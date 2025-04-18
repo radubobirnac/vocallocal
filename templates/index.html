@@ -207,9 +207,26 @@
                         recordingStatus.textContent = 'Recording in progress...';
                         isRecording = true;
                         
-                        // Create media recorder with specific options
-                        const options = { mimeType: 'audio/webm' };
-                        mediaRecorder = new MediaRecorder(stream, options);
+                        // Try to create recorder with different formats in order of preference
+                        let options;
+                        try {
+                            // Try MP3 format first - this worked for file uploads
+                            options = { mimeType: 'audio/mpeg' };
+                            mediaRecorder = new MediaRecorder(stream, options);
+                            console.log("Using MP3 recording format");
+                        } catch (e1) {
+                            try {
+                                // Fall back to WebM
+                                options = { mimeType: 'audio/webm' };
+                                mediaRecorder = new MediaRecorder(stream, options);
+                                console.log("Using WebM recording format");
+                            } catch (e2) {
+                                // Last resort - use browser default
+                                mediaRecorder = new MediaRecorder(stream);
+                                console.log("Using default recording format:", mediaRecorder.mimeType);
+                            }
+                        }
+                        
                         audioChunks = [];
                         
                         // Collect audio chunks
@@ -219,9 +236,29 @@
                         
                         // When recording stops
                         mediaRecorder.addEventListener('stop', () => {
-                            // Use WebM format instead of WAV
+                            // Create the blob with appropriate format
                             const audioBlob = new Blob(audioChunks);
-                            const audioFile = new File([audioBlob], 'recording.webm', { type: 'audio/webm' });
+                            
+                            // Set filename based on actual format used
+                            let fileName, fileType;
+                            if (mediaRecorder.mimeType.includes('audio/mpeg')) {
+                                fileName = 'recording.mp3';
+                                fileType = 'audio/mpeg';
+                            } else if (mediaRecorder.mimeType.includes('audio/webm')) {
+                                fileName = 'recording.webm';
+                                fileType = 'audio/webm';
+                            } else {
+                                // Default to mp3 for compatibility
+                                fileName = 'recording.mp3';
+                                fileType = 'audio/mpeg';
+                            }
+                            
+                            const audioFile = new File([audioBlob], fileName, { type: fileType });
+                            
+                            // Log info for debugging
+                            console.log("Recording format:", mediaRecorder.mimeType);
+                            console.log("File type:", fileType);
+                            console.log("Blob size:", audioBlob.size, "bytes");
                             
                             // Create form data and add file
                             const formData = new FormData();
@@ -236,8 +273,12 @@
                                 method: 'POST',
                                 body: formData
                             })
-                            .then(response => response.json())
+                            .then(response => {
+                                console.log("Server response status:", response.status);
+                                return response.json();
+                            })
                             .then(result => {
+                                console.log("Server response:", result);
                                 if (result.text) {
                                     document.getElementById('transcript').textContent = result.text;
                                     showStatus('Transcription complete!', 'success');
@@ -255,7 +296,7 @@
                             recordingStatus.textContent = 'Click to start recording';
                         });
                         
-                        // Start recording with timeslice to get data during recording
+                        // Start recording with timeslice to get data
                         mediaRecorder.start(1000);  // Get a dataavailable event every second
                         
                     } catch (error) {
