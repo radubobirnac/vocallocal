@@ -130,7 +130,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://kit.fontawesome.com/your-font-awesome-kit.js" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/4b1c7a602f.js" crossorigin="anonymous"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Load languages
@@ -189,6 +189,87 @@
                 navigator.clipboard.writeText(text)
                     .then(() => showStatus('Copied to clipboard!', 'success'))
                     .catch(err => showStatus('Failed to copy: ' + err, 'danger'));
+            });
+
+            // Record button functionality
+            const recordButton = document.getElementById('recordButton');
+            const recordingStatus = document.getElementById('recordingStatus');
+            let mediaRecorder;
+            let audioChunks = [];
+            let isRecording = false;
+            
+            recordButton.addEventListener('click', async () => {
+                // If not recording, start recording
+                if (!isRecording) {
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        recordButton.classList.add('recording');
+                        recordingStatus.textContent = 'Recording in progress...';
+                        isRecording = true;
+                        
+                        // Create media recorder
+                        mediaRecorder = new MediaRecorder(stream);
+                        audioChunks = [];
+                        
+                        // Collect audio chunks
+                        mediaRecorder.addEventListener('dataavailable', event => {
+                            audioChunks.push(event.data);
+                        });
+                        
+                        // When recording stops
+                        mediaRecorder.addEventListener('stop', () => {
+                            // Create audio blob and file
+                            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                            const audioFile = new File([audioBlob], 'recording.wav', { type: 'audio/wav' });
+                            
+                            // Create form data and add file
+                            const formData = new FormData();
+                            formData.append('file', audioFile);
+                            formData.append('language', document.getElementById('languageSelect').value);
+                            
+                            // Show transcribing status
+                            showStatus('Transcribing your recording...', 'info');
+                            
+                            // Send to server
+                            fetch('/api/transcribe', {
+                                method: 'POST',
+                                body: formData
+                            })
+                            .then(response => response.json())
+                            .then(result => {
+                                if (result.text) {
+                                    document.getElementById('transcript').textContent = result.text;
+                                    showStatus('Transcription complete!', 'success');
+                                } else {
+                                    showStatus('Transcription failed. Please try again.', 'danger');
+                                }
+                            })
+                            .catch(error => {
+                                showStatus(`Error: ${error.message}`, 'danger');
+                            });
+                            
+                            // Reset UI
+                            recordButton.classList.remove('recording');
+                            recordingStatus.textContent = 'Click to start recording';
+                        });
+                        
+                        // Start recording with timeslice to get data during recording
+                        mediaRecorder.start(1000);  // Get a dataavailable event every second
+                        
+                    } catch (error) {
+                        showStatus('Microphone access denied or not available', 'warning');
+                        console.error('Error accessing microphone:', error);
+                    }
+                } else {
+                    // Stop recording
+                    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                        mediaRecorder.stop();
+                        isRecording = false;
+                        
+                        // Stop all tracks in the stream
+                        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    }
+                }
             });
 
             // Status display
