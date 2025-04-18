@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VocalLocal - Speech to Text</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            padding-top: 2rem;
+        }
+        .container {
+            max-width: 800px;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #5a67d8;
+        }
+        .recorder-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #recordButton {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #5a67d8;
+            color: white;
+            border: none;
+            font-size: 24px;
+            margin-bottom: 1rem;
+        }
+        #recordButton:hover {
+            background-color: #4c51bf;
+        }
+        .recording {
+            background-color: #e53e3e !important;
+        }
+        #transcript {
+            margin-top: 2rem;
+            min-height: 200px;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            padding: 1rem;
+            background-color: #f8f9fa;
+        }
+        #uploadForm {
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">VocalLocal</div>
+            <p class="lead">Accurate Speech-to-Text Transcription</p>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label for="languageSelect" class="form-label">Select Language:</label>
+                <select id="languageSelect" class="form-select"></select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Record Audio</h5>
+                    </div>
+                    <div class="card-body recorder-container">
+                        <button id="recordButton">
+                            <i class="fa-solid fa-microphone"></i>
+                        </button>
+                        <div id="recordingStatus">Click to start recording</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Upload Audio File</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <input class="form-control" type="file" id="audioFile" accept=".wav, .mp3, .ogg, .m4a">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Transcribe</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5>Transcript</h5>
+                            <button id="copyButton" class="btn btn-sm btn-outline-secondary">Copy</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="transcript">Transcribed text will appear here...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-12">
+                <div id="status" class="alert alert-info d-none"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://kit.fontawesome.com/your-font-awesome-kit.js" crossorigin="anonymous"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load languages
+            fetch('/api/languages')
+                .then(response => response.json())
+                .then(languages => {
+                    const languageSelect = document.getElementById('languageSelect');
+                    Object.entries(languages).forEach(([name, code]) => {
+                        const option = document.createElement('option');
+                        option.value = code;
+                        option.textContent = name;
+                        if (code === 'en') option.selected = true;
+                        languageSelect.appendChild(option);
+                    });
+                });
+
+            // File upload handling
+            const uploadForm = document.getElementById('uploadForm');
+            uploadForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const fileInput = document.getElementById('audioFile');
+                if (!fileInput.files.length) {
+                    showStatus('Please select a file', 'warning');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                formData.append('language', document.getElementById('languageSelect').value);
+
+                showStatus('Transcribing your audio...', 'info');
+                
+                try {
+                    const response = await fetch('/api/transcribe', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        document.getElementById('transcript').textContent = result.text;
+                        showStatus('Transcription complete!', 'success');
+                    } else {
+                        showStatus(`Error: ${result.error}`, 'danger');
+                    }
+                } catch (error) {
+                    showStatus(`Error: ${error.message}`, 'danger');
+                }
+            });
+
+            // Copy button
+            document.getElementById('copyButton').addEventListener('click', () => {
+                const text = document.getElementById('transcript').textContent;
+                navigator.clipboard.writeText(text)
+                    .then(() => showStatus('Copied to clipboard!', 'success'))
+                    .catch(err => showStatus('Failed to copy: ' + err, 'danger'));
+            });
+
+            // Status display
+            function showStatus(message, type = 'info') {
+                const statusEl = document.getElementById('status');
+                statusEl.textContent = message;
+                statusEl.className = `alert alert-${type}`;
+                statusEl.classList.remove('d-none');
+                
+                setTimeout(() => {
+                    statusEl.classList.add('d-none');
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html> 

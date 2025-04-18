@@ -9,6 +9,7 @@ A powerful speech-to-text application that uses OpenAI's Whisper API to provide 
 - Multiple recording modes (fixed duration or key-triggered)
 - Save transcripts to files
 - Simple and intuitive interface
+- Web interface for deployment on Render
 
 ## Requirements
 
@@ -44,6 +45,8 @@ Then edit `.env` and add your OpenAI API key.
 
 ## Usage
 
+### Desktop Applications
+
 The project includes several versions of the application:
 
 - `modsimple.py`: Simple modular version with language selection
@@ -55,6 +58,52 @@ To run the simple modular version:
 ```bash
 python modsimple.py
 ```
+
+### Web Application
+
+The project also includes a web interface that can be deployed to Render or run locally:
+
+To run the web application locally:
+```bash
+flask run
+```
+
+## Deployment to Render
+
+1. **Fork or clone this repository**
+
+2. **Create a new Web Service on Render**
+   - Sign up for a [Render](https://render.com/) account if you don't have one
+   - Go to your Render dashboard and click "New +" > "Web Service"
+   - Connect your GitHub repository
+   - Name your service (e.g., "vocallocal")
+   - Select "Python" as the Environment
+   - Set the Build Command to:
+     ```
+     ./build.sh
+     ```
+   - Set the Start Command to:
+     ```
+     gunicorn app:app
+     ```
+
+3. **Add Environment Variables**
+   - Add your `OPENAI_API_KEY` to the environment variables section
+   - Add `SECRET_KEY` for Flask session security
+
+4. **Deploy your service**
+   - Click "Create Web Service"
+   - Render will automatically build and deploy your application
+
+## Troubleshooting Deployment
+
+If you encounter issues with PyAudio installation on Render, try these steps:
+
+1. **Use the build.sh script** - This script installs the necessary system dependencies for PyAudio.
+
+2. **Alternative: Use render.yaml** - This configuration file can also be used to set up your deployment.
+
+3. **Check Render logs** - If your deployment fails, check the logs for specific errors.
 
 ## Contributing
 
