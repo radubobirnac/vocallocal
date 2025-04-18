@@ -54,7 +54,7 @@
             border: 1px solid #e2e8f0;
             border-radius: 5px;
             padding: 1rem;
-            background-color: #f8f9fb;
+            background-color: #f8f9fa;
         }
         #uploadForm {
             margin-top: 1rem;
@@ -207,8 +207,9 @@
                         recordingStatus.textContent = 'Recording in progress...';
                         isRecording = true;
                         
-                        // Create media recorder
-                        mediaRecorder = new MediaRecorder(stream);
+                        // Create media recorder with specific options
+                        const options = { mimeType: 'audio/webm' };
+                        mediaRecorder = new MediaRecorder(stream, options);
                         audioChunks = [];
                         
                         // Collect audio chunks
@@ -218,9 +219,9 @@
                         
                         // When recording stops
                         mediaRecorder.addEventListener('stop', () => {
-                            // Create audio blob and file
-                            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                            const audioFile = new File([audioBlob], 'recording.wav', { type: 'audio/wav' });
+                            // Use WebM format instead of WAV
+                            const audioBlob = new Blob(audioChunks);
+                            const audioFile = new File([audioBlob], 'recording.webm', { type: 'audio/webm' });
                             
                             // Create form data and add file
                             const formData = new FormData();
@@ -245,6 +246,7 @@
                                 }
                             })
                             .catch(error => {
+                                console.error('Full error details:', error);
                                 showStatus(`Error: ${error.message}`, 'danger');
                             });
                             
