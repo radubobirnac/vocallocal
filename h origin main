@@ -1,0 +1,7 @@
+[33mcommit e7faae3ae65a2d43a4e5633e09d466ca74af9386[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Radu Bobirnac <radubobirnac@gmail.com>
+Date:   Thu Apr 17 22:39:36 2025 -0700
+
+    Add microphone recording functionality to web iterface
+
+templates/index.html
