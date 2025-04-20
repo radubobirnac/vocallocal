@@ -19,13 +19,32 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .header {
-            text-align: center;
             margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo-container {
+            display: flex;
+            flex-direction: column;
         }
         .logo {
             font-size: 2rem;
             font-weight: bold;
             color: #5a67d8;
+        }
+        .subtitle {
+            font-size: 1rem;
+            color: #718096;
+        }
+        .language-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .language-label {
+            margin-bottom: 0;
+            white-space: nowrap;
         }
         .recorder-container {
             display: flex;
@@ -64,14 +83,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">VocalLocal</div>
-            <p class="lead">Accurate Speech-to-Text Transcription</p>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <label for="languageSelect" class="form-label">Select Language:</label>
-                <select id="languageSelect" class="form-select"></select>
+            <div class="logo-container">
+                <div class="logo">VocalLocal</div>
+                <p class="subtitle">Accurate Speech-to-Text Transcription</p>
+            </div>
+            <div class="language-selector">
+                <label for="languageSelect" class="language-label"><i class="fas fa-globe"></i></label>
+                <select id="languageSelect" class="form-select form-select-sm" style="width: auto;"></select>
             </div>
         </div>
 
@@ -138,11 +156,11 @@
                 .then(response => response.json())
                 .then(languages => {
                     const languageSelect = document.getElementById('languageSelect');
-                    Object.entries(languages).forEach(([name, code]) => {
+                    Object.entries(languages).forEach(([name, langData]) => {
                         const option = document.createElement('option');
-                        option.value = code;
-                        option.textContent = name;
-                        if (code === 'en') option.selected = true;
+                        option.value = langData.code;
+                        option.textContent = langData.native;
+                        if (langData.code === 'en') option.selected = true;
                         languageSelect.appendChild(option);
                     });
                 });
