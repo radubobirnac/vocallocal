@@ -174,7 +174,6 @@
                     </div>
                     <div class="collapse" id="aboutSection">
                         <div class="card-body">
-                            <h5>What is VocalLocal?</h5>
                             <p>VocalLocal is a multilingual speech-to-text transcription tool designed to provide accurate transcriptions in multiple languages. Using advanced AI technology, it converts spoken language from audio recordings or microphone input into written text.</p>
                             
                             <h5>Features</h5>
@@ -190,7 +189,16 @@
                                 <li>Audio quality significantly affects transcription accuracy</li>
                                 <li>Background noise may impact results</li>
                                 <li>Maximum file size of 16MB per upload</li>
-                                <li>Some rare languages or dialects may have lower accuracy</li>
+                                <li>
+                                    Some rare languages or dialects may have lower accuracy
+                                    <br>
+                                    <small class="text-muted">
+                                        See <a href="https://openai.com/index/introducing-our-next-generation-audio-models/" target="_blank" rel="noopener noreferrer">
+                                            OpenAI's paper on word error rate
+                                        </a> for more details.
+                                    </small>
+                                </li>
+                                <li>Recordings are limited to 5 minutes maximum duration</li>
                             </ul>
                             
                             <h5>Technical Details</h5>
@@ -209,6 +217,10 @@
     <script src="https://kit.fontawesome.com/4b1c7a602f.js" crossorigin="anonymous"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Add these constants/variables 
+            const MAX_RECORDING_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
+            let recordingTimer = null;
+            
             // Load languages
             fetch('/api/languages')
                 .then(response => response.json())
@@ -283,6 +295,18 @@
                         recordingStatus.textContent = 'Recording in progress...';
                         isRecording = true;
                         
+                        // Set a timer to automatically stop recording after MAX_RECORDING_TIME
+                        recordingTimer = setTimeout(() => {
+                            if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
+                                showStatus('Maximum recording time reached (5 minutes)', 'warning');
+                                mediaRecorder.stop();
+                                isRecording = false;
+                                
+                                // Stop all tracks in the stream
+                                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                            }
+                        }, MAX_RECORDING_TIME);
+                        
                         // Try to create recorder with different formats in order of preference
                         let options;
                         try {
@@ -312,6 +336,12 @@
                         
                         // When recording stops
                         mediaRecorder.addEventListener('stop', () => {
+                            // Clear the recording timer when stopping
+                            if (recordingTimer) {
+                                clearTimeout(recordingTimer);
+                                recordingTimer = null;
+                            }
+                            
                             // Create the blob with appropriate format
                             const audioBlob = new Blob(audioChunks);
                             
@@ -384,6 +414,12 @@
                     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                         mediaRecorder.stop();
                         isRecording = false;
+                        
+                        // Clear the recording timer
+                        if (recordingTimer) {
+                            clearTimeout(recordingTimer);
+                            recordingTimer = null;
+                        }
                         
                         // Stop all tracks in the stream
                         mediaRecorder.stream.getTracks().forEach(track => track.stop());
