@@ -221,6 +221,20 @@
             const MAX_RECORDING_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
             let recordingTimer = null;
             
+            // Add iOS detection
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isMediaRecorderSupported = window.MediaRecorder !== undefined;
+            
+            // Helper function to check if format is supported
+            function isFormatSupported(mimeType) {
+                if (!isMediaRecorderSupported) return false;
+                try {
+                    return MediaRecorder.isTypeSupported(mimeType);
+                } catch (e) {
+                    return false;
+                }
+            }
+            
             // Load languages
             fetch('/api/languages')
                 .then(response => response.json())
@@ -307,23 +321,60 @@
                             }
                         }, MAX_RECORDING_TIME);
                         
-                        // Try to create recorder with different formats in order of preference
-                        let options;
-                        try {
-                            // Try MP3 format first - this worked for file uploads
-                            options = { mimeType: 'audio/mpeg' };
-                            mediaRecorder = new MediaRecorder(stream, options);
-                            console.log("Using MP3 recording format");
-                        } catch (e1) {
+                        // Try to create recorder with different formats based on device and browser
+                        if (!isMediaRecorderSupported) {
+                            throw new Error("MediaRecorder is not supported in this browser");
+                        }
+                        
+                        // Choose appropriate formats based on the platform
+                        let created = false;
+                        
+                        // For iOS devices, prioritize audio/mp4 format
+                        if (isIOS) {
+                            console.log("iOS device detected, prioritizing compatible formats");
+                            
+                            // Try audio/mp4 first for iOS (this is the one that works best)
+                            if (!created && isFormatSupported('audio/mp4')) {
+                                try {
+                                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/mp4' });
+                                    console.log("Using audio/mp4 format for iOS");
+                                    created = true;
+                                } catch (e) {
+                                    console.warn("Error with audio/mp4 on iOS", e);
+                                }
+                            }
+                        } else {
+                            // For non-iOS, try preferred formats
+                            const formats = [
+                                'audio/webm',  // Works well on Chrome/Firefox
+                                'audio/mp4',   // Works on Safari
+                                'audio/mpeg'   // Rarely supported but try it
+                            ];
+                            
+                            for (const format of formats) {
+                                if (created) break;
+                                
+                                if (isFormatSupported(format)) {
+                                    try {
+                                        mediaRecorder = new MediaRecorder(stream, { mimeType: format });
+                                        console.log(`Using ${format} format`);
+                                        created = true;
+                                    } catch (e) {
+                                        console.warn(`Error with ${format}`, e);
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // If no specific format worked, fall back to browser default
+                        if (!created) {
                             try {
-                                // Fall back to WebM
-                                options = { mimeType: 'audio/webm' };
-                                mediaRecorder = new MediaRecorder(stream, options);
-                                console.log("Using WebM recording format");
-                            } catch (e2) {
-                                // Last resort - use browser default
                                 mediaRecorder = new MediaRecorder(stream);
-                                console.log("Using default recording format:", mediaRecorder.mimeType);
+                                console.log("Using default browser format:", 
+                                    mediaRecorder.mimeType || "unknown");
+                            } catch (e) {
+                                console.error("Cannot create MediaRecorder", e);
+                                throw new Error("Recording not supported on this device");
                             }
                         }
                         
@@ -331,7 +382,9 @@
                         
                         // Collect audio chunks
                         mediaRecorder.addEventListener('dataavailable', event => {
-                            audioChunks.push(event.data);
+                            if (event.data && event.data.size > 0) {
+                                audioChunks.push(event.data);
+                            }
                         });
                         
                         // When recording stops
@@ -342,27 +395,39 @@
                                 recordingTimer = null;
                             }
                             
+                            if (audioChunks.length === 0) {
+                                showStatus('No audio data recorded', 'warning');
+                                recordButton.classList.remove('recording');
+                                recordingStatus.textContent = 'Click to start recording';
+                                return;
+                            }
+                            
                             // Create the blob with appropriate format
                             const audioBlob = new Blob(audioChunks);
                             
                             // Set filename based on actual format used
                             let fileName, fileType;
-                            if (mediaRecorder.mimeType.includes('audio/mpeg')) {
-                                fileName = 'recording.mp3';
-                                fileType = 'audio/mpeg';
-                            } else if (mediaRecorder.mimeType.includes('audio/webm')) {
+                            const mimeType = (mediaRecorder.mimeType || '').toLowerCase();
+                            
+                            if (mimeType.includes('audio/mp4')) {
+                                fileName = 'recording.m4a';
+                                fileType = 'audio/mp4';
+                            } else if (mimeType.includes('audio/webm')) {
                                 fileName = 'recording.webm';
                                 fileType = 'audio/webm';
-                            } else {
-                                // Default to mp3 for compatibility
+                            } else if (mimeType.includes('audio/mpeg')) {
                                 fileName = 'recording.mp3';
                                 fileType = 'audio/mpeg';
+                            } else {
+                                // Default to m4a for iOS compatibility
+                                fileName = isIOS ? 'recording.m4a' : 'recording.mp3';
+                                fileType = isIOS ? 'audio/mp4' : 'audio/mpeg';
                             }
                             
                             const audioFile = new File([audioBlob], fileName, { type: fileType });
                             
                             // Log info for debugging
-                            console.log("Recording format:", mediaRecorder.mimeType);
+                            console.log("Recording format:", mimeType || "unknown");
                             console.log("File type:", fileType);
                             console.log("Blob size:", audioBlob.size, "bytes");
                             
@@ -406,7 +471,15 @@
                         mediaRecorder.start(1000);  // Get a dataavailable event every second
                         
                     } catch (error) {
-                        showStatus('Microphone access denied or not available', 'warning');
+                        recordButton.classList.remove('recording');
+                        isRecording = false;
+                        recordingStatus.textContent = 'Click to start recording';
+                        
+                        if (error.name === 'NotAllowedError') {
+                            showStatus('Microphone access denied', 'warning');
+                        } else {
+                            showStatus(`Recording error: ${error.message}`, 'danger');
+                        }
                         console.error('Error accessing microphone:', error);
                     }
                 } else {
