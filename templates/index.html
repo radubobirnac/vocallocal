@@ -78,6 +78,12 @@
         #uploadForm {
             margin-top: 1rem;
         }
+        .about-section i {
+            transition: transform 0.3s ease;
+        }
+        .about-section button[aria-expanded="true"] i {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body>
@@ -85,7 +91,7 @@
         <div class="header">
             <div class="logo-container">
                 <div class="logo">VocalLocal</div>
-                <p class="subtitle">Accurate Speech-to-Text Transcription</p>
+                <p class="subtitle">Accurate Multilingual Speech-to-Text Transcription</p>
             </div>
             <div class="language-selector">
                 <img src="https://img.icons8.com/ios-filled/24/000000/language.png" alt="Language" style="width: 24px; height: 24px;" />
@@ -109,19 +115,6 @@
                 </div>
             </div>
             <div class="col-md-6 mb-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>Upload Audio File</h5>
-                    </div>
-                    <div class="card-body">
-                        <form id="uploadForm" enctype="multipart/form-data">
-                            <div class="mb-3">
-                                <input class="form-control" type="file" id="audioFile" accept=".wav, .mp3, .ogg, .m4a">
-                            </div>
-                            <button type="submit" class="btn btn-primary">Transcribe</button>
-                        </form>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -143,7 +136,69 @@
 
         <div class="row mt-3">
             <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Upload Audio File</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <input class="form-control" type="file" id="audioFile" accept=".wav, .mp3, .ogg, .m4a">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Transcribe</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-12">
                 <div id="status" class="alert alert-info d-none"></div>
+            </div>
+        </div>
+
+        <!-- New About Section -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card about-section">
+                    <div class="card-header bg-light">
+                        <button class="btn btn-link text-decoration-none text-dark w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#aboutSection" aria-expanded="false" aria-controls="aboutSection">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">About VocalLocal</h5>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="collapse" id="aboutSection">
+                        <div class="card-body">
+                            <h5>What is VocalLocal?</h5>
+                            <p>VocalLocal is a multilingual speech-to-text transcription tool designed to provide accurate transcriptions in multiple languages. Using advanced AI technology, it converts spoken language from audio recordings or microphone input into written text.</p>
+                            
+                            <h5>Features</h5>
+                            <ul>
+                                <li><strong>Real-time transcription</strong> - Record directly from your microphone and get immediate results</li>
+                                <li><strong>File upload support</strong> - Process pre-recorded audio files in various formats</li>
+                                <li><strong>Multilingual capabilities</strong> - Support for 30+ languages with native language names</li>
+                                <li><strong>Easy copying</strong> - One-click copying of transcription results</li>
+                            </ul>
+                            
+                            <h5>Limitations</h5>
+                            <ul>
+                                <li>Audio quality significantly affects transcription accuracy</li>
+                                <li>Background noise may impact results</li>
+                                <li>Maximum file size of 16MB per upload</li>
+                                <li>Some rare languages or dialects may have lower accuracy</li>
+                            </ul>
+                            
+                            <h5>Technical Details</h5>
+                            <p>VocalLocal uses OpenAI's speech recognition models to process audio. The application supports various audio formats including WAV, MP3, OGG, and M4A. The language detection feature can automatically identify the spoken language, though manually selecting the correct language may improve accuracy for certain languages.</p>
+                            
+                            <h5>Privacy Information</h5>
+                            <p>Audio data is processed securely and is not stored permanently. Recordings are only kept temporarily during the transcription process and are deleted immediately afterward. Transcribed text remains in your browser and is not saved on our servers unless explicitly requested.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
