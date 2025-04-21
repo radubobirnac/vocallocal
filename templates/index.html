@@ -4,68 +4,73 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VocalLocal - Speech to Text</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
             background-color: #f8f9fa;
-            padding-top: 2rem;
-        }
-        .container {
-            max-width: 800px;
-            background-color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px 0;
         }
         .header {
-            margin-bottom: 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-        .logo-container {
-            display: flex;
-            flex-direction: column;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
         }
         .logo {
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: bold;
-            color: #5a67d8;
+            color: #4e5afc;
         }
         .subtitle {
-            font-size: 1rem;
-            color: #718096;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+        .recorder-container {
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        #recordButton {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background-color: #4e5afc;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        #recordButton:hover {
+            background-color: #3949db;
+            transform: scale(1.05);
+        }
+        #recordButton i {
+            font-size: 2rem;
+        }
+        #recordButton.recording {
+            animation: pulse 1.5s infinite;
+            background-color: #dc3545;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
         .language-selector {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-        }
-        .language-label {
-            margin-bottom: 0;
-            white-space: nowrap;
-        }
-        .recorder-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        #recordButton {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background-color: #5a67d8;
-            color: white;
-            border: none;
-            font-size: 24px;
-            margin-bottom: 1rem;
-        }
-        #recordButton:hover {
-            background-color: #4c51bf;
-        }
-        .recording {
-            background-color: #e53e3e !important;
+            gap: 10px;
         }
         #transcript {
             min-height: 200px;
@@ -73,6 +78,7 @@
             border-radius: 5px;
             padding: 1rem;
             background-color: #f8f9fa;
+            height: 100%;
         }
         #uploadForm {
             margin-top: 1rem;
@@ -83,13 +89,71 @@
         .about-section button[aria-expanded="true"] i {
             transform: rotate(180deg);
         }
-        @media (max-width: 768px) {
-            .recorder-container {
-                border-right: none !important;
-                border-bottom: 1px solid #e2e8f0;
-                padding-bottom: 1rem;
-                margin-bottom: 1rem;
+        .model-toggle {
+            margin-bottom: 0.75rem;
+        }
+        .model-toggle h6 {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        .model-toggle .form-check {
+            margin-right: 1.5rem;
+        }
+        .info-icon {
+            cursor: pointer;
+            color: #4e5afc;
+            margin-left: 5px;
+        }
+        .section-divider {
+            height: 2px;
+            background-color: #e9ecef;
+            margin: 2rem 0;
+        }
+        
+        /* Responsive adjustments */
+        @media (min-width: 992px) {
+            .transcript-container {
+                height: 100%;
+                display: flex;
+                flex-direction: column;
             }
+            .transcript-card-body {
+                display: flex;
+                flex: 1;
+            }
+            .controls-column {
+                padding-right: 2rem;
+                border-right: 1px solid #e2e8f0;
+            }
+        }
+        
+        @media (max-width: 991px) {
+            .controls-column {
+                margin-bottom: 2rem;
+                padding-bottom: 2rem;
+                border-bottom: 1px solid #e2e8f0;
+            }
+        }
+        
+        /* Tighter spacing for card elements */
+        .card-body {
+            padding: 1rem;
+        }
+        
+        /* Reduce spacing around transcript heading */
+        h6.transcript-heading {
+            margin-bottom: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        /* Make dividers between sections thinner */
+        .controls-column {
+            padding-bottom: 0.75rem;
+        }
+        
+        /* Reduce space between status and button */
+        #recordingStatus {
+            margin-bottom: 0.5rem;
         }
     </style>
 </head>
@@ -107,150 +171,140 @@
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-12 mb-4">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5>Voice Transcription</h5>
-                            <button id="copyButton" class="btn btn-sm btn-outline-secondary">Copy</button>
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Voice Transcription</h5>
+                <button id="copyButton" class="btn btn-sm btn-outline-secondary">Copy</button>
+            </div>
+            <div class="card-body transcript-card-body p-2">
+                <div class="row h-100">
+                    <div class="col-lg-4 controls-column pb-2">
+                        <div class="model-toggle mb-2">
+                            <h6 class="mb-1">Model Selection</h6>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="transcriptionModel" id="fastModel" value="gpt-4o-mini-transcribe" checked>
+                                <label class="form-check-label" for="fastModel">Fast model</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="transcriptionModel" id="accurateModel" value="gpt-4o-transcribe">
+                                <label class="form-check-label" for="accurateModel">More accurate but slower</label>
+                            </div>
+                        </div>
+                        
+                        <div class="recorder-container">
+                            <button id="recordButton">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                            <div id="recordingStatus">Click to start recording</div>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4 mb-3 mb-md-0">
-                                <div class="recorder-container text-center border-end pe-md-3">
-                                    <button id="recordButton" class="mb-3">
-                                        <i class="fas fa-microphone"></i>
-                                    </button>
-                                    <div id="recordingStatus" class="text-center">Click to start recording</div>
-                                </div>
-                            </div>
-                            <div class="col-md-8">
-                                <h6 class="mb-3">Transcript</h6>
-                                <div id="transcript" class="p-3">Transcribed text will appear here...</div>
-                            </div>
-                        </div>
+                    
+                    <div class="col-lg-8 transcript-container">
+                        <h6 class="transcript-heading">Transcript</h6>
+                        <div id="transcript" class="flex-grow-1">Transcribed text will appear here...</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="row mt-3">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>Upload Audio File</h5>
-                    </div>
-                    <div class="card-body">
-                        <form id="uploadForm" enctype="multipart/form-data">
-                            <div class="mb-3">
-                                <input class="form-control" type="file" id="audioFile" accept=".wav, .mp3, .ogg, .m4a">
-                            </div>
-                            <button type="submit" class="btn btn-primary">Transcribe</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div class="section-divider"></div>
 
-        <div class="row mt-3">
-            <div class="col-12">
-                <div id="status" class="alert alert-info d-none"></div>
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Upload Audio File</h5>
             </div>
-        </div>
-
-        <!-- New About Section -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card about-section">
-                    <div class="card-header bg-light">
-                        <button class="btn btn-link text-decoration-none text-dark w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#aboutSection" aria-expanded="false" aria-controls="aboutSection">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">About VocalLocal</h5>
-                                <i class="fas fa-chevron-down"></i>
-                            </div>
-                        </button>
+            <div class="card-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <input class="form-control" type="file" id="audioFile" accept=".wav, .mp3, .ogg, .m4a">
                     </div>
-                    <div class="collapse" id="aboutSection">
-                        <div class="card-body">
-                            <p>VocalLocal is a multilingual speech-to-text transcription tool designed to provide accurate transcriptions in multiple languages. Using advanced AI technology, it converts spoken language from audio recordings or microphone input into written text.</p>
-                            
-                            <h5>Features</h5>
-                            <ul>
-                                <li><strong>Real-time transcription</strong> - Record directly from your microphone and get immediate results</li>
-                                <li><strong>File upload support</strong> - Process pre-recorded audio files in various formats</li>
-                                <li><strong>Multilingual capabilities</strong> - Support for 30+ languages with native language names</li>
-                                <li><strong>Easy copying</strong> - One-click copying of transcription results</li>
-                            </ul>
-                            
-                            <h5>Limitations</h5>
-                            <ul>
-                                <li>Audio quality significantly affects transcription accuracy</li>
-                                <li>Background noise may impact results</li>
-                                <li>Maximum file size of 16MB per upload</li>
-                                <li>
-                                    Some rare languages or dialects may have lower accuracy
-                                    <br>
-                                    <small class="text-muted">
-                                        See <a href="https://openai.com/index/introducing-our-next-generation-audio-models/" target="_blank" rel="noopener noreferrer">
-                                            OpenAI's paper on word error rate
-                                        </a> for more details.
-                                    </small>
-                                </li>
-                                <li>Recordings are limited to 5 minutes maximum duration</li>
-                                <li>Speaking in multiple languages at once may result in mixed results</li>
-                            </ul>
-                            
-                            <h5>Technical Details</h5>
-                            <p>VocalLocal uses OpenAI's speech recognition models to process audio. The application supports various audio formats including WAV, MP3, OGG, and M4A. The language detection feature can automatically identify the spoken language, though manually selecting the correct language may improve accuracy for certain languages.</p>
-                            
-                            <h5>Privacy Information</h5>
-                            <p>Audio data is processed securely and is not stored permanently. Recordings are only kept temporarily during the transcription process and are deleted immediately afterward. Transcribed text remains in your browser and is not saved on our servers unless explicitly requested.</p>
+                    <div class="mb-3">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="uploadTranscriptionModel" id="uploadFastModel" value="gpt-4o-mini-transcribe" checked>
+                            <label class="form-check-label" for="uploadFastModel">Fast model</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="uploadTranscriptionModel" id="uploadAccurateModel" value="gpt-4o-transcribe">
+                            <label class="form-check-label" for="uploadAccurateModel">More accurate but slower</label>
                         </div>
                     </div>
-                </div>
+                    <button type="submit" class="btn btn-primary">Transcribe</button>
+                </form>
             </div>
+        </div>
+
+        <div class="mt-3">
+            <div id="status" class="alert alert-info d-none"></div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://kit.fontawesome.com/4b1c7a602f.js" crossorigin="anonymous"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Add these constants/variables 
-            const MAX_RECORDING_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
-            let recordingTimer = null;
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
             
-            // Add iOS detection
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            const isMediaRecorderSupported = window.MediaRecorder !== undefined;
-            
-            // Helper function to check if format is supported
-            function isFormatSupported(mimeType) {
-                if (!isMediaRecorderSupported) return false;
-                try {
-                    return MediaRecorder.isTypeSupported(mimeType);
-                } catch (e) {
-                    return false;
-                }
+            // Status message display
+            function showStatus(message, type) {
+                const statusEl = document.getElementById('status');
+                statusEl.textContent = message;
+                statusEl.className = `alert alert-${type}`;
+                statusEl.classList.remove('d-none');
+                
+                // Auto hide after 5 seconds
+                setTimeout(() => {
+                    statusEl.classList.add('d-none');
+                }, 5000);
             }
             
             // Load languages
-            fetch('/api/languages')
-                .then(response => response.json())
-                .then(languages => {
-                    const languageSelect = document.getElementById('languageSelect');
-                    Object.entries(languages).forEach(([name, langData]) => {
-                        const option = document.createElement('option');
-                        option.value = langData.code;
-                        option.textContent = langData.native;
-                        if (langData.code === 'en') option.selected = true;
-                        languageSelect.appendChild(option);
-                    });
-                });
-
-            // File upload handling
+            const languageSelect = document.getElementById('languageSelect');
+            const languages = {
+                "English": "en",
+                "Spanish": "es",
+                "French": "fr",
+                "German": "de",
+                "Italian": "it",
+                "Portuguese": "pt",
+                "Dutch": "nl",
+                "Japanese": "ja",
+                "Chinese": "zh",
+                "Korean": "ko",
+                "Russian": "ru",
+                "Arabic": "ar",
+                "Hindi": "hi",
+                "Turkish": "tr",
+                "Swedish": "sv",
+                "Polish": "pl",
+                "Norwegian": "no",
+                "Finnish": "fi",
+                "Danish": "da",
+                "Ukrainian": "uk",
+                "Czech": "cs",
+                "Romanian": "ro",
+                "Hungarian": "hu",
+                "Greek": "el",
+                "Hebrew": "he",
+                "Thai": "th",
+                "Vietnamese": "vi",
+                "Indonesian": "id",
+                "Malay": "ms",
+                "Bulgarian": "bg"
+            };
+            
+            Object.entries(languages).forEach(([name, code]) => {
+                const option = document.createElement('option');
+                option.value = code;
+                option.textContent = name;
+                if (code === 'en') option.selected = true;
+                languageSelect.appendChild(option);
+            });
+            
+            // Upload form handling
             const uploadForm = document.getElementById('uploadForm');
             uploadForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -264,6 +318,7 @@
                 const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
                 formData.append('language', document.getElementById('languageSelect').value);
+                formData.append('model', document.querySelector('input[name="uploadTranscriptionModel"]:checked').value);
 
                 showStatus('Transcribing your audio...', 'info');
                 
@@ -302,216 +357,145 @@
             let isRecording = false;
             
             recordButton.addEventListener('click', async () => {
-                // If not recording, start recording
-                if (!isRecording) {
-                    try {
-                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        recordButton.classList.add('recording');
-                        recordingStatus.textContent = 'Recording in progress...';
-                        isRecording = true;
-                        
-                        // Set a timer to automatically stop recording after MAX_RECORDING_TIME
-                        recordingTimer = setTimeout(() => {
-                            if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
-                                showStatus('Maximum recording time reached (5 minutes)', 'warning');
-                                mediaRecorder.stop();
-                                isRecording = false;
-                                
-                                // Stop all tracks in the stream
-                                mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                            }
-                        }, MAX_RECORDING_TIME);
-                        
-                        // Try to create recorder with different formats based on device and browser
-                        if (!isMediaRecorderSupported) {
-                            throw new Error("MediaRecorder is not supported in this browser");
-                        }
-                        
-                        // Choose appropriate formats based on the platform
-                        let created = false;
-                        
-                        // For iOS devices, prioritize audio/mp4 format
-                        if (isIOS) {
-                            console.log("iOS device detected, prioritizing compatible formats");
-                            
-                            // Try audio/mp4 first for iOS (this is the one that works best)
-                            if (!created && isFormatSupported('audio/mp4')) {
-                                try {
-                                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/mp4' });
-                                    console.log("Using audio/mp4 format for iOS");
-                                    created = true;
-                                } catch (e) {
-                                    console.warn("Error with audio/mp4 on iOS", e);
-                                }
-                            }
-                        } else {
-                            // For non-iOS, try preferred formats
-                            const formats = [
-                                'audio/webm',  // Works well on Chrome/Firefox
-                                'audio/mp4',   // Works on Safari
-                                'audio/mpeg'   // Rarely supported but try it
-                            ];
-                            
-                            for (const format of formats) {
-                                if (created) break;
-                                
-                                if (isFormatSupported(format)) {
-                                    try {
-                                        mediaRecorder = new MediaRecorder(stream, { mimeType: format });
-                                        console.log(`Using ${format} format`);
-                                        created = true;
-                                    } catch (e) {
-                                        console.warn(`Error with ${format}`, e);
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // If no specific format worked, fall back to browser default
-                        if (!created) {
-                            try {
-                                mediaRecorder = new MediaRecorder(stream);
-                                console.log("Using default browser format:", 
-                                    mediaRecorder.mimeType || "unknown");
-                            } catch (e) {
-                                console.error("Cannot create MediaRecorder", e);
-                                throw new Error("Recording not supported on this device");
-                            }
-                        }
-                        
-                        audioChunks = [];
-                        
-                        // Collect audio chunks
-                        mediaRecorder.addEventListener('dataavailable', event => {
-                            if (event.data && event.data.size > 0) {
-                                audioChunks.push(event.data);
-                            }
-                        });
-                        
-                        // When recording stops
-                        mediaRecorder.addEventListener('stop', () => {
-                            // Clear the recording timer when stopping
-                            if (recordingTimer) {
-                                clearTimeout(recordingTimer);
-                                recordingTimer = null;
-                            }
-                            
-                            if (audioChunks.length === 0) {
-                                showStatus('No audio data recorded', 'warning');
-                                recordButton.classList.remove('recording');
-                                recordingStatus.textContent = 'Click to start recording';
-                                return;
-                            }
-                            
-                            // Create the blob with appropriate format
-                            const audioBlob = new Blob(audioChunks);
-                            
-                            // Set filename based on actual format used
-                            let fileName, fileType;
-                            const mimeType = (mediaRecorder.mimeType || '').toLowerCase();
-                            
-                            if (mimeType.includes('audio/mp4')) {
-                                fileName = 'recording.m4a';
-                                fileType = 'audio/mp4';
-                            } else if (mimeType.includes('audio/webm')) {
-                                fileName = 'recording.webm';
-                                fileType = 'audio/webm';
-                            } else if (mimeType.includes('audio/mpeg')) {
-                                fileName = 'recording.mp3';
-                                fileType = 'audio/mpeg';
-                            } else {
-                                // Default to m4a for iOS compatibility
-                                fileName = isIOS ? 'recording.m4a' : 'recording.mp3';
-                                fileType = isIOS ? 'audio/mp4' : 'audio/mpeg';
-                            }
-                            
-                            const audioFile = new File([audioBlob], fileName, { type: fileType });
-                            
-                            // Log info for debugging
-                            console.log("Recording format:", mimeType || "unknown");
-                            console.log("File type:", fileType);
-                            console.log("Blob size:", audioBlob.size, "bytes");
-                            
-                            // Create form data and add file
-                            const formData = new FormData();
-                            formData.append('file', audioFile);
-                            formData.append('language', document.getElementById('languageSelect').value);
-                            
-                            // Show transcribing status
-                            showStatus('Transcribing your recording...', 'info');
-                            
-                            // Send to server
-                            fetch('/api/transcribe', {
-                                method: 'POST',
-                                body: formData
-                            })
-                            .then(response => {
-                                console.log("Server response status:", response.status);
-                                return response.json();
-                            })
-                            .then(result => {
-                                console.log("Server response:", result);
-                                if (result.text) {
-                                    document.getElementById('transcript').textContent = result.text;
-                                    showStatus('Transcription complete!', 'success');
-                                } else {
-                                    showStatus('Transcription failed. Please try again.', 'danger');
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Full error details:', error);
-                                showStatus(`Error: ${error.message}`, 'danger');
-                            });
-                            
-                            // Reset UI
-                            recordButton.classList.remove('recording');
-                            recordingStatus.textContent = 'Click to start recording';
-                        });
-                        
-                        // Start recording with timeslice to get data
-                        mediaRecorder.start(1000);  // Get a dataavailable event every second
-                        
-                    } catch (error) {
-                        recordButton.classList.remove('recording');
-                        isRecording = false;
-                        recordingStatus.textContent = 'Click to start recording';
-                        
-                        if (error.name === 'NotAllowedError') {
-                            showStatus('Microphone access denied', 'warning');
-                        } else {
-                            showStatus(`Recording error: ${error.message}`, 'danger');
-                        }
-                        console.error('Error accessing microphone:', error);
-                    }
-                } else {
+                if (isRecording) {
                     // Stop recording
                     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                         mediaRecorder.stop();
-                        isRecording = false;
+                    }
+                    isRecording = false;
+                    recordButton.classList.remove('recording');
+                    recordingStatus.textContent = 'Processing...';
+                    return;
+                }
+                
+                // Start new recording
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    
+                    // Set up recorder
+                    audioChunks = [];
+                    const options = {};
+                    
+                    // Try to use better codecs if available
+                    const mimeTypes = [
+                        'audio/webm;codecs=opus',
+                        'audio/webm',
+                        'audio/mp4',
+                        'audio/ogg;codecs=opus',
+                        'audio/ogg'
+                    ];
+                    
+                    let mimeType = '';
+                    for (const type of mimeTypes) {
+                        if (MediaRecorder.isTypeSupported(type)) {
+                            mimeType = type;
+                            break;
+                        }
+                    }
+                    
+                    if (mimeType) {
+                        options.mimeType = mimeType;
+                    }
+                    
+                    mediaRecorder = new MediaRecorder(stream, options);
+                    
+                    // Set up recording
+                    isRecording = true;
+                    recordButton.classList.add('recording');
+                    recordingStatus.textContent = 'Recording... Click to stop';
+                    
+                    // Handle data as it becomes available
+                    mediaRecorder.addEventListener('dataavailable', event => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                        }
+                    });
+                    
+                    // Handle recording stop
+                    mediaRecorder.addEventListener('stop', () => {
+                        // Stop all audio tracks
+                        stream.getAudioTracks().forEach(track => track.stop());
                         
-                        // Clear the recording timer
-                        if (recordingTimer) {
-                            clearTimeout(recordingTimer);
-                            recordingTimer = null;
+                        // Create audio blob
+                        const mimeType = mediaRecorder.mimeType;
+                        let fileType, fileName;
+                        
+                        // Detect iOS for compatibility
+                        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                        
+                        if (mimeType.includes('webm')) {
+                            fileType = 'audio/webm';
+                            fileName = 'recording.webm';
+                        } else if (mimeType.includes('ogg')) {
+                            fileType = 'audio/ogg';
+                            fileName = 'recording.ogg';
+                        } else {
+                            // Default to m4a for iOS compatibility
+                            fileName = isIOS ? 'recording.m4a' : 'recording.mp3';
+                            fileType = isIOS ? 'audio/mp4' : 'audio/mpeg';
                         }
                         
-                        // Stop all tracks in the stream
-                        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                        const audioBlob = new Blob(audioChunks, { type: fileType });
+                        const audioFile = new File([audioBlob], fileName, { type: fileType });
+                        
+                        // Log info for debugging
+                        console.log("Recording format:", mimeType || "unknown");
+                        console.log("File type:", fileType);
+                        console.log("Blob size:", audioBlob.size, "bytes");
+                        
+                        // Create form data and add file
+                        const formData = new FormData();
+                        formData.append('file', audioFile);
+                        formData.append('language', document.getElementById('languageSelect').value);
+                        formData.append('model', document.querySelector('input[name="transcriptionModel"]:checked').value);
+                        
+                        // Show transcribing status
+                        showStatus('Transcribing your recording...', 'info');
+                        
+                        // Send to server
+                        fetch('/api/transcribe', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => {
+                            console.log("Server response status:", response.status);
+                            return response.json();
+                        })
+                        .then(result => {
+                            console.log("Server response:", result);
+                            if (result.text) {
+                                document.getElementById('transcript').textContent = result.text;
+                                showStatus('Transcription complete!', 'success');
+                            } else {
+                                showStatus('Transcription failed. Please try again.', 'danger');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Full error details:', error);
+                            showStatus(`Error: ${error.message}`, 'danger');
+                        });
+                        
+                        // Reset UI
+                        recordButton.classList.remove('recording');
+                        recordingStatus.textContent = 'Click to start recording';
+                    });
+                    
+                    // Start recording with timeslice to get data
+                    mediaRecorder.start(1000);  // Get a dataavailable event every second
+                    
+                } catch (error) {
+                    recordButton.classList.remove('recording');
+                    isRecording = false;
+                    recordingStatus.textContent = 'Click to start recording';
+                    
+                    if (error.name === 'NotAllowedError') {
+                        showStatus('Microphone access denied', 'warning');
+                    } else {
+                        showStatus(`Recording error: ${error.message}`, 'danger');
                     }
+                    console.error('Error accessing microphone:', error);
                 }
             });
-
-            // Status display
-            function showStatus(message, type = 'info') {
-                const statusEl = document.getElementById('status');
-                statusEl.textContent = message;
-                statusEl.className = `alert alert-${type}`;
-                statusEl.classList.remove('d-none');
-                
-                setTimeout(() => {
-                    statusEl.classList.add('d-none');
-                }, 3000);
-            }
         });
     </script>
 </body>

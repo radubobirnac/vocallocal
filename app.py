@@ -55,11 +55,14 @@ def transcribe_audio():
         # Get language code from form
         language = request.form.get('language', 'en')
         
+        # Get model from form or use default
+        model = request.form.get('model', 'gpt-4o-mini-transcribe')
+        
         # Process with OpenAI
         try:
             with open(filepath, 'rb') as audio_file:
                 response = openai.audio.transcriptions.create(
-                    model="gpt-4o-mini-transcribe",
+                    model=model,
                     file=audio_file,
                     language=language
                 )
@@ -71,6 +74,7 @@ def transcribe_audio():
             return jsonify({
                 'text': response.text,
                 'language': language,
+                'model': model,
                 'success': True
             })
             
