@@ -91,6 +91,15 @@ def transcribe_audio():
             error_details = traceback.format_exc()
             print(f"Transcription error: {str(e)}\n{error_details}")
             
+            # Check for duration limit error
+            error_message = str(e)
+            if "audio duration" in error_message and "longer than" in error_message and "seconds" in error_message:
+                return jsonify({
+                    'error': 'Audio file exceeds the maximum duration limit of 25 minutes.',
+                    'errorType': 'DurationLimitExceeded',
+                    'details': 'Please upload a shorter audio file or split your recording into smaller segments.'
+                }), 413  # 413 Payload Too Large
+            
             return jsonify({
                 'error': str(e),
                 'errorType': type(e).__name__,
