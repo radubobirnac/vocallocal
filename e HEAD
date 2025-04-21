@@ -1,0 +1,5 @@
+[33mcommit 3ae7c153c795644721ce7ee90e726a3b7c033876[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Radu Bobirnac <radubobirnac@gmail.com>
+Date:   Sat Apr 19 22:23:30 2025 -0700
+
+    Remove redundant 'What is VocalLocal?' heading from About section
