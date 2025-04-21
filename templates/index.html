@@ -260,7 +260,7 @@
                         <li>Background noise may impact results</li>
                         <li>Maximum file size of 16MB per upload</li>
                         <li>Some rare languages or dialects may have lower accuracy. For more information on speech recognition accuracy measurements, see <a href="https://openai.com/index/introducing-our-next-generation-audio-models/" target="_blank">OpenAI's research on word error rates</a>.</li>
-                        <li>Recordings are limited to 5 minutes maximum duration</li>
+                        <li>Recordings are limited to 25 minutes maximum duration</li>
                         <li>Speaking in multiple languages at once may result in mixed results</li>
                     </ul>
                     
@@ -369,6 +369,12 @@
                     return;
                 }
 
+                // Warn users if the file is likely to exceed duration limits
+                // Most audio is between 32-320 kbps, so 16MB could be over 25 mins for lower bitrates
+                if (file.size > 8 * 1024 * 1024) {
+                    showStatus('Warning: Large audio files may exceed the 25-minute duration limit', 'warning');
+                }
+
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('language', document.getElementById('languageSelect').value);
@@ -415,6 +421,9 @@
             let mediaRecorder;
             let audioChunks = [];
             let isRecording = false;
+            let recordingTimer;
+            let recordingStartTime;
+            const MAX_RECORDING_DURATION = 25 * 60 * 1000; // 25 minutes in milliseconds
             
             recordButton.addEventListener('click', async () => {
                 if (isRecording) {
@@ -425,6 +434,7 @@
                     isRecording = false;
                     recordButton.classList.remove('recording');
                     recordingStatus.textContent = 'Processing...';
+                    clearTimeout(recordingTimer);
                     return;
                 }
                 
@@ -463,6 +473,15 @@
                     isRecording = true;
                     recordButton.classList.add('recording');
                     recordingStatus.textContent = 'Recording... Click to stop';
+                    recordingStartTime = Date.now();
+                    
+                    // Set timer to stop recording when reaching max duration
+                    recordingTimer = setTimeout(() => {
+                        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                            mediaRecorder.stop();
+                            showStatus('Recording stopped: Reached the maximum duration of 25 minutes', 'warning');
+                        }
+                    }, MAX_RECORDING_DURATION);
                     
                     // Handle data as it becomes available
                     mediaRecorder.addEventListener('dataavailable', event => {
@@ -547,6 +566,7 @@
                     recordButton.classList.remove('recording');
                     isRecording = false;
                     recordingStatus.textContent = 'Click to start recording';
+                    clearTimeout(recordingTimer);
                     
                     if (error.name === 'NotAllowedError') {
                         showStatus('Microphone access denied', 'warning');
