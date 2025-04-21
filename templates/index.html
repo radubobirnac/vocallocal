@@ -258,7 +258,7 @@
                     <ul>
                         <li>Audio quality significantly affects transcription accuracy</li>
                         <li>Background noise may impact results</li>
-                        <li>Maximum file size of 16MB per upload</li>
+                        <li>Maximum file size of 30MB per upload</li>
                         <li>Some rare languages or dialects may have lower accuracy. For more information on speech recognition accuracy measurements, see <a href="https://openai.com/index/introducing-our-next-generation-audio-models/" target="_blank">OpenAI's research on word error rates</a>.</li>
                         <li>Recordings are limited to 25 minutes maximum duration</li>
                         <li>Speaking in multiple languages at once may result in mixed results</li>
@@ -364,14 +364,14 @@
                     lastModified: new Date(file.lastModified)
                 });
                 
-                if (file.size > 16 * 1024 * 1024) {
-                    showStatus('File size exceeds the maximum limit of 16MB', 'warning');
+                if (file.size > 30 * 1024 * 1024) {
+                    showStatus('File size exceeds the maximum limit of 30MB', 'warning');
                     return;
                 }
 
                 // Warn users if the file is likely to exceed duration limits
-                // Most audio is between 32-320 kbps, so 16MB could be over 25 mins for lower bitrates
-                if (file.size > 8 * 1024 * 1024) {
+                // Most audio is between 32-320 kbps, so 30MB could be over 25 mins for lower bitrates
+                if (file.size > 15 * 1024 * 1024) {
                     showStatus('Warning: Large audio files may exceed the 25-minute duration limit', 'warning');
                 }
 
