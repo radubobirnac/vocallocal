@@ -25,7 +25,7 @@ if not openai.api_key:
 
 # Configure upload settings
 UPLOAD_FOLDER = tempfile.gettempdir()
-ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg', 'm4a', 'webm'}
+ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg', 'm4a', 'mp4', 'webm'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload size
 
@@ -61,6 +61,9 @@ def transcribe_audio():
         # Process with OpenAI
         try:
             with open(filepath, 'rb') as audio_file:
+                # Log request information for debugging
+                print(f"Transcribing file: {filename}, size: {os.path.getsize(filepath)} bytes, format: {file.content_type}, model: {model}")
+                
                 response = openai.audio.transcriptions.create(
                     model=model,
                     file=audio_file,
@@ -82,9 +85,19 @@ def transcribe_audio():
             # Clean up on error
             if os.path.exists(filepath):
                 os.remove(filepath)
-            return jsonify({'error': str(e)}), 500
+            
+            # Log the detailed error
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"Transcription error: {str(e)}\n{error_details}")
+            
+            return jsonify({
+                'error': str(e),
+                'errorType': type(e).__name__,
+                'details': 'See server logs for more information'
+            }), 500
     
-    return jsonify({'error': 'Invalid file type'}), 400
+    return jsonify({'error': f'Invalid file type. Allowed types: {", ".join(ALLOWED_EXTENSIONS)}'}), 400
 
 @app.route('/api/languages', methods=['GET'])
 def get_languages():
