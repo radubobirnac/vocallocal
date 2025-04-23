@@ -203,6 +203,23 @@
                 display: block !important;
                 width: 100%;
                 margin-top: 1rem;
+                clear: both;
+                visibility: visible !important;
+            }
+            .transcript-container {
+                width: 100%;
+                display: block;
+            }
+            .transcript-heading.mt-3 {
+                margin-top: 1.5rem !important;
+                display: block;
+                clear: both;
+            }
+            #basicTranslation {
+                width: 100%;
+                word-break: break-word;
+                overflow-wrap: break-word;
+                display: block;
             }
             .d-flex.justify-content-between.align-items-start {
                 display: flex !important;
@@ -213,6 +230,11 @@
                 min-width: 0;
                 overflow-wrap: break-word;
                 word-break: break-word;
+            }
+            .btn-mobile-friendly {
+                font-size: 0.85rem;
+                padding: 0.15rem 0.4rem;
+                margin-left: 0.3rem;
             }
         }
         
@@ -242,6 +264,13 @@
             width: 100%;
             overflow-wrap: break-word;
             word-break: break-word;
+        }
+
+        /* Fix for basic translation visibility */
+        #basicTranslationCard {
+            display: block;
+            width: 100%;
+            margin-top: 1rem;
         }
     </style>
 </head>
@@ -320,7 +349,7 @@
                                 </div>
                             </div>
                             
-                            <div id="basicTranslationCard" style="display: none;">
+                            <div id="basicTranslationCard">
                                 <h6 class="transcript-heading mt-3">Translation</h6>
                                 <div id="basicTranslation" class="transcript">
                                     <div class="d-flex justify-content-between align-items-start">
@@ -557,6 +586,15 @@
     <script src="https://kit.fontawesome.com/4b1c7a602f.js" crossorigin="anonymous"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Force translation box to be visible on mobile
+            if (window.innerWidth <= 576) {
+                const translationCard = document.getElementById('basicTranslationCard');
+                if (translationCard) {
+                    translationCard.style.display = 'block';
+                    translationCard.style.visibility = 'visible';
+                }
+            }
+            
             // Check browser compatibility
             function checkBrowserCompatibility() {
                 // Check for MediaRecorder API
@@ -1070,14 +1108,28 @@
                                 speakText(translatedText, translateTo);
                             });
                             
-                            translationCard.style.display = 'block';
+                            // Make sure translation section is visible on mobile
+                            if (window.innerWidth <= 576) {
+                                translationCard.style.display = 'block';
+                                translationCard.style.visibility = 'visible';
+                            } else {
+                                translationCard.style.display = 'block';
+                            }
                             showStatus('Transcription and translation complete!', 'success');
                         } else {
-                            translationCard.style.display = 'none';
+                            if (window.innerWidth <= 576) {
+                                translationCard.style.display = 'none !important';
+                            } else {
+                                translationCard.style.display = 'none';
+                            }
                             showStatus('Transcription complete, but translation failed.', 'warning');
                         }
                     } else {
-                        translationCard.style.display = 'none';
+                        if (window.innerWidth <= 576) {
+                            translationCard.style.display = 'none !important';
+                        } else {
+                            translationCard.style.display = 'none';
+                        }
                         showStatus('Transcription complete!', 'success');
                     }
                 } catch (error) {
@@ -1308,14 +1360,28 @@
                                                     speakText(translatedText, translateTo);
                                                 });
                                                 
-                                                translationCard.style.display = 'block';
+                                                // Make sure translation section is visible on mobile
+                                                if (window.innerWidth <= 576) {
+                                                    translationCard.style.display = 'block';
+                                                    translationCard.style.visibility = 'visible';
+                                                } else {
+                                                    translationCard.style.display = 'block';
+                                                }
                                                 showStatus('Transcription and translation complete!', 'success');
                                             } else {
-                                                translationCard.style.display = 'none';
+                                                if (window.innerWidth <= 576) {
+                                                    translationCard.style.display = 'none !important';
+                                                } else {
+                                                    translationCard.style.display = 'none';
+                                                }
                                                 showStatus('Transcription complete, but translation failed.', 'warning');
                                             }
                                         } else {
-                                            translationCard.style.display = 'none';
+                                            if (window.innerWidth <= 576) {
+                                                translationCard.style.display = 'none !important';
+                                            } else {
+                                                translationCard.style.display = 'none';
+                                            }
                                             showStatus('Transcription complete!', 'success');
                                         }
                                     } else if (result.error) {
