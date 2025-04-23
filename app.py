@@ -137,6 +137,7 @@ def get_languages():
         "Hungarian": {"code": "hu", "native": "Magyar"},
         "Greek": {"code": "el", "native": "Ελληνικά"},
         "Hebrew": {"code": "he", "native": "עברית"},
+        "Telugu": {"code": "te", "native": "తెలుగు"},
         "Thai": {"code": "th", "native": "ไทย"},
         "Vietnamese": {"code": "vi", "native": "Tiếng Việt"},
         "Indonesian": {"code": "id", "native": "Bahasa Indonesia"},
@@ -144,6 +145,61 @@ def get_languages():
         "Bulgarian": {"code": "bg", "native": "Български"}
     }
     return jsonify(supported_languages)
+
+@app.route('/api/translate', methods=['POST'])
+def translate_text():
+    """
+    Endpoint for translating text from one language to another.
+    
+    Required JSON parameters:
+    - text: The text to translate
+    - target_language: The language code to translate to (e.g., 'en', 'es', 'fr')
+    
+    Returns:
+    - JSON with translated text
+    """
+    data = request.json
+    
+    if not data or 'text' not in data or 'target_language' not in data:
+        return jsonify({'error': 'Missing required parameters: text and target_language'}), 400
+    
+    text = data['text']
+    target_language = data['target_language']
+    
+    if not text.strip():
+        return jsonify({'error': 'Empty text provided'}), 400
+    
+    try:
+        # Use OpenAI API for translation
+        response = openai.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": f"You are a professional translator. Translate the text into {target_language}. Only respond with the translation, nothing else."},
+                {"role": "user", "content": text}
+            ],
+            temperature=0.3,
+            max_tokens=2048
+        )
+        
+        translated_text = response.choices[0].message.content
+        
+        return jsonify({
+            'text': translated_text,
+            'source_language': 'auto-detect',
+            'target_language': target_language,
+            'success': True
+        })
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Translation error: {str(e)}\n{error_details}")
+        
+        return jsonify({
+            'error': str(e),
+            'errorType': type(e).__name__,
+            'details': 'See server logs for more information'
+        }), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0') 
