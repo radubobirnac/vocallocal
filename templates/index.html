@@ -194,6 +194,25 @@
             .transcript, .translation {
                 min-height: 80px;
                 padding: 0.5rem;
+                width: 100%;
+                display: block;
+                overflow-wrap: break-word;
+            }
+            /* Improve translation visibility on mobile */
+            #basicTranslationCard {
+                display: block !important;
+                width: 100%;
+                margin-top: 1rem;
+            }
+            .d-flex.justify-content-between.align-items-start {
+                display: flex !important;
+                width: 100%;
+            }
+            .d-flex.justify-content-between.align-items-start > div {
+                flex: 1;
+                min-width: 0;
+                overflow-wrap: break-word;
+                word-break: break-word;
             }
         }
         
@@ -216,6 +235,13 @@
         /* Reduce space between status and button */
         #recordingStatus {
             margin-bottom: 0.5rem;
+        }
+        
+        /* Ensure translations are properly visible on mobile */
+        #basicTranslationCard .transcript {
+            width: 100%;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
     </style>
 </head>
@@ -1006,8 +1032,8 @@
                     document.getElementById('basicTranscript').innerHTML = `
                         <div class="d-flex justify-content-between align-items-start">
                             <div>${result.text || "No transcript received."}</div>
-                            <button id="basicPlayTranscriptButton" class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-play"></i>
+                            <button id="basicPlayTranscriptButton" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
+                                <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
                             </button>
                         </div>
                     `;
@@ -1033,8 +1059,8 @@
                             document.getElementById('basicTranslation').innerHTML = `
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>${translatedText}</div>
-                                    <button id="basicPlayTranslationButton" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-play"></i>
+                                    <button id="basicPlayTranslationButton" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
+                                        <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
                                     </button>
                                 </div>
                             `;
@@ -1153,8 +1179,15 @@
             // Basic mode play buttons
             document.getElementById('basicPlayTranscriptButton').addEventListener('click', () => {
                 const transcriptElement = document.getElementById('basicTranscript');
-                const textElement = transcriptElement.querySelector('div:first-child');
-                const text = textElement ? textElement.textContent : transcriptElement.textContent;
+                const textElement = transcriptElement.querySelector('div:first-child div');
+                let text = '';
+                
+                if (textElement) {
+                    text = textElement.textContent;
+                } else {
+                    const firstChild = transcriptElement.querySelector('div:first-child');
+                    text = firstChild ? firstChild.textContent : transcriptElement.textContent;
+                }
                 
                 if (text && text !== 'Transcribed text will appear here...') {
                     speakText(text, document.getElementById('basicLanguageSelect').value);
@@ -1166,9 +1199,12 @@
             document.getElementById('basicPlayTranslationButton').addEventListener('click', () => {
                 const translationElement = document.getElementById('basicTranslation');
                 const textElement = translationElement.querySelector('div:first-child div');
-                const text = textElement ? textElement.textContent : translationElement.textContent;
+                const text = textElement ? textElement.textContent : (
+                    translationElement.textContent.includes('Translated text will appear here...') ? 
+                    '' : translationElement.textContent
+                );
                 
-                if (text && text !== 'Translated text will appear here...') {
+                if (text && text !== '') {
                     speakText(text, document.getElementById('basicTranslateSelect').value);
                 } else {
                     showStatus('No translation to play', 'warning');
