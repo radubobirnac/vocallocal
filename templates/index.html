@@ -90,6 +90,13 @@
             margin-left: 0.5rem;
             padding: 0.2rem 0.5rem;
         }
+        
+        /* Mobile-friendly button styles */
+        .btn-mobile-friendly {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
         .speaker-card {
             height: 100%;
         }
@@ -149,6 +156,45 @@
                 padding-bottom: 2rem;
                 border-bottom: 1px solid #e2e8f0;
             }
+            .header {
+                flex-direction: column;
+                align-items: center;
+            }
+            .logo-container {
+                margin-bottom: 1rem;
+                text-align: center;
+            }
+            .language-selector {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+        }
+        
+        /* Additional mobile-specific adjustments */
+        @media (max-width: 576px) {
+            .language-selector {
+                flex-direction: column;
+                align-items: center;
+            }
+            select.form-select-sm {
+                width: 100% !important;
+                margin-right: 0 !important;
+                margin-bottom: 10px;
+            }
+            .play-btn {
+                padding: 0.15rem 0.4rem;
+                font-size: 0.85rem;
+            }
+            .btn-sm {
+                padding: 0.2rem 0.5rem;
+                font-size: 0.875rem;
+            }
+            .transcript, .translation {
+                min-height: 80px;
+                padding: 0.5rem;
+            }
         }
         
         /* Tighter spacing for card elements */
@@ -181,10 +227,12 @@
                 <p class="subtitle" id="appSubtitle">Accurate Multilingual Speech-to-Text Transcription</p>
             </div>
             <div class="language-selector">
-                <img src="https://img.icons8.com/ios-filled/24/000000/language.png" alt="Language" style="width: 24px; height: 24px;" />
-                <select id="globalLanguageSelect" class="form-select form-select-sm" style="width: auto; margin-right: 15px;">
-                    <!-- Will be populated with languages -->
-                </select>
+                <div class="d-flex align-items-center">
+                    <img src="https://img.icons8.com/ios-filled/24/000000/language.png" alt="Language" style="width: 24px; height: 24px; margin-right: 5px;" />
+                    <select id="globalLanguageSelect" class="form-select form-select-sm" style="width: auto; margin-right: 15px;">
+                        <!-- Will be populated with languages -->
+                    </select>
+                </div>
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" id="modeToggle">
                     <label class="form-check-label" for="modeToggle">Bilingual Mode</label>
@@ -240,8 +288,8 @@
                             <div id="basicTranscript" class="transcript flex-grow-1">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>Transcribed text will appear here...</div>
-                                    <button id="basicPlayTranscriptButton" class="btn btn-sm btn-outline-primary me-2">
-                                        <i class="fas fa-play"></i> Play
+                                    <button id="basicPlayTranscriptButton" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
+                                        <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
                                     </button>
                                 </div>
                             </div>
@@ -251,8 +299,8 @@
                                 <div id="basicTranslation" class="transcript">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div>Translated text will appear here...</div>
-                                        <button id="basicPlayTranslationButton" class="btn btn-sm btn-outline-primary me-2">
-                                            <i class="fas fa-play"></i> Play
+                                        <button id="basicPlayTranslationButton" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
+                                            <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
                                         </button>
                                     </div>
                                 </div>
@@ -377,8 +425,8 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <h5>Speaker 1</h5>
                                 <div>
-                                    <button id="playTranscript1Button" class="btn btn-sm btn-outline-primary me-2">
-                                        <i class="fas fa-play"></i> Play
+                                    <button id="playTranscript1Button" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
+                                        <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
                                     </button>
                                     <button id="copyTranscript1Button" class="btn btn-sm btn-outline-secondary">Copy</button>
                                 </div>
@@ -391,8 +439,8 @@
                             <div id="translation1" class="translation">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>Translation will appear here...</div>
-                                    <button class="btn btn-sm btn-outline-primary me-2" id="playTranslation1Button">
-                                        <i class="fas fa-play"></i> Play
+                                    <button class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly" id="playTranslation1Button">
+                                        <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
                                     </button>
                                 </div>
                             </div>
@@ -407,8 +455,8 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <h5>Speaker 2</h5>
                                 <div>
-                                    <button id="playTranscript2Button" class="btn btn-sm btn-outline-primary me-2">
-                                        <i class="fas fa-play"></i> Play
+                                    <button id="playTranscript2Button" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
+                                        <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
                                     </button>
                                     <button id="copyTranscript2Button" class="btn btn-sm btn-outline-secondary">Copy</button>
                                 </div>
@@ -421,8 +469,8 @@
                             <div id="translation2" class="translation">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>Translation will appear here...</div>
-                                    <button class="btn btn-sm btn-outline-primary me-2" id="playTranslation2Button">
-                                        <i class="fas fa-play"></i> Play
+                                    <button class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly" id="playTranslation2Button">
+                                        <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
                                     </button>
                                 </div>
                             </div>
@@ -1190,8 +1238,8 @@
                                         document.getElementById('basicTranscript').innerHTML = `
                                             <div class="d-flex justify-content-between align-items-start">
                                                 <div>${result.text}</div>
-                                                <button id="basicPlayTranscriptButton" class="btn btn-sm btn-outline-primary me-2">
-                                                    <i class="fas fa-play"></i> Play
+                                                <button id="basicPlayTranscriptButton" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
+                                                    <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
                                                 </button>
                                             </div>
                                         `;
@@ -1213,8 +1261,8 @@
                                                 document.getElementById('basicTranslation').innerHTML = `
                                                     <div class="d-flex justify-content-between align-items-start">
                                                         <div>${translatedText}</div>
-                                                        <button id="basicPlayTranslationButton" class="btn btn-sm btn-outline-primary me-2">
-                                                            <i class="fas fa-play"></i> Play
+                                                        <button id="basicPlayTranslationButton" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
+                                                            <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
                                                         </button>
                                                     </div>
                                                 `;
@@ -1384,8 +1432,8 @@
                                                 partnerSpeaker.translation.innerHTML = `
                                                     <div class="d-flex justify-content-between align-items-start">
                                                         <div>${translatedText}</div>
-                                                        <button class="btn btn-sm btn-outline-primary me-2" id="playTranslation${partnerId}Button">
-                                                            <i class="fas fa-play"></i> Play
+                                                        <button class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly" id="playTranslation${partnerId}Button">
+                                                            <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
                                                         </button>
                                                     </div>
                                                 `;
