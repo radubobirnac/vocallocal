@@ -172,8 +172,8 @@
             }
         }
         
-        /* Mobile-specific fixes for translation box visibility */
-        @media (max-width: 767px) {
+        /* Additional mobile-specific adjustments */
+        @media (max-width: 576px) {
             .language-selector {
                 flex-direction: column;
                 align-items: center;
@@ -193,79 +193,26 @@
             }
             .transcript, .translation {
                 min-height: 80px;
-                padding: 0.75rem;
-                margin-bottom: 0.75rem;
+                padding: 0.5rem;
                 width: 100%;
                 display: block;
                 overflow-wrap: break-word;
-                word-break: break-word;
             }
-            
-            /* Ensure the translation box is always visible */
+            /* Improve translation visibility on mobile */
             #basicTranslationCard {
                 display: block !important;
-                margin: 1rem 0;
                 width: 100%;
-                clear: both;
+                margin-top: 1rem;
             }
-            
-            /* Improve visibility and styling of translation components */
-            #basicTranslationCard h6 {
-                display: block;
-                margin-bottom: 0.5rem;
-                font-weight: bold;
-            }
-            
-            /* Ensure proper spacing of transcript container */
-            .transcript-container {
-                padding: 0;
-                width: 100%;
-                display: block;
-            }
-            
-            /* Improve button spacing */
-            .btn-mobile-friendly {
-                padding: 0.25rem 0.5rem;
-                margin-left: 0.25rem;
-            }
-            
-            /* Fix flex display issues on mobile */
             .d-flex.justify-content-between.align-items-start {
                 display: flex !important;
                 width: 100%;
-                align-items: flex-start !important;
             }
-            
             .d-flex.justify-content-between.align-items-start > div {
                 flex: 1;
                 min-width: 0;
                 overflow-wrap: break-word;
                 word-break: break-word;
-            }
-            
-            /* Clear floats */
-            .transcript-container::after {
-                content: "";
-                display: table;
-                clear: both;
-            }
-            
-            /* Remove any hidden overflow */
-            .card-body {
-                overflow: visible;
-            }
-            
-            /* Ensure column layouts work properly */
-            .col-lg-8 {
-                width: 100%;
-                max-width: 100%;
-                flex: 0 0 100%;
-            }
-            
-            /* Make copy button more visible */
-            #basicCopyTranslationButton {
-                margin-top: 0.5rem;
-                display: inline-block;
             }
         }
         
@@ -288,6 +235,107 @@
         /* Reduce space between status and button */
         #recordingStatus {
             margin-bottom: 0.5rem;
+        }
+        
+        /* Ensure translations are properly visible on mobile */
+        #basicTranslationCard .transcript {
+            width: 100%;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        /* NEW CSS FIXES FOR RESPONSIVE DESIGN ISSUES */
+        
+        /* Improve translation visibility on mobile */
+        @media (max-width: 576px) {
+            #basicTranslationCard, 
+            .translation-header, 
+            .translation {
+                display: block !important;
+                width: 100%;
+                margin-top: 0.5rem;
+            }
+            
+            /* Make buttons more tappable on mobile */
+            .btn-mobile-friendly {
+                min-width: 40px;
+                min-height: 34px;
+                padding: 0.25rem 0.5rem;
+                margin-left: 8px;
+            }
+            
+            /* Ensure transcript and translation containers are always visible */
+            .transcript, .translation {
+                min-height: 60px;
+                padding: 0.75rem;
+                width: 100%;
+                display: block !important;
+                overflow-wrap: break-word;
+                word-break: break-word;
+                margin-bottom: 1rem;
+            }
+            
+            /* Fix flex layout issues on small screens */
+            .d-flex.justify-content-between.align-items-start {
+                display: flex !important;
+                width: 100%;
+                flex-wrap: wrap;
+            }
+            
+            /* Ensure text content takes necessary space */
+            .d-flex.justify-content-between.align-items-start > div:first-child {
+                flex: 1;
+                min-width: 70%;
+                padding-right: 8px;
+            }
+
+            /* Make play buttons more visible on mobile */
+            #basicPlayTranscriptButton,
+            #basicPlayTranslationButton,
+            #playTranscript1Button,
+            #playTranscript2Button,
+            #playTranslation1Button,
+            #playTranslation2Button {
+                min-width: 40px;
+                min-height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        /* Ensure translation visibility at all screen sizes */
+        #basicTranslationCard .transcript,
+        .translation-header,
+        .translation {
+            display: block;
+        }
+        
+
+        /* Fix for translation elements always being visible */
+        #basicTranslationCard {
+            display: block;
+        }
+
+        /* Fix spacing for buttons on very small screens */
+        @media (max-width: 320px) {
+            .btn-mobile-friendly {
+                margin-left: 4px;
+                min-width: 32px;
+                padding: 0.15rem 0.3rem;
+            }
+            
+            .d-flex.justify-content-between.align-items-start {
+                gap: 4px;
+            }
+        }
+
+        /* Make sure content is readable in translation areas */
+        .translation div:first-child, 
+        .transcript div:first-child {
+            word-break: break-word;
+            hyphens: auto;
         }
     </style>
 </head>
@@ -366,7 +414,7 @@
                                 </div>
                             </div>
                             
-                            <div id="basicTranslationCard">
+                            <div id="basicTranslationCard" style="display: none;">
                                 <h6 class="transcript-heading mt-3">Translation</h6>
                                 <div id="basicTranslation" class="transcript">
                                     <div class="d-flex justify-content-between align-items-start">
@@ -662,9 +710,8 @@
             const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
             const isFirefox = navigator.userAgent.indexOf("Firefox") > -1;
             const isEdge = navigator.userAgent.indexOf("Edg") > -1;
-            const isMobile = window.innerWidth < 768 || isIOS || isAndroid;
             
-            console.log("Device detection:", { isIOS, isAndroid, isSafari, isFirefox, isEdge, isMobile });
+            console.log("Device detection:", { isIOS, isAndroid, isSafari, isFirefox, isEdge });
             
             // Load languages - shared function
             function loadLanguages() {
@@ -969,35 +1016,6 @@
                 }
             }
             
-            // Function to handle showing translation box
-            function showTranslationBox(translationText) {
-                const translationCard = document.getElementById('basicTranslationCard');
-                const translationElement = document.getElementById('basicTranslation');
-                
-                // Always ensure it's visible
-                if (isMobile) {
-                    translationCard.style.display = 'block';
-                } else {
-                    translationCard.style.display = 'block';
-                }
-                
-                // Update content
-                translationElement.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>${translationText}</div>
-                        <button id="basicPlayTranslationButton" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
-                            <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
-                        </button>
-                    </div>
-                `;
-                
-                // Re-attach event listener
-                document.getElementById('basicPlayTranslationButton').addEventListener('click', () => {
-                    const translateTo = document.getElementById('basicTranslateSelect').value;
-                    speakText(translationText, translateTo);
-                });
-            }
-            
             // Send form data to server with timeout and retry
             function sendToServer(formData, endpoint = '/api/transcribe', maxRetries = 1) {
                 return new Promise(async (resolve, reject) => {
@@ -1125,27 +1143,35 @@
                     });
                     
                     // Handle translation if requested
+                    const translationCard = document.getElementById('basicTranslationCard');
+                    
                     if (translateTo) {
                         showStatus('Translating text...', 'info');
                         const translatedText = await translateText(result.text, translateTo);
                         
                         if (translatedText) {
-                            // Use the improved function to show translation
-                            showTranslationBox(translatedText);
+                            document.getElementById('basicTranslation').innerHTML = `
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>${translatedText}</div>
+                                    <button id="basicPlayTranslationButton" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
+                                        <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
+                                    </button>
+                                </div>
+                            `;
+                            
+                            // Reattach event listener for play translation button
+                            document.getElementById('basicPlayTranslationButton').addEventListener('click', () => {
+                                speakText(translatedText, translateTo);
+                            });
+                            
+                            translationCard.style.display = 'block';
                             showStatus('Transcription and translation complete!', 'success');
                         } else {
-                            // Even if translation fails, ensure box is visible with error message
-                            if (isMobile) {
-                                showTranslationBox("Translation failed. Please try again.");
-                            }
+                            translationCard.style.display = 'none';
                             showStatus('Transcription complete, but translation failed.', 'warning');
                         }
                     } else {
-                        // For mobile, we should still show the translation box but with a message
-                        if (isMobile) {
-                            const translationCard = document.getElementById('basicTranslationCard');
-                            translationCard.style.display = 'none';
-                        }
+                        translationCard.style.display = 'none';
                         showStatus('Transcription complete!', 'success');
                     }
                 } catch (error) {
@@ -1355,27 +1381,35 @@
                                         
                                         // Handle translation if requested
                                         const translateTo = document.getElementById('basicTranslateSelect').value;
+                                        const translationCard = document.getElementById('basicTranslationCard');
                                         
                                         if (translateTo) {
                                             showStatus('Translating text...', 'info');
                                             const translatedText = await translateText(result.text, translateTo);
                                             
                                             if (translatedText) {
-                                                // Use the improved function to show translation
-                                                showTranslationBox(translatedText);
+                                                document.getElementById('basicTranslation').innerHTML = `
+                                                    <div class="d-flex justify-content-between align-items-start">
+                                                        <div>${translatedText}</div>
+                                                        <button id="basicPlayTranslationButton" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
+                                                            <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
+                                                        </button>
+                                                    </div>
+                                                `;
+                                                
+                                                // Reattach event listener for play translation button
+                                                document.getElementById('basicPlayTranslationButton').addEventListener('click', () => {
+                                                    speakText(translatedText, translateTo);
+                                                });
+                                                
+                                                translationCard.style.display = 'block';
                                                 showStatus('Transcription and translation complete!', 'success');
                                             } else {
-                                                // Even on translation failure, ensure visibility on mobile
-                                                if (isMobile) {
-                                                    showTranslationBox("Translation failed. Please try again.");
-                                                } else {
-                                                    document.getElementById('basicTranslationCard').style.display = 'none';
-                                                }
+                                                translationCard.style.display = 'none';
                                                 showStatus('Transcription complete, but translation failed.', 'warning');
                                             }
                                         } else {
-                                            // Hide translation card if no translation requested
-                                            document.getElementById('basicTranslationCard').style.display = 'none';
+                                            translationCard.style.display = 'none';
                                             showStatus('Transcription complete!', 'success');
                                         }
                                     } else if (result.error) {
@@ -1649,22 +1683,6 @@
                     speakText(translationText, partnerLang);
                 });
             });
-            
-            // Mobile translation box visibility fix
-            if (isMobile) {
-                // Ensure translation box is visible initially but with placeholder
-                const translationCard = document.getElementById('basicTranslationCard');
-                if (translationCard) {
-                    console.log('Mobile device detected - ensuring translation box visibility');
-                    
-                    // For translations requested through the UI, we'll show the box with showTranslationBox()
-                    // For initial load, we'll make sure it's visible but just normally hidden until translated
-                    // Don't hide it programmatically on mobile
-                }
-                
-                // Add mobile-specific class to body for additional CSS targeting
-                document.body.classList.add('mobile-device');
-            }
         });
     </script>
 </body>
