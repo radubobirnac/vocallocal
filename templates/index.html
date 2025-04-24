@@ -96,6 +96,13 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            min-width: 70px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-mobile-friendly i {
+            margin-right: 5px;
         }
         .speaker-card {
             height: 100%;
@@ -213,6 +220,59 @@
                 min-width: 0;
                 overflow-wrap: break-word;
                 word-break: break-word;
+            }
+            /* Ensure proper button layout in bilingual mode for mobile */
+            .card-header .d-flex.justify-content-between.align-items-center {
+                flex-wrap: nowrap !important;
+            }
+            
+            /* Make copy button appear next to play button */
+            #copyTranscript1Button, 
+            #copyTranscript2Button {
+                display: inline-flex !important;
+                margin-left: 0.25rem !important;
+                min-width: 40px;
+                padding: 0.25rem 0.5rem;
+            }
+            
+            /* Make translation header and buttons display correctly */
+            .translation-header {
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                margin-top: 0.75rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            /* Make the translation layout better on mobile */
+            .translation {
+                position: relative;
+            }
+            
+            /* Make buttons more tappable on mobile */
+            .btn-mobile-friendly {
+                min-width: 65px !important;
+                font-size: 0.9rem !important;
+                padding: 0.3rem 0.5rem !important;
+                margin-right: 8px !important;
+                font-weight: 500 !important;
+            }
+            
+            /* Ensure buttons in transcript rows are properly aligned */
+            .d-flex.justify-content-between.align-items-start {
+                align-items: center !important;
+            }
+            
+            /* Better spacing between button and text */
+            .btn-mobile-friendly span {
+                margin-left: 5px !important;
+                display: inline-block !important;
+            }
+            
+            /* Make sure the play buttons have priority in the flex layout */
+            .transcript div.d-flex button,
+            .translation div.d-flex button {
+                flex-shrink: 0 !important;
             }
         }
         
@@ -337,6 +397,61 @@
             word-break: break-word;
             hyphens: auto;
         }
+
+        /* Make sure the translation copy buttons appear correctly */
+        #copyTranslationMobile1Button,
+        #copyTranslationMobile2Button {
+            min-width: 40px;
+            padding: 0.25rem 0.5rem;
+            margin-left: 0.25rem;
+        }
+
+        /* Better translation headers for desktop */
+        @media (min-width: 768px) {
+            .translation-header {
+                margin-top: 1rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .translation-header h6 {
+                margin-bottom: 0;
+            }
+        }
+
+        /* Better translation layout for mobile */
+        @media (max-width: 767px) {
+            .translation-header h6 {
+                margin-bottom: 0;
+            }
+            
+            .translation div.d-flex > div:last-child {
+                display: flex;
+                align-items: center;
+            }
+            
+            #playTranslation1Button,
+            #playTranslation2Button {
+                margin-right: 0;
+            }
+        }
+
+        /* Increase the size of the button icons */
+        .btn-mobile-friendly i {
+            font-size: 1rem !important;
+        }
+
+        #translation1, #translation2 {
+            margin-top: 10px;
+        }
+
+        .translation div.d-flex {
+            align-items: center !important;
+        }
+
+        /* Speaker 1 & 2 initial display */
+        #transcript1, #transcript2 {
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -387,14 +502,6 @@
                                 </div>
                             </div>
                             
-                            <div class="mb-3">
-                                <label for="basicTranslateSelect" class="form-label">Translate To (Optional):</label>
-                                <select id="basicTranslateSelect" class="form-select">
-                                    <option value="">No Translation</option>
-                                    <!-- Will be populated with languages -->
-                                </select>
-                            </div>
-                            
                             <div class="recorder-container">
                                 <button id="basicRecordButton" class="recordButton">
                                     <i class="fas fa-microphone"></i>
@@ -406,26 +513,11 @@
                         <div class="col-lg-8 transcript-container">
                             <h6 class="transcript-heading">Transcript</h6>
                             <div id="basicTranscript" class="transcript flex-grow-1">
-                                <div class="d-flex justify-content-between align-items-start">
+                                <div class="d-flex justify-content-between align-items-center">
                                     <div>Transcribed text will appear here...</div>
-                                    <button id="basicPlayTranscriptButton" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
-                                        <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
+                                    <button id="basicPlayTranscriptButton" class="btn btn-sm btn-outline-primary btn-mobile-friendly">
+                                        <i class="fas fa-play"></i> <span>Play</span>
                                     </button>
-                                </div>
-                            </div>
-                            
-                            <div id="basicTranslationCard" style="display: none;">
-                                <h6 class="transcript-heading mt-3">Translation</h6>
-                                <div id="basicTranslation" class="transcript">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>Translated text will appear here...</div>
-                                        <button id="basicPlayTranslationButton" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
-                                            <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="mt-2 text-end">
-                                    <button id="basicCopyTranslationButton" class="btn btn-sm btn-outline-secondary">Copy Translation</button>
                                 </div>
                             </div>
                         </div>
@@ -546,7 +638,7 @@
                                 <h5>Speaker 1</h5>
                                 <div>
                                     <button id="playTranscript1Button" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
-                                        <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
+                                        <i class="fas fa-play"></i> <span>Play</span>
                                     </button>
                                     <button id="copyTranscript1Button" class="btn btn-sm btn-outline-secondary">Copy</button>
                                 </div>
@@ -555,13 +647,19 @@
                         <div class="card-body">
                             <h6>Original:</h6>
                             <div id="transcript1" class="transcript">Your speech will appear here...</div>
-                            <h6 class="translation-header">Translation:</h6>
+                            <div class="d-flex justify-content-between align-items-center translation-header">
+                                <h6>Translation:</h6>
+                                <button id="copyTranslation1Button" class="btn btn-sm btn-outline-secondary d-none d-md-block">Copy</button>
+                            </div>
                             <div id="translation1" class="translation">
-                                <div class="d-flex justify-content-between align-items-start">
+                                <div class="d-flex justify-content-between align-items-center">
                                     <div>Translation will appear here...</div>
-                                    <button class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly" id="playTranslation1Button">
-                                        <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
-                                    </button>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-primary btn-mobile-friendly" id="playTranslation1Button">
+                                            <i class="fas fa-play"></i> <span>Play</span>
+                                        </button>
+                                        <button id="copyTranslationMobile1Button" class="btn btn-sm btn-outline-secondary d-inline-block d-md-none">Copy</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -576,7 +674,7 @@
                                 <h5>Speaker 2</h5>
                                 <div>
                                     <button id="playTranscript2Button" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
-                                        <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
+                                        <i class="fas fa-play"></i> <span>Play</span>
                                     </button>
                                     <button id="copyTranscript2Button" class="btn btn-sm btn-outline-secondary">Copy</button>
                                 </div>
@@ -585,13 +683,19 @@
                         <div class="card-body">
                             <h6>Original:</h6>
                             <div id="transcript2" class="transcript">Your speech will appear here...</div>
-                            <h6>Translation:</h6>
+                            <div class="d-flex justify-content-between align-items-center translation-header">
+                                <h6>Translation:</h6>
+                                <button id="copyTranslation2Button" class="btn btn-sm btn-outline-secondary d-none d-md-block">Copy</button>
+                            </div>
                             <div id="translation2" class="translation">
-                                <div class="d-flex justify-content-between align-items-start">
+                                <div class="d-flex justify-content-between align-items-center">
                                     <div>Translation will appear here...</div>
-                                    <button class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly" id="playTranslation2Button">
-                                        <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
-                                    </button>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-primary btn-mobile-friendly" id="playTranslation2Button">
+                                            <i class="fas fa-play"></i> <span>Play</span>
+                                        </button>
+                                        <button id="copyTranslationMobile2Button" class="btn btn-sm btn-outline-secondary d-inline-block d-md-none">Copy</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -726,9 +830,8 @@
                         // Populate global language dropdown
                         populateLanguageDropdown('globalLanguageSelect', sortedLanguages, 'en');
                         
-                        // Populate basic mode dropdowns
+                        // Populate basic mode dropdown
                         populateLanguageDropdown('basicLanguageSelect', sortedLanguages, 'en');
-                        populateLanguageDropdown('basicTranslateSelect', sortedLanguages, '', true);
                         
                         // Populate bilingual mode dropdowns
                         populateLanguageDropdown('languageSelect1', sortedLanguages, 'en');
@@ -1113,21 +1216,18 @@
                 formData.append('language', document.getElementById('basicLanguageSelect').value);
                 formData.append('model', document.querySelector('input[name="uploadTranscriptionModel"]:checked').value);
                 
-                // Add translation target if selected
-                const translateTo = document.getElementById('basicTranslateSelect').value;
-                
                 showStatus('Transcribing your audio...', 'info');
                 
                 try {
-                    // First get transcription
+                    // Get transcription
                     const result = await sendToServer(formData);
                     
                     // Update transcript
                     document.getElementById('basicTranscript').innerHTML = `
-                        <div class="d-flex justify-content-between align-items-start">
+                        <div class="d-flex justify-content-between align-items-center">
                             <div>${result.text || "No transcript received."}</div>
-                            <button id="basicPlayTranscriptButton" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
-                                <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
+                            <button id="basicPlayTranscriptButton" class="btn btn-sm btn-outline-primary btn-mobile-friendly">
+                                <i class="fas fa-play"></i> <span>Play</span>
                             </button>
                         </div>
                     `;
@@ -1142,38 +1242,7 @@
                         }
                     });
                     
-                    // Handle translation if requested
-                    const translationCard = document.getElementById('basicTranslationCard');
-                    
-                    if (translateTo) {
-                        showStatus('Translating text...', 'info');
-                        const translatedText = await translateText(result.text, translateTo);
-                        
-                        if (translatedText) {
-                            document.getElementById('basicTranslation').innerHTML = `
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>${translatedText}</div>
-                                    <button id="basicPlayTranslationButton" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
-                                        <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
-                                    </button>
-                                </div>
-                            `;
-                            
-                            // Reattach event listener for play translation button
-                            document.getElementById('basicPlayTranslationButton').addEventListener('click', () => {
-                                speakText(translatedText, translateTo);
-                            });
-                            
-                            translationCard.style.display = 'block';
-                            showStatus('Transcription and translation complete!', 'success');
-                        } else {
-                            translationCard.style.display = 'none';
-                            showStatus('Transcription complete, but translation failed.', 'warning');
-                        }
-                    } else {
-                        translationCard.style.display = 'none';
-                        showStatus('Transcription complete!', 'success');
-                    }
+                    showStatus('Transcription complete!', 'success');
                 } catch (error) {
                     console.error('Upload error:', error);
                     
@@ -1199,75 +1268,7 @@
                     return;
                 }
                 
-                // Use newer clipboard API with fallback to older one
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(text)
-                        .then(() => showStatus('Transcript copied to clipboard!', 'success'))
-                        .catch(err => {
-                            console.error('Clipboard error:', err);
-                            showStatus('Failed to copy to clipboard: ' + err.message, 'danger');
-                        });
-                } else {
-                    // Fallback for older browsers
-                    const textarea = document.createElement('textarea');
-                    textarea.value = text;
-                    textarea.style.position = 'fixed';  // Avoid scrolling to bottom
-                    document.body.appendChild(textarea);
-                    textarea.focus();
-                    textarea.select();
-                    
-                    try {
-                        const successful = document.execCommand('copy');
-                        if (successful) {
-                            showStatus('Transcript copied to clipboard!', 'success');
-                        } else {
-                            showStatus('Copy failed. Please try selecting and copying manually.', 'warning');
-                        }
-                    } catch (err) {
-                        showStatus('Copy failed. Please try selecting and copying manually.', 'warning');
-                    }
-                    
-                    document.body.removeChild(textarea);
-                }
-            });
-            
-            document.getElementById('basicCopyTranslationButton').addEventListener('click', () => {
-                const translationElement = document.getElementById('basicTranslation');
-                const textElement = translationElement.querySelector('div:first-child');
-                const text = textElement ? textElement.textContent : translationElement.textContent;
-                
-                if (text === 'Translated text will appear here...') {
-                    showStatus('No translation to copy', 'warning');
-                    return;
-                }
-                
-                // Use newer clipboard API with fallback to older one
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(text)
-                        .then(() => showStatus('Translation copied to clipboard!', 'success'))
-                        .catch(err => showStatus('Failed to copy: ' + err, 'danger'));
-                } else {
-                    // Fallback for older browsers
-                    const textarea = document.createElement('textarea');
-                    textarea.value = text;
-                    textarea.style.position = 'fixed';
-                    document.body.appendChild(textarea);
-                    textarea.focus();
-                    textarea.select();
-                    
-                    try {
-                        const successful = document.execCommand('copy');
-                        if (successful) {
-                            showStatus('Translation copied to clipboard!', 'success');
-                        } else {
-                            showStatus('Copy failed. Please try selecting and copying manually.', 'warning');
-                        }
-                    } catch (err) {
-                        showStatus('Copy failed. Please try selecting and copying manually.', 'warning');
-                    }
-                    
-                    document.body.removeChild(textarea);
-                }
+                copyTextToClipboard(text, 'Transcript copied to clipboard!');
             });
             
             // Basic mode play buttons
@@ -1287,21 +1288,6 @@
                     speakText(text, document.getElementById('basicLanguageSelect').value);
                 } else {
                     showStatus('No transcript to play', 'warning');
-                }
-            });
-            
-            document.getElementById('basicPlayTranslationButton').addEventListener('click', () => {
-                const translationElement = document.getElementById('basicTranslation');
-                const textElement = translationElement.querySelector('div:first-child div');
-                const text = textElement ? textElement.textContent : (
-                    translationElement.textContent.includes('Translated text will appear here...') ? 
-                    '' : translationElement.textContent
-                );
-                
-                if (text && text !== '') {
-                    speakText(text, document.getElementById('basicTranslateSelect').value);
-                } else {
-                    showStatus('No translation to play', 'warning');
                 }
             });
             
@@ -1366,10 +1352,10 @@
                                     if (result.text) {
                                         // Update transcript
                                         document.getElementById('basicTranscript').innerHTML = `
-                                            <div class="d-flex justify-content-between align-items-start">
+                                            <div class="d-flex justify-content-between align-items-center">
                                                 <div>${result.text}</div>
-                                                <button id="basicPlayTranscriptButton" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
-                                                    <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
+                                                <button id="basicPlayTranscriptButton" class="btn btn-sm btn-outline-primary btn-mobile-friendly">
+                                                    <i class="fas fa-play"></i> <span>Play</span>
                                                 </button>
                                             </div>
                                         `;
@@ -1379,39 +1365,7 @@
                                             speakText(result.text, document.getElementById('basicLanguageSelect').value);
                                         });
                                         
-                                        // Handle translation if requested
-                                        const translateTo = document.getElementById('basicTranslateSelect').value;
-                                        const translationCard = document.getElementById('basicTranslationCard');
-                                        
-                                        if (translateTo) {
-                                            showStatus('Translating text...', 'info');
-                                            const translatedText = await translateText(result.text, translateTo);
-                                            
-                                            if (translatedText) {
-                                                document.getElementById('basicTranslation').innerHTML = `
-                                                    <div class="d-flex justify-content-between align-items-start">
-                                                        <div>${translatedText}</div>
-                                                        <button id="basicPlayTranslationButton" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
-                                                            <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
-                                                        </button>
-                                                    </div>
-                                                `;
-                                                
-                                                // Reattach event listener for play translation button
-                                                document.getElementById('basicPlayTranslationButton').addEventListener('click', () => {
-                                                    speakText(translatedText, translateTo);
-                                                });
-                                                
-                                                translationCard.style.display = 'block';
-                                                showStatus('Transcription and translation complete!', 'success');
-                                            } else {
-                                                translationCard.style.display = 'none';
-                                                showStatus('Transcription complete, but translation failed.', 'warning');
-                                            }
-                                        } else {
-                                            translationCard.style.display = 'none';
-                                            showStatus('Transcription complete!', 'success');
-                                        }
+                                        showStatus('Transcription complete!', 'success');
                                     } else if (result.error) {
                                         console.error('Server error:', result.error);
                                         showStatus(`Error: ${result.error}`, 'danger', true);
@@ -1560,11 +1514,14 @@
                                             if (translatedText) {
                                                 // Update partner's translation display
                                                 partnerSpeaker.translation.innerHTML = `
-                                                    <div class="d-flex justify-content-between align-items-start">
+                                                    <div class="d-flex justify-content-between align-items-center">
                                                         <div>${translatedText}</div>
-                                                        <button class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly" id="playTranslation${partnerId}Button">
-                                                            <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Play</span>
-                                                        </button>
+                                                        <div>
+                                                            <button class="btn btn-sm btn-outline-primary btn-mobile-friendly" id="playTranslation${partnerId}Button">
+                                                                <i class="fas fa-play"></i> <span>Play</span>
+                                                            </button>
+                                                            <button id="copyTranslationMobile${partnerId}Button" class="btn btn-sm btn-outline-secondary d-inline-block d-md-none">Copy</button>
+                                                        </div>
                                                     </div>
                                                 `;
                                                 
@@ -1619,7 +1576,7 @@
                     }
                 });
                 
-                // Copy button functionality 
+                // Copy button functionality for original transcript
                 speaker.copyButton.addEventListener('click', () => {
                     const text = speaker.transcript.textContent;
                     if (text === 'Your speech will appear here...') {
@@ -1627,33 +1584,31 @@
                         return;
                     }
                     
-                    if (navigator.clipboard && navigator.clipboard.writeText) {
-                        navigator.clipboard.writeText(text)
-                            .then(() => showStatus(`Speaker ${speaker.id}'s transcript copied!`, 'success'))
-                            .catch(err => showStatus('Failed to copy: ' + err, 'danger'));
-                    } else {
-                        // Fallback for older browsers
-                        const textarea = document.createElement('textarea');
-                        textarea.value = text;
-                        textarea.style.position = 'fixed';
-                        document.body.appendChild(textarea);
-                        textarea.focus();
-                        textarea.select();
-                        
-                        try {
-                            const successful = document.execCommand('copy');
-                            if (successful) {
-                                showStatus(`Speaker ${speaker.id}'s transcript copied!`, 'success');
-                            } else {
-                                showStatus('Copy failed. Please try selecting and copying manually.', 'warning');
-                            }
-                        } catch (err) {
-                            showStatus('Copy failed. Please try selecting and copying manually.', 'warning');
-                        }
-                        
-                        document.body.removeChild(textarea);
-                    }
+                    copyTextToClipboard(text, `Speaker ${speaker.id}'s transcript copied!`);
                 });
+                
+                // Copy buttons for translations (both desktop and mobile versions)
+                const desktopCopyTranslationBtn = document.getElementById(`copyTranslation${speaker.id}Button`);
+                const mobileCopyTranslationBtn = document.getElementById(`copyTranslationMobile${speaker.id}Button`);
+                
+                // Function to handle copying translation for this speaker
+                const copyTranslationHandler = () => {
+                    // Get the text content properly from the container div
+                    const translationElement = speaker.translation;
+                    const textElement = translationElement.querySelector('div:first-child div');
+                    let translationText = textElement ? textElement.textContent : "";
+                    
+                    if (!translationText || translationText === "Translation will appear here...") {
+                        showStatus('No translation to copy', 'warning');
+                        return;
+                    }
+                    
+                    copyTextToClipboard(translationText, `Speaker ${speaker.id}'s translation copied!`);
+                };
+                
+                // Add event listeners to both desktop and mobile copy buttons
+                desktopCopyTranslationBtn.addEventListener('click', copyTranslationHandler);
+                mobileCopyTranslationBtn.addEventListener('click', copyTranslationHandler);
                 
                 // Play original transcript button functionality
                 speaker.playButton.addEventListener('click', () => {
@@ -1684,6 +1639,36 @@
                 });
             });
         });
+
+        // Helper function for copying text to clipboard
+        function copyTextToClipboard(text, successMessage) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text)
+                    .then(() => showStatus(successMessage, 'success'))
+                    .catch(err => showStatus('Failed to copy: ' + err, 'danger'));
+            } else {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        showStatus(successMessage, 'success');
+                    } else {
+                        showStatus('Copy failed. Please try selecting and copying manually.', 'warning');
+                    }
+                } catch (err) {
+                    showStatus('Copy failed. Please try selecting and copying manually.', 'warning');
+                }
+                
+                document.body.removeChild(textarea);
+            }
+        }
     </script>
 </body>
 </html>
