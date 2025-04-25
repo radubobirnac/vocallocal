@@ -172,13 +172,13 @@ def translate_text():
     try:
         # Use OpenAI API for translation
         response = openai.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4.1-mini",
             messages=[
                 {"role": "system", "content": f"You are a professional translator. Translate the text into {target_language}. Only respond with the translation, nothing else."},
                 {"role": "user", "content": text}
             ],
             temperature=0.3,
-            max_tokens=2048
+            max_tokens=5000
         )
         
         translated_text = response.choices[0].message.content
