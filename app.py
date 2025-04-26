@@ -146,6 +146,117 @@ def get_languages():
     }
     return jsonify(supported_languages)
 
+@app.route('/api/tts', methods=['POST'])
+def text_to_speech():
+    """
+    Endpoint for converting text to speech using OpenAI's TTS service.
+    
+    Required JSON parameters:
+    - text: The text to convert to speech
+    - language: The language code (e.g., 'en', 'es', 'fr')
+    
+    Returns:
+    - Audio file as response with appropriate content type
+    """
+    data = request.json
+    
+    if not data or 'text' not in data or 'language' not in data:
+        return jsonify({'error': 'Missing required parameters: text and language'}), 400
+    
+    text = data['text']
+    language = data['language']
+    
+    if not text.strip():
+        return jsonify({'error': 'Empty text provided'}), 400
+    
+    try:
+        # Map language code to appropriate voice
+        # OpenAI voices: alloy, echo, fable, onyx, nova, shimmer
+        voice_map = {
+            # Default English voice (alloy is neutral)
+            'en': 'alloy',
+            
+            # Romance languages (nova is good for these)
+            'es': 'nova',  # Spanish
+            'fr': 'nova',  # French
+            'it': 'nova',  # Italian
+            'pt': 'nova',  # Portuguese
+            'ro': 'nova',  # Romanian
+            
+            # Germanic languages (onyx works well)
+            'de': 'onyx',  # German
+            'nl': 'onyx',  # Dutch
+            'sv': 'onyx',  # Swedish
+            'no': 'onyx',  # Norwegian
+            'da': 'onyx',  # Danish
+            
+            # Asian languages (shimmer is clearer)
+            'ja': 'shimmer',  # Japanese
+            'zh': 'shimmer',  # Chinese
+            'ko': 'shimmer',  # Korean
+            
+            # Slavic languages (echo has good clarity)
+            'ru': 'echo',   # Russian
+            'uk': 'echo',   # Ukrainian
+            'cs': 'echo',   # Czech
+            'pl': 'echo',   # Polish
+            'bg': 'echo',   # Bulgarian
+            
+            # Other languages
+            'ar': 'fable',  # Arabic
+            'hi': 'fable',  # Hindi
+            'tr': 'fable',  # Turkish
+            'fi': 'onyx',   # Finnish
+            'hu': 'echo',   # Hungarian
+            'el': 'nova',   # Greek
+            'he': 'fable',  # Hebrew
+            'te': 'fable',  # Telugu
+            'th': 'shimmer',  # Thai
+            'vi': 'shimmer',  # Vietnamese
+            'id': 'shimmer',  # Indonesian
+            'ms': 'shimmer',  # Malay
+        }
+        
+        # Get voice based on language or default to alloy
+        voice = voice_map.get(language, 'alloy')
+        
+        # Log request for debugging
+        print(f"TTS request: language={language}, voice={voice}, text_length={len(text)}")
+        
+        # Create a temporary file to store the audio
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3')
+        temp_file.close()
+        
+        # Generate speech with OpenAI
+        response = openai.audio.speech.create(
+            model="tts-1",
+            voice=voice,
+            input=text
+        )
+        
+        # Save to the temporary file
+        response.stream_to_file(temp_file.name)
+        
+        # Send the file as response
+        return send_from_directory(
+            os.path.dirname(temp_file.name),
+            os.path.basename(temp_file.name),
+            as_attachment=True,
+            download_name="speech.mp3",
+            mimetype="audio/mpeg"
+        )
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"TTS error: {str(e)}\n{error_details}")
+        
+        return jsonify({
+            'error': str(e),
+            'errorType': type(e).__name__,
+            'details': 'See server logs for more information'
+        }), 500
+
 @app.route('/api/translate', methods=['POST'])
 def translate_text():
     """

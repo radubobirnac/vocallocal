@@ -870,6 +870,61 @@
             
             // Speech synthesis functionality - shared function
             function speakText(text, langCode) {
+                if (!text || text.trim() === '') {
+                    showStatus('No text to speak', 'warning');
+                    return;
+                }
+                
+                showStatus('Generating audio...', 'info');
+                
+                // Call our backend TTS API
+                fetch('/api/tts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        language: langCode
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('TTS service error');
+                    }
+                    return response.blob();
+                })
+                .then(audioBlob => {
+                    // Create audio element to play the response
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    const audio = new Audio(audioUrl);
+                    
+                    // Play the audio
+                    audio.play()
+                        .then(() => {
+                            showStatus('Playing audio...', 'info');
+                        })
+                        .catch(error => {
+                            showStatus('Error playing audio: ' + error.message, 'danger');
+                            console.error('Audio playback error:', error);
+                        });
+                        
+                    // Clean up the object URL when done
+                    audio.onended = () => {
+                        URL.revokeObjectURL(audioUrl);
+                    };
+                })
+                .catch(error => {
+                    showStatus('Error generating speech: ' + error.message, 'danger');
+                    console.error('TTS error:', error);
+                    
+                    // Fallback to browser's speech synthesis if OpenAI TTS fails
+                    fallbackSpeakText(text, langCode);
+                });
+            }
+            
+            // Fallback to browser's speech synthesis
+            function fallbackSpeakText(text, langCode) {
                 if (!window.speechSynthesis) {
                     showStatus('Text-to-speech is not supported in your browser', 'warning');
                     return;
@@ -886,7 +941,7 @@
                 
                 // Start speaking
                 window.speechSynthesis.speak(utterance);
-                showStatus('Playing audio...', 'info');
+                showStatus('Playing audio (browser TTS fallback)...', 'info');
             }
             
             // Get supported media types based on browser/device
