@@ -899,8 +899,8 @@
                     const audioUrl = URL.createObjectURL(audioBlob);
                     const audio = new Audio(audioUrl);
                     
-                    // Set playback rate to 1.15 (15% faster)
-                    audio.playbackRate = 1.15;
+                    // Set playback rate to 1.10 (10% faster)
+                    audio.playbackRate = 1.10;
                     
                     // Play the audio
                     audio.play()
@@ -939,8 +939,8 @@
                 // Create a new utterance
                 const utterance = new SpeechSynthesisUtterance(text);
                 
-                // Set rate to 1.15 (15% faster)
-                utterance.rate = 1.15;
+                // Set rate to 1.10 (10% faster)
+                utterance.rate = 1.10;
                 
                 // Set language
                 utterance.lang = langCode;
