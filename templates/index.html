@@ -1335,7 +1335,7 @@
             // Basic mode play buttons
             document.getElementById('basicPlayTranscriptButton').addEventListener('click', () => {
                 const transcriptElement = document.getElementById('basicTranscript');
-                const textElement = transcriptElement.querySelector('div:first-child div');
+                const textElement = transcriptElement.querySelector('div:first-child');
                 let text = '';
                 
                 if (textElement) {
@@ -1656,7 +1656,7 @@
                 const copyTranslationHandler = () => {
                     // Get the text content properly from the container div
                     const translationElement = speaker.translation;
-                    const textElement = translationElement.querySelector('div:first-child div');
+                    const textElement = translationElement.querySelector('div:first-child');
                     let translationText = textElement ? textElement.textContent : "";
                     
                     if (!translationText || translationText === "Translation will appear here...") {
@@ -1685,7 +1685,7 @@
                 speaker.playTranslationButton.addEventListener('click', () => {
                     // Get the text content properly from the container div
                     const translationElement = speaker.translation;
-                    const textElement = translationElement.querySelector('div:first-child div');
+                    const textElement = translationElement.querySelector('div:first-child');
                     let translationText = textElement ? textElement.textContent : "";
                     
                     if (!translationText || translationText === "Translation will appear here...") {
