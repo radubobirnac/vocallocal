@@ -1321,7 +1321,7 @@
             // Basic mode copy buttons
             document.getElementById('basicCopyTranscriptButton').addEventListener('click', () => {
                 const transcriptElement = document.getElementById('basicTranscript');
-                const textElement = transcriptElement.querySelector('div:first-child');
+                const textElement = transcriptElement.querySelector('div.d-flex > div:first-child');
                 const text = textElement ? textElement.textContent : transcriptElement.textContent;
                 
                 if (text === 'Transcribed text will appear here...') {
@@ -1335,13 +1335,13 @@
             // Basic mode play buttons
             document.getElementById('basicPlayTranscriptButton').addEventListener('click', () => {
                 const transcriptElement = document.getElementById('basicTranscript');
-                const textElement = transcriptElement.querySelector('div:first-child');
+                const textElement = transcriptElement.querySelector('div.d-flex > div:first-child');
                 let text = '';
                 
                 if (textElement) {
                     text = textElement.textContent;
                 } else {
-                    const firstChild = transcriptElement.querySelector('div:first-child');
+                    const firstChild = transcriptElement.querySelector('div.d-flex > div:first-child');
                     text = firstChild ? firstChild.textContent : transcriptElement.textContent;
                 }
                 
@@ -1656,7 +1656,7 @@
                 const copyTranslationHandler = () => {
                     // Get the text content properly from the container div
                     const translationElement = speaker.translation;
-                    const textElement = translationElement.querySelector('div:first-child');
+                    const textElement = translationElement.querySelector('div.d-flex > div:first-child');
                     let translationText = textElement ? textElement.textContent : "";
                     
                     if (!translationText || translationText === "Translation will appear here...") {
@@ -1685,7 +1685,7 @@
                 speaker.playTranslationButton.addEventListener('click', () => {
                     // Get the text content properly from the container div
                     const translationElement = speaker.translation;
-                    const textElement = translationElement.querySelector('div:first-child');
+                    const textElement = translationElement.querySelector('div.d-flex > div:first-child');
                     let translationText = textElement ? textElement.textContent : "";
                     
                     if (!translationText || translationText === "Translation will appear here...") {
