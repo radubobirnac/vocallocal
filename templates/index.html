@@ -452,6 +452,32 @@
         #transcript1, #transcript2 {
             margin-bottom: 10px;
         }
+
+        /* Style for copy buttons to match play buttons */
+        .btn-outline-secondary i {
+            margin-right: 0; /* No margin needed if we remove the text */
+        }
+
+        /* Add hover tooltip */
+        [title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 2px 5px;
+            border-radius: 3px;
+            white-space: nowrap;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        [title] {
+            position: relative;
+        }
     </style>
 </head>
 <body>
@@ -480,7 +506,7 @@
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Voice Transcription</h5>
-                    <button id="basicCopyTranscriptButton" class="btn btn-sm btn-outline-secondary">Copy</button>
+                    <button id="basicCopyTranscriptButton" class="btn btn-sm btn-outline-secondary" title="Copy"><i class="fas fa-copy"></i></button>
                 </div>
                 <div class="card-body transcript-card-body p-2">
                     <div class="row h-100">
@@ -640,7 +666,7 @@
                                     <button id="playTranscript1Button" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
                                         <i class="fas fa-play"></i> <span>Play</span>
                                     </button>
-                                    <button id="copyTranscript1Button" class="btn btn-sm btn-outline-secondary">Copy</button>
+                                    <button id="copyTranscript1Button" class="btn btn-sm btn-outline-secondary" title="Copy"><i class="fas fa-copy"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -649,7 +675,7 @@
                             <div id="transcript1" class="transcript">Your speech will appear here...</div>
                             <div class="d-flex justify-content-between align-items-center translation-header">
                                 <h6>Translation:</h6>
-                                <button id="copyTranslation1Button" class="btn btn-sm btn-outline-secondary d-none d-md-block">Copy</button>
+                                <button id="copyTranslation1Button" class="btn btn-sm btn-outline-secondary d-none d-md-block" title="Copy"><i class="fas fa-copy"></i></button>
                             </div>
                             <div id="translation1" class="translation">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -658,7 +684,7 @@
                                         <button class="btn btn-sm btn-outline-primary btn-mobile-friendly" id="playTranslation1Button">
                                             <i class="fas fa-play"></i> <span>Play</span>
                                         </button>
-                                        <button id="copyTranslationMobile1Button" class="btn btn-sm btn-outline-secondary d-inline-block d-md-none">Copy</button>
+                                        <button id="copyTranslationMobile1Button" class="btn btn-sm btn-outline-secondary d-inline-block d-md-none" title="Copy"><i class="fas fa-copy"></i></button>
                                     </div>
                                 </div>
                             </div>
@@ -676,7 +702,7 @@
                                     <button id="playTranscript2Button" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
                                         <i class="fas fa-play"></i> <span>Play</span>
                                     </button>
-                                    <button id="copyTranscript2Button" class="btn btn-sm btn-outline-secondary">Copy</button>
+                                    <button id="copyTranscript2Button" class="btn btn-sm btn-outline-secondary" title="Copy"><i class="fas fa-copy"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -685,7 +711,7 @@
                             <div id="transcript2" class="transcript">Your speech will appear here...</div>
                             <div class="d-flex justify-content-between align-items-center translation-header">
                                 <h6>Translation:</h6>
-                                <button id="copyTranslation2Button" class="btn btn-sm btn-outline-secondary d-none d-md-block">Copy</button>
+                                <button id="copyTranslation2Button" class="btn btn-sm btn-outline-secondary d-none d-md-block" title="Copy"><i class="fas fa-copy"></i></button>
                             </div>
                             <div id="translation2" class="translation">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -694,7 +720,7 @@
                                         <button class="btn btn-sm btn-outline-primary btn-mobile-friendly" id="playTranslation2Button">
                                             <i class="fas fa-play"></i> <span>Play</span>
                                         </button>
-                                        <button id="copyTranslationMobile2Button" class="btn btn-sm btn-outline-secondary d-inline-block d-md-none">Copy</button>
+                                        <button id="copyTranslationMobile2Button" class="btn btn-sm btn-outline-secondary d-inline-block d-md-none" title="Copy"><i class="fas fa-copy"></i></button>
                                     </div>
                                 </div>
                             </div>
@@ -1581,7 +1607,7 @@
                                                             <button class="btn btn-sm btn-outline-primary btn-mobile-friendly" id="playTranslation${partnerId}Button">
                                                                 <i class="fas fa-play"></i> <span>Play</span>
                                                             </button>
-                                                            <button id="copyTranslationMobile${partnerId}Button" class="btn btn-sm btn-outline-secondary d-inline-block d-md-none">Copy</button>
+                                                            <button id="copyTranslationMobile${partnerId}Button" class="btn btn-sm btn-outline-secondary d-inline-block d-md-none" title="Copy"><i class="fas fa-copy"></i></button>
                                                         </div>
                                                     </div>
                                                 `;
