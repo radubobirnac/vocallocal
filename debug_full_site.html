@@ -90,7 +90,7 @@
             margin-left: 0.5rem;
             padding: 0.2rem 0.5rem;
         }
-        
+
         /* Mobile-friendly button styles */
         .btn-mobile-friendly {
             white-space: nowrap;
@@ -139,7 +139,7 @@
             background-color: #e9ecef;
             margin: 2rem 0;
         }
-        
+
         /* Responsive adjustments */
         @media (min-width: 992px) {
             .transcript-container {
@@ -156,7 +156,7 @@
                 border-right: 1px solid #e2e8f0;
             }
         }
-        
+
         @media (max-width: 991px) {
             .controls-column {
                 margin-bottom: 2rem;
@@ -178,7 +178,7 @@
                 gap: 10px;
             }
         }
-        
+
         .translation-buttons {
             display: flex;
             align-items: center;
@@ -231,16 +231,16 @@
             .card-header .d-flex.justify-content-between.align-items-center {
                 flex-wrap: nowrap !important;
             }
-            
+
             /* Make copy button appear next to play button */
-            #copyTranscript1Button, 
+            #copyTranscript1Button,
             #copyTranscript2Button {
                 display: inline-flex !important;
                 margin-left: 0.25rem !important;
                 min-width: 40px;
                 padding: 0.25rem 0.5rem;
             }
-            
+
             /* Make translation header and buttons display correctly */
             .translation-header {
                 display: flex !important;
@@ -254,7 +254,7 @@
             .translation {
                 position: relative;
             }
-            
+
             /* Make buttons more tappable on mobile */
             .btn-mobile-friendly {
                 min-width: 65px !important;
@@ -262,46 +262,46 @@
                 padding: 0.3rem 0.5rem !important;
                 font-weight: 500 !important;
             }
-            
+
             /* Ensure buttons in transcript rows are properly aligned */
             .d-flex.justify-content-between.align-items-start {
                 align-items: center !important;
             }
-            
+
             /* Better spacing between button and text */
             .btn-mobile-friendly span {
                 margin-left: 5px !important;
                 display: inline-block !important;
             }
-            
+
             /* Make sure the play buttons have priority in the flex layout */
             .transcript div.d-flex button,
             .translation div.d-flex button {
                 flex-shrink: 0 !important;
             }
         }
-        
+
         /* Tighter spacing for card elements */
         .card-body {
             padding: 1rem;
         }
-        
+
         /* Reduce spacing around transcript heading */
         h6.transcript-heading {
             margin-bottom: 0.5rem;
             margin-top: 0.5rem;
         }
-        
+
         /* Make dividers between sections thinner */
         .controls-column {
             padding-bottom: 0.75rem;
         }
-        
+
         /* Reduce space between status and button */
         #recordingStatus {
             margin-bottom: 0.5rem;
         }
-        
+
         /* Ensure translations are properly visible on mobile */
         #basicTranslationCard .transcript {
             width: 100%;
@@ -310,17 +310,17 @@
         }
 
         /* NEW CSS FIXES FOR RESPONSIVE DESIGN ISSUES */
-        
+
         /* Improve translation visibility on mobile */
         @media (max-width: 576px) {
-            #basicTranslationCard, 
-            .translation-header, 
+            #basicTranslationCard,
+            .translation-header,
             .translation {
                 display: block !important;
                 width: 100%;
                 margin-top: 0.5rem;
             }
-            
+
             /* Make buttons more tappable on mobile */
             .btn-mobile-friendly {
                 min-width: 40px;
@@ -328,7 +328,7 @@
                 padding: 0.25rem 0.5rem;
                 margin-left: 8px;
             }
-            
+
             /* Ensure transcript and translation containers are always visible */
             .transcript, .translation {
                 min-height: 60px;
@@ -339,14 +339,14 @@
                 word-break: break-word;
                 margin-bottom: 1rem;
             }
-            
+
             /* Fix flex layout issues on small screens */
             .d-flex.justify-content-between.align-items-start {
                 display: flex !important;
                 width: 100%;
                 flex-wrap: wrap;
             }
-            
+
             /* Ensure text content takes necessary space */
             .d-flex.justify-content-between.align-items-start > div:first-child {
                 flex: 1;
@@ -376,7 +376,7 @@
         .translation {
             display: block;
         }
-        
+
 
         /* Fix for translation elements always being visible */
         #basicTranslationCard {
@@ -390,14 +390,14 @@
                 min-width: 32px;
                 padding: 0.15rem 0.3rem;
             }
-            
+
             .d-flex.justify-content-between.align-items-start {
                 gap: 4px;
             }
         }
 
         /* Make sure content is readable in translation areas */
-        .translation div:first-child, 
+        .translation div:first-child,
         .transcript div:first-child {
             word-break: break-word;
             hyphens: auto;
@@ -416,7 +416,7 @@
                 margin-top: 1rem;
                 margin-bottom: 0.5rem;
             }
-            
+
             .translation-header h6 {
                 margin-bottom: 0;
             }
@@ -427,12 +427,12 @@
             .translation-header h6 {
                 margin-bottom: 0;
             }
-            
+
             .translation div.d-flex > div:last-child {
                 display: flex;
                 align-items: center;
             }
-            
+
             #playTranslation1Button,
             #playTranslation2Button {
             }
@@ -504,12 +504,7 @@
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Voice Transcription</h5>
-                    <div class="translation-buttons d-flex align-items-center">
-                        <button id="basicPlayTranscriptButton" class="btn btn-sm btn-outline-primary btn-mobile-friendly" title="Play">
-                            <i data-feather="play"></i>
-                        </button>
-                        <button id="basicCopyTranscriptButton" class="btn btn-sm btn-outline-secondary" title="Copy"><i data-feather="copy"></i></button>
-                    </div>
+                    <button id="basicCopyTranscriptButton" class="btn btn-sm btn-outline-secondary" title="Copy"><i data-feather="copy"></i></button>
                 </div>
                 <div class="card-body transcript-card-body p-2">
                     <div class="row h-100">
@@ -518,7 +513,7 @@
                                 <label for="basicLanguageSelect" class="form-label">Input Language:</label>
                                 <select id="basicLanguageSelect" class="form-select"></select>
                             </div>
-                            
+
                             <div class="model-toggle mb-2">
                                 <h6 class="mb-1">Model Selection</h6>
                                 <div class="form-check form-check-inline">
@@ -530,7 +525,7 @@
                                     <label class="form-check-label" for="basicAccurateModel">More accurate but slower</label>
                                 </div>
                             </div>
-                            
+
                             <div class="recorder-container">
                                 <button id="basicRecordButton" class="recordButton">
                                     <i class="fas fa-microphone"></i>
@@ -538,12 +533,15 @@
                                 <div id="basicRecordingStatus">Click to start recording</div>
                             </div>
                         </div>
-                        
+
                         <div class="col-lg-8 transcript-container">
                             <h6 class="transcript-heading">Transcript</h6>
                             <div id="basicTranscript" class="transcript flex-grow-1">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>Transcribed text will appear here...</div>
+                                    <button id="basicPlayTranscriptButton" class="btn btn-sm btn-outline-primary btn-mobile-friendly" title="Play">
+                                        <i data-feather="play"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -590,7 +588,7 @@
                                 <label for="languageSelect1" class="form-label">Your Language:</label>
                                 <select id="languageSelect1" class="form-select"></select>
                             </div>
-                            
+
                             <div class="mb-3">
                                 <label for="modelSelect1" class="form-label">Transcription Quality:</label>
                                 <select id="modelSelect1" class="form-select">
@@ -598,14 +596,14 @@
                                     <option value="gpt-4o-transcribe">Higher (Slower)</option>
                                 </select>
                             </div>
-                            
+
                             <div class="recorder-container">
                                 <button id="recordButton1" class="recordButton">
                                     <i class="fas fa-microphone"></i>
                                 </button>
                                 <div id="recordingStatus1">Click to start recording</div>
                             </div>
-                            
+
                             <div class="form-check audioToggle">
                                 <input class="form-check-input" type="checkbox" id="enableTTS1">
                                 <label class="form-check-label" for="enableTTS1">
@@ -615,7 +613,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Speaker 2 UI -->
                 <div class="col-md-6 mb-4" id="speakerSection2">
                     <div class="card speaker-card speaker-2">
@@ -627,7 +625,7 @@
                                 <label for="languageSelect2" class="form-label">Your Language:</label>
                                 <select id="languageSelect2" class="form-select"></select>
                             </div>
-                            
+
                             <div class="mb-3">
                                 <label for="modelSelect2" class="form-label">Transcription Quality:</label>
                                 <select id="modelSelect2" class="form-select">
@@ -635,14 +633,14 @@
                                     <option value="gpt-4o-transcribe">Higher (Slower)</option>
                                 </select>
                             </div>
-                            
+
                             <div class="recorder-container">
                                 <button id="recordButton2" class="recordButton">
                                     <i class="fas fa-microphone"></i>
                                 </button>
                                 <div id="recordingStatus2">Click to start recording</div>
                             </div>
-                            
+
                             <div class="form-check audioToggle">
                                 <input class="form-check-input" type="checkbox" id="enableTTS2">
                                 <label class="form-check-label" for="enableTTS2">
@@ -691,7 +689,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Speaker 2 Output -->
                 <div class="col-md-6 mb-4">
                     <div class="card">
@@ -742,7 +740,7 @@
             <div class="collapse" id="aboutSection">
                 <div class="card-body">
                     <p>VocalLocal is a multilingual speech-to-text transcription tool designed to provide accurate transcriptions in multiple languages. Using advanced AI technology, it converts spoken language from audio recordings or microphone input into written text.</p>
-                    
+
                     <h6>Features</h6>
                     <ul>
                         <li>Real-time transcription - Record directly from your microphone and get immediate results</li>
@@ -752,7 +750,7 @@
                         <li>Bilingual mode - Facilitate conversations between speakers of different languages</li>
                         <li>Text-to-speech playback - Listen to transcriptions and translations</li>
                     </ul>
-                    
+
                     <h6>Limitations</h6>
                     <ul>
                         <li>Audio quality significantly affects transcription accuracy</li>
@@ -761,11 +759,12 @@
                         <li>Some rare languages or dialects may have lower accuracy. For more information on speech recognition accuracy measurements, see <a href="https://openai.com/index/introducing-our-next-generation-audio-models/" target="_blank">OpenAI's research on word error rates</a>.</li>
                         <li>Recordings are limited to 25 minutes maximum duration</li>
                         <li>Speaking in multiple languages at once may result in mixed results</li>
+                        <li>Transcription may not be accurate for very fast speech or heavily accented speech</li>
                     </ul>
-                    
+
                     <h6>Technical Details</h6>
                     <p>VocalLocal uses OpenAI's speech recognition models to process audio. The application supports various audio formats including WAV, MP3, OGG, and M4A. The language detection feature can automatically identify the spoken language, though manually selecting the correct language may improve accuracy for certain languages.</p>
-                    
+
                     <h6>Privacy Information</h6>
                     <p>Audio data is processed securely and is not stored permanently. Recordings are only kept temporarily during the transcription process and are deleted immediately afterward. Transcribed text remains in your browser and is not saved on our servers unless explicitly requested.</p>
                 </div>
@@ -795,7 +794,7 @@
                     document.getElementById('recordingStatus1').textContent = 'Recording not supported in this browser';
                     document.getElementById('recordingStatus2').textContent = 'Recording not supported in this browser';
                 }
-                
+
                 // Check for getUserMedia support
                 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                     showStatus('Your browser does not support microphone access. Please try a modern browser.', 'danger', true);
@@ -808,18 +807,18 @@
                     document.getElementById('recordingStatus2').textContent = 'Microphone access not supported';
                 }
             }
-            
+
             // Mode toggle functionality
             const modeToggle = document.getElementById('modeToggle');
             const basicMode = document.getElementById('basicMode');
             const bilingualMode = document.getElementById('bilingualMode');
             const appSubtitle = document.getElementById('appSubtitle');
-            
+
             // Set default to monolingual mode
             basicMode.style.display = 'block';
             bilingualMode.style.display = 'none';
             appSubtitle.textContent = 'Accurate Multilingual Speech-to-Text Transcription';
-            
+
             // Toggle between modes
             modeToggle.addEventListener('change', () => {
                 if (modeToggle.checked) {
@@ -834,36 +833,36 @@
                     appSubtitle.textContent = 'Accurate Multilingual Speech-to-Text Transcription';
                 }
             });
-            
+
             // Detect device and browser
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             const isAndroid = /Android/.test(navigator.userAgent);
             const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
             const isFirefox = navigator.userAgent.indexOf("Firefox") > -1;
             const isEdge = navigator.userAgent.indexOf("Edg") > -1;
-            
+
             console.log("Device detection:", { isIOS, isAndroid, isSafari, isFirefox, isEdge });
-            
+
             // Load languages - shared function
             function loadLanguages() {
                 return fetch('/api/languages')
                     .then(response => response.json())
                     .then(languages => {
                         // Sort language names alphabetically
-                        const sortedLanguages = Object.entries(languages).sort((a, b) => 
+                        const sortedLanguages = Object.entries(languages).sort((a, b) =>
                             a[0].localeCompare(b[0])
                         );
-                        
+
                         // Populate global language dropdown
                         populateLanguageDropdown('globalLanguageSelect', sortedLanguages, 'en');
-                        
+
                         // Populate basic mode dropdown
                         populateLanguageDropdown('basicLanguageSelect', sortedLanguages, 'en');
-                        
+
                         // Populate bilingual mode dropdowns
                         populateLanguageDropdown('languageSelect1', sortedLanguages, 'en');
                         populateLanguageDropdown('languageSelect2', sortedLanguages, 'es');
-                        
+
                         return sortedLanguages;
                     })
                     .catch(error => {
@@ -871,12 +870,12 @@
                         showStatus('Could not load language options. Please refresh the page.', 'warning', true);
                     });
             }
-            
+
             // Helper function to populate a language dropdown
             function populateLanguageDropdown(dropdownId, languages, defaultCode, includeEmpty = false) {
                 const dropdown = document.getElementById(dropdownId);
                 dropdown.innerHTML = ''; // Clear existing options
-                
+
                 // Add empty option if requested
                 if (includeEmpty) {
                     const emptyOption = document.createElement('option');
@@ -884,7 +883,7 @@
                     emptyOption.textContent = 'No Translation';
                     dropdown.appendChild(emptyOption);
                 }
-                
+
                 // Add language options
                 languages.forEach(([name, details]) => {
                     const option = document.createElement('option');
@@ -894,16 +893,16 @@
                     dropdown.appendChild(option);
                 });
             }
-            
+
             // Speech synthesis functionality - shared function
             function speakText(text, langCode) {
                 if (!text || text.trim() === '') {
                     showStatus('No text to speak', 'warning');
                     return;
                 }
-                
+
                 showStatus('Generating audio...', 'info');
-                
+
                 // Call our backend TTS API
                 fetch('/api/tts', {
                     method: 'POST',
@@ -925,10 +924,10 @@
                     // Create audio element to play the response
                     const audioUrl = URL.createObjectURL(audioBlob);
                     const audio = new Audio(audioUrl);
-                    
+
                     // Set playback rate to 1.10 (10% faster)
                     audio.playbackRate = 1.10;
-                    
+
                     // Play the audio
                     audio.play()
                         .then(() => {
@@ -938,7 +937,7 @@
                             showStatus('Error playing audio: ' + error.message, 'danger');
                             console.error('Audio playback error:', error);
                         });
-                        
+
                     // Clean up the object URL when done
                     audio.onended = () => {
                         URL.revokeObjectURL(audioUrl);
@@ -947,40 +946,40 @@
                 .catch(error => {
                     showStatus('Error generating speech: ' + error.message, 'danger');
                     console.error('TTS error:', error);
-                    
+
                     // Fallback to browser's speech synthesis if OpenAI TTS fails
                     fallbackSpeakText(text, langCode);
                 });
             }
-            
+
             // Fallback to browser's speech synthesis
             function fallbackSpeakText(text, langCode) {
                 if (!window.speechSynthesis) {
                     showStatus('Text-to-speech is not supported in your browser', 'warning');
                     return;
                 }
-                
+
                 // Stop any current speech
                 window.speechSynthesis.cancel();
-                
+
                 // Create a new utterance
                 const utterance = new SpeechSynthesisUtterance(text);
-                
+
                 // Set rate to 1.10 (10% faster)
                 utterance.rate = 1.10;
-                
+
                 // Set language
                 utterance.lang = langCode;
-                
+
                 // Start speaking
                 window.speechSynthesis.speak(utterance);
                 showStatus('Playing audio (browser TTS fallback)...', 'info');
             }
-            
+
             // Get supported media types based on browser/device
             function getSupportedMediaTypes() {
                 const supportedTypes = [];
-                
+
                 // Check what audio formats are supported
                 const mimeTypes = [
                     'audio/webm',
@@ -991,17 +990,17 @@
                     'audio/ogg;codecs=opus',
                     'audio/wav'
                 ];
-                
+
                 // Test each MIME type
                 mimeTypes.forEach(type => {
                     if (MediaRecorder.isTypeSupported(type)) {
                         supportedTypes.push(type);
                     }
                 });
-                
+
                 // Determine the best MIME type based on device/browser
                 let bestType;
-                
+
                 if (isIOS || isSafari) {
                     // iOS and Safari prefer these formats
                     bestType = supportedTypes.find(t => t.includes('mp4')) ||
@@ -1020,10 +1019,10 @@
                                supportedTypes.find(t => t.includes('ogg')) ||
                                supportedTypes[0];
                 }
-                
+
                 return { supportedTypes, bestType };
             }
-            
+
             // Error handling for microphone issues - shared function
             function handleMicrophoneError(error) {
                 if (error.name === 'NotAllowedError') {
@@ -1041,27 +1040,27 @@
                 }
                 console.error('Microphone error:', error);
             }
-            
+
             // Status display - shared function
             function showStatus(message, type = 'info', persistent = false) {
                 const statusEl = document.getElementById('status');
                 statusEl.textContent = message;
                 statusEl.className = `alert alert-${type}`;
                 statusEl.classList.remove('d-none');
-                
+
                 if (!persistent) {
                     setTimeout(() => {
                         statusEl.classList.add('d-none');
                     }, 3000);
                 }
             }
-            
+
             // Universal audio recording function with cross-platform support
             async function startRecording(options = {}) {
                 try {
                     // Visual indication that we're requesting mic access
                     showStatus('Requesting microphone access...', 'info');
-                    
+
                     // Get audio constraints with echo cancellation and noise suppression
                     const constraints = {
                         audio: {
@@ -1070,43 +1069,43 @@
                             autoGainControl: true
                         }
                     };
-                    
+
                     const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                    
+
                     // Get the best supported MIME type
                     const { bestType } = getSupportedMediaTypes();
-                    
+
                     // Configure recorder
                     const recorderOptions = bestType ? { mimeType: bestType } : {};
                     const mediaRecorder = new MediaRecorder(stream, recorderOptions);
-                    
+
                     // Setup data array
                     const audioChunks = [];
-                    
+
                     // Data available listener
                     mediaRecorder.addEventListener('dataavailable', event => {
                         if (event.data.size > 0) {
                             audioChunks.push(event.data);
                         }
                     });
-                    
+
                     // Start recording
                     mediaRecorder.start(100); // Get events more frequently for better responsiveness
                     showStatus('Recording started', 'success');
-                    
+
                     // Add visual feedback for recording
                     const recordButton = options.recordButton || null;
                     if (recordButton) {
                         recordButton.classList.add('recording');
                     }
-                    
+
                     // Log diagnostics
                     console.log("Recording started with:", {
                         mimeType: mediaRecorder.mimeType || "default",
                         deviceInfo: "Audio input device",
                         sampleRate: stream.getAudioTracks()[0].getSettings().sampleRate || "unknown"
                     });
-                    
+
                     return {
                         mediaRecorder,
                         audioChunks,
@@ -1117,14 +1116,14 @@
                     throw error; // Re-throw to let caller handle it
                 }
             }
-            
+
             // Process and send audio data
             function processAudio(audioChunks, mimeType, formData) {
                 return new Promise((resolve, reject) => {
                     try {
                         // Determine best file format based on MIME type and device
                         let fileType, fileName;
-                        
+
                         if (mimeType.includes('webm')) {
                             fileType = 'audio/webm';
                             fileName = 'recording.webm';
@@ -1147,22 +1146,22 @@
                                 fileName = 'recording.webm';
                             }
                         }
-                        
+
                         // Create blob with determined type
                         const audioBlob = new Blob(audioChunks, { type: fileType });
-                        
+
                         // Validate blob
                         if (audioBlob.size === 0) {
                             reject(new Error('No audio data recorded'));
                             return;
                         }
-                        
+
                         // Create file object
                         const audioFile = new File([audioBlob], fileName, { type: fileType });
-                        
+
                         // Add file to form data
                         formData.append('file', audioFile);
-                        
+
                         // Log diagnostic info
                         console.log("Audio recording info:", {
                             recordedMimeType: mimeType,
@@ -1171,7 +1170,7 @@
                             blobSize: audioBlob.size,
                             chunkCount: audioChunks.length
                         });
-                        
+
                         resolve(formData);
                     } catch (error) {
                         console.error("Error processing audio:", error);
@@ -1179,7 +1178,7 @@
                     }
                 });
             }
-            
+
             // Translate text function
             async function translateText(text, targetLang) {
                 try {
@@ -1193,11 +1192,11 @@
                             target_language: targetLang
                         })
                     });
-                    
+
                     if (!response.ok) {
                         throw new Error(`Translation failed: ${response.status}`);
                     }
-                    
+
                     const result = await response.json();
                     return result.text;
                 } catch (error) {
@@ -1206,50 +1205,50 @@
                     return null;
                 }
             }
-            
+
             // Send form data to server with timeout and retry
             function sendToServer(formData, endpoint = '/api/transcribe', maxRetries = 1) {
                 return new Promise(async (resolve, reject) => {
                     let attempt = 0;
-                    
+
                     while (attempt <= maxRetries) {
                         try {
                             // Create AbortController for timeout
                             const controller = new AbortController();
                             const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
-                            
+
                             const response = await fetch(endpoint, {
                                 method: 'POST',
                                 body: formData,
                                 signal: controller.signal
                             });
-                            
+
                             // Clear timeout
                             clearTimeout(timeoutId);
-                            
+
                             if (!response.ok) {
                                 throw new Error(`Server error: ${response.status}`);
                             }
-                            
+
                             const result = await response.json();
                             resolve(result);
                             return; // Exit the retry loop on success
-                            
+
                         } catch (error) {
                             attempt++;
-                            
+
                             // Log the error
                             console.error(`Attempt ${attempt} failed:`, error);
-                            
+
                             // If it's a timeout or a network error and we have retries left
-                            if ((error.name === 'AbortError' || 
-                                (error.name === 'TypeError' && error.message.includes('Failed to fetch'))) && 
+                            if ((error.name === 'AbortError' ||
+                                (error.name === 'TypeError' && error.message.includes('Failed to fetch'))) &&
                                 attempt <= maxRetries) {
                                 console.log(`Retrying... (${attempt}/${maxRetries})`);
                                 await new Promise(r => setTimeout(r, 1000)); // Wait 1 second before retry
                                 continue;
                             }
-                            
+
                             // If we're out of retries or it's not a retriable error
                             reject(error);
                             return;
@@ -1257,7 +1256,7 @@
                     }
                 });
             }
-            
+
             // Load languages
             loadLanguages().then(languages => {
                 // Set up global language dropdown listener
@@ -1265,51 +1264,51 @@
                 if (globalLanguageSelect) {
                     globalLanguageSelect.addEventListener('change', function() {
                         const selectedLanguage = this.value;
-                        
+
                         // Update the language in the basic mode
                         const basicLanguageSelect = document.getElementById('basicLanguageSelect');
                         if (basicLanguageSelect) {
                             basicLanguageSelect.value = selectedLanguage;
                         }
-                        
+
                         // Update the language in the bilingual mode for speaker 1
                         const languageSelect1 = document.getElementById('languageSelect1');
                         if (languageSelect1) {
                             languageSelect1.value = selectedLanguage;
                         }
-                        
+
                         showStatus(`Input language changed to ${globalLanguageSelect.options[globalLanguageSelect.selectedIndex].text}`, 'info');
                     });
                 }
             });
-            
+
             // Run compatibility check
             checkBrowserCompatibility();
-            
+
             // ========== BASIC MODE IMPLEMENTATION ==========
-            
+
             // Basic mode file upload
             const basicUploadForm = document.getElementById('basicUploadForm');
             basicUploadForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
+
                 const fileInput = document.getElementById('basicAudioFile');
                 if (!fileInput.files.length) {
                     showStatus('Please select a file', 'warning');
                     return;
                 }
-                
+
                 const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
                 formData.append('language', document.getElementById('basicLanguageSelect').value);
                 formData.append('model', document.querySelector('input[name="uploadTranscriptionModel"]:checked').value);
-                
+
                 showStatus('Transcribing your audio...', 'info');
-                
+
                 try {
                     // Get transcription
                     const result = await sendToServer(formData);
-                    
+
                     // Update transcript
                     document.getElementById('basicTranscript').innerHTML = `
                         <div class="d-flex justify-content-between align-items-center">
@@ -1320,7 +1319,7 @@
                         </div>
                     `;
                     feather.replace(); // Render the new icon
-                    
+
                     // Reattach event listener for play button
                     document.getElementById('basicPlayTranscriptButton').addEventListener('click', () => {
                         const text = result.text;
@@ -1330,11 +1329,11 @@
                             showStatus('No transcript to play', 'warning');
                         }
                     });
-                    
+
                     showStatus('Transcription complete!', 'success');
                 } catch (error) {
                     console.error('Upload error:', error);
-                    
+
                     // User-friendly error messages
                     if (error.name === 'AbortError') {
                         showStatus('The request took too long to complete. Please try with a smaller file or check your connection.', 'warning');
@@ -1345,54 +1344,54 @@
                     }
                 }
             });
-            
+
             // Basic mode copy buttons
             document.getElementById('basicCopyTranscriptButton').addEventListener('click', () => {
                 const transcriptElement = document.getElementById('basicTranscript');
                 const textElement = transcriptElement.querySelector('div.d-flex > div:first-child');
                 const text = textElement ? textElement.textContent : transcriptElement.textContent;
-                
+
                 if (text === 'Transcribed text will appear here...') {
                     showStatus('No text to copy', 'warning');
                     return;
                 }
-                
+
                 copyTextToClipboard(text, 'Transcript copied to clipboard!');
             });
-            
+
             // Basic mode play buttons
             document.getElementById('basicPlayTranscriptButton').addEventListener('click', () => {
                 const transcriptElement = document.getElementById('basicTranscript');
                 const textElement = transcriptElement.querySelector('div.d-flex > div:first-child');
                 let text = '';
-                
+
                 if (textElement) {
                     text = textElement.textContent;
                 } else {
                     const firstChild = transcriptElement.querySelector('div.d-flex > div:first-child');
                     text = firstChild ? firstChild.textContent : transcriptElement.textContent;
                 }
-                
+
                 if (text && text !== 'Transcribed text will appear here...') {
                     speakText(text, document.getElementById('basicLanguageSelect').value);
                 } else {
                     showStatus('No transcript to play', 'warning');
                 }
             });
-            
+
             // Basic mode recording
             const basicRecordButton = document.getElementById('basicRecordButton');
             const basicRecordingStatus = document.getElementById('basicRecordingStatus');
             let basicRecording = null;
             let basicIsRecording = false;
-            
+
             basicRecordButton.addEventListener('click', async () => {
                 // If not recording, start recording
                 if (!basicIsRecording) {
                     try {
                         basicRecordingStatus.textContent = 'Recording in progress...';
                         basicIsRecording = true;
-                        
+
                         // Start recording using the enhanced function with button reference
                         basicRecording = await startRecording({
                             recordButton: basicRecordButton
@@ -1405,23 +1404,23 @@
                     }
                 } else {
                     // Stop recording
-                    if (basicRecording && basicRecording.mediaRecorder && 
+                    if (basicRecording && basicRecording.mediaRecorder &&
                         basicRecording.mediaRecorder.state !== 'inactive') {
-                        
+
                         basicRecordingStatus.textContent = 'Processing...';
-                        
+
                         try {
                             // Stop the media recorder
                             basicRecording.mediaRecorder.stop();
-                            
+
                             // Stop all tracks in the stream
                             basicRecording.stream.getTracks().forEach(track => track.stop());
-                            
+
                             // Prepare form data
                             const formData = new FormData();
                             formData.append('language', document.getElementById('basicLanguageSelect').value);
                             formData.append('model', document.querySelector('input[name="transcriptionModel"]:checked').value);
-                            
+
                             // Process the recorded audio after a short delay to ensure all data is collected
                             setTimeout(async () => {
                                 try {
@@ -1431,13 +1430,13 @@
                                         basicRecording.mediaRecorder.mimeType,
                                         formData
                                     );
-                                    
+
                                     // Show transcribing status
                                     showStatus('Transcribing your recording...', 'info');
-                                    
+
                                     // Send to server
                                     const result = await sendToServer(processedFormData);
-                                    
+
                                     if (result.text) {
                                         // Update transcript
                                         document.getElementById('basicTranscript').innerHTML = `
@@ -1449,12 +1448,12 @@
                                             </div>
                                         `;
                                         feather.replace(); // Render the new icon
-                                        
+
                                         // Reattach event listener for play button
                                         document.getElementById('basicPlayTranscriptButton').addEventListener('click', () => {
                                             speakText(result.text, document.getElementById('basicLanguageSelect').value);
                                         });
-                                        
+
                                         showStatus('Transcription complete!', 'success');
                                     } else if (result.error) {
                                         console.error('Server error:', result.error);
@@ -1464,7 +1463,7 @@
                                     }
                                 } catch (error) {
                                     console.error('Processing error:', error);
-                                    
+
                                     if (error.message === 'No audio data recorded') {
                                         showStatus('No audio data recorded. Please try again and speak louder.', 'warning');
                                     } else if (error.name === 'AbortError') {
@@ -1475,12 +1474,12 @@
                                         showStatus(`Error: ${error.message}`, 'danger');
                                     }
                                 }
-                                
+
                                 // Reset UI
                                 basicRecordButton.classList.remove('recording');
                                 basicRecordingStatus.textContent = 'Click to start recording';
                             }, 500); // Short delay to ensure all data is collected
-                            
+
                         } catch (error) {
                             console.error('Error stopping recording:', error);
                             showStatus('Error processing recording. Please try again.', 'danger');
@@ -1488,13 +1487,13 @@
                             basicRecordingStatus.textContent = 'Click to start recording';
                         }
                     }
-                    
+
                     basicIsRecording = false;
                 }
             });
-            
+
             // ========== BILINGUAL MODE IMPLEMENTATION ==========
-            
+
             // Initialize speakers for the bilingual mode
             const speakers = [
                 {
@@ -1503,15 +1502,17 @@
                     modelSelect: document.getElementById('modelSelect1'),
                     recordButton: document.getElementById('recordButton1'),
                     recordingStatus: document.getElementById('recordingStatus1'),
-                    transcript: document.getElementById('transcript1'),
-                    translation: document.getElementById('translation1'),
-                    playButton: document.getElementById('playTranscript1Button'),
+                    transcriptElement: document.getElementById('transcript1'),
+                    translationElement: document.getElementById('translation1'),
+                    playTranscriptButton: document.getElementById('playTranscript1Button'),
+                    copyTranscriptButton: document.getElementById('copyTranscript1Button'),
                     playTranslationButton: document.getElementById('playTranslation1Button'),
-                    copyButton: document.getElementById('copyTranscript1Button'),
-                    enableTTS: document.getElementById('enableTTS1'),
-                    recording: null,
+                    copyTranslationButton: document.getElementById('copyTranslation1Button'), // Desktop copy button
+                    copyTranslationMobileButton: document.getElementById('copyTranslationMobile1Button'), // Mobile copy button
+                    enableTTSCheckbox: document.getElementById('enableTTS1'),
                     isRecording: false,
-                    partnerId: 2  // The ID of the other speaker
+                    mediaRecorder: null,
+                    audioChunks: []
                 },
                 {
                     id: 2,
@@ -1519,32 +1520,38 @@
                     modelSelect: document.getElementById('modelSelect2'),
                     recordButton: document.getElementById('recordButton2'),
                     recordingStatus: document.getElementById('recordingStatus2'),
-                    transcript: document.getElementById('transcript2'),
-                    translation: document.getElementById('translation2'),
-                    playButton: document.getElementById('playTranscript2Button'),
+                    transcriptElement: document.getElementById('transcript2'),
+                    translationElement: document.getElementById('translation2'),
+                    playTranscriptButton: document.getElementById('playTranscript2Button'),
+                    copyTranscriptButton: document.getElementById('copyTranscript2Button'),
                     playTranslationButton: document.getElementById('playTranslation2Button'),
-                    copyButton: document.getElementById('copyTranscript2Button'),
-                    enableTTS: document.getElementById('enableTTS2'),
-                    recording: null,
+                    copyTranslationButton: document.getElementById('copyTranslation2Button'), // Desktop copy button
+                    copyTranslationMobileButton: document.getElementById('copyTranslationMobile2Button'), // Mobile copy button
+                    enableTTSCheckbox: document.getElementById('enableTTS2'),
                     isRecording: false,
-                    partnerId: 1  // The ID of the other speaker
+                    mediaRecorder: null,
+                    audioChunks: []
                 }
             ];
-            
-            // Configure recording for both speakers
+
+            // Add event listeners for bilingual mode record buttons
             speakers.forEach(speaker => {
-                // Record button functionality
                 speaker.recordButton.addEventListener('click', async () => {
-                    // If not recording, start recording
                     if (!speaker.isRecording) {
+                        // Start recording
                         try {
                             speaker.recordingStatus.textContent = 'Recording in progress...';
                             speaker.isRecording = true;
-                            
+                            speaker.recordButton.classList.add('recording');
+
                             // Start recording using the enhanced function with button reference
-                            speaker.recording = await startRecording({
+                            const recording = await startRecording({
                                 recordButton: speaker.recordButton
                             });
+                            speaker.mediaRecorder = recording.mediaRecorder;
+                            speaker.audioChunks = recording.audioChunks;
+                            speaker.stream = recording.stream;
+
                         } catch (error) {
                             // Error already handled by handleMicrophoneError
                             speaker.recordButton.classList.remove('recording');
@@ -1553,215 +1560,184 @@
                         }
                     } else {
                         // Stop recording
-                        if (speaker.recording && speaker.recording.mediaRecorder && 
-                            speaker.recording.mediaRecorder.state !== 'inactive') {
-                            
+                        if (speaker.mediaRecorder && speaker.mediaRecorder.state !== 'inactive') {
                             speaker.recordingStatus.textContent = 'Processing...';
-                            
+
                             try {
                                 // Stop the media recorder
-                                speaker.recording.mediaRecorder.stop();
-                                
+                                speaker.mediaRecorder.stop();
+
                                 // Stop all tracks in the stream
-                                speaker.recording.stream.getTracks().forEach(track => track.stop());
-                                
-                                // Get the partner's language for translation
-                                const partnerId = speaker.partnerId;
-                                const partnerLang = document.getElementById(`languageSelect${partnerId}`).value;
-                                
+                                speaker.stream.getTracks().forEach(track => track.stop());
+
                                 // Prepare form data
                                 const formData = new FormData();
                                 formData.append('language', speaker.languageSelect.value);
                                 formData.append('model', speaker.modelSelect.value);
-                                
-                                // Process the recorded audio after a short delay
+
+                                // Process the recorded audio after a short delay to ensure all data is collected
                                 setTimeout(async () => {
                                     try {
                                         // Process audio data
                                         const processedFormData = await processAudio(
-                                            speaker.recording.audioChunks,
-                                            speaker.recording.mediaRecorder.mimeType,
+                                            speaker.audioChunks,
+                                            speaker.mediaRecorder.mimeType,
                                             formData
                                         );
-                                        
+
                                         // Show transcribing status
                                         showStatus(`Transcribing Speaker ${speaker.id}'s recording...`, 'info');
-                                        
+
                                         // Send to server
                                         const result = await sendToServer(processedFormData);
-                                        
+
                                         if (result.text) {
                                             // Update transcript
-                                            speaker.transcript.textContent = result.text;
-                                            
-                                            // Get the partner speaker
-                                            const partnerSpeaker = speakers.find(s => s.id === partnerId);
-                                            
+                                            speaker.transcriptElement.innerHTML = result.text;
+
                                             // Translate the transcript
-                                            showStatus('Translating...', 'info');
-                                            const translatedText = await translateText(result.text, partnerLang);
-                                            
-                                            if (translatedText) {
-                                                // Update partner's translation display
-                                                partnerSpeaker.translation.innerHTML = `
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <div>${translatedText}</div>
-                                                        <div>
-                                                            <button class="btn btn-sm btn-outline-primary btn-mobile-friendly" id="playTranslation${partnerId}Button" title="Play">
-                                                                <i data-feather="play"></i>
-                                                            </button>
-                                                            <button id="copyTranslationMobile${partnerId}Button" class="btn btn-sm btn-outline-secondary d-inline-block d-md-none" title="Copy"><i data-feather="copy"></i></button>
+                                            const targetLang = speaker.id === 1 ? speakers[1].languageSelect.value : speakers[0].languageSelect.value;
+                                            if (targetLang) {
+                                                showStatus(`Translating Speaker ${speaker.id}'s transcript...`, 'info');
+                                                const translatedText = await translateText(result.text, targetLang);
+                                                if (translatedText) {
+                                                    speaker.translationElement.innerHTML = `
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div>${translatedText}</div>
                                                         </div>
-                                                    </div>
-                                                `;
-                                                feather.replace(); // Render the new icons
-                                                
-                                                // Re-attach event listener for play translation button
-                                                document.getElementById(`playTranslation${partnerId}Button`).addEventListener('click', () => {
-                                                    speakText(translatedText, partnerLang);
-                                                });
-                                                
-                                                // Play TTS if enabled for the partner
-                                                if (partnerSpeaker.enableTTS.checked) {
-                                                    speakText(translatedText, partnerLang);
+                                                    `;
+                                                    // Auto-play translation if enabled
+                                                    if (speaker.enableTTSCheckbox.checked) {
+                                                        speakText(translatedText, targetLang);
+                                                    }
+                                                    showStatus(`Translation for Speaker ${speaker.id} complete!`, 'success');
+                                                } else {
+                                                    speaker.translationElement.innerHTML = 'Translation failed.';
+                                                    showStatus(`Translation for Speaker ${speaker.id} failed.`, 'danger');
                                                 }
-                                                
-                                                showStatus('Transcription and translation complete!', 'success');
                                             } else {
-                                                showStatus('Transcription complete, but translation failed.', 'warning');
+                                                speaker.translationElement.innerHTML = 'No translation language selected.';
+                                                showStatus('No translation language selected.', 'warning');
                                             }
+
+                                            showStatus(`Transcription for Speaker ${speaker.id} complete!`, 'success');
                                         } else if (result.error) {
                                             console.error('Server error:', result.error);
-                                            showStatus(`Error: ${result.error}`, 'danger', true);
+                                            showStatus(`Error for Speaker ${speaker.id}: ${result.error}`, 'danger', true);
                                         } else {
-                                            showStatus('Transcription failed. Please try again.', 'danger');
+                                            showStatus(`Transcription for Speaker ${speaker.id} failed. Please try again.`, 'danger');
                                         }
                                     } catch (error) {
                                         console.error('Processing error:', error);
-                                        
+
                                         if (error.message === 'No audio data recorded') {
-                                            showStatus('No audio data recorded. Please try again and speak louder.', 'warning');
+                                            showStatus(`No audio data recorded for Speaker ${speaker.id}. Please try again and speak louder.`, 'warning');
                                         } else if (error.name === 'AbortError') {
-                                            showStatus('Request timed out. Please try a shorter recording or check your connection.', 'warning');
+                                            showStatus(`Request timed out for Speaker ${speaker.id}. Please try a shorter recording or check your connection.`, 'warning');
                                         } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-                                            showStatus('Network error. Please check your internet connection.', 'danger');
+                                            showStatus(`Network error for Speaker ${speaker.id}. Please check your internet connection.`, 'danger');
                                         } else {
-                                            showStatus(`Error: ${error.message}`, 'danger');
+                                            showStatus(`Error for Speaker ${speaker.id}: ${error.message}`, 'danger');
                                         }
                                     }
-                                    
+
                                     // Reset UI
                                     speaker.recordButton.classList.remove('recording');
                                     speaker.recordingStatus.textContent = 'Click to start recording';
                                 }, 500); // Short delay to ensure all data is collected
-                                
+
                             } catch (error) {
                                 console.error('Error stopping recording:', error);
-                                showStatus('Error processing recording. Please try again.', 'danger');
+                                showStatus(`Error processing recording for Speaker ${speaker.id}. Please try again.`, 'danger');
                                 speaker.recordButton.classList.remove('recording');
                                 speaker.recordingStatus.textContent = 'Click to start recording';
                             }
                         }
-                        
+
                         speaker.isRecording = false;
                     }
                 });
-                
-                // Copy button functionality for original transcript
-                speaker.copyButton.addEventListener('click', () => {
-                    const text = speaker.transcript.textContent;
-                    if (text === 'Your speech will appear here...') {
-                        showStatus('No text to copy', 'warning');
-                        return;
-                    }
-                    
-                    copyTextToClipboard(text, `Speaker ${speaker.id}'s transcript copied!`);
-                });
-                
-                // Copy buttons for translations (both desktop and mobile versions)
-                const desktopCopyTranslationBtn = document.getElementById(`copyTranslation${speaker.id}Button`);
-                const mobileCopyTranslationBtn = document.getElementById(`copyTranslationMobile${speaker.id}Button`);
-                
-                // Function to handle copying translation for this speaker
-                const copyTranslationHandler = () => {
-                    // Get the text content properly from the container div
-                    const translationElement = speaker.translation;
-                    const textElement = translationElement.querySelector('div.d-flex > div:first-child');
-                    let translationText = textElement ? textElement.textContent : "";
-                    
-                    if (!translationText || translationText === "Translation will appear here...") {
-                        showStatus('No translation to copy', 'warning');
-                        return;
-                    }
-                    
-                    copyTextToClipboard(translationText, `Speaker ${speaker.id}'s translation copied!`);
-                };
-                
-                // Add event listeners to both desktop and mobile copy buttons
-                desktopCopyTranslationBtn.addEventListener('click', copyTranslationHandler);
-                mobileCopyTranslationBtn.addEventListener('click', copyTranslationHandler);
-                
-                // Play original transcript button functionality
-                speaker.playButton.addEventListener('click', () => {
-                    const text = speaker.transcript.textContent;
-                    if (text && text !== 'Your speech will appear here...') {
-                        speakText(text, speaker.languageSelect.value);
-                    } else {
-                        showStatus('No transcript to play', 'warning');
-                    }
-                });
-                
-                // Play translation button functionality
-                speaker.playTranslationButton.addEventListener('click', () => {
-                    // Get the text content properly from the container div
-                    const translationElement = speaker.translation;
-                    const textElement = translationElement.querySelector('div.d-flex > div:first-child');
-                    let translationText = textElement ? textElement.textContent : "";
-                    
-                    if (!translationText || translationText === "Translation will appear here...") {
-                        showStatus('No translation to play', 'warning');
-                        return;
-                    }
-                    
-                    // Get partner's language for the translation
-                    const partnerId = speaker.partnerId;
-                    const partnerLang = document.getElementById(`languageSelect${partnerId}`).value;
-                    speakText(translationText, partnerLang);
-                });
+
+                // Add event listeners for bilingual mode play buttons
+                if (speaker.playTranscriptButton) {
+                    speaker.playTranscriptButton.addEventListener('click', () => {
+                        const text = speaker.transcriptElement.textContent;
+                        if (text && text !== 'Your speech will appear here...') {
+                            speakText(text, speaker.languageSelect.value);
+                        } else {
+                            showStatus(`No transcript for Speaker ${speaker.id} to play`, 'warning');
+                        }
+                    });
+                }
+
+                if (speaker.playTranslationButton) {
+                    speaker.playTranslationButton.addEventListener('click', () => {
+                        const textElement = speaker.translationElement.querySelector('div.d-flex > div:first-child');
+                        const text = textElement ? textElement.textContent : speaker.translationElement.textContent;
+
+                        const targetLang = speaker.id === 1 ? speakers[1].languageSelect.value : speakers[0].languageSelect.value;
+
+                        if (text && text !== 'Translation will appear here...' && targetLang) {
+                             speakText(text, targetLang);
+                        } else if (!text || text === 'Translation will appear here...') {
+                            showStatus(`No translation for Speaker ${speaker.id} to play`, 'warning');
+                        } else if (!targetLang) {
+                             showStatus('No translation language selected for playback.', 'warning');
+                        }
+                    });
+                }
+
+
+                // Add event listeners for bilingual mode copy buttons
+                if (speaker.copyTranscriptButton) {
+                    speaker.copyTranscriptButton.addEventListener('click', () => {
+                        const text = speaker.transcriptElement.textContent;
+                         if (text && text !== 'Your speech will appear here...') {
+                            copyTextToClipboard(text, `Speaker ${speaker.id} transcript copied to clipboard!`);
+                        } else {
+                            showStatus(`No transcript for Speaker ${speaker.id} to copy`, 'warning');
+                        }
+                    });
+                }
+
+                 if (speaker.copyTranslationButton) {
+                    speaker.copyTranslationButton.addEventListener('click', () => {
+                        const textElement = speaker.translationElement.querySelector('div.d-flex > div:first-child');
+                        const text = textElement ? textElement.textContent : speaker.translationElement.textContent;
+                         if (text && text !== 'Translation will appear here...') {
+                            copyTextToClipboard(text, `Speaker ${speaker.id} translation copied to clipboard!`);
+                        } else {
+                            showStatus(`No translation for Speaker ${speaker.id} to copy`, 'warning');
+                        }
+                    });
+                }
+
+                 if (speaker.copyTranslationMobileButton) {
+                    speaker.copyTranslationMobileButton.addEventListener('click', () => {
+                        const textElement = speaker.translationElement.querySelector('div.d-flex > div:first-child');
+                        const text = textElement ? textElement.textContent : speaker.translationElement.textContent;
+                         if (text && text !== 'Translation will appear here...') {
+                            copyTextToClipboard(text, `Speaker ${speaker.id} translation copied to clipboard!`);
+                        } else {
+                            showStatus(`No translation for Speaker ${speaker.id} to copy`, 'warning');
+                        }
+                    });
+                }
             });
 
+            // Helper function to copy text to clipboard
+            function copyTextToClipboard(text, successMessage = 'Text copied to clipboard!') {
+                navigator.clipboard.writeText(text).then(() => {
+                    showStatus(successMessage, 'success');
+                }).catch(err => {
+                    console.error('Could not copy text: ', err);
+                    showStatus('Failed to copy text to clipboard.', 'danger');
+                });
+            }
+
+            // Initial feather icon replacement
             feather.replace();
         });
-
-        // Helper function for copying text to clipboard
-        function copyTextToClipboard(text, successMessage) {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text)
-                    .then(() => showStatus(successMessage, 'success'))
-                    .catch(err => showStatus('Failed to copy: ' + err, 'danger'));
-            } else {
-                // Fallback for older browsers
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                textarea.style.position = 'fixed';
-                document.body.appendChild(textarea);
-                textarea.focus();
-                textarea.select();
-                
-                try {
-                    const successful = document.execCommand('copy');
-                    if (successful) {
-                        showStatus(successMessage, 'success');
-                    } else {
-                        showStatus('Copy failed. Please try selecting and copying manually.', 'warning');
-                    }
-                } catch (err) {
-                    showStatus('Copy failed. Please try selecting and copying manually.', 'warning');
-                }
-                
-                document.body.removeChild(textarea);
-            }
-        }
     </script>
 </body>
 </html>

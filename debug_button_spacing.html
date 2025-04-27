@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Button Spacing</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        /* Extracted CSS from index.html */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+            padding: 20px; /* Added padding for visibility */
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #4e5afc;
+        }
+        .subtitle {
+            color: #666;
+            margin-top: 0.5rem;
+        }
+        .mode-switch {
+            margin-bottom: 1.5rem;
+        }
+        .recorder-container {
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        .recordButton {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background-color: #4e5afc;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        .recordButton:hover {
+            background-color: #3949db;
+            transform: scale(1.05);
+        }
+        .recordButton i {
+            font-size: 2rem;
+        }
+        .recordButton.recording {
+            animation: pulse 1.5s infinite;
+            background-color: #dc3545;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .language-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .transcript, .translation {
+            min-height: 100px;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            height: 100%;
+        }
+        #uploadForm {
+            margin-top: 1rem;
+        }
+        .play-btn {
+            margin-left: 0.5rem;
+            padding: 0.2rem 0.5rem;
+        }
+
+        /* Mobile-friendly button styles */
+        .btn-mobile-friendly {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 70px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-mobile-friendly i {
+            margin-right: 5px;
+        }
+        .speaker-card {
+            height: 100%;
+        }
+        .speaker-1 .card-header {
+            background-color: #e6f3ff;
+        }
+        .speaker-2 .card-header {
+            background-color: #e6fff0;
+        }
+        .about-section i {
+            transition: transform 0.3s ease;
+        }
+        .about-section button[aria-expanded="true"] i {
+            transform: rotate(180deg);
+        }
+        .model-toggle {
+            margin-bottom: 0.75rem;
+        }
+        .model-toggle h6 {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        .model-toggle .form-check {
+            margin-right: 1.5rem;
+        }
+        .info-icon {
+            cursor: pointer;
+            color: #4e5afc;
+            margin-left: 5px;
+        }
+        .section-divider {
+            height: 2px;
+            background-color: #e9ecef;
+            margin: 2rem 0;
+        }
+
+        /* Responsive adjustments */
+        @media (min-width: 992px) {
+            .transcript-container {
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+            }
+            .transcript-card-body {
+                display: flex;
+                flex: 1;
+            }
+            .controls-column {
+                padding-right: 2rem;
+                border-right: 1px solid #e2e8f0;
+            }
+        }
+
+        @media (max-width: 991px) {
+            .controls-column {
+                margin-bottom: 2rem;
+                padding-bottom: 2rem;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            .header {
+                flex-direction: column;
+                align-items: center;
+            }
+            .logo-container {
+                margin-bottom: 1rem;
+                text-align: center;
+            }
+            .language-selector {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+        }
+
+        .translation-buttons {
+            display: flex;
+            align-items: center;
+            gap: 1rem; /* Increased spacing between buttons */
+        }
+
+        /* Additional mobile-specific adjustments */
+        @media (max-width: 576px) {
+            .language-selector {
+                flex-direction: column;
+                align-items: center;
+            }
+            select.form-select-sm {
+                width: 100% !important;
+                margin-right: 0 !important;
+                margin-bottom: 10px;
+            }
+            .play-btn {
+                padding: 0.15rem 0.4rem;
+                font-size: 0.85rem;
+            }
+            .btn-sm {
+                padding: 0.2rem 0.5rem;
+                font-size: 0.875rem;
+            }
+            .transcript, .translation {
+                min-height: 80px;
+                padding: 0.5rem;
+                width: 100%;
+                display: block;
+                overflow-wrap: break-word;
+            }
+            /* Improve translation visibility on mobile */
+            #basicTranslationCard {
+                display: block !important;
+                width: 100%;
+                margin-top: 1rem;
+            }
+            .d-flex.justify-content-between.align-items-start {
+                display: flex !important;
+                width: 100%;
+            }
+            .d-flex.justify-content-between.align-items-start > div {
+                flex: 1;
+                min-width: 0;
+                overflow-wrap: break-word;
+                word-break: break-word;
+            }
+            /* Ensure proper button layout in bilingual mode for mobile */
+            .card-header .d-flex.justify-content-between.align-items-center {
+                flex-wrap: nowrap !important;
+            }
+
+            /* Make copy button appear next to play button */
+            #copyTranscript1Button,
+            #copyTranscript2Button {
+                display: inline-flex !important;
+                margin-left: 0.25rem !important;
+                min-width: 40px;
+                padding: 0.25rem 0.5rem;
+            }
+
+            /* Make translation header and buttons display correctly */
+            .translation-header {
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                margin-top: 0.75rem;
+                margin-bottom: 0.5rem;
+            }
+
+            /* Make the translation layout better on mobile */
+            .translation {
+                position: relative;
+            }
+
+            /* Make buttons more tappable on mobile */
+            .btn-mobile-friendly {
+                min-width: 65px !important;
+                font-size: 0.9rem !important;
+                padding: 0.3rem 0.5rem !important;
+                font-weight: 500 !important;
+            }
+
+            /* Ensure buttons in transcript rows are properly aligned */
+            .d-flex.justify-content-between.align-items-start {
+                align-items: center !important;
+            }
+
+            /* Better spacing between button and text */
+            .btn-mobile-friendly span {
+                margin-left: 5px !important;
+                display: inline-block !important;
+            }
+
+            /* Make sure the play buttons have priority in the flex layout */
+            .transcript div.d-flex button,
+            .translation div.d-flex button {
+                flex-shrink: 0 !important;
+            }
+        }
+
+        /* Tighter spacing for card elements */
+        .card-body {
+            padding: 1rem;
+        }
+
+        /* Reduce spacing around transcript heading */
+        h6.transcript-heading {
+            margin-bottom: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Make dividers between sections thinner */
+        .controls-column {
+            padding-bottom: 0.75rem;
+        }
+
+        /* Reduce space between status and button */
+        #recordingStatus {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Ensure translations are properly visible on mobile */
+        #basicTranslationCard .transcript {
+            width: 100%;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        /* NEW CSS FIXES FOR RESPONSIVE DESIGN ISSUES */
+
+        /* Improve translation visibility on mobile */
+        @media (max-width: 576px) {
+            #basicTranslationCard,
+            .translation-header,
+            .translation {
+                display: block !important;
+                width: 100%;
+                margin-top: 0.5rem;
+            }
+
+            /* Make buttons more tappable on mobile */
+            .btn-mobile-friendly {
+                min-width: 40px;
+                min-height: 34px;
+                padding: 0.25rem 0.5rem;
+                margin-left: 8px;
+            }
+
+            /* Ensure transcript and translation containers are always visible */
+            .transcript, .translation {
+                min-height: 60px;
+                padding: 0.75rem;
+                width: 100%;
+                display: block !important;
+                overflow-wrap: break-word;
+                word-break: break-word;
+                margin-bottom: 1rem;
+            }
+
+            /* Fix flex layout issues on small screens */
+            .d-flex.justify-content-between.align-items-start {
+                display: flex !important;
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            /* Ensure text content takes necessary space */
+            .d-flex.justify-content-between.align-items-start > div:first-child {
+                flex: 1;
+                min-width: 70%;
+                padding-right: 8px;
+            }
+
+            /* Make play buttons more visible on mobile */
+            #basicPlayTranscriptButton,
+            #basicPlayTranslationButton,
+            #playTranscript1Button,
+            #playTranscript2Button,
+            #playTranslation1Button,
+            #playTranslation2Button {
+                min-width: 40px;
+                min-height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        /* Ensure translation visibility at all screen sizes */
+        #basicTranslationCard .transcript,
+        .translation-header,
+        .translation {
+            display: block;
+        }
+
+
+        /* Fix for translation elements always being visible */
+        #basicTranslationCard {
+            display: block;
+        }
+
+        /* Fix spacing for buttons on very small screens */
+        @media (max-width: 320px) {
+            .btn-mobile-friendly {
+                margin-left: 4px;
+                min-width: 32px;
+                padding: 0.15rem 0.3rem;
+            }
+
+            .d-flex.justify-content-between.align-items-start {
+                gap: 4px;
+            }
+        }
+
+        /* Make sure content is readable in translation areas */
+        .translation div:first-child,
+        .transcript div:first-child {
+            word-break: break-word;
+            hyphens: auto;
+        }
+
+        /* Make sure the translation copy buttons appear correctly */
+        #copyTranslationMobile1Button,
+        #copyTranslationMobile2Button {
+            min-width: 40px;
+            padding: 0.25rem 0.5rem;
+        }
+
+        /* Better translation headers for desktop */
+        @media (min-width: 768px) {
+            .translation-header {
+                margin-top: 1rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .translation-header h6 {
+                margin-bottom: 0;
+            }
+        }
+
+        /* Better translation layout for mobile */
+        @media (max-width: 767px) {
+            .translation-header h6 {
+                margin-bottom: 0;
+            }
+
+            .translation div.d-flex > div:last-child {
+                display: flex;
+                align-items: center;
+            }
+
+            #playTranslation1Button,
+            #playTranslation2Button {
+            }
+        }
+
+        /* Increase the size of the button icons */
+        .btn-mobile-friendly i {
+            font-size: 1rem !important;
+        }
+
+        #translation1, #translation2 {
+            margin-top: 10px;
+        }
+
+        .translation div.d-flex {
+            align-items: center !important;
+        }
+
+        /* Speaker 1 & 2 initial display */
+        #transcript1, #transcript2 {
+            margin-bottom: 10px;
+        }
+
+        /* Add hover tooltip */
+        [title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 2px 5px;
+            border-radius: 3px;
+            white-space: nowrap;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        [title] {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Minimal HTML for Speaker 1 Output -->
+        <div class="card">
+             <div class="card-header"> <!-- Added for context -->
+                 <h5>Speaker 1</h5>
+             </div>
+            <div class="card-body">
+                <h6>Original:</h6>
+                <div id="transcript1" class="transcript">Original speech...</div>
+                <div class="d-flex justify-content-between align-items-center translation-header">
+                    <h6>Translation:</h6>
+                    <div class="translation-buttons d-flex align-items-center">
+                        <button class="btn btn-sm btn-outline-primary btn-mobile-friendly d-inline-block" id="playTranslation1Button" title="Play">
+                            <i data-feather="play"></i>
+                        </button>
+                        <button id="copyTranslation1Button" class="btn btn-sm btn-outline-secondary d-none d-md-block" title="Copy"><i data-feather="copy"></i></button>
+                        <button id="copyTranslationMobile1Button" class="btn btn-sm btn-outline-secondary d-inline-block d-md-none" title="Copy"><i data-feather="copy"></i></button>
+                    </div>
+                </div>
+                <div id="translation1" class="translation">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>Translation will appear here...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script>
+        feather.replace(); // Render icons
+    </script>
+</body>
+</html>
