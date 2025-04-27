@@ -453,11 +453,6 @@
             margin-bottom: 10px;
         }
 
-        /* Style for copy buttons to match play buttons */
-        .btn-outline-secondary i {
-            margin-right: 0; /* No margin needed if we remove the text */
-        }
-
         /* Add hover tooltip */
         [title]:hover::after {
             content: attr(title);
@@ -506,7 +501,7 @@
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Voice Transcription</h5>
-                    <button id="basicCopyTranscriptButton" class="btn btn-sm btn-outline-secondary" title="Copy"><i class="fas fa-copy"></i></button>
+                    <button id="basicCopyTranscriptButton" class="btn btn-sm btn-outline-secondary" title="Copy"><i data-feather="copy"></i></button>
                 </div>
                 <div class="card-body transcript-card-body p-2">
                     <div class="row h-100">
@@ -666,7 +661,7 @@
                                     <button id="playTranscript1Button" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
                                         <i class="fas fa-play"></i> <span>Play</span>
                                     </button>
-                                    <button id="copyTranscript1Button" class="btn btn-sm btn-outline-secondary" title="Copy"><i class="fas fa-copy"></i></button>
+                                    <button id="copyTranscript1Button" class="btn btn-sm btn-outline-secondary" title="Copy"><i data-feather="copy"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -675,7 +670,7 @@
                             <div id="transcript1" class="transcript">Your speech will appear here...</div>
                             <div class="d-flex justify-content-between align-items-center translation-header">
                                 <h6>Translation:</h6>
-                                <button id="copyTranslation1Button" class="btn btn-sm btn-outline-secondary d-none d-md-block" title="Copy"><i class="fas fa-copy"></i></button>
+                                <button id="copyTranslation1Button" class="btn btn-sm btn-outline-secondary d-none d-md-block" title="Copy"><i data-feather="copy"></i></button>
                             </div>
                             <div id="translation1" class="translation">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -684,7 +679,7 @@
                                         <button class="btn btn-sm btn-outline-primary btn-mobile-friendly" id="playTranslation1Button">
                                             <i class="fas fa-play"></i> <span>Play</span>
                                         </button>
-                                        <button id="copyTranslationMobile1Button" class="btn btn-sm btn-outline-secondary d-inline-block d-md-none" title="Copy"><i class="fas fa-copy"></i></button>
+                                        <button id="copyTranslationMobile1Button" class="btn btn-sm btn-outline-secondary d-inline-block d-md-none" title="Copy"><i data-feather="copy"></i></button>
                                     </div>
                                 </div>
                             </div>
@@ -702,7 +697,7 @@
                                     <button id="playTranscript2Button" class="btn btn-sm btn-outline-primary me-2 btn-mobile-friendly">
                                         <i class="fas fa-play"></i> <span>Play</span>
                                     </button>
-                                    <button id="copyTranscript2Button" class="btn btn-sm btn-outline-secondary" title="Copy"><i class="fas fa-copy"></i></button>
+                                    <button id="copyTranscript2Button" class="btn btn-sm btn-outline-secondary" title="Copy"><i data-feather="copy"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -711,7 +706,7 @@
                             <div id="transcript2" class="transcript">Your speech will appear here...</div>
                             <div class="d-flex justify-content-between align-items-center translation-header">
                                 <h6>Translation:</h6>
-                                <button id="copyTranslation2Button" class="btn btn-sm btn-outline-secondary d-none d-md-block" title="Copy"><i class="fas fa-copy"></i></button>
+                                <button id="copyTranslation2Button" class="btn btn-sm btn-outline-secondary d-none d-md-block" title="Copy"><i data-feather="copy"></i></button>
                             </div>
                             <div id="translation2" class="translation">
                                 <div class="d-flex justify-content-between align-items-center">
@@ -720,7 +715,7 @@
                                         <button class="btn btn-sm btn-outline-primary btn-mobile-friendly" id="playTranslation2Button">
                                             <i class="fas fa-play"></i> <span>Play</span>
                                         </button>
-                                        <button id="copyTranslationMobile2Button" class="btn btn-sm btn-outline-secondary d-inline-block d-md-none" title="Copy"><i class="fas fa-copy"></i></button>
+                                        <button id="copyTranslationMobile2Button" class="btn btn-sm btn-outline-secondary d-inline-block d-md-none" title="Copy"><i data-feather="copy"></i></button>
                                     </div>
                                 </div>
                             </div>
@@ -779,6 +774,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://kit.fontawesome.com/4b1c7a602f.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Check browser compatibility
@@ -1607,7 +1603,7 @@
                                                             <button class="btn btn-sm btn-outline-primary btn-mobile-friendly" id="playTranslation${partnerId}Button">
                                                                 <i class="fas fa-play"></i> <span>Play</span>
                                                             </button>
-                                                            <button id="copyTranslationMobile${partnerId}Button" class="btn btn-sm btn-outline-secondary d-inline-block d-md-none" title="Copy"><i class="fas fa-copy"></i></button>
+                                                            <button id="copyTranslationMobile${partnerId}Button" class="btn btn-sm btn-outline-secondary d-inline-block d-md-none" title="Copy"><i data-feather="copy"></i></button>
                                                         </div>
                                                     </div>
                                                 `;
@@ -1725,6 +1721,8 @@
                     speakText(translationText, partnerLang);
                 });
             });
+
+            feather.replace();
         });
 
         // Helper function for copying text to clipboard
