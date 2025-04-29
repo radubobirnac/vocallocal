@@ -437,6 +437,128 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
   
+// ========================
+  // Theme Switcher Logic
+  // ========================
+  const themeToggleButton = document.getElementById('theme-toggle-btn');
+  const themeOptionsContainer = document.getElementById('theme-options');
+  const themeOptionButtons = document.querySelectorAll('.theme-option');
+  const htmlElement = document.documentElement; // Get the <html> element
+
+  // Function to apply the selected theme
+  function applyTheme(theme) {
+    let effectiveTheme = theme;
+
+    // Determine the actual theme if 'system' is selected
+    if (theme === 'system') {
+      effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    // Apply the theme class to the <html> element
+    htmlElement.setAttribute('data-theme', effectiveTheme);
+
+    // Update the toggle button icon
+    const icon = themeToggleButton.querySelector('i');
+    if (theme === 'light') {
+      icon.className = 'fas fa-sun';
+    } else if (theme === 'dark') {
+      icon.className = 'fas fa-moon';
+    } else { // system
+      icon.className = 'fas fa-desktop';
+    }
+
+    // Update active state in dropdown
+    themeOptionButtons.forEach(btn => {
+      if (btn.getAttribute('data-theme') === theme) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    // Save the user's *chosen* theme preference (light, dark, or system)
+    try {
+      localStorage.setItem('vocal-local-theme', theme);
+    } catch (e) {
+      console.warn('LocalStorage is not available. Theme preference will not be saved.');
+    }
+    
+    console.log(`Applied theme: ${effectiveTheme} (User choice: ${theme})`);
+  }
+
+  // Function to load the saved theme or default to system
+  function loadTheme() {
+    let savedTheme = 'system'; // Default to system
+    try {
+      savedTheme = localStorage.getItem('vocal-local-theme') || 'system';
+    } catch (e) {
+      console.warn('LocalStorage is not available. Defaulting to system theme.');
+    }
+    applyTheme(savedTheme);
+  }
+
+  // Event listener for the theme toggle button
+  if (themeToggleButton && themeOptionsContainer) {
+    themeToggleButton.addEventListener('click', (event) => {
+      event.stopPropagation(); // Prevent click from immediately closing dropdown
+      const isShown = themeOptionsContainer.classList.toggle('show');
+      themeOptionsContainer.style.display = isShown ? 'block' : 'none';
+    });
+  }
+
+  // Event listeners for theme option buttons
+  themeOptionButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const selectedTheme = button.getAttribute('data-theme');
+      applyTheme(selectedTheme);
+      themeOptionsContainer.classList.remove('show'); // Hide dropdown after selection
+      themeOptionsContainer.style.display = 'none';
+    });
+  });
+
+  // Listener to close dropdown when clicking outside
+  document.addEventListener('click', (event) => {
+    if (themeOptionsContainer && themeOptionsContainer.classList.contains('show') && !themeToggleButton.contains(event.target) && !themeOptionsContainer.contains(event.target)) {
+      themeOptionsContainer.classList.remove('show');
+      themeOptionsContainer.style.display = 'none';
+    }
+  });
+
+  // Listener for changes in system color scheme preference
+  const systemColorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  
+  try {
+      systemColorSchemeQuery.addEventListener('change', () => {
+          let currentPreference = 'system';
+          try {
+              currentPreference = localStorage.getItem('vocal-local-theme') || 'system';
+          } catch (e) { /* Ignore localStorage error here */ }
+          
+          // Only re-apply if the user's choice is 'system'
+          if (currentPreference === 'system') {
+              applyTheme('system');
+          }
+      });
+  } catch (e) {
+      // Fallback for older browsers that use addListener
+      try {
+          systemColorSchemeQuery.addListener(() => {
+              let currentPreference = 'system';
+              try {
+                  currentPreference = localStorage.getItem('vocal-local-theme') || 'system';
+              } catch (e) { /* Ignore localStorage error here */ }
+              
+              if (currentPreference === 'system') {
+                  applyTheme('system');
+              }
+          });
+      } catch (err) {
+          console.error("Error adding listener for system color scheme changes:", err);
+      }
+  }
+
+  // Load the theme when the DOM is ready
+  loadTheme();
   // ========================
   // Initialize Application
   // ========================

@@ -21,26 +21,66 @@
   --radius: 0.5rem;
 }
 
-.dark {
+html[data-theme='dark'] {
   --background: 222.2 84% 4.9%;
   --foreground: 210 40% 98%;
   --card: 222.2 84% 4.9%;
   --card-foreground: 210 40% 98%;
   --popover: 222.2 84% 4.9%;
   --popover-foreground: 210 40% 98%;
-  --primary: 262 83% 67%;
-  --primary-foreground: 210 40% 98%;
+  --primary: 262 83% 67%; /* Keep primary color consistent */
+  --primary-foreground: 210 40% 98%; /* Ensure contrast */
   --secondary: 217.2 32.6% 17.5%;
   --secondary-foreground: 210 40% 98%;
   --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
+  --muted-foreground: 210 40% 85%; /* Increased lightness for dark mode contrast */
   --accent: 217.2 32.6% 17.5%;
   --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
+  --destructive: 0 72% 51%; /* Adjusted for better visibility */
   --destructive-foreground: 210 40% 98%;
   --border: 217.2 32.6% 17.5%;
   --input: 217.2 32.6% 17.5%;
-  --ring: 212.7 26.8% 83.9%;
+  --ring: 262 83% 67%; /* Match primary for focus rings */
+
+  /* Dark theme specific overrides */
+  .status-info {
+    background-color: hsl(210, 100%, 15%);
+    color: hsl(210, 100%, 85%);
+    border-color: hsl(210, 100%, 25%);
+  }
+  .status-success {
+    background-color: hsl(150, 100%, 15%);
+    color: hsl(150, 100%, 85%);
+    border-color: hsl(150, 100%, 25%);
+  }
+  .status-warning {
+    background-color: hsl(40, 100%, 15%);
+    color: hsl(40, 100%, 85%);
+    border-color: hsl(40, 100%, 25%);
+  }
+  .status-error {
+    background-color: hsl(0, 100%, 20%);
+    color: hsl(0, 100%, 85%);
+    border-color: hsl(0, 100%, 30%);
+  }
+  .speaker-card-1 .card-header {
+    background-color: hsla(240, 100%, 20%, 0.3);
+  }
+  .speaker-card-2 .card-header {
+    background-color: hsla(170, 100%, 20%, 0.3);
+  }
+  .form-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='hsl(210 40% 98%)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  }
+  .form-checkbox-input:checked::after {
+     border-color: hsl(var(--primary-foreground)); /* Ensure checkmark is visible */
+  }
+  #about-toggle i {
+    color: hsl(var(--foreground)); /* Ensure chevron is visible */
+  }
+  .record-button.recording {
+    background-color: hsl(var(--destructive)); /* Ensure recording button uses dark destructive */
+  }
 }
 
 * {
@@ -506,4 +546,147 @@ p {
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   border-width: 0;
+}
+/* Toggle Switch Styles */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px; /* Adjusted width */
+  height: 28px; /* Adjusted height */
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px; /* Adjusted size */
+  width: 20px; /* Adjusted size */
+  left: 4px; /* Adjusted position */
+  bottom: 4px; /* Adjusted position */
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: hsl(var(--primary)); /* Use primary color */
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px hsl(var(--primary));
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px); /* Adjusted translation */
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 28px; /* Adjusted for height */
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+/* Theme Selector Styles */
+.theme-selector {
+  position: relative;
+  display: inline-block;
+}
+
+.theme-options-dropdown {
+  display: none; /* Hidden by default */
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem); /* Position below the button */
+  background-color: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  min-width: 150px; /* Ensure enough width */
+  padding: 0.5rem 0;
+}
+
+.theme-options-dropdown.show {
+  display: block; /* Show when active */
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* Space between icon and text */
+  background: none;
+  border: none;
+  color: hsl(var(--popover-foreground));
+  padding: 0.5rem 1rem;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.2s ease;
+}
+
+.theme-option i {
+  width: 1em; /* Align icons */
+  text-align: center;
+}
+
+.theme-option:hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+/* Style for the active theme button */
+.theme-option.active {
+  font-weight: 600;
+  color: hsl(var(--primary));
+}
+
+/* Ensure toggle button icon color matches theme */
+#theme-toggle-btn i {
+  color: hsl(var(--foreground));
+}
+
+#theme-toggle-btn:hover i {
+  color: hsl(var(--accent-foreground));
+}
+
+/* Adjust header layout slightly if needed */
+header .flex.items-center.gap-6 {
+  align-items: center; /* Vertically align items in the header controls */
+}
+
+/* Ensure About toggle button blends with card header and text is visible */
+#about-toggle {
+  background-color: transparent;
+  border: none;
+  padding: 0; /* Remove default button padding if necessary */
+  color: inherit; /* Inherit color from card-header/card */
+}
+
+#about-toggle h2.card-title {
+  color: hsl(var(--card-foreground)); /* Explicitly set text color */
+  margin-bottom: 0; /* Override any potential margin issues */
+}
+
+/* Ensure chevron icon color is correct in dark mode (already handled, but good to confirm) */
+html[data-theme='dark'] #about-toggle i {
+  color: hsl(var(--foreground));
 }

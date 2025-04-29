@@ -35,10 +35,34 @@
           </select>
         </div>
         
+        <!-- Toggle Switch for Bilingual Mode -->
         <div class="flex items-center gap-2">
-          <input type="checkbox" id="bilingual-mode" class="form-checkbox-input">
-          <label for="bilingual-mode" class="form-checkbox-label">Bilingual Mode</label>
+          <label for="bilingual-mode" class="form-checkbox-label cursor-pointer">Bilingual Mode</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="bilingual-mode">
+            <span class="slider round"></span>
+          </label>
         </div>
+        <!-- End Toggle Switch -->
+
+        <!-- Theme Selector -->
+        <div class="theme-selector">
+          <button id="theme-toggle-btn" class="button button-outline button-icon" title="Change theme">
+            <i class="fas fa-sun"></i> <!-- Default icon, will change dynamically -->
+          </button>
+          <div id="theme-options" class="theme-options-dropdown" style="display: none;">
+            <button class="theme-option" data-theme="light">
+              <i class="fas fa-sun"></i> Light Mode
+            </button>
+            <button class="theme-option" data-theme="dark">
+              <i class="fas fa-moon"></i> Dark Mode
+            </button>
+            <button class="theme-option" data-theme="system">
+              <i class="fas fa-desktop"></i> System
+            </button>
+          </div>
+        </div>
+        <!-- End Theme Selector -->
       </div>
     </header>
 
@@ -311,7 +335,7 @@
 
         <div class="grid md:grid-cols-2 gap-6">
           <div>
-            <h3 class="text-lg font-medium mb-3" style="color: hsl(var(--primary))">Features</h3>
+            <h3 class="text-lg font-medium mb-3">Features</h3>
             <ul class="space-y-2">
               <li class="flex items-start gap-2">
                 <i class="fas fa-check-circle text-green-600 mt-1"></i>
@@ -341,7 +365,7 @@
           </div>
 
           <div>
-            <h3 class="text-lg font-medium mb-3" style="color: hsl(var(--primary))">Limitations</h3>
+            <h3 class="text-lg font-medium mb-3">Limitations</h3>
             <ul class="space-y-2">
               <li class="flex items-start gap-2">
                 <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
