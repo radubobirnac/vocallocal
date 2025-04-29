@@ -1,12 +1,20 @@
-#!/usr/bin/env bash
-# Install system dependencies for PyAudio
-apt-get update
-apt-get install -y portaudio19-dev python3-pyaudio
+#!/bin/bash
 
-# Install Python dependencies
-pip install --upgrade pip
+# Make sure script can be executed with: chmod +x build.sh
+
+# Set up virtual environment if it doesn't exist
+if [ ! -d "venv" ]; then
+    echo "Creating virtual environment..."
+    python3 -m venv venv
+fi
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Install dependencies
+echo "Installing dependencies..."
 pip install -r requirements.txt
 
-# Create necessary directories if they don't exist
-mkdir -p transcripts logs
-touch transcripts/.gitkeep logs/.gitkeep 
+# Run the application
+echo "Starting VocalLocal application..."
+python app.py
