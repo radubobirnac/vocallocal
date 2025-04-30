@@ -4,18 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vocal Local - Speech to Text</title>
-  
+
   <!-- Favicon -->
   <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
-  
+
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-  
+
   <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
+
   <!-- Styles -->
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
@@ -27,14 +27,14 @@
         <h1 class="text-3xl font-bold" style="color: hsl(var(--primary)); font-family: 'Poppins', sans-serif;">Vocal Local</h1>
         <p id="app-subtitle" class="text-lg text-muted">Accurate Multilingual Speech-to-Text Transcription</p>
       </div>
-      
+
       <div class="flex items-center gap-6 mt-4 md:mt-0">
         <div class="flex items-center gap-2">
           <select id="global-language" class="form-select">
             <!-- Will be populated with languages -->
           </select>
         </div>
-        
+
         <!-- Toggle Switch for Bilingual Mode -->
         <div class="flex items-center gap-2">
           <label for="bilingual-mode" class="form-checkbox-label cursor-pointer">Bilingual Mode</label>
@@ -44,6 +44,17 @@
           </label>
         </div>
         <!-- End Toggle Switch -->
+
+        <!-- Translation Model Selector (only visible in bilingual mode) -->
+        <div id="translation-model-container" class="flex items-center gap-2" style="display: none;">
+          <label for="translation-model-select" class="form-checkbox-label">Translation Model:</label>
+          <select id="translation-model-select" class="form-select">
+            <option value="gemini" selected>Gemini 2.0 Flash Lite</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash Preview 04-17</option>
+            <option value="openai">OpenAI GPT-4.1 Mini</option>
+          </select>
+        </div>
+        <!-- End Translation Model Selector -->
 
         <!-- Theme Selector -->
         <div class="theme-selector">
@@ -93,21 +104,17 @@
                 <label for="basic-language" class="form-label">Input Language:</label>
                 <select id="basic-language" class="form-select"></select>
               </div>
-              
+
               <div class="form-group">
-                <label class="form-label">Model Selection</label>
-                <div class="space-y-2">
-                  <div class="form-radio">
-                    <input type="radio" id="basic-fast-model" name="basic-model" value="gpt-4o-mini-transcribe" class="form-radio-input" checked>
-                    <label for="basic-fast-model" class="form-radio-label">Fast model</label>
-                  </div>
-                  <div class="form-radio">
-                    <input type="radio" id="basic-accurate-model" name="basic-model" value="gpt-4o-transcribe" class="form-radio-input">
-                    <label for="basic-accurate-model" class="form-radio-label">More accurate but slower</label>
-                  </div>
-                </div>
+                <label for="basic-model-select" class="form-label">Model Selection</label>
+                <select id="basic-model-select" class="form-select">
+                  <option value="gpt-4o-mini-transcribe">OpenAI GPT-4o Mini</option>
+                  <option value="gpt-4o-transcribe">OpenAI GPT-4o</option>
+                  <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview</option>
+                  <option value="gemini-2.5-flash-preview-04-17" selected>Gemini 2.5 Flash Preview</option>
+                </select>
               </div>
-              
+
               <div class="flex flex-col items-center mt-4">
                 <button id="basic-record-btn" class="record-button mb-2">
                   <i class="fas fa-microphone text-lg"></i>
@@ -115,15 +122,21 @@
                 <div id="basic-recording-status" class="text-sm text-center">Click to start recording</div>
               </div>
             </div>
-            
+
             <div class="col-span-2">
               <label for="basic-transcript" class="form-label">Transcript</label>
-              <textarea id="basic-transcript" class="form-textarea w-full" placeholder="Your transcription will appear here..." readonly></textarea>
+              <textarea id="basic-transcript" class="form-textarea w-full" placeholder="Your transcription will appear here..."></textarea>
+              <div class="transcript-controls mt-2 flex justify-between">
+                <div>
+                  <button id="basic-translate-btn" class="button button-small">Translate Edited Text</button>
+                  <button id="basic-undo-btn" class="button button-outline button-small">Undo Edits</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      
+
       <!-- File Upload Card -->
       <div class="card">
         <div class="card-header">
@@ -146,19 +159,18 @@
                 Maximum file size: 30MB
               </p>
             </div>
-            
+
             <div class="space-y-4">
-              <div class="flex gap-6">
-                <div class="form-radio">
-                  <input type="radio" id="basic-upload-fast-model" name="basic-upload-model" value="gpt-4o-mini-transcribe" class="form-radio-input" checked>
-                  <label for="basic-upload-fast-model" class="form-radio-label">Fast model</label>
-                </div>
-                <div class="form-radio">
-                  <input type="radio" id="basic-upload-accurate-model" name="basic-upload-model" value="gpt-4o-transcribe" class="form-radio-input">
-                  <label for="basic-upload-accurate-model" class="form-radio-label">More accurate but slower</label>
-                </div>
+              <div class="form-group">
+                <label for="basic-upload-model-select" class="form-label">Model Selection</label>
+                <select id="basic-upload-model-select" class="form-select">
+                  <option value="gpt-4o-mini-transcribe">OpenAI GPT-4o Mini</option>
+                  <option value="gpt-4o-transcribe">OpenAI GPT-4o</option>
+                  <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview</option>
+                  <option value="gemini-2.5-flash-preview-04-17" selected>Gemini 2.5 Flash Preview</option>
+                </select>
               </div>
-              
+
               <button type="submit" class="button button-primary">
                 Transcribe
               </button>
@@ -167,9 +179,10 @@
         </div>
       </div>
     </div>
-    
+
     <!-- BILINGUAL MODE -->
     <div id="bilingual-mode-content" class="space-y-6" style="display: none;">
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Speaker 1 UI -->
         <div class="card speaker-card-1">
@@ -182,22 +195,24 @@
                 <label for="language-1" class="form-label">Your Language:</label>
                 <select id="language-1" class="form-select"></select>
               </div>
-              
+
               <div class="form-group">
                 <label for="model-1" class="form-label">Transcription Quality:</label>
                 <select id="model-1" class="form-select">
-                  <option value="gpt-4o-mini-transcribe">Standard (Faster)</option>
-                  <option value="gpt-4o-transcribe">Higher (Slower)</option>
+                  <option value="gpt-4o-mini-transcribe">OpenAI GPT-4o Mini</option>
+                  <option value="gpt-4o-transcribe">OpenAI GPT-4o</option>
+                  <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview</option>
+                  <option value="gemini-2.5-flash-preview-04-17" selected>Gemini 2.5 Flash Preview</option>
                 </select>
               </div>
-              
+
               <div class="flex flex-col items-center mt-4">
                 <button id="record-btn-1" class="record-button mb-2">
                   <i class="fas fa-microphone text-lg"></i>
                 </button>
                 <div id="recording-status-1" class="text-sm text-center">Click to start recording</div>
               </div>
-              
+
               <div class="form-checkbox mt-4">
                 <input type="checkbox" id="enable-tts-1" class="form-checkbox-input">
                 <label for="enable-tts-1" class="form-checkbox-label">Read translations aloud</label>
@@ -205,7 +220,7 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Speaker 2 UI -->
         <div class="card speaker-card-2">
           <div class="card-header">
@@ -217,22 +232,24 @@
                 <label for="language-2" class="form-label">Your Language:</label>
                 <select id="language-2" class="form-select"></select>
               </div>
-              
+
               <div class="form-group">
                 <label for="model-2" class="form-label">Transcription Quality:</label>
                 <select id="model-2" class="form-select">
-                  <option value="gpt-4o-mini-transcribe">Standard (Faster)</option>
-                  <option value="gpt-4o-transcribe">Higher (Slower)</option>
+                  <option value="gpt-4o-mini-transcribe">OpenAI GPT-4o Mini</option>
+                  <option value="gpt-4o-transcribe">OpenAI GPT-4o</option>
+                  <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview</option>
+                  <option value="gemini-2.5-flash-preview-04-17" selected>Gemini 2.5 Flash Preview</option>
                 </select>
               </div>
-              
+
               <div class="flex flex-col items-center mt-4">
                 <button id="record-btn-2" class="record-button mb-2">
                   <i class="fas fa-microphone text-lg"></i>
                 </button>
                 <div id="recording-status-2" class="text-sm text-center">Click to start recording</div>
               </div>
-              
+
               <div class="form-checkbox mt-4">
                 <input type="checkbox" id="enable-tts-2" class="form-checkbox-input">
                 <label for="enable-tts-2" class="form-checkbox-label">Read translations aloud</label>
@@ -241,7 +258,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Conversation Display -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Speaker 1 Output -->
@@ -260,9 +277,15 @@
           <div class="card-content">
             <div class="form-group">
               <label class="form-label">Original:</label>
-              <textarea id="transcript-1" class="form-textarea" placeholder="Your speech will appear here..." readonly></textarea>
+              <textarea id="transcript-1" class="form-textarea" placeholder="Your speech will appear here..."></textarea>
+              <div class="transcript-controls mt-2 flex justify-between">
+                <div>
+                  <button id="translate-edited-1" class="button button-small">Translate Edited Text</button>
+                  <button id="undo-edits-1" class="button button-outline button-small">Undo Edits</button>
+                </div>
+              </div>
             </div>
-            
+
             <div class="translation-section">
               <div class="translation-title">
                 <label class="form-label">Translation:</label>
@@ -279,7 +302,7 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Speaker 2 Output -->
         <div class="card">
           <div class="card-header">
@@ -296,9 +319,15 @@
           <div class="card-content">
             <div class="form-group">
               <label class="form-label">Original:</label>
-              <textarea id="transcript-2" class="form-textarea" placeholder="Your speech will appear here..." readonly></textarea>
+              <textarea id="transcript-2" class="form-textarea" placeholder="Your speech will appear here..."></textarea>
+              <div class="transcript-controls mt-2 flex justify-between">
+                <div>
+                  <button id="translate-edited-2" class="button button-small">Translate Edited Text</button>
+                  <button id="undo-edits-2" class="button button-outline button-small">Undo Edits</button>
+                </div>
+              </div>
             </div>
-            
+
             <div class="translation-section">
               <div class="translation-title">
                 <label class="form-label">Translation:</label>
@@ -317,7 +346,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- About Section -->
     <div class="card mt-6 mb-6">
       <div class="card-header">
@@ -328,8 +357,8 @@
       </div>
       <div id="about-content" class="card-content" style="display: none;">
         <p class="mb-6">
-          Vocal Local is a multilingual speech-to-text transcription tool designed to provide accurate 
-          transcriptions in multiple languages. Using advanced AI technology, it converts spoken 
+          Vocal Local is a multilingual speech-to-text transcription tool designed to provide accurate
+          transcriptions in multiple languages. Using advanced AI technology, it converts spoken
           language from audio recordings or microphone input into written text.
         </p>
 
@@ -393,8 +422,8 @@
               </li>
             </ul>
             <p class="text-sm text-muted mt-4">
-              For more information on speech recognition accuracy measurements, see 
-              <a href="https://openai.com/index/introducing-our-next-generation-audio-models/" target="_blank" 
+              For more information on speech recognition accuracy measurements, see
+              <a href="https://openai.com/index/introducing-our-next-generation-audio-models/" target="_blank"
                  style="color: hsl(var(--primary)); text-decoration: underline;">
                 OpenAI's research on word error rates
               </a>.
@@ -404,7 +433,7 @@
       </div>
     </div>
   </div>
-  
+
   <!-- Scripts -->
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>

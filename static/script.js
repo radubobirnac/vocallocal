@@ -2,30 +2,30 @@ document.addEventListener('DOMContentLoaded', () => {
   // ========================
   // Utility Functions
   // ========================
-  
+
   // Show status message
   function showStatus(message, type = 'info', persistent = false) {
     const statusEl = document.getElementById('status');
     if (!statusEl) return;
-    
+
     statusEl.textContent = message;
     statusEl.className = `status status-${type}`;
     statusEl.style.display = 'block';
-    
+
     if (!persistent) {
       setTimeout(() => {
         statusEl.style.display = 'none';
       }, 3000);
     }
   }
-  
+
   // Copy text to clipboard
   function copyTextToClipboard(text, successMessage) {
     if (!text || text.trim() === '') {
       showStatus('No text to copy', 'warning');
       return;
     }
-    
+
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text)
         .then(() => showStatus(successMessage, 'success'))
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.appendChild(textarea);
       textarea.focus();
       textarea.select();
-      
+
       try {
         const successful = document.execCommand('copy');
         if (successful) {
@@ -49,20 +49,20 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (err) {
         showStatus('Copy failed. Please try selecting and copying manually.', 'warning');
       }
-      
+
       document.body.removeChild(textarea);
     }
   }
-  
+
   // Speak text using TTS
   function speakText(text, langCode) {
     if (!text || text.trim() === '') {
       showStatus('No text to speak', 'warning');
       return;
     }
-    
+
     showStatus('Generating audio...', 'info');
-    
+
     // Call our backend TTS API
     fetch('/api/tts', {
       method: 'POST',
@@ -84,10 +84,10 @@ document.addEventListener('DOMContentLoaded', () => {
       // Create audio element to play the response
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
-      
+
       // Set playback rate to 1.10 (10% faster)
       audio.playbackRate = 1.10;
-      
+
       // Play the audio
       audio.play()
         .then(() => {
@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
           showStatus('Error playing audio: ' + error.message, 'error');
           console.error('Audio playback error:', error);
         });
-        
+
       // Clean up the object URL when done
       audio.onended = () => {
         URL.revokeObjectURL(audioUrl);
@@ -106,36 +106,36 @@ document.addEventListener('DOMContentLoaded', () => {
     .catch(error => {
       showStatus('Error generating speech: ' + error.message, 'error');
       console.error('TTS error:', error);
-      
+
       // Fallback to browser's speech synthesis
       fallbackSpeakText(text, langCode);
     });
   }
-  
+
   // Fallback TTS using browser's speech synthesis
   function fallbackSpeakText(text, langCode) {
     if (!window.speechSynthesis) {
       showStatus('Text-to-speech is not supported in your browser', 'warning');
       return;
     }
-    
+
     // Stop any current speech
     window.speechSynthesis.cancel();
-    
+
     // Create a new utterance
     const utterance = new SpeechSynthesisUtterance(text);
-    
+
     // Set rate to 1.10 (10% faster)
     utterance.rate = 1.10;
-    
+
     // Set language
     utterance.lang = langCode;
-    
+
     // Start speaking
     window.speechSynthesis.speak(utterance);
     showStatus('Playing audio (browser TTS fallback)...', 'info');
   }
-  
+
   // Check browser compatibility
   function checkBrowserCompatibility() {
     // Check for MediaRecorder API
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       return false;
     }
-    
+
     // Check for getUserMedia support
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       showStatus('Your browser does not support microphone access. Please try a modern browser.', 'error', true);
@@ -157,10 +157,10 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       return false;
     }
-    
+
     return true;
   }
-  
+
   // Error handling for microphone issues
   function handleMicrophoneError(error) {
     if (error.name === 'NotAllowedError') {
@@ -178,16 +178,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     console.error('Microphone error:', error);
   }
-  
+
   // Get supported media types based on browser/device
   function getSupportedMediaTypes() {
     const supportedTypes = [];
-    
+
     // Check for browser type
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     const isAndroid = /Android/.test(navigator.userAgent);
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    
+
     // Check what audio formats are supported
     const mimeTypes = [
       'audio/webm',
@@ -198,17 +198,17 @@ document.addEventListener('DOMContentLoaded', () => {
       'audio/ogg;codecs=opus',
       'audio/wav'
     ];
-    
+
     // Test each MIME type
     mimeTypes.forEach(type => {
       if (MediaRecorder.isTypeSupported(type)) {
         supportedTypes.push(type);
       }
     });
-    
+
     // Determine the best MIME type based on device/browser
     let bestType;
-    
+
     if (isIOS || isSafari) {
       // iOS and Safari prefer these formats
       bestType = supportedTypes.find(t => t.includes('mp4')) ||
@@ -227,16 +227,16 @@ document.addEventListener('DOMContentLoaded', () => {
                  supportedTypes.find(t => t.includes('ogg')) ||
                  supportedTypes[0];
     }
-    
+
     return { supportedTypes, bestType };
   }
-  
+
   // Audio recording function
   async function startRecording(options = {}) {
     try {
       // Visual indication that we're requesting mic access
       showStatus('Requesting microphone access...', 'info');
-      
+
       // Get audio constraints with echo cancellation and noise suppression
       const constraints = {
         audio: {
@@ -245,43 +245,43 @@ document.addEventListener('DOMContentLoaded', () => {
           autoGainControl: true
         }
       };
-      
+
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      
+
       // Get the best supported MIME type
       const { bestType } = getSupportedMediaTypes();
-      
+
       // Configure recorder
       const recorderOptions = bestType ? { mimeType: bestType } : {};
       const mediaRecorder = new MediaRecorder(stream, recorderOptions);
-      
+
       // Setup data array
       const audioChunks = [];
-      
+
       // Data available listener
       mediaRecorder.addEventListener('dataavailable', event => {
         if (event.data.size > 0) {
           audioChunks.push(event.data);
         }
       });
-      
+
       // Start recording
       mediaRecorder.start(100); // Get events more frequently for better responsiveness
       showStatus('Recording started', 'success');
-      
+
       // Add visual feedback for recording
       const recordButton = options.recordButton || null;
       if (recordButton) {
         recordButton.classList.add('recording');
       }
-      
+
       // Log diagnostics
       console.log("Recording started with:", {
         mimeType: mediaRecorder.mimeType || "default",
         deviceInfo: "Audio input device",
         sampleRate: stream.getAudioTracks()[0].getSettings().sampleRate || "unknown"
       });
-      
+
       return {
         mediaRecorder,
         audioChunks,
@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
       throw error; // Re-throw to let caller handle it
     }
   }
-  
+
   // Process and send audio data
   function processAudio(audioChunks, mimeType, formData) {
     return new Promise((resolve, reject) => {
@@ -300,10 +300,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Check for browser type
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-        
+
         // Determine best file format based on MIME type and device
         let fileType, fileName;
-        
+
         if (mimeType.includes('webm')) {
           fileType = 'audio/webm';
           fileName = 'recording.webm';
@@ -326,22 +326,22 @@ document.addEventListener('DOMContentLoaded', () => {
             fileName = 'recording.webm';
           }
         }
-        
+
         // Create blob with determined type
         const audioBlob = new Blob(audioChunks, { type: fileType });
-        
+
         // Validate blob
         if (audioBlob.size === 0) {
           reject(new Error('No audio data recorded'));
           return;
         }
-        
+
         // Create file object
         const audioFile = new File([audioBlob], fileName, { type: fileType });
-        
+
         // Add file to form data
         formData.append('file', audioFile);
-        
+
         // Log diagnostic info
         console.log("Audio recording info:", {
           recordedMimeType: mimeType,
@@ -350,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
           blobSize: audioBlob.size,
           chunkCount: audioChunks.length
         });
-        
+
         resolve(formData);
       } catch (error) {
         console.error("Error processing audio:", error);
@@ -358,50 +358,50 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  
+
   // Send form data to server with timeout and retry
   function sendToServer(formData, endpoint = '/api/transcribe', maxRetries = 1) {
     return new Promise(async (resolve, reject) => {
       let attempt = 0;
-      
+
       while (attempt <= maxRetries) {
         try {
           // Create AbortController for timeout
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
-          
+
           const response = await fetch(endpoint, {
             method: 'POST',
             body: formData,
             signal: controller.signal
           });
-          
+
           // Clear timeout
           clearTimeout(timeoutId);
-          
+
           if (!response.ok) {
             throw new Error(`Server error: ${response.status}`);
           }
-          
+
           const result = await response.json();
           resolve(result);
           return; // Exit the retry loop on success
-          
+
         } catch (error) {
           attempt++;
-          
+
           // Log the error
           console.error(`Attempt ${attempt} failed:`, error);
-          
+
           // If it's a timeout or a network error and we have retries left
-          if ((error.name === 'AbortError' || 
-              (error.name === 'TypeError' && error.message.includes('Failed to fetch'))) && 
+          if ((error.name === 'AbortError' ||
+              (error.name === 'TypeError' && error.message.includes('Failed to fetch'))) &&
               attempt <= maxRetries) {
             console.log(`Retrying... (${attempt}/${maxRetries})`);
             await new Promise(r => setTimeout(r, 1000)); // Wait 1 second before retry
             continue;
           }
-          
+
           // If we're out of retries or it's not a retriable error
           reject(error);
           return;
@@ -409,10 +409,46 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  
+
+  // Get the current translation model
+  function getTranslationModel() {
+    // Get the selected value from the dropdown
+    const translationModelSelect = document.getElementById('translation-model-select');
+    if (translationModelSelect) {
+      return translationModelSelect.value;
+    } else {
+      return 'gemini'; // Default to Gemini if dropdown not found
+    }
+  }
+
+  // Save translation model preference
+  function saveTranslationModelPreference(model) {
+    try {
+      localStorage.setItem('vocal-local-translation-model', model);
+    } catch (e) {
+      console.warn('LocalStorage is not available. Translation model preference will not be saved.');
+    }
+  }
+
+  // Load translation model preference
+  function loadTranslationModelPreference() {
+    try {
+      return localStorage.getItem('vocal-local-translation-model') || 'gemini'; // Default to Gemini
+    } catch (e) {
+      console.warn('LocalStorage is not available. Defaulting to Gemini.');
+      return 'gemini';
+    }
+  }
+
   // Translate text function
   async function translateText(text, targetLang) {
     try {
+      // Get the current translation model
+      const translationModel = getTranslationModel();
+
+      // Log which model is being used
+      console.log(`Translating with ${translationModel} model`);
+
       const response = await fetch('/api/translate', {
         method: 'POST',
         headers: {
@@ -420,15 +456,27 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         body: JSON.stringify({
           text: text,
-          target_language: targetLang
+          target_language: targetLang,
+          translation_model: translationModel
         })
       });
-      
+
       if (!response.ok) {
         throw new Error(`Translation failed: ${response.status}`);
       }
-      
+
       const result = await response.json();
+
+      // Log performance metrics
+      if (result.performance) {
+        console.log(`Translation performance: ${result.performance.time_seconds}s, ${result.performance.characters_per_second} chars/s`);
+      }
+
+      // Show a message if fallback was used
+      if (result.fallback_used) {
+        showStatus(`Translation completed using ${result.model_used} as fallback`, 'info');
+      }
+
       return result.text;
     } catch (error) {
       console.error('Translation error:', error);
@@ -436,7 +484,195 @@ document.addEventListener('DOMContentLoaded', () => {
       return null;
     }
   }
-  
+
+// ========================
+  // Editable Transcript Functions
+  // ========================
+
+  // Store original transcription when received from API
+  function updateTranscript(elementId, text) {
+    const transcriptEl = document.getElementById(elementId);
+    if (!transcriptEl) return;
+
+    transcriptEl.value = text;
+    transcriptEl.dataset.originalText = text; // Store original for undo
+
+    console.log(`Updated transcript ${elementId} with ${text.length} characters`);
+  }
+
+  // Function to handle translate edited text button clicks
+  function setupTranslateEditedButtons() {
+    // Basic mode translate button
+    const basicTranslateBtn = document.getElementById('basic-translate-btn');
+    if (basicTranslateBtn) {
+      basicTranslateBtn.addEventListener('click', async () => {
+        const transcriptEl = document.getElementById('basic-transcript');
+        if (!transcriptEl || !transcriptEl.value.trim()) {
+          showStatus('Please enter some text to translate', 'warning');
+          return;
+        }
+
+        // Get target language from global language selector
+        const targetLang = document.getElementById('global-language').value;
+
+        // Show translating status
+        showStatus('Translating edited text...', 'info');
+
+        try {
+          const translatedText = await translateText(transcriptEl.value, targetLang);
+          if (translatedText) {
+            // Update translation textarea
+            const translationEl = document.getElementById('basic-translation');
+            if (translationEl) {
+              translationEl.value = translatedText;
+            }
+            showStatus('Translation complete!', 'success');
+          }
+        } catch (error) {
+          console.error('Translation error:', error);
+          showStatus('Translation failed. Please try again.', 'error');
+        }
+      });
+    }
+
+    // Bilingual mode translate buttons
+    const translateEdited1 = document.getElementById('translate-edited-1');
+    const translateEdited2 = document.getElementById('translate-edited-2');
+
+    if (translateEdited1) {
+      translateEdited1.addEventListener('click', async () => {
+        const transcriptEl = document.getElementById('transcript-1');
+        if (!transcriptEl || !transcriptEl.value.trim()) {
+          showStatus('Please enter some text to translate', 'warning');
+          return;
+        }
+
+        // Get partner's language for translation
+        const partnerLang = document.getElementById('language-2').value;
+
+        // Show translating status
+        showStatus('Translating edited text...', 'info');
+
+        try {
+          const translatedText = await translateText(transcriptEl.value, partnerLang);
+          if (translatedText) {
+            // Update partner's translation display
+            const translationEl = document.getElementById('translation-2');
+            if (translationEl) {
+              translationEl.value = translatedText;
+            }
+
+            // Play TTS if enabled for the partner
+            const enableTTS = document.getElementById('enable-tts-2');
+            if (enableTTS && enableTTS.checked) {
+              speakText(translatedText, partnerLang);
+            }
+
+            showStatus('Translation complete!', 'success');
+          }
+        } catch (error) {
+          console.error('Translation error:', error);
+          showStatus('Translation failed. Please try again.', 'error');
+        }
+      });
+    }
+
+    if (translateEdited2) {
+      translateEdited2.addEventListener('click', async () => {
+        const transcriptEl = document.getElementById('transcript-2');
+        if (!transcriptEl || !transcriptEl.value.trim()) {
+          showStatus('Please enter some text to translate', 'warning');
+          return;
+        }
+
+        // Get partner's language for translation
+        const partnerLang = document.getElementById('language-1').value;
+
+        // Show translating status
+        showStatus('Translating edited text...', 'info');
+
+        try {
+          const translatedText = await translateText(transcriptEl.value, partnerLang);
+          if (translatedText) {
+            // Update partner's translation display
+            const translationEl = document.getElementById('translation-1');
+            if (translationEl) {
+              translationEl.value = translatedText;
+            }
+
+            // Play TTS if enabled for the partner
+            const enableTTS = document.getElementById('enable-tts-1');
+            if (enableTTS && enableTTS.checked) {
+              speakText(translatedText, partnerLang);
+            }
+
+            showStatus('Translation complete!', 'success');
+          }
+        } catch (error) {
+          console.error('Translation error:', error);
+          showStatus('Translation failed. Please try again.', 'error');
+        }
+      });
+    }
+  }
+
+  // Function to handle undo edits button clicks
+  function setupUndoButtons() {
+    // Basic mode undo button
+    const basicUndoBtn = document.getElementById('basic-undo-btn');
+    if (basicUndoBtn) {
+      basicUndoBtn.addEventListener('click', () => {
+        const transcriptEl = document.getElementById('basic-transcript');
+        if (!transcriptEl) return;
+
+        const originalText = transcriptEl.dataset.originalText || '';
+
+        if (originalText) {
+          transcriptEl.value = originalText;
+          showStatus('Reverted to original transcription', 'info');
+        } else {
+          showStatus('No original transcription to revert to', 'warning');
+        }
+      });
+    }
+
+    // Bilingual mode undo buttons
+    const undoEdits1 = document.getElementById('undo-edits-1');
+    const undoEdits2 = document.getElementById('undo-edits-2');
+
+    if (undoEdits1) {
+      undoEdits1.addEventListener('click', () => {
+        const transcriptEl = document.getElementById('transcript-1');
+        if (!transcriptEl) return;
+
+        const originalText = transcriptEl.dataset.originalText || '';
+
+        if (originalText) {
+          transcriptEl.value = originalText;
+          showStatus('Reverted to original transcription', 'info');
+        } else {
+          showStatus('No original transcription to revert to', 'warning');
+        }
+      });
+    }
+
+    if (undoEdits2) {
+      undoEdits2.addEventListener('click', () => {
+        const transcriptEl = document.getElementById('transcript-2');
+        if (!transcriptEl) return;
+
+        const originalText = transcriptEl.dataset.originalText || '';
+
+        if (originalText) {
+          transcriptEl.value = originalText;
+          showStatus('Reverted to original transcription', 'info');
+        } else {
+          showStatus('No original transcription to revert to', 'warning');
+        }
+      });
+    }
+  }
+
 // ========================
   // Theme Switcher Logic
   // ========================
@@ -482,7 +718,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
       console.warn('LocalStorage is not available. Theme preference will not be saved.');
     }
-    
+
     console.log(`Applied theme: ${effectiveTheme} (User choice: ${theme})`);
   }
 
@@ -526,14 +762,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Listener for changes in system color scheme preference
   const systemColorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
-  
+
   try {
       systemColorSchemeQuery.addEventListener('change', () => {
           let currentPreference = 'system';
           try {
               currentPreference = localStorage.getItem('vocal-local-theme') || 'system';
           } catch (e) { /* Ignore localStorage error here */ }
-          
+
           // Only re-apply if the user's choice is 'system'
           if (currentPreference === 'system') {
               applyTheme('system');
@@ -547,7 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
               try {
                   currentPreference = localStorage.getItem('vocal-local-theme') || 'system';
               } catch (e) { /* Ignore localStorage error here */ }
-              
+
               if (currentPreference === 'system') {
                   applyTheme('system');
               }
@@ -562,22 +798,49 @@ document.addEventListener('DOMContentLoaded', () => {
   // ========================
   // Initialize Application
   // ========================
-  
+
   // Check browser compatibility first
   const isBrowserCompatible = checkBrowserCompatibility();
-  
+
+  // Initialize translation model dropdown
+  const translationModelSelect = document.getElementById('translation-model-select');
+  if (translationModelSelect) {
+    // Load saved preference
+    const savedModel = loadTranslationModelPreference();
+    translationModelSelect.value = savedModel;
+
+    // Add event listener
+    translationModelSelect.addEventListener('change', () => {
+      const model = translationModelSelect.value;
+      saveTranslationModelPreference(model);
+
+      // Get the model display name
+      const selectedOption = translationModelSelect.options[translationModelSelect.selectedIndex];
+      const modelDisplayName = selectedOption ? selectedOption.textContent : model;
+
+      showStatus(`Translation model changed to ${modelDisplayName}`, 'info');
+    });
+  }
+
   // Initialize mode toggle
   const modeToggle = document.getElementById('bilingual-mode');
   const basicMode = document.getElementById('basic-mode');
   const bilingualMode = document.getElementById('bilingual-mode-content');
   const appSubtitle = document.getElementById('app-subtitle');
-  
+  const translationModelContainer = document.getElementById('translation-model-container');
+
   if (modeToggle && basicMode && bilingualMode) {
     modeToggle.addEventListener('change', () => {
       if (modeToggle.checked) {
         // Bilingual mode
         basicMode.style.display = 'none';
         bilingualMode.style.display = 'block';
+
+        // Show translation model dropdown
+        if (translationModelContainer) {
+          translationModelContainer.style.display = 'flex';
+        }
+
         if (appSubtitle) {
           appSubtitle.textContent = 'Bilingual Conversation Tool';
         }
@@ -585,23 +848,51 @@ document.addEventListener('DOMContentLoaded', () => {
         // Basic mode
         basicMode.style.display = 'block';
         bilingualMode.style.display = 'none';
+
+        // Hide translation model dropdown
+        if (translationModelContainer) {
+          translationModelContainer.style.display = 'none';
+        }
+
         if (appSubtitle) {
           appSubtitle.textContent = 'Accurate Multilingual Speech-to-Text Transcription';
         }
       }
     });
+
+    // Set initial state
+    if (modeToggle.checked) {
+      // If bilingual mode is initially active
+      basicMode.style.display = 'none';
+      bilingualMode.style.display = 'block';
+
+      if (translationModelContainer) {
+        translationModelContainer.style.display = 'flex';
+      }
+
+      if (appSubtitle) {
+        appSubtitle.textContent = 'Bilingual Conversation Tool';
+      }
+    } else {
+      // If basic mode is initially active
+      if (translationModelContainer) {
+        translationModelContainer.style.display = 'none';
+      }
+    }
+  } else {
+    console.warn("Some UI elements are missing");
   }
-  
+
   // Load languages from API
   function loadLanguages() {
     return fetch('/api/languages')
       .then(response => response.json())
       .then(languages => {
         // Sort language names alphabetically
-        const sortedLanguages = Object.entries(languages).sort((a, b) => 
+        const sortedLanguages = Object.entries(languages).sort((a, b) =>
           a[0].localeCompare(b[0])
         );
-        
+
         return sortedLanguages;
       })
       .catch(error => {
@@ -610,14 +901,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return [];
       });
   }
-  
+
   // Helper function to populate a language dropdown
   function populateLanguageDropdown(dropdownId, languages, defaultCode) {
     const dropdown = document.getElementById(dropdownId);
     if (!dropdown) return;
-    
+
     dropdown.innerHTML = ''; // Clear existing options
-    
+
     // Add language options
     languages.forEach(([name, details]) => {
       const option = document.createElement('option');
@@ -627,7 +918,7 @@ document.addEventListener('DOMContentLoaded', () => {
       dropdown.appendChild(option);
     });
   }
-  
+
   // Initialize language dropdowns
   loadLanguages().then(languages => {
     // Populate all language dropdowns
@@ -635,76 +926,71 @@ document.addEventListener('DOMContentLoaded', () => {
     populateLanguageDropdown('basic-language', languages, 'en');
     populateLanguageDropdown('language-1', languages, 'en');
     populateLanguageDropdown('language-2', languages, 'es');
-    
+
     // Set up global language dropdown listener
     const globalLanguageSelect = document.getElementById('global-language');
     if (globalLanguageSelect) {
       globalLanguageSelect.addEventListener('change', function() {
         const selectedLanguage = this.value;
-        
+
         // Update the language in the basic mode
         const basicLanguageSelect = document.getElementById('basic-language');
         if (basicLanguageSelect) {
           basicLanguageSelect.value = selectedLanguage;
         }
-        
+
         // Update the language in the bilingual mode for speaker 1
         const language1Select = document.getElementById('language-1');
         if (language1Select) {
           language1Select.value = selectedLanguage;
         }
-        
+
         showStatus(`Input language changed to ${globalLanguageSelect.options[globalLanguageSelect.selectedIndex].text}`, 'info');
       });
     }
   });
-  
+
   // ========================
   // Basic Mode Implementation
   // ========================
-  
+
   // Basic mode file upload
   const basicUploadForm = document.getElementById('basic-upload-form');
   if (basicUploadForm) {
     basicUploadForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
+
       const fileInput = document.getElementById('basic-file-input');
       if (!fileInput || !fileInput.files.length) {
         showStatus('Please select a file', 'warning');
         return;
       }
-      
+
       const formData = new FormData();
       formData.append('file', fileInput.files[0]);
       formData.append('language', document.getElementById('basic-language').value);
-      
-      // Get selected model
-      const modelRadios = document.querySelectorAll('input[name="basic-model"]');
-      let selectedModel = 'gpt-4o-mini-transcribe'; // Default
-      modelRadios.forEach(radio => {
-        if (radio.checked) {
-          selectedModel = radio.value;
-        }
-      });
+
+      // Get selected model from dropdown
+      const modelSelect = document.getElementById('basic-upload-model-select');
+      let selectedModel = 'gemini-2.5-flash-preview-04-17'; // Default to Gemini 2.5 Flash Preview
+      if (modelSelect) {
+        selectedModel = modelSelect.value;
+      }
       formData.append('model', selectedModel);
-      
+
       showStatus('Transcribing your audio...', 'info');
-      
+
       try {
         // Get transcription
         const result = await sendToServer(formData);
-        
+
         // Update transcript
-        const transcriptEl = document.getElementById('basic-transcript');
-        if (transcriptEl) {
-          transcriptEl.value = result.text || "No transcript received.";
-        }
-        
+        updateTranscript('basic-transcript', result.text || "No transcript received.");
+
         showStatus('Transcription complete!', 'success');
       } catch (error) {
         console.error('Upload error:', error);
-        
+
         // User-friendly error messages
         if (error.name === 'AbortError') {
           showStatus('The request took too long to complete. Please try with a smaller file or check your connection.', 'warning');
@@ -716,40 +1002,40 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  
+
   // Basic mode copy button
   const basicCopyBtn = document.getElementById('basic-copy-btn');
   if (basicCopyBtn) {
     basicCopyBtn.addEventListener('click', () => {
       const transcriptEl = document.getElementById('basic-transcript');
       if (!transcriptEl) return;
-      
+
       const text = transcriptEl.value;
       copyTextToClipboard(text, 'Transcript copied to clipboard!');
     });
   }
-  
+
   // Basic mode play button
   const basicPlayBtn = document.getElementById('basic-play-btn');
   if (basicPlayBtn) {
     basicPlayBtn.addEventListener('click', () => {
       const transcriptEl = document.getElementById('basic-transcript');
       if (!transcriptEl) return;
-      
+
       const text = transcriptEl.value;
       const langSelect = document.getElementById('basic-language');
       const lang = langSelect ? langSelect.value : 'en';
-      
+
       speakText(text, lang);
     });
   }
-  
+
   // Basic mode recording
   const basicRecordBtn = document.getElementById('basic-record-btn');
   if (basicRecordBtn && isBrowserCompatible) {
     let recording = null;
     let isRecording = false;
-    
+
     basicRecordBtn.addEventListener('click', async () => {
       // If not recording, start recording
       if (!isRecording) {
@@ -758,9 +1044,9 @@ document.addEventListener('DOMContentLoaded', () => {
           if (recordingStatus) {
             recordingStatus.textContent = 'Recording in progress...';
           }
-          
+
           isRecording = true;
-          
+
           // Start recording using the enhanced function with button reference
           recording = await startRecording({
             recordButton: basicRecordBtn
@@ -776,37 +1062,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } else {
         // Stop recording
-        if (recording && recording.mediaRecorder && 
+        if (recording && recording.mediaRecorder &&
             recording.mediaRecorder.state !== 'inactive') {
-            
+
           const recordingStatus = document.getElementById('basic-recording-status');
           if (recordingStatus) {
             recordingStatus.textContent = 'Processing...';
           }
-          
+
           try {
             // Stop the media recorder
             recording.mediaRecorder.stop();
-            
+
             // Stop all tracks in the stream
             recording.stream.getTracks().forEach(track => track.stop());
-            
+
             // Prepare form data
             const formData = new FormData();
-            
+
             const languageSelect = document.getElementById('basic-language');
             formData.append('language', languageSelect ? languageSelect.value : 'en');
-            
-            // Get selected model
-            const modelRadios = document.querySelectorAll('input[name="basic-model"]');
-            let selectedModel = 'gpt-4o-mini-transcribe'; // Default
-            modelRadios.forEach(radio => {
-              if (radio.checked) {
-                selectedModel = radio.value;
-              }
-            });
+
+            // Get selected model from dropdown
+            const modelSelect = document.getElementById('basic-model-select');
+            let selectedModel = 'gemini-2.5-flash-preview-04-17'; // Default to Gemini 2.5 Flash Preview
+            if (modelSelect) {
+              selectedModel = modelSelect.value;
+            }
             formData.append('model', selectedModel);
-            
+
             // Process the recorded audio after a short delay to ensure all data is collected
             setTimeout(async () => {
               try {
@@ -816,20 +1100,17 @@ document.addEventListener('DOMContentLoaded', () => {
                   recording.mediaRecorder.mimeType,
                   formData
                 );
-                
+
                 // Show transcribing status
                 showStatus('Transcribing your recording...', 'info');
-                
+
                 // Send to server
                 const result = await sendToServer(processedFormData);
-                
+
                 if (result.text) {
                   // Update transcript
-                  const transcriptEl = document.getElementById('basic-transcript');
-                  if (transcriptEl) {
-                    transcriptEl.value = result.text;
-                  }
-                  
+                  updateTranscript('basic-transcript', result.text);
+
                   showStatus('Transcription complete!', 'success');
                 } else if (result.error) {
                   console.error('Server error:', result.error);
@@ -839,7 +1120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
               } catch (error) {
                 console.error('Processing error:', error);
-                
+
                 if (error.message === 'No audio data recorded') {
                   showStatus('No audio data recorded. Please try again and speak louder.', 'warning');
                 } else if (error.name === 'AbortError') {
@@ -850,7 +1131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   showStatus(`Error: ${error.message}`, 'error');
                 }
               }
-              
+
               // Reset UI
               basicRecordBtn.classList.remove('recording');
               const recordingStatus = document.getElementById('basic-recording-status');
@@ -858,7 +1139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 recordingStatus.textContent = 'Click to start recording';
               }
             }, 500); // Short delay to ensure all data is collected
-            
+
           } catch (error) {
             console.error('Error stopping recording:', error);
             showStatus('Error processing recording. Please try again.', 'error');
@@ -869,16 +1150,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           }
         }
-        
+
         isRecording = false;
       }
     });
   }
-  
+
   // ========================
   // Bilingual Mode Implementation
   // ========================
-  
+
   // Initialize speakers
   const speakers = [
     {
@@ -916,7 +1197,7 @@ document.addEventListener('DOMContentLoaded', () => {
       partnerId: 1
     }
   ];
-  
+
   // Set up bilingual mode if browser is compatible
   if (isBrowserCompatible) {
     speakers.forEach(speaker => {
@@ -924,7 +1205,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!speaker.recordBtn || !speaker.transcriptEl || !speaker.languageSelect) {
         return;
       }
-      
+
       // Record button functionality
       speaker.recordBtn.addEventListener('click', async () => {
         // If not recording, start recording
@@ -933,9 +1214,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (speaker.recordingStatus) {
               speaker.recordingStatus.textContent = 'Recording in progress...';
             }
-            
+
             speaker.isRecording = true;
-            
+
             // Start recording
             speaker.recording = await startRecording({
               recordButton: speaker.recordBtn
@@ -950,35 +1231,35 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         } else {
           // Stop recording
-          if (speaker.recording && speaker.recording.mediaRecorder && 
+          if (speaker.recording && speaker.recording.mediaRecorder &&
               speaker.recording.mediaRecorder.state !== 'inactive') {
-              
+
             if (speaker.recordingStatus) {
               speaker.recordingStatus.textContent = 'Processing...';
             }
-            
+
             try {
               // Stop the media recorder
               speaker.recording.mediaRecorder.stop();
-              
+
               // Stop all tracks in the stream
               speaker.recording.stream.getTracks().forEach(track => track.stop());
-              
+
               // Get the partner's language for translation
               const partnerSpeaker = speakers.find(s => s.id === speaker.partnerId);
               const partnerLang = partnerSpeaker?.languageSelect?.value || 'en';
-              
+
               // Prepare form data
               const formData = new FormData();
               formData.append('language', speaker.languageSelect.value);
-              
+
               // Get model value
-              let modelValue = 'gpt-4o-mini-transcribe';
+              let modelValue = 'gemini-2.5-flash-preview-04-17'; // Default to Gemini 2.5 Flash Preview
               if (speaker.modelSelect) {
                 modelValue = speaker.modelSelect.value;
               }
               formData.append('model', modelValue);
-              
+
               // Process the recorded audio after a short delay
               setTimeout(async () => {
                 try {
@@ -988,30 +1269,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     speaker.recording.mediaRecorder.mimeType,
                     formData
                   );
-                  
+
                   // Show transcribing status
                   showStatus(`Transcribing Speaker ${speaker.id}'s recording...`, 'info');
-                  
+
                   // Send to server
                   const result = await sendToServer(processedFormData);
-                  
+
                   if (result.text) {
                     // Update transcript
-                    speaker.transcriptEl.value = result.text;
-                    
+                    updateTranscript(`transcript-${speaker.id}`, result.text);
+
                     // Translate the transcript
                     showStatus('Translating...', 'info');
                     const translatedText = await translateText(result.text, partnerLang);
-                    
+
                     if (translatedText && partnerSpeaker?.translationEl) {
                       // Update partner's translation display
                       partnerSpeaker.translationEl.value = translatedText;
-                      
+
                       // Play TTS if enabled for the partner
                       if (partnerSpeaker.enableTTS && partnerSpeaker.enableTTS.checked) {
                         speakText(translatedText, partnerLang);
                       }
-                      
+
                       showStatus('Transcription and translation complete!', 'success');
                     } else {
                       showStatus('Transcription complete, but translation failed.', 'warning');
@@ -1024,7 +1305,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   }
                 } catch (error) {
                   console.error('Processing error:', error);
-                  
+
                   if (error.message === 'No audio data recorded') {
                     showStatus('No audio data recorded. Please try again and speak louder.', 'warning');
                   } else if (error.name === 'AbortError') {
@@ -1035,14 +1316,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     showStatus(`Error: ${error.message}`, 'error');
                   }
                 }
-                
+
                 // Reset UI
                 speaker.recordBtn.classList.remove('recording');
                 if (speaker.recordingStatus) {
                   speaker.recordingStatus.textContent = 'Click to start recording';
                 }
               }, 500); // Short delay to ensure all data is collected
-              
+
             } catch (error) {
               console.error('Error stopping recording:', error);
               showStatus('Error processing recording. Please try again.', 'error');
@@ -1052,11 +1333,11 @@ document.addEventListener('DOMContentLoaded', () => {
               }
             }
           }
-          
+
           speaker.isRecording = false;
         }
       });
-      
+
       // Play transcript button
       if (speaker.playTranscriptBtn) {
         speaker.playTranscriptBtn.addEventListener('click', () => {
@@ -1068,7 +1349,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
       }
-      
+
       // Play translation button
       if (speaker.playTranslationBtn) {
         speaker.playTranslationBtn.addEventListener('click', () => {
@@ -1082,7 +1363,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
       }
-      
+
       // Copy transcript button
       if (speaker.copyTranscriptBtn) {
         speaker.copyTranscriptBtn.addEventListener('click', () => {
@@ -1090,7 +1371,7 @@ document.addEventListener('DOMContentLoaded', () => {
           copyTextToClipboard(text, `Speaker ${speaker.id}'s transcript copied!`);
         });
       }
-      
+
       // Copy translation button
       if (speaker.copyTranslationBtn) {
         speaker.copyTranslationBtn.addEventListener('click', () => {
@@ -1100,7 +1381,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  
+
   // File selection display
   const fileInputs = document.querySelectorAll('input[type="file"]');
   fileInputs.forEach(input => {
@@ -1111,7 +1392,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
-  
+
   // About section toggle
   const aboutToggle = document.getElementById('about-toggle');
   const aboutContent = document.getElementById('about-content');
@@ -1126,4 +1407,20 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Initialize editable transcript functionality
+  setupTranslateEditedButtons();
+  setupUndoButtons();
+
+  // Add auto-scroll on focus for mobile
+  document.querySelectorAll('.form-textarea').forEach(textarea => {
+    textarea.addEventListener('focus', function() {
+      // On mobile, scroll the textarea into view when focused
+      if (window.innerWidth < 768) {
+        setTimeout(() => {
+          this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300); // Short delay to account for keyboard appearance
+      }
+    });
+  });
 });

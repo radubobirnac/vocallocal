@@ -246,6 +246,8 @@ p {
 .form-textarea {
   min-height: 100px;
   resize: vertical;
+  padding: 0.75rem; /* Larger padding for better touch targets */
+  font-size: 16px; /* Prevent iOS zoom on focus */
 }
 
 /* Radio and checkbox */
@@ -401,11 +403,11 @@ p {
   .md\:grid-cols-2 {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .md\:grid-cols-3 {
     grid-template-columns: repeat(3, 1fr);
   }
-  
+
   .md\:flex-row {
     flex-direction: row;
   }
@@ -498,6 +500,36 @@ p {
 /* Translation section */
 .translation-section {
   margin-top: 1rem;
+}
+
+/* Transcript controls */
+.transcript-controls {
+  margin-top: 0.5rem;
+}
+
+.button-small {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .transcript-controls {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .transcript-controls div {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .transcript-controls button {
+    flex: 1;
+  }
+}
   padding-top: 1rem;
   border-top: 1px solid hsl(var(--border));
 }
@@ -602,6 +634,23 @@ input:checked + .slider:before {
 
 .slider.round:before {
   border-radius: 50%;
+}
+
+/* Translation Model Toggle specific styles */
+#translation-model-toggle + .slider {
+  background-color: #f0f0f0;
+  border: 2px solid #ddd;
+}
+
+#translation-model-toggle:checked + .slider {
+  background-color: #4CAF50;
+}
+
+#translation-model-description {
+  color: #666;
+  font-style: italic;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
 }
 /* Theme Selector Styles */
 .theme-selector {
