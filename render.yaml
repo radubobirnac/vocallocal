@@ -7,8 +7,9 @@ services:
       apt-get install -y portaudio19-dev python3-pyaudio
       pip install --upgrade pip
       pip install -r requirements.txt
+      pip install google-generativeai>=0.8.5
     startCommand: gunicorn app:app
     plan: free
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.11 
+        value: 3.11.11
