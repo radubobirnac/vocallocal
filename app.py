@@ -10,8 +10,21 @@ import datetime
 from flask import Flask, request, jsonify, render_template, send_from_directory, session
 from werkzeug.utils import secure_filename
 import openai
-import google.generativeai as genai
 from dotenv import load_dotenv
+
+# Try to import Google Generative AI
+try:
+    import google.generativeai as genai
+    GEMINI_AVAILABLE = True
+    print("Google Generative AI module loaded successfully")
+except ImportError:
+    GEMINI_AVAILABLE = False
+    print("Warning: Google Generative AI module not available. Gemini features will be disabled.")
+    # Create a placeholder for genai
+    class GenaiPlaceholder:
+        def configure(self, **kwargs):
+            pass
+    genai = GenaiPlaceholder()
 
 # Load environment variables
 load_dotenv()
@@ -29,8 +42,9 @@ if not openai.api_key:
 gemini_api_key = os.getenv('Gemini_Api_Key')
 if not gemini_api_key:
     print("Warning: Gemini API key not found. Set Gemini_Api_Key environment variable.")
-else:
+elif GEMINI_AVAILABLE:
     genai.configure(api_key=gemini_api_key)
+    print("Gemini API configured successfully")
 
 # Configure upload settings
 UPLOAD_FOLDER = tempfile.gettempdir()
@@ -405,6 +419,10 @@ def translate_text():
 
 def transcribe_with_gemini(audio_data, language, model_type="gemini-2.5-pro-preview-03-25"):
     """Helper function to transcribe audio using Google Gemini"""
+    # Check if Gemini is available
+    if not GEMINI_AVAILABLE:
+        raise ImportError("Google Generative AI module is not available. Cannot use Gemini for transcription.")
+
     try:
         # First, let's list available models to see what we can use
         try:
@@ -507,6 +525,10 @@ def translate_with_openai(text, target_language, prompt):
 
 def translate_with_gemini(text, target_language, prompt, translation_model='gemini'):
     """Helper function to translate text using Google Gemini"""
+    # Check if Gemini is available
+    if not GEMINI_AVAILABLE:
+        raise ImportError("Google Generative AI module is not available. Cannot use Gemini for translation.")
+
     # Configure the model
     generation_config = {
         "temperature": 0.2,

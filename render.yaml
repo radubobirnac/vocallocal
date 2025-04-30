@@ -8,7 +8,8 @@ services:
       pip install --upgrade pip
       pip install -r requirements.txt
       pip install google-generativeai>=0.8.5
-    startCommand: gunicorn app:app
+      pip install google-api-core google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib googleapis-common-protos protobuf
+    startCommand: bash ./start.sh
     plan: free
     envVars:
       - key: PYTHON_VERSION
