@@ -3,8 +3,12 @@ services:
     name: vocallocal
     env: python
     buildCommand: |
-      chmod +x build.sh
-      ./build.sh
+      apt-get update
+      apt-get install -y portaudio19-dev python3-pyaudio
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      chmod +x postbuild.sh
+      ./postbuild.sh
     startCommand: bash ./start.sh
     plan: free
     envVars:

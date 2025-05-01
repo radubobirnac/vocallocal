@@ -7,32 +7,14 @@ python --version
 echo "Pip version:"
 pip --version
 
-# Ensure Google packages are installed
-echo "Installing Google Generative AI package..."
-pip install google-generativeai>=0.8.5 --verbose
-echo "Installing Google API dependencies..."
-pip install google-api-core google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib googleapis-common-protos protobuf --verbose
+# Install Google packages directly into the site-packages directory
+echo "Installing Google packages directly..."
+python -m pip install --target=/opt/render/project/src/.venv/lib/python3.11/site-packages google-generativeai>=0.8.5
+python -m pip install --target=/opt/render/project/src/.venv/lib/python3.11/site-packages google-api-core google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib googleapis-common-protos protobuf
 
 # Verify installation
 echo "Checking installed packages:"
 pip list | grep google
-
-# Check if the google package is installed
-if pip list | grep -q "google-api-core"; then
-  echo "Google API Core is installed"
-else
-  echo "ERROR: Google API Core is NOT installed"
-  # Try to fix by installing directly
-  pip install --no-cache-dir google-api-core
-fi
-
-if pip list | grep -q "google-generativeai"; then
-  echo "Google Generative AI is installed"
-else
-  echo "ERROR: Google Generative AI is NOT installed"
-  # Try to fix by installing directly
-  pip install --no-cache-dir google-generativeai
-fi
 
 # Check Python path
 echo "Python path:"
