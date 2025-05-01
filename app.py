@@ -63,6 +63,39 @@ except Exception as outer_e:
             pass
     genai = GenaiPlaceholder()
 
+# Import token counter and metrics tracker
+try:
+    import tiktoken
+except ImportError:
+    # Install tiktoken if not available
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "tiktoken"])
+        import tiktoken
+    except Exception:
+        print("Failed to install tiktoken. Token counting will use approximations.")
+
+# Import our custom modules
+try:
+    from token_counter import (
+        count_openai_tokens, count_openai_chat_tokens, count_openai_audio_tokens,
+        count_gemini_tokens, count_gemini_audio_tokens, estimate_audio_duration
+    )
+    from metrics_tracker import (
+        metrics_tracker, track_translation_metrics, track_transcription_metrics
+    )
+    METRICS_AVAILABLE = True
+    print("Metrics tracking enabled")
+except ImportError as e:
+    print(f"Metrics tracking not available: {str(e)}")
+    METRICS_AVAILABLE = False
+
+    # Create placeholder decorators if metrics tracking is not available
+    def track_translation_metrics(func):
+        return func
+
+    def track_transcription_metrics(func):
+        return func
+
 # Load environment variables
 load_dotenv()
 
@@ -454,6 +487,7 @@ def translate_text():
             'details': 'See server logs for more information'
         }), 500
 
+@track_transcription_metrics
 def transcribe_with_gemini(audio_data, language, model_type="gemini-2.5-pro-preview-03-25"):
     """Helper function to transcribe audio using Google Gemini"""
     # Check if Gemini is available
@@ -491,6 +525,21 @@ def transcribe_with_gemini(audio_data, language, model_type="gemini-2.5-pro-prev
 
         # Check if the model is available
         model_name = model_type
+        # For metrics tracking, use a simplified model name
+        display_model = model_type
+        if 'gemini-2.5-flash-preview' in model_type:
+            display_model = 'gemini-2.5-flash-preview'
+        elif 'gemini-2.5-pro-preview' in model_type:
+            display_model = 'gemini-2.5-pro-preview'
+
+        # Estimate audio duration for token counting
+        audio_size = len(audio_data)
+        estimated_duration = estimate_audio_duration(audio_size, "webm") if METRICS_AVAILABLE else None
+
+        # Estimate token usage
+        estimated_tokens = count_gemini_audio_tokens(audio_size, estimated_duration) if METRICS_AVAILABLE else audio_size // 100
+        print(f"Estimated Gemini audio transcription token usage: {estimated_tokens} tokens (audio size: {audio_size} bytes, est. duration: {estimated_duration:.2f}s)")
+
         if model_name not in str(available_models):
             print(f"Warning: {model_name} not found in available models. Attempting to use it anyway.")
 
@@ -498,9 +547,11 @@ def transcribe_with_gemini(audio_data, language, model_type="gemini-2.5-pro-prev
             if "gemini-pro" in available_models:
                 print(f"Trying alternative model: gemini-pro")
                 model_name = "gemini-pro"
+                display_model = "gemini-pro"
             elif "gemini-1.5-pro" in available_models:
                 print(f"Trying alternative model: gemini-1.5-pro")
                 model_name = "gemini-1.5-pro"
+                display_model = "gemini-1.5-pro"
 
         # Initialize the Gemini model
         model = genai.GenerativeModel(
@@ -534,6 +585,7 @@ def transcribe_with_gemini(audio_data, language, model_type="gemini-2.5-pro-prev
         transcription = response.text
 
         print(f"Gemini transcription completed: {len(transcription)} characters")
+        print(f"Successfully transcribed with {model_type}")
 
         return transcription
 
@@ -549,13 +601,22 @@ def transcribe_with_gemini(audio_data, language, model_type="gemini-2.5-pro-prev
         print("Falling back to OpenAI for transcription.")
         return transcribe_with_openai(audio_data, language)
 
-def transcribe_with_openai(audio_data, language):
+@track_transcription_metrics
+def transcribe_with_openai(audio_data, language, model_type="whisper-1"):
     """Helper function to transcribe audio using OpenAI"""
     try:
         # Create a temporary file to store the audio
         with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
             temp_file.write(audio_data)
             temp_file_path = temp_file.name
+
+        # Estimate audio duration for token counting
+        audio_size = len(audio_data)
+        estimated_duration = estimate_audio_duration(audio_size, "webm") if METRICS_AVAILABLE else None
+
+        # Estimate token usage
+        estimated_tokens = count_openai_audio_tokens(audio_size, estimated_duration) if METRICS_AVAILABLE else audio_size // 100
+        print(f"Estimated OpenAI audio transcription token usage: {estimated_tokens} tokens (audio size: {audio_size} bytes, est. duration: {estimated_duration:.2f}s)")
 
         # Open the file in binary mode
         with open(temp_file_path, 'rb') as audio_file:
@@ -580,20 +641,40 @@ def transcribe_with_openai(audio_data, language):
         print(f"Error in OpenAI transcription: {str(e)}")
         raise e
 
-def translate_with_openai(text, target_language, prompt):
+@track_translation_metrics
+def translate_with_openai(text, target_language, prompt, translation_model='openai'):
     """Helper function to translate text using OpenAI"""
+    # Prepare messages
+    messages = [
+        {"role": "system", "content": prompt},
+        {"role": "user", "content": text}
+    ]
+
+    # Count tokens for logging and metrics
+    model_name = "gpt-4.1-mini"
+    input_tokens = count_openai_chat_tokens(messages, model_name) if METRICS_AVAILABLE else len(text) // 4
+
+    # Make the API call
     response = openai.chat.completions.create(
-        model="gpt-4.1-mini",
-        messages=[
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": text}
-        ],
+        model=model_name,
+        messages=messages,
         temperature=0.3,
         max_tokens=5000
     )
 
-    return response.choices[0].message.content
+    # Get the response text
+    translated_text = response.choices[0].message.content
 
+    # Count output tokens for metrics
+    output_tokens = count_openai_tokens(translated_text, model_name) if METRICS_AVAILABLE else len(translated_text) // 4
+
+    # Log token usage
+    total_tokens = input_tokens + output_tokens
+    print(f"OpenAI translation token usage: {total_tokens} tokens (input: {input_tokens}, output: {output_tokens})")
+
+    return translated_text
+
+@track_translation_metrics
 def translate_with_gemini(text, target_language, prompt, translation_model='gemini'):
     """Helper function to translate text using Google Gemini"""
     # Check if Gemini is available
@@ -612,17 +693,24 @@ def translate_with_gemini(text, target_language, prompt, translation_model='gemi
 
         # Select the appropriate model based on the translation_model parameter
         model_name = "gemini-2.0-flash-lite"  # Default model
+        display_model = translation_model  # For metrics tracking
 
         if 'gemini-2.5-flash-preview' in translation_model:
             # Use the full model name from the available models list
             model_name = "models/gemini-2.5-flash-preview-04-17"
+            display_model = "gemini-2.5-flash"
             print(f"Using Gemini 2.5 Flash Preview model for translation")
         elif 'gemini-2.5-pro-preview' in translation_model:
             # Use the full model name from the available models list
             model_name = "models/gemini-2.5-pro-preview-03-25"
+            display_model = "gemini-2.5-pro"
             print(f"Using Gemini 2.5 Pro Preview model for translation")
         else:
             print(f"Using Gemini 2.0 Flash Lite model for translation")
+
+        # Count input tokens for metrics
+        input_prompt = f"{prompt}\n\nText to translate: {text}"
+        input_tokens = count_gemini_tokens(input_prompt, model_name) if METRICS_AVAILABLE else len(input_prompt) // 3
 
         # Initialize the Gemini model
         model = genai.GenerativeModel(
@@ -632,11 +720,18 @@ def translate_with_gemini(text, target_language, prompt, translation_model='gemi
 
         # Create the prompt with system and user messages
         chat = model.start_chat(history=[])
-        response = chat.send_message(
-            f"{prompt}\n\nText to translate: {text}"
-        )
+        response = chat.send_message(input_prompt)
 
-        return response.text
+        translated_text = response.text
+
+        # Count output tokens for metrics
+        output_tokens = count_gemini_tokens(translated_text, model_name) if METRICS_AVAILABLE else len(translated_text) // 3
+
+        # Log token usage
+        total_tokens = input_tokens + output_tokens
+        print(f"Gemini translation token usage: {total_tokens} tokens (input: {input_tokens}, output: {output_tokens})")
+
+        return translated_text
     except Exception as e:
         print(f"Error using Gemini API: {str(e)}. Falling back to OpenAI for translation.")
         return translate_with_openai(text, target_language, prompt)
@@ -682,6 +777,37 @@ def test_openai_api():
         import traceback
         error_details = traceback.format_exc()
         print(f"OpenAI API test error: {str(e)}\n{error_details}")
+
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/admin/dashboard', methods=['GET'])
+def admin_dashboard():
+    """Admin dashboard for viewing metrics"""
+    from datetime import datetime
+    today_date = datetime.now().strftime("%Y-%m-%d")
+    return render_template('admin_dashboard.html', today_date=today_date)
+
+@app.route('/api/admin/metrics', methods=['GET'])
+def get_metrics():
+    """API endpoint to get metrics data"""
+    if not METRICS_AVAILABLE:
+        return jsonify({
+            'status': 'error',
+            'message': 'Metrics tracking is not available'
+        }), 500
+
+    try:
+        # Get metrics from the tracker
+        metrics_data = metrics_tracker.get_metrics()
+
+        return jsonify(metrics_data)
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Metrics API error: {str(e)}\n{error_details}")
 
         return jsonify({
             'status': 'error',

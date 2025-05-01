@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VocalLocal Admin Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .metrics-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+        
+        .metrics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .metrics-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .metric-item {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        
+        .metric-name {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .metric-subtext {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
+        }
+        
+        .tab-container {
+            margin-bottom: 20px;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab-button {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #666;
+        }
+        
+        .tab-button.active {
+            color: #007bff;
+            border-bottom: 2px solid #007bff;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px 0;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>VocalLocal Admin Dashboard</h1>
+        
+        <div class="tab-container">
+            <div class="tab-buttons">
+                <button class="tab-button active" data-tab="overview">Overview</button>
+                <button class="tab-button" data-tab="translation">Translation</button>
+                <button class="tab-button" data-tab="transcription">Transcription</button>
+                <button class="tab-button" data-tab="daily">Daily Usage</button>
+                <button class="tab-button" data-tab="hourly">Hourly Usage</button>
+            </div>
+            
+            <div id="overview" class="tab-content active">
+                <div class="metrics-card">
+                    <div class="metrics-header">
+                        <div class="metrics-title">Overall Usage</div>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <div class="metric-name">Total Translations</div>
+                            <div class="metric-value" id="total-translations">0</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-name">Total Transcriptions</div>
+                            <div class="metric-value" id="total-transcriptions">0</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-name">Total Tokens Used</div>
+                            <div class="metric-value" id="total-tokens">0</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-name">Average Response Time</div>
+                            <div class="metric-value" id="avg-response-time">0 ms</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="metrics-card">
+                    <div class="metrics-header">
+                        <div class="metrics-title">Model Usage Distribution</div>
+                    </div>
+                    <div class="chart-container" id="model-distribution-chart">
+                        <!-- Chart will be rendered here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div id="translation" class="tab-content">
+                <div class="metrics-card">
+                    <div class="metrics-header">
+                        <div class="metrics-title">Translation Metrics</div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Calls</th>
+                                <th>Tokens</th>
+                                <th>Characters</th>
+                                <th>Avg. Time (s)</th>
+                                <th>Chars/Second</th>
+                                <th>Success Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody id="translation-table-body">
+                            <!-- Table rows will be populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="transcription" class="tab-content">
+                <div class="metrics-card">
+                    <div class="metrics-header">
+                        <div class="metrics-title">Transcription Metrics</div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Calls</th>
+                                <th>Tokens</th>
+                                <th>Characters</th>
+                                <th>Avg. Time (s)</th>
+                                <th>Chars/Second</th>
+                                <th>Success Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transcription-table-body">
+                            <!-- Table rows will be populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="daily" class="tab-content">
+                <div class="metrics-card">
+                    <div class="metrics-header">
+                        <div class="metrics-title">Daily Usage</div>
+                        <div>
+                            <input type="date" id="daily-date-picker" value="{{ today_date }}">
+                        </div>
+                    </div>
+                    <div class="chart-container" id="daily-usage-chart">
+                        <!-- Chart will be rendered here -->
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Operation</th>
+                                <th>Model</th>
+                                <th>Tokens</th>
+                            </tr>
+                        </thead>
+                        <tbody id="daily-table-body">
+                            <!-- Table rows will be populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="hourly" class="tab-content">
+                <div class="metrics-card">
+                    <div class="metrics-header">
+                        <div class="metrics-title">Hourly Usage</div>
+                        <div>
+                            <input type="date" id="hourly-date-picker" value="{{ today_date }}">
+                            <select id="hourly-hour-picker">
+                                <!-- Hours will be populated dynamically -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="hourly-usage-chart">
+                        <!-- Chart will be rendered here -->
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Operation</th>
+                                <th>Model</th>
+                                <th>Tokens</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hourly-table-body">
+                            <!-- Table rows will be populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Fetch metrics data from the API
+        async function fetchMetrics() {
+            try {
+                const response = await fetch('/api/admin/metrics');
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching metrics:', error);
+                return null;
+            }
+        }
+        
+        // Update the dashboard with the fetched metrics
+        async function updateDashboard() {
+            const metrics = await fetchMetrics();
+            if (!metrics) return;
+            
+            // Update overview metrics
+            updateOverviewMetrics(metrics);
+            
+            // Update translation table
+            updateTranslationTable(metrics.translation);
+            
+            // Update transcription table
+            updateTranscriptionTable(metrics.transcription);
+            
+            // Update daily usage
+            updateDailyUsage(metrics.daily_usage);
+            
+            // Update hourly usage
+            updateHourlyUsage(metrics.hourly_usage);
+            
+            // Create charts
+            createModelDistributionChart(metrics);
+        }
+        
+        function updateOverviewMetrics(metrics) {
+            let totalTranslations = 0;
+            let totalTranscriptions = 0;
+            let totalTokens = 0;
+            let totalTime = 0;
+            let totalCalls = 0;
+            
+            // Calculate translation totals
+            for (const model in metrics.translation) {
+                const modelData = metrics.translation[model];
+                totalTranslations += modelData.calls;
+                totalTokens += modelData.tokens;
+                totalTime += modelData.time;
+                totalCalls += modelData.calls;
+            }
+            
+            // Calculate transcription totals
+            for (const model in metrics.transcription) {
+                const modelData = metrics.transcription[model];
+                totalTranscriptions += modelData.calls;
+                totalTokens += modelData.tokens;
+                totalTime += modelData.time;
+                totalCalls += modelData.calls;
+            }
+            
+            // Update the DOM
+            document.getElementById('total-translations').textContent = totalTranslations;
+            document.getElementById('total-transcriptions').textContent = totalTranscriptions;
+            document.getElementById('total-tokens').textContent = totalTokens.toLocaleString();
+            
+            const avgResponseTime = totalCalls > 0 ? (totalTime / totalCalls) * 1000 : 0;
+            document.getElementById('avg-response-time').textContent = `${avgResponseTime.toFixed(0)} ms`;
+        }
+        
+        function updateTranslationTable(translationMetrics) {
+            const tableBody = document.getElementById('translation-table-body');
+            tableBody.innerHTML = '';
+            
+            for (const model in translationMetrics) {
+                const data = translationMetrics[model];
+                const avgTime = data.calls > 0 ? data.time / data.calls : 0;
+                const charsPerSecond = data.time > 0 ? data.chars / data.time : 0;
+                const successRate = data.calls > 0 ? ((data.calls - data.failures) / data.calls) * 100 : 0;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${model}</td>
+                    <td>${data.calls}</td>
+                    <td>${data.tokens.toLocaleString()}</td>
+                    <td>${data.chars.toLocaleString()}</td>
+                    <td>${avgTime.toFixed(2)}</td>
+                    <td>${charsPerSecond.toFixed(2)}</td>
+                    <td>${successRate.toFixed(1)}%</td>
+                `;
+                
+                tableBody.appendChild(row);
+            }
+        }
+        
+        function updateTranscriptionTable(transcriptionMetrics) {
+            const tableBody = document.getElementById('transcription-table-body');
+            tableBody.innerHTML = '';
+            
+            for (const model in transcriptionMetrics) {
+                const data = transcriptionMetrics[model];
+                const avgTime = data.calls > 0 ? data.time / data.calls : 0;
+                const charsPerSecond = data.time > 0 ? data.chars / data.time : 0;
+                const successRate = data.calls > 0 ? ((data.calls - data.failures) / data.calls) * 100 : 0;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${model}</td>
+                    <td>${data.calls}</td>
+                    <td>${data.tokens.toLocaleString()}</td>
+                    <td>${data.chars.toLocaleString()}</td>
+                    <td>${avgTime.toFixed(2)}</td>
+                    <td>${charsPerSecond.toFixed(2)}</td>
+                    <td>${successRate.toFixed(1)}%</td>
+                `;
+                
+                tableBody.appendChild(row);
+            }
+        }
+        
+        function updateDailyUsage(dailyUsage) {
+            const dateInput = document.getElementById('daily-date-picker');
+            const selectedDate = dateInput.value;
+            const tableBody = document.getElementById('daily-table-body');
+            tableBody.innerHTML = '';
+            
+            const dayData = dailyUsage[selectedDate] || {};
+            
+            for (const operation in dayData) {
+                for (const model in dayData[operation]) {
+                    const tokens = dayData[operation][model];
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${operation}</td>
+                        <td>${model}</td>
+                        <td>${tokens.toLocaleString()}</td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                }
+            }
+        }
+        
+        function updateHourlyUsage(hourlyUsage) {
+            const dateInput = document.getElementById('hourly-date-picker');
+            const hourSelect = document.getElementById('hourly-hour-picker');
+            const selectedDate = dateInput.value;
+            const selectedHour = hourSelect.value;
+            const tableBody = document.getElementById('hourly-table-body');
+            tableBody.innerHTML = '';
+            
+            // Populate hours dropdown if needed
+            if (hourSelect.options.length === 0) {
+                for (let i = 0; i < 24; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = `${i.toString().padStart(2, '0')}:00`;
+                    hourSelect.appendChild(option);
+                }
+            }
+            
+            const hourKey = `${selectedDate}-${selectedHour.padStart(2, '0')}`;
+            const hourData = hourlyUsage[hourKey] || {};
+            
+            for (const operation in hourData) {
+                for (const model in hourData[operation]) {
+                    const tokens = hourData[operation][model];
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${operation}</td>
+                        <td>${model}</td>
+                        <td>${tokens.toLocaleString()}</td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                }
+            }
+        }
+        
+        function createModelDistributionChart(metrics) {
+            const ctx = document.getElementById('model-distribution-chart').getContext('2d');
+            
+            // Prepare data for the chart
+            const models = [];
+            const tokenCounts = [];
+            
+            // Add translation models
+            for (const model in metrics.translation) {
+                models.push(`${model} (Translation)`);
+                tokenCounts.push(metrics.translation[model].tokens);
+            }
+            
+            // Add transcription models
+            for (const model in metrics.transcription) {
+                models.push(`${model} (Transcription)`);
+                tokenCounts.push(metrics.transcription[model].tokens);
+            }
+            
+            // Create the chart
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: models,
+                    datasets: [{
+                        label: 'Tokens Used',
+                        data: tokenCounts,
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.5)',
+                            'rgba(255, 99, 132, 0.5)',
+                            'rgba(75, 192, 192, 0.5)',
+                            'rgba(255, 206, 86, 0.5)',
+                            'rgba(153, 102, 255, 0.5)',
+                            'rgba(255, 159, 64, 0.5)'
+                        ],
+                        borderColor: [
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Tokens'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Token Usage by Model'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Tab switching functionality
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons and content
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                
+                // Add active class to clicked button and corresponding content
+                button.classList.add('active');
+                const tabId = button.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        // Date picker event listeners
+        document.getElementById('daily-date-picker').addEventListener('change', updateDashboard);
+        document.getElementById('hourly-date-picker').addEventListener('change', updateDashboard);
+        document.getElementById('hourly-hour-picker').addEventListener('change', updateDashboard);
+        
+        // Initial dashboard update
+        updateDashboard();
+        
+        // Refresh dashboard every 5 minutes
+        setInterval(updateDashboard, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
