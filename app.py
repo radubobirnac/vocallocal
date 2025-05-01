@@ -12,30 +12,50 @@ from werkzeug.utils import secure_filename
 import openai
 from dotenv import load_dotenv
 
-# Try to import Google Generative AI
+# Try to import Google Generative AI, install if missing
 try:
     # Print debug information about the Python path
     import sys
+    import subprocess
     print("Python path:")
     for path in sys.path:
         print(f"  {path}")
 
     # Try to import the module
     print("Attempting to import google.generativeai...")
-    import google.generativeai as genai
-    GEMINI_AVAILABLE = True
-    print("Google Generative AI module loaded successfully")
-except ImportError as e:
-    GEMINI_AVAILABLE = False
-    print(f"Warning: Google Generative AI module not available: {str(e)}")
-    print("Gemini features will be disabled.")
-
-    # Try to import the base google package to see if it's available
     try:
-        import google
-        print(f"Base google package is available: {google.__file__}")
-    except ImportError as e2:
-        print(f"Base google package is not available: {str(e2)}")
+        import google.generativeai as genai
+        GEMINI_AVAILABLE = True
+        print("Google Generative AI module loaded successfully")
+    except ImportError as e:
+        print(f"Google Generative AI module not available: {str(e)}")
+        print("Attempting to install Google Generative AI module...")
+
+        # Try to install the package
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "google-generativeai>=0.8.5"])
+            subprocess.check_call([sys.executable, "-m", "pip", "install",
+                                  "google-api-core", "google-api-python-client", "google-auth",
+                                  "google-auth-httplib2", "google-auth-oauthlib",
+                                  "googleapis-common-protos", "protobuf"])
+
+            # Try importing again
+            import google.generativeai as genai
+            GEMINI_AVAILABLE = True
+            print("Google Generative AI module installed and loaded successfully")
+        except Exception as install_error:
+            print(f"Failed to install Google Generative AI module: {str(install_error)}")
+            GEMINI_AVAILABLE = False
+            print("Gemini features will be disabled.")
+
+            # Create a placeholder for genai
+            class GenaiPlaceholder:
+                def configure(self, **kwargs):
+                    pass
+            genai = GenaiPlaceholder()
+except Exception as outer_e:
+    print(f"Unexpected error: {str(outer_e)}")
+    GEMINI_AVAILABLE = False
 
     # Create a placeholder for genai
     class GenaiPlaceholder:
@@ -438,7 +458,9 @@ def transcribe_with_gemini(audio_data, language, model_type="gemini-2.5-pro-prev
     """Helper function to transcribe audio using Google Gemini"""
     # Check if Gemini is available
     if not GEMINI_AVAILABLE:
-        raise ImportError("Google Generative AI module is not available. Cannot use Gemini for transcription.")
+        print("Google Generative AI module is not available. Cannot use Gemini for transcription.")
+        print("Falling back to OpenAI for transcription.")
+        return transcribe_with_openai(audio_data, language)
 
     try:
         # First, let's list available models to see what we can use
@@ -523,7 +545,39 @@ def transcribe_with_gemini(audio_data, language, model_type="gemini-2.5-pro-prev
             print("The Gemini 2.5 Flash Preview model does not support audio transcription yet.")
             print("This feature may be available in a future update.")
 
-        # Re-raise the exception to be handled by the caller
+        # Fall back to OpenAI for transcription
+        print("Falling back to OpenAI for transcription.")
+        return transcribe_with_openai(audio_data, language)
+
+def transcribe_with_openai(audio_data, language):
+    """Helper function to transcribe audio using OpenAI"""
+    try:
+        # Create a temporary file to store the audio
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
+            temp_file.write(audio_data)
+            temp_file_path = temp_file.name
+
+        # Open the file in binary mode
+        with open(temp_file_path, 'rb') as audio_file:
+            # Call the OpenAI API to transcribe the audio
+            response = openai.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file,
+                language=language if language != "auto" else None
+            )
+
+        # Clean up the temporary file
+        os.remove(temp_file_path)
+
+        # Extract the transcription from the response
+        transcription = response.text
+
+        print(f"OpenAI transcription completed: {len(transcription)} characters")
+
+        return transcription
+
+    except Exception as e:
+        print(f"Error in OpenAI transcription: {str(e)}")
         raise e
 
 def translate_with_openai(text, target_language, prompt):
@@ -544,43 +598,48 @@ def translate_with_gemini(text, target_language, prompt, translation_model='gemi
     """Helper function to translate text using Google Gemini"""
     # Check if Gemini is available
     if not GEMINI_AVAILABLE:
-        raise ImportError("Google Generative AI module is not available. Cannot use Gemini for translation.")
+        print("Google Generative AI module is not available. Falling back to OpenAI for translation.")
+        return translate_with_openai(text, target_language, prompt)
 
-    # Configure the model
-    generation_config = {
-        "temperature": 0.2,
-        "top_p": 0.95,
-        "top_k": 0,
-        "max_output_tokens": 8192,
-    }
+    try:
+        # Configure the model
+        generation_config = {
+            "temperature": 0.2,
+            "top_p": 0.95,
+            "top_k": 0,
+            "max_output_tokens": 8192,
+        }
 
-    # Select the appropriate model based on the translation_model parameter
-    model_name = "gemini-2.0-flash-lite"  # Default model
+        # Select the appropriate model based on the translation_model parameter
+        model_name = "gemini-2.0-flash-lite"  # Default model
 
-    if 'gemini-2.5-flash-preview' in translation_model:
-        # Use the full model name from the available models list
-        model_name = "models/gemini-2.5-flash-preview-04-17"
-        print(f"Using Gemini 2.5 Flash Preview model for translation")
-    elif 'gemini-2.5-pro-preview' in translation_model:
-        # Use the full model name from the available models list
-        model_name = "models/gemini-2.5-pro-preview-03-25"
-        print(f"Using Gemini 2.5 Pro Preview model for translation")
-    else:
-        print(f"Using Gemini 2.0 Flash Lite model for translation")
+        if 'gemini-2.5-flash-preview' in translation_model:
+            # Use the full model name from the available models list
+            model_name = "models/gemini-2.5-flash-preview-04-17"
+            print(f"Using Gemini 2.5 Flash Preview model for translation")
+        elif 'gemini-2.5-pro-preview' in translation_model:
+            # Use the full model name from the available models list
+            model_name = "models/gemini-2.5-pro-preview-03-25"
+            print(f"Using Gemini 2.5 Pro Preview model for translation")
+        else:
+            print(f"Using Gemini 2.0 Flash Lite model for translation")
 
-    # Initialize the Gemini model
-    model = genai.GenerativeModel(
-        model_name=model_name,
-        generation_config=generation_config
-    )
+        # Initialize the Gemini model
+        model = genai.GenerativeModel(
+            model_name=model_name,
+            generation_config=generation_config
+        )
 
-    # Create the prompt with system and user messages
-    chat = model.start_chat(history=[])
-    response = chat.send_message(
-        f"{prompt}\n\nText to translate: {text}"
-    )
+        # Create the prompt with system and user messages
+        chat = model.start_chat(history=[])
+        response = chat.send_message(
+            f"{prompt}\n\nText to translate: {text}"
+        )
 
-    return response.text
+        return response.text
+    except Exception as e:
+        print(f"Error using Gemini API: {str(e)}. Falling back to OpenAI for translation.")
+        return translate_with_openai(text, target_language, prompt)
 
 # For loading static assets
 @app.route('/static/<path:path>')
