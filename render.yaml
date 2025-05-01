@@ -14,3 +14,9 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.11
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: Gemini_Api_Key
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
