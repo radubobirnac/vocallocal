@@ -54,87 +54,240 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Speak text using TTS
-  function speakText(text, langCode) {
+  // Global state for TTS players
+  const ttsPlayers = {};
+
+  // Function to manage button states for TTS
+  function setTTSButtonState(sourceId, state) {
+    const playBtn = document.getElementById(`play-${sourceId}`);
+    const stopBtn = document.getElementById(`stop-${sourceId}`);
+
+    if (!playBtn || !stopBtn) return;
+
+    if (state === 'playing') {
+      playBtn.style.display = 'none';
+      stopBtn.style.display = 'inline-flex'; // Use inline-flex to match button class
+    } else { // 'stopped', 'paused', 'ended', 'error'
+      playBtn.style.display = 'inline-flex';
+      stopBtn.style.display = 'none';
+    }
+  }
+
+  // Speak text using TTS with play/pause/resume
+  function speakText(sourceId, text, langCode) {
     if (!text || text.trim() === '') {
       showStatus('No text to speak', 'warning');
       return;
     }
 
-    showStatus('Generating audio...', 'info');
+    // Initialize player state if it doesn't exist
+    if (!ttsPlayers[sourceId]) {
+      ttsPlayers[sourceId] = {
+        audio: null,
+        paused: false,
+        blobUrl: null,
+        lang: null,
+        text: null,
+        error: false
+      };
+    }
 
-    // Call our backend TTS API
+    const player = ttsPlayers[sourceId];
+
+    // --- Resume Logic ---
+    if (player.audio && player.paused && player.text === text && player.lang === langCode) {
+      player.audio.play()
+        .then(() => {
+          player.paused = false;
+          setTTSButtonState(sourceId, 'playing');
+          showStatus('Resuming audio...', 'info');
+        })
+        .catch(error => {
+          showStatus('Error resuming audio: ' + error.message, 'error');
+          console.error('Audio resume error:', error);
+          setTTSButtonState(sourceId, 'error');
+          player.error = true;
+        });
+      return; // Don't fetch new audio if resuming
+    }
+
+    // --- Stop any currently playing audio for this source ---
+    if (player.audio && !player.audio.paused) {
+      player.audio.pause();
+      player.audio.currentTime = 0; // Reset playback position
+      if (player.blobUrl) {
+        URL.revokeObjectURL(player.blobUrl); // Clean up old blob URL
+        player.blobUrl = null;
+      }
+    }
+    // Also stop any other playing audio to prevent overlap
+    Object.keys(ttsPlayers).forEach(id => {
+        if (id !== sourceId && ttsPlayers[id].audio && !ttsPlayers[id].audio.paused) {
+            ttsPlayers[id].audio.pause();
+            ttsPlayers[id].paused = true; // Mark as paused
+            setTTSButtonState(id, 'paused');
+        }
+    });
+
+
+    player.text = text;
+    player.lang = langCode;
+    player.paused = false;
+    player.error = false;
+
+    // --- Play from existing blob if available ---
+    if (player.blobUrl) {
+      try {
+        player.audio = new Audio(player.blobUrl);
+        player.audio.playbackRate = 1.10;
+
+        player.audio.onplay = () => {
+          setTTSButtonState(sourceId, 'playing');
+          showStatus('Playing audio...', 'info');
+        };
+        player.audio.onpause = () => {
+          // Only set to paused if not at the end
+          if (!player.audio.ended) {
+            player.paused = true;
+            setTTSButtonState(sourceId, 'paused');
+          }
+        };
+        player.audio.onended = () => {
+          player.paused = false;
+          setTTSButtonState(sourceId, 'ended');
+          // Don't revoke URL here, allow replaying
+        };
+        player.audio.onerror = (e) => {
+          showStatus('Error playing audio', 'error');
+          console.error('Audio playback error:', e);
+          setTTSButtonState(sourceId, 'error');
+          player.error = true;
+          if (player.blobUrl) URL.revokeObjectURL(player.blobUrl); // Clean up on error
+          player.blobUrl = null;
+        };
+
+        player.audio.play().catch(error => {
+          showStatus('Error playing audio: ' + error.message, 'error');
+          console.error('Audio playback error:', error);
+          setTTSButtonState(sourceId, 'error');
+          player.error = true;
+          if (player.blobUrl) URL.revokeObjectURL(player.blobUrl);
+          player.blobUrl = null;
+        });
+      } catch (e) {
+          showStatus('Error creating audio player', 'error');
+          console.error('Audio element creation error:', e);
+          setTTSButtonState(sourceId, 'error');
+          player.error = true;
+          if (player.blobUrl) URL.revokeObjectURL(player.blobUrl);
+          player.blobUrl = null;
+      }
+      return;
+    }
+
+    // --- Fetch new audio blob ---
+    showStatus('Generating audio...', 'info');
+    setTTSButtonState(sourceId, 'loading'); // Indicate loading state visually if needed
+
     fetch('/api/tts', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        text: text,
-        language: langCode
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text, language: langCode })
     })
     .then(response => {
-      if (!response.ok) {
-        throw new Error('TTS service error');
-      }
+      if (!response.ok) throw new Error(`TTS service error (${response.status})`);
       return response.blob();
     })
     .then(audioBlob => {
-      // Create audio element to play the response
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
+      player.blobUrl = URL.createObjectURL(audioBlob);
+      player.audio = new Audio(player.blobUrl);
+      player.audio.playbackRate = 1.10;
 
-      // Set playback rate to 1.10 (10% faster)
-      audio.playbackRate = 1.10;
-
-      // Play the audio
-      audio.play()
-        .then(() => {
-          showStatus('Playing audio...', 'info');
-        })
-        .catch(error => {
-          showStatus('Error playing audio: ' + error.message, 'error');
-          console.error('Audio playback error:', error);
-        });
-
-      // Clean up the object URL when done
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl);
+      player.audio.onplay = () => {
+        setTTSButtonState(sourceId, 'playing');
+        showStatus('Playing audio...', 'info');
       };
+      player.audio.onpause = () => {
+        if (!player.audio.ended) {
+          player.paused = true;
+          setTTSButtonState(sourceId, 'paused');
+        }
+      };
+      player.audio.onended = () => {
+        player.paused = false;
+        setTTSButtonState(sourceId, 'ended');
+        // Don't revoke URL here, allow replaying
+      };
+      player.audio.onerror = (e) => {
+        showStatus('Error playing generated audio', 'error');
+        console.error('Audio playback error:', e);
+        setTTSButtonState(sourceId, 'error');
+        player.error = true;
+        if (player.blobUrl) URL.revokeObjectURL(player.blobUrl);
+        player.blobUrl = null;
+      };
+
+      player.audio.play().catch(error => {
+        showStatus('Error playing audio: ' + error.message, 'error');
+        console.error('Audio playback error:', error);
+        setTTSButtonState(sourceId, 'error');
+        player.error = true;
+        if (player.blobUrl) URL.revokeObjectURL(player.blobUrl);
+        player.blobUrl = null;
+      });
     })
     .catch(error => {
       showStatus('Error generating speech: ' + error.message, 'error');
       console.error('TTS error:', error);
-
-      // Fallback to browser's speech synthesis
-      fallbackSpeakText(text, langCode);
+      setTTSButtonState(sourceId, 'error');
+      player.error = true;
+      // Consider fallbackSpeakText here if desired, but it won't have pause/resume
+      // fallbackSpeakText(sourceId, text, langCode);
     });
   }
 
-  // Fallback TTS using browser's speech synthesis
-  function fallbackSpeakText(text, langCode) {
-    if (!window.speechSynthesis) {
-      showStatus('Text-to-speech is not supported in your browser', 'warning');
-      return;
+  // Function to stop (pause) TTS playback
+  function stopSpeakText(sourceId) {
+    if (ttsPlayers[sourceId] && ttsPlayers[sourceId].audio && !ttsPlayers[sourceId].audio.paused) {
+      ttsPlayers[sourceId].audio.pause();
+      // State update (paused=true, button state) handled by onpause listener
+      showStatus('Playback stopped.', 'info');
     }
-
-    // Stop any current speech
-    window.speechSynthesis.cancel();
-
-    // Create a new utterance
-    const utterance = new SpeechSynthesisUtterance(text);
-
-    // Set rate to 1.10 (10% faster)
-    utterance.rate = 1.10;
-
-    // Set language
-    utterance.lang = langCode;
-
-    // Start speaking
-    window.speechSynthesis.speak(utterance);
-    showStatus('Playing audio (browser TTS fallback)...', 'info');
   }
+
+  // Fallback TTS using browser's speech synthesis (No pause/resume implemented here)
+  function fallbackSpeakText(sourceId, text, langCode) {
+      // Note: Implementing reliable pause/resume with SpeechSynthesis is tricky
+      // and varies across browsers. Sticking to basic playback for fallback.
+      if (!window.speechSynthesis) {
+          showStatus('Text-to-speech is not supported in your browser', 'warning');
+          setTTSButtonState(sourceId, 'error');
+          return;
+      }
+
+      // Stop any current speech globally
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.10;
+      utterance.lang = langCode;
+
+      utterance.onstart = () => {
+          setTTSButtonState(sourceId, 'playing');
+          showStatus('Playing audio (browser TTS fallback)...', 'info');
+      };
+      utterance.onend = () => {
+          setTTSButtonState(sourceId, 'ended');
+      };
+      utterance.onerror = (event) => {
+          showStatus('Browser TTS error: ' + event.error, 'error');
+          console.error('SpeechSynthesis error:', event);
+          setTTSButtonState(sourceId, 'error');
+      };
+
+      window.speechSynthesis.speak(utterance);
+  }
+
 
   // Check browser compatibility
   function checkBrowserCompatibility() {
@@ -1015,20 +1168,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Basic mode play button
+  // Basic mode play/stop buttons
   const basicPlayBtn = document.getElementById('basic-play-btn');
+  const basicStopBtn = document.getElementById('basic-stop-btn');
+
   if (basicPlayBtn) {
     basicPlayBtn.addEventListener('click', () => {
       const transcriptEl = document.getElementById('basic-transcript');
       if (!transcriptEl) return;
-
       const text = transcriptEl.value;
       const langSelect = document.getElementById('basic-language');
       const lang = langSelect ? langSelect.value : 'en';
-
-      speakText(text, lang);
+      speakText('basic', text, lang); // Pass sourceId 'basic'
     });
   }
+  if (basicStopBtn) {
+    basicStopBtn.addEventListener('click', () => {
+      stopSpeakText('basic'); // Pass sourceId 'basic'
+    });
+  }
+
 
   // Basic mode recording
   const basicRecordBtn = document.getElementById('basic-record-btn');
@@ -1171,7 +1330,9 @@ document.addEventListener('DOMContentLoaded', () => {
       languageSelect: document.getElementById('language-1'),
       modelSelect: document.getElementById('model-1'),
       playTranscriptBtn: document.getElementById('play-transcript-1'),
+      stopTranscriptBtn: document.getElementById('stop-transcript-1'), // Added stop button
       playTranslationBtn: document.getElementById('play-translation-1'),
+      stopTranslationBtn: document.getElementById('stop-translation-1'), // Added stop button
       copyTranscriptBtn: document.getElementById('copy-transcript-1'),
       copyTranslationBtn: document.getElementById('copy-translation-1'),
       enableTTS: document.getElementById('enable-tts-1'),
@@ -1188,7 +1349,9 @@ document.addEventListener('DOMContentLoaded', () => {
       languageSelect: document.getElementById('language-2'),
       modelSelect: document.getElementById('model-2'),
       playTranscriptBtn: document.getElementById('play-transcript-2'),
+      stopTranscriptBtn: document.getElementById('stop-transcript-2'), // Added stop button
       playTranslationBtn: document.getElementById('play-translation-2'),
+      stopTranslationBtn: document.getElementById('stop-translation-2'), // Added stop button
       copyTranscriptBtn: document.getElementById('copy-transcript-2'),
       copyTranslationBtn: document.getElementById('copy-translation-2'),
       enableTTS: document.getElementById('enable-tts-2'),
@@ -1338,31 +1501,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
 
-      // Play transcript button
+      // Play/Stop transcript buttons
       if (speaker.playTranscriptBtn) {
         speaker.playTranscriptBtn.addEventListener('click', () => {
           const text = speaker.transcriptEl.value;
+          const sourceId = `transcript-${speaker.id}`;
           if (text && text !== 'Your speech will appear here...') {
-            speakText(text, speaker.languageSelect.value);
+            speakText(sourceId, text, speaker.languageSelect.value);
           } else {
             showStatus('No transcript to play', 'warning');
           }
         });
       }
+      if (speaker.stopTranscriptBtn) {
+          speaker.stopTranscriptBtn.addEventListener('click', () => {
+              const sourceId = `transcript-${speaker.id}`;
+              stopSpeakText(sourceId);
+          });
+      }
 
-      // Play translation button
+
+      // Play/Stop translation buttons
       if (speaker.playTranslationBtn) {
         speaker.playTranslationBtn.addEventListener('click', () => {
           const text = speaker.translationEl.value;
+          const sourceId = `translation-${speaker.id}`;
           if (text && text !== 'Translation will appear here...') {
             const partnerSpeaker = speakers.find(s => s.id === speaker.partnerId);
             const lang = partnerSpeaker?.languageSelect?.value || 'en';
-            speakText(text, lang);
+            speakText(sourceId, text, lang);
           } else {
             showStatus('No translation to play', 'warning');
           }
         });
       }
+      if (speaker.stopTranslationBtn) {
+          speaker.stopTranslationBtn.addEventListener('click', () => {
+              const sourceId = `translation-${speaker.id}`;
+              stopSpeakText(sourceId);
+          });
+      }
+
 
       // Copy transcript button
       if (speaker.copyTranscriptBtn) {

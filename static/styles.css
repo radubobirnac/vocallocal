@@ -530,9 +530,6 @@ p {
     flex: 1;
   }
 }
-  padding-top: 1rem;
-  border-top: 1px solid hsl(var(--border));
-}
 
 .translation-title {
   display: flex;

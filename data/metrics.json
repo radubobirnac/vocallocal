@@ -1,0 +1,94 @@
+{
+  "translation": {
+    "openai": {
+      "calls": 0,
+      "tokens": 0,
+      "chars": 0,
+      "time": 0,
+      "failures": 0
+    },
+    "gemini": {
+      "calls": 0,
+      "tokens": 0,
+      "chars": 0,
+      "time": 0,
+      "failures": 0
+    },
+    "gemini-2.5-flash": {
+      "calls": 0,
+      "tokens": 0,
+      "chars": 0,
+      "time": 0,
+      "failures": 0
+    },
+    "gemini-2.5-pro": {
+      "calls": 0,
+      "tokens": 0,
+      "chars": 0,
+      "time": 0,
+      "failures": 0
+    },
+    "unknown": {
+      "calls": 14,
+      "tokens": 104,
+      "chars": 434,
+      "time": 132.49485206604004,
+      "failures": 0
+    }
+  },
+  "transcription": {
+    "openai": {
+      "calls": 0,
+      "tokens": 0,
+      "chars": 0,
+      "time": 0,
+      "failures": 0
+    },
+    "gemini-2.5-flash-preview": {
+      "calls": 0,
+      "tokens": 0,
+      "chars": 0,
+      "time": 0,
+      "failures": 0
+    },
+    "gemini-2.5-pro-preview": {
+      "calls": 0,
+      "tokens": 0,
+      "chars": 0,
+      "time": 0,
+      "failures": 0
+    },
+    "unknown": {
+      "calls": 20,
+      "tokens": 13640,
+      "chars": 724,
+      "time": 43.34903335571289,
+      "failures": 0
+    }
+  },
+  "daily_usage": {
+    "2025-05-01": {
+      "transcription": {
+        "unknown": 13640
+      },
+      "translation": {
+        "unknown": 104
+      }
+    }
+  },
+  "hourly_usage": {
+    "2025-05-01-08": {
+      "transcription": {
+        "unknown": 1172
+      }
+    },
+    "2025-05-01-09": {
+      "transcription": {
+        "unknown": 12468
+      },
+      "translation": {
+        "unknown": 104
+      }
+    }
+  }
+}
