@@ -1,20 +1,32 @@
 #!/bin/bash
 
-# Make sure script can be executed with: chmod +x build.sh
+# Print debugging information
+echo "Starting build script..."
+echo "Python version:"
+python --version
+echo "Pip version:"
+pip --version
 
-# Set up virtual environment if it doesn't exist
-if [ ! -d "venv" ]; then
-    echo "Creating virtual environment..."
-    python3 -m venv venv
-fi
+# Update pip
+echo "Updating pip..."
+pip install --upgrade pip
 
-# Activate virtual environment
-source venv/bin/activate
+# Install system dependencies
+echo "Installing system dependencies..."
+apt-get update
+apt-get install -y portaudio19-dev python3-pyaudio
 
-# Install dependencies
-echo "Installing dependencies..."
-pip install -r requirements.txt
+# Install Python dependencies
+echo "Installing Python dependencies from requirements-render.txt..."
+pip install -r requirements-render.txt
 
-# Run the application
-echo "Starting VocalLocal application..."
-python app.py
+# Explicitly install Google packages
+echo "Explicitly installing Google packages..."
+pip install google-generativeai>=0.8.5
+pip install google-api-core google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib googleapis-common-protos protobuf
+
+# Verify installation
+echo "Checking installed packages:"
+pip list | grep google
+
+echo "Build script completed successfully."
