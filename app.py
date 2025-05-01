@@ -14,12 +14,29 @@ from dotenv import load_dotenv
 
 # Try to import Google Generative AI
 try:
+    # Print debug information about the Python path
+    import sys
+    print("Python path:")
+    for path in sys.path:
+        print(f"  {path}")
+
+    # Try to import the module
+    print("Attempting to import google.generativeai...")
     import google.generativeai as genai
     GEMINI_AVAILABLE = True
     print("Google Generative AI module loaded successfully")
-except ImportError:
+except ImportError as e:
     GEMINI_AVAILABLE = False
-    print("Warning: Google Generative AI module not available. Gemini features will be disabled.")
+    print(f"Warning: Google Generative AI module not available: {str(e)}")
+    print("Gemini features will be disabled.")
+
+    # Try to import the base google package to see if it's available
+    try:
+        import google
+        print(f"Base google package is available: {google.__file__}")
+    except ImportError as e2:
+        print(f"Base google package is not available: {str(e2)}")
+
     # Create a placeholder for genai
     class GenaiPlaceholder:
         def configure(self, **kwargs):

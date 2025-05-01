@@ -7,8 +7,7 @@ services:
       apt-get install -y portaudio19-dev python3-pyaudio
       pip install --upgrade pip
       pip install -r requirements.txt
-      pip install google-generativeai>=0.8.5
-      pip install google-api-core google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib googleapis-common-protos protobuf
+      pip install google-generativeai>=0.8.5 google-api-core google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib googleapis-common-protos protobuf
     startCommand: bash ./start.sh
     plan: free
     envVars:
