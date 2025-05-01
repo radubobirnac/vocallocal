@@ -39,9 +39,9 @@ if not openai.api_key:
     print("Warning: OpenAI API key not found. Set OPENAI_API_KEY environment variable.")
 
 # Google Gemini API configuration
-gemini_api_key = os.getenv('Gemini_Api_Key')
+gemini_api_key = os.getenv('Gemini_Api_Key') or os.getenv('GEMINI_API_KEY')
 if not gemini_api_key:
-    print("Warning: Gemini API key not found. Set Gemini_Api_Key environment variable.")
+    print("Warning: Gemini API key not found. Set Gemini_Api_Key or GEMINI_API_KEY environment variable.")
 elif GEMINI_AVAILABLE:
     genai.configure(api_key=gemini_api_key)
     print("Gemini API configured successfully")
