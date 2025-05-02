@@ -98,8 +98,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Helper function to detect mobile devices
+  function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }
+
   // Speak text using TTS with play/pause/resume
   function speakText(sourceId, text, langCode) {
+    // For mobile devices or when sourceId refers to a DOM element, always get the latest text
+    if (isMobileDevice() || sourceId.includes('-')) {
+      // For translation elements, always get the current text from the DOM
+      if (sourceId.startsWith('translation-')) {
+        const speakerId = sourceId.split('-')[1];
+        const translationEl = document.getElementById(`translation-${speakerId}`);
+        if (translationEl && translationEl.value.trim() !== '') {
+          text = translationEl.value;
+          console.log(`Using current DOM text for TTS (translation-${speakerId}): ${text.substring(0, 30)}...`);
+        }
+      } else if (sourceId.startsWith('transcript-')) {
+        const speakerId = sourceId.split('-')[1];
+        const transcriptEl = document.getElementById(`transcript-${speakerId}`);
+        if (transcriptEl && transcriptEl.value.trim() !== '') {
+          text = transcriptEl.value;
+          console.log(`Using current DOM text for TTS (transcript-${speakerId}): ${text.substring(0, 30)}...`);
+        }
+      } else if (sourceId === 'basic-transcript') {
+        const transcriptEl = document.getElementById('basic-transcript');
+        if (transcriptEl && transcriptEl.value.trim() !== '') {
+          text = transcriptEl.value;
+          console.log(`Using current DOM text for TTS (basic): ${text.substring(0, 30)}...`);
+        }
+      }
+    }
+
     if (!text || text.trim() === '') {
       showStatus('No text to speak', 'warning');
       return;
@@ -1204,7 +1235,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const text = transcriptEl.value;
       const langSelect = document.getElementById('basic-language');
       const lang = langSelect ? langSelect.value : 'en';
-      speakText('basic-transcript', text, lang); // Use consistent sourceId format
+
+      // For mobile devices, add a small delay to ensure the DOM is fully updated
+      if (isMobileDevice()) {
+        setTimeout(() => {
+          // Get the text again to ensure it's the most current
+          const currentText = transcriptEl.value;
+          speakText('basic-transcript', currentText, lang);
+        }, 50);
+      } else {
+        speakText('basic-transcript', text, lang); // Use consistent sourceId format
+      }
     });
   }
   if (basicStopBtn) {
@@ -1480,7 +1521,13 @@ document.addEventListener('DOMContentLoaded', () => {
                       if (partnerSpeaker.enableTTS && partnerSpeaker.enableTTS.checked) {
                         // Use the correct sourceId format for the translation
                         const sourceId = `translation-${partnerSpeaker.id}`;
-                        speakText(sourceId, translatedText, partnerLang);
+
+                        // Small delay to ensure the DOM is updated with the latest translation
+                        setTimeout(() => {
+                          // Get the text directly from the DOM element to ensure it's current
+                          const currentTranslationText = partnerSpeaker.translationEl.value;
+                          speakText(sourceId, currentTranslationText, partnerLang);
+                        }, 100);
                       }
 
                       showStatus('Transcription and translation complete!', 'success');
@@ -1531,10 +1578,20 @@ document.addEventListener('DOMContentLoaded', () => {
       // Play/Stop transcript buttons
       if (speaker.playTranscriptBtn) {
         speaker.playTranscriptBtn.addEventListener('click', () => {
+          // Always get the current text from the DOM element
           const text = speaker.transcriptEl.value;
           const sourceId = `transcript-${speaker.id}`;
           if (text && text !== 'Your speech will appear here...') {
-            speakText(sourceId, text, speaker.languageSelect.value);
+            // For mobile devices, add a small delay to ensure the DOM is fully updated
+            if (isMobileDevice()) {
+              setTimeout(() => {
+                // Get the text again to ensure it's the most current
+                const currentText = speaker.transcriptEl.value;
+                speakText(sourceId, currentText, speaker.languageSelect.value);
+              }, 50);
+            } else {
+              speakText(sourceId, text, speaker.languageSelect.value);
+            }
           } else {
             showStatus('No transcript to play', 'warning');
           }
@@ -1551,12 +1608,23 @@ document.addEventListener('DOMContentLoaded', () => {
       // Play/Stop translation buttons
       if (speaker.playTranslationBtn) {
         speaker.playTranslationBtn.addEventListener('click', () => {
+          // Always get the current text from the DOM element
           const text = speaker.translationEl.value;
           const sourceId = `translation-${speaker.id}`;
           if (text && text !== 'Translation will appear here...') {
             const partnerSpeaker = speakers.find(s => s.id === speaker.partnerId);
             const lang = partnerSpeaker?.languageSelect?.value || 'en';
-            speakText(sourceId, text, lang);
+
+            // For mobile devices, add a small delay to ensure the DOM is fully updated
+            if (isMobileDevice()) {
+              setTimeout(() => {
+                // Get the text again to ensure it's the most current
+                const currentText = speaker.translationEl.value;
+                speakText(sourceId, currentText, lang);
+              }, 50);
+            } else {
+              speakText(sourceId, text, lang);
+            }
           } else {
             showStatus('No translation to play', 'warning');
           }
