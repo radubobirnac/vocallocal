@@ -59,17 +59,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Function to manage button states for TTS
   function setTTSButtonState(sourceId, state) {
-    const playBtn = document.getElementById(`play-${sourceId}`);
-    const stopBtn = document.getElementById(`stop-${sourceId}`);
+    let playBtn, stopBtn;
 
-    if (!playBtn || !stopBtn) return;
+    // Handle different button ID patterns based on sourceId
+    if (sourceId === 'basic-transcript') {
+      // Basic mode buttons
+      playBtn = document.getElementById('basic-play-btn');
+      stopBtn = document.getElementById('basic-stop-btn');
+    } else if (sourceId.startsWith('transcript-')) {
+      // Bilingual mode transcript buttons
+      const speakerId = sourceId.split('-')[1];
+      playBtn = document.getElementById(`play-transcript-${speakerId}`);
+      stopBtn = document.getElementById(`stop-transcript-${speakerId}`);
+    } else if (sourceId.startsWith('translation-')) {
+      // Bilingual mode translation buttons
+      const speakerId = sourceId.split('-')[1];
+      playBtn = document.getElementById(`play-translation-${speakerId}`);
+      stopBtn = document.getElementById(`stop-translation-${speakerId}`);
+    } else {
+      // Default pattern (for backward compatibility)
+      playBtn = document.getElementById(`play-${sourceId}`);
+      stopBtn = document.getElementById(`stop-${sourceId}`);
+    }
+
+    if (!playBtn || !stopBtn) {
+      console.warn(`Could not find play/stop buttons for sourceId: ${sourceId}`);
+      return;
+    }
 
     if (state === 'playing') {
       playBtn.style.display = 'none';
       stopBtn.style.display = 'inline-flex'; // Use inline-flex to match button class
+      console.log(`TTS Button State: ${sourceId} - PLAYING - Showing stop button`);
     } else { // 'stopped', 'paused', 'ended', 'error'
       playBtn.style.display = 'inline-flex';
       stopBtn.style.display = 'none';
+      console.log(`TTS Button State: ${sourceId} - ${state} - Showing play button`);
     }
   }
 
@@ -1179,12 +1204,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const text = transcriptEl.value;
       const langSelect = document.getElementById('basic-language');
       const lang = langSelect ? langSelect.value : 'en';
-      speakText('basic', text, lang); // Pass sourceId 'basic'
+      speakText('basic-transcript', text, lang); // Use consistent sourceId format
     });
   }
   if (basicStopBtn) {
     basicStopBtn.addEventListener('click', () => {
-      stopSpeakText('basic'); // Pass sourceId 'basic'
+      stopSpeakText('basic-transcript'); // Use consistent sourceId format
     });
   }
 
@@ -1453,7 +1478,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                       // Play TTS if enabled for the partner
                       if (partnerSpeaker.enableTTS && partnerSpeaker.enableTTS.checked) {
-                        speakText(translatedText, partnerLang);
+                        // Use the correct sourceId format for the translation
+                        const sourceId = `translation-${partnerSpeaker.id}`;
+                        speakText(sourceId, translatedText, partnerLang);
                       }
 
                       showStatus('Transcription and translation complete!', 'success');

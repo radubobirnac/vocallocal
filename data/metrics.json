@@ -29,10 +29,10 @@
       "failures": 0
     },
     "unknown": {
-      "calls": 14,
-      "tokens": 104,
-      "chars": 434,
-      "time": 132.49485206604004,
+      "calls": 26,
+      "tokens": 578,
+      "chars": 2342,
+      "time": 158.4873161315918,
       "failures": 0
     }
   },
@@ -59,10 +59,10 @@
       "failures": 0
     },
     "unknown": {
-      "calls": 20,
-      "tokens": 13640,
-      "chars": 724,
-      "time": 43.34903335571289,
+      "calls": 36,
+      "tokens": 57982,
+      "chars": 3688,
+      "time": 97.54540729522705,
       "failures": 0
     }
   },
@@ -73,6 +73,14 @@
       },
       "translation": {
         "unknown": 104
+      }
+    },
+    "2025-05-02": {
+      "transcription": {
+        "unknown": 44342
+      },
+      "translation": {
+        "unknown": 474
       }
     }
   },
@@ -88,6 +96,19 @@
       },
       "translation": {
         "unknown": 104
+      }
+    },
+    "2025-05-02-08": {
+      "transcription": {
+        "unknown": 33324
+      },
+      "translation": {
+        "unknown": 474
+      }
+    },
+    "2025-05-02-09": {
+      "transcription": {
+        "unknown": 11018
       }
     }
   }
