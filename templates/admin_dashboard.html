@@ -127,8 +127,28 @@
                 <button class="tab-button" data-tab="translation">Translation</button>
                 <button class="tab-button" data-tab="transcription">Transcription</button>
                 <button class="tab-button" data-tab="daily">Daily Usage</button>
-                <button class="tab-button" data-tab="hourly">Hourly Usage</button>
             </div>
+            <div class="admin-actions">
+                <button id="reset-metrics-btn" class="reset-button">Reset All Metrics</button>
+            </div>
+            <style>
+                .admin-actions {
+                    margin-top: 1rem;
+                    text-align: right;
+                }
+                .reset-button {
+                    background-color: #dc3545;
+                    color: white;
+                    border: none;
+                    padding: 0.5rem 1rem;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: 500;
+                }
+                .reset-button:hover {
+                    background-color: #c82333;
+                }
+            </style>
 
             <div id="overview" class="tab-content active">
                 <div class="metrics-card">
@@ -290,34 +310,7 @@
                 </div>
             </div>
 
-            <div id="hourly" class="tab-content">
-                <div class="metrics-card">
-                    <div class="metrics-header">
-                        <div class="metrics-title">Hourly Usage</div>
-                        <div>
-                            <input type="date" id="hourly-date-picker" value="{{ today_date }}">
-                            <select id="hourly-hour-picker">
-                                <!-- Hours will be populated dynamically -->
-                            </select>
-                        </div>
-                    </div>
-                    <div class="chart-container" id="hourly-usage-chart">
-                        <!-- Chart will be rendered here -->
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Operation</th>
-                                <th>Model</th>
-                                <th>Tokens</th>
-                            </tr>
-                        </thead>
-                        <tbody id="hourly-table-body">
-                            <!-- Table rows will be populated dynamically -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+
         </div>
     </div>
 
@@ -352,11 +345,34 @@
             // Update daily usage
             updateDailyUsage(metrics.daily_usage);
 
-            // Update hourly usage
-            updateHourlyUsage(metrics.hourly_usage);
-
             // Create charts
             createModelDistributionChart(metrics);
+        }
+
+        // Reset all metrics
+        async function resetMetrics() {
+            if (!confirm('Are you sure you want to reset all metrics? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/reset-metrics', {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    alert('Metrics reset successfully!');
+                    // Refresh the dashboard
+                    updateDashboard();
+                } else {
+                    alert('Error resetting metrics: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error resetting metrics:', error);
+                alert('Error resetting metrics. Please check the console for details.');
+            }
         }
 
         function updateOverviewMetrics(metrics) {
@@ -467,42 +483,7 @@
             }
         }
 
-        function updateHourlyUsage(hourlyUsage) {
-            const dateInput = document.getElementById('hourly-date-picker');
-            const hourSelect = document.getElementById('hourly-hour-picker');
-            const selectedDate = dateInput.value;
-            const selectedHour = hourSelect.value;
-            const tableBody = document.getElementById('hourly-table-body');
-            tableBody.innerHTML = '';
 
-            // Populate hours dropdown if needed
-            if (hourSelect.options.length === 0) {
-                for (let i = 0; i < 24; i++) {
-                    const option = document.createElement('option');
-                    option.value = i;
-                    option.textContent = `${i.toString().padStart(2, '0')}:00`;
-                    hourSelect.appendChild(option);
-                }
-            }
-
-            const hourKey = `${selectedDate}-${selectedHour.padStart(2, '0')}`;
-            const hourData = hourlyUsage[hourKey] || {};
-
-            for (const operation in hourData) {
-                for (const model in hourData[operation]) {
-                    const tokens = hourData[operation][model];
-
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${operation}</td>
-                        <td>${model}</td>
-                        <td>${tokens.toLocaleString()}</td>
-                    `;
-
-                    tableBody.appendChild(row);
-                }
-            }
-        }
 
         function createModelDistributionChart(metrics) {
             const ctx = document.getElementById('model-distribution-chart').getContext('2d');
@@ -586,8 +567,9 @@
 
         // Date picker event listeners
         document.getElementById('daily-date-picker').addEventListener('change', updateDashboard);
-        document.getElementById('hourly-date-picker').addEventListener('change', updateDashboard);
-        document.getElementById('hourly-hour-picker').addEventListener('change', updateDashboard);
+
+        // Reset metrics button event listener
+        document.getElementById('reset-metrics-btn').addEventListener('click', resetMetrics);
 
         // Initial dashboard update
         updateDashboard();

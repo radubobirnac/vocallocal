@@ -1732,17 +1732,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const settingsPanel = document.getElementById('settings-panel');
 
   if (settingsToggle && settingsPanel) {
-    // Check if we should show settings by default on desktop
+    // Always hide settings by default on all devices
     function updateSettingsPanelVisibility() {
-      if (window.innerWidth >= 768) {
-        // On desktop, show settings by default
-        settingsPanel.style.display = 'block';
-        settingsToggle.classList.add('active');
-      } else {
-        // On mobile, hide settings by default
-        settingsPanel.style.display = 'none';
-        settingsToggle.classList.remove('active');
-      }
+      // Hide settings by default on all devices
+      settingsPanel.style.display = 'none';
+      settingsToggle.classList.remove('active');
     }
 
     // Initial setup
@@ -1755,8 +1749,7 @@ document.addEventListener('DOMContentLoaded', () => {
       settingsToggle.classList.toggle('active');
     });
 
-    // Update on window resize
-    window.addEventListener('resize', updateSettingsPanelVisibility);
+    // No need to update on window resize since we always hide settings by default
   }
 
   // Initialize editable transcript functionality

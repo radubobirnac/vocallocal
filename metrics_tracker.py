@@ -248,6 +248,35 @@ class MetricsTracker:
             return self.metrics["hourly_usage"][hour_str]
         return {}
 
+    def reset_metrics(self):
+        """Reset all metrics to zero"""
+        # Create a fresh metrics structure
+        self.metrics = {
+            "translation": {
+                "openai": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0},
+                "gemini": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0},
+                "gemini-2.5-flash": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0},
+                "gemini-2.5-pro": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0}
+            },
+            "transcription": {
+                "openai": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0},
+                "gemini-2.0-flash-lite": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0},
+                "gemini-2.5-flash-preview": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0},
+                "gemini-2.5-pro-preview": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0}
+            },
+            "tts": {
+                "openai": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0},
+                "gemini": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0}
+            },
+            "daily_usage": {},
+            "hourly_usage": {}
+        }
+
+        # Save the reset metrics
+        self._save_metrics()
+
+        logger.info("All metrics have been reset to zero")
+
 # Create a singleton instance
 metrics_tracker = MetricsTracker()
 
@@ -286,9 +315,10 @@ def track_translation_metrics(func):
             # Get character count from the first argument (text)
             char_count = len(args[0]) if args else 0
 
-            # Estimate tokens used (this will be refined in the token counting functions)
-            # For now, use a rough estimate of 4 characters per token
-            tokens_used = char_count // 4
+            # Estimate tokens used based on character count
+            # For translation, tokens are typically fewer than characters
+            # A better estimate is about 1 token per 3-4 characters
+            tokens_used = max(1, char_count // 4)  # Ensure at least 1 token
 
         except Exception as e:
             success = False
@@ -343,11 +373,10 @@ def track_transcription_metrics(func):
             # Get character count from the result
             char_count = len(result) if result else 0
 
-            # Estimate tokens used based on audio size
-            # For audio, we'll use a rough estimate based on the audio data size
-            # This will be refined in the token counting functions
-            audio_data = args[0] if args else b''
-            tokens_used = len(audio_data) // 100  # Very rough estimate
+            # For transcription, tokens should be roughly proportional to output characters
+            # For most models, 1 token is approximately 3-4 characters
+            # We'll use a more conservative estimate for transcription
+            tokens_used = max(1, char_count // 3)  # Ensure at least 1 token
 
         except Exception as e:
             success = False

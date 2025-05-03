@@ -1019,6 +1019,33 @@ def get_metrics():
             'message': str(e)
         }), 500
 
+@app.route('/api/admin/reset-metrics', methods=['POST'])
+def reset_metrics():
+    """API endpoint to reset all metrics data"""
+    if not METRICS_AVAILABLE:
+        return jsonify({
+            'status': 'error',
+            'message': 'Metrics tracking is not available'
+        }), 500
+
+    try:
+        # Reset all metrics
+        metrics_tracker.reset_metrics()
+
+        return jsonify({
+            'status': 'success',
+            'message': 'All metrics have been reset successfully'
+        })
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Metrics reset error: {str(e)}\n{error_details}")
+
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 if __name__ == '__main__':
     import argparse
 
