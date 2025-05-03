@@ -1,24 +1,24 @@
 {
   "translation": {
     "openai": {
-      "calls": 0,
-      "tokens": 0,
-      "chars": 0,
-      "time": 0,
+      "calls": 2,
+      "tokens": 188,
+      "chars": 208,
+      "time": 5.056585788726807,
       "failures": 0
     },
     "gemini": {
-      "calls": 0,
-      "tokens": 0,
-      "chars": 0,
-      "time": 0,
+      "calls": 2,
+      "tokens": 229,
+      "chars": 219,
+      "time": 1.06028151512146,
       "failures": 0
     },
     "gemini-2.5-flash": {
-      "calls": 0,
-      "tokens": 0,
-      "chars": 0,
-      "time": 0,
+      "calls": 4,
+      "tokens": 568,
+      "chars": 640,
+      "time": 2.2068958282470703,
       "failures": 0
     },
     "gemini-2.5-pro": {
@@ -29,10 +29,10 @@
       "failures": 0
     },
     "unknown": {
-      "calls": 26,
-      "tokens": 578,
-      "chars": 2342,
-      "time": 158.4873161315918,
+      "calls": 27,
+      "tokens": 627,
+      "chars": 2541,
+      "time": 159.07579898834229,
       "failures": 0
     }
   },
@@ -45,10 +45,10 @@
       "failures": 0
     },
     "gemini-2.5-flash-preview": {
-      "calls": 0,
-      "tokens": 0,
-      "chars": 0,
-      "time": 0,
+      "calls": 2,
+      "tokens": 262,
+      "chars": 224,
+      "time": 2.41870379447937,
       "failures": 0
     },
     "gemini-2.5-pro-preview": {
@@ -59,10 +59,17 @@
       "failures": 0
     },
     "unknown": {
-      "calls": 36,
-      "tokens": 57982,
-      "chars": 3688,
-      "time": 97.54540729522705,
+      "calls": 39,
+      "tokens": 61371,
+      "chars": 4042,
+      "time": 100.657794713974,
+      "failures": 0
+    },
+    "gemini-2.0-flash-lite": {
+      "calls": 2,
+      "tokens": 152,
+      "chars": 214,
+      "time": 2.2581074237823486,
       "failures": 0
     }
   },
@@ -77,10 +84,15 @@
     },
     "2025-05-02": {
       "transcription": {
-        "unknown": 44342
+        "unknown": 47731,
+        "gemini-2.0-flash-lite": 152,
+        "gemini-2.5-flash-preview": 262
       },
       "translation": {
-        "unknown": 474
+        "unknown": 523,
+        "gemini": 229,
+        "openai": 188,
+        "gemini-2.5-flash": 568
       }
     }
   },
@@ -109,6 +121,19 @@
     "2025-05-02-09": {
       "transcription": {
         "unknown": 11018
+      }
+    },
+    "2025-05-02-18": {
+      "transcription": {
+        "unknown": 3389,
+        "gemini-2.0-flash-lite": 152,
+        "gemini-2.5-flash-preview": 262
+      },
+      "translation": {
+        "unknown": 49,
+        "gemini": 229,
+        "openai": 188,
+        "gemini-2.5-flash": 568
       }
     }
   }

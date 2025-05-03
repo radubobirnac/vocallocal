@@ -149,7 +149,7 @@ def transcribe_audio():
         language = request.form.get('language', 'en')
 
         # Get model from form or use default
-        model = request.form.get('model', 'gpt-4o-mini-transcribe')
+        model = request.form.get('model', 'gemini')
 
         # Process with OpenAI or Gemini based on the model
         try:
@@ -158,7 +158,7 @@ def transcribe_audio():
                 print(f"Transcribing file: {filename}, size: {os.path.getsize(filepath)} bytes, format: {file.content_type}, model: {model}")
 
                 # Check if we should use Gemini
-                if model.startswith('gemini-'):
+                if model.startswith('gemini-') or model == 'gemini':
                     try:
                         # Read the file content
                         audio_content = audio_file.read()
@@ -487,9 +487,11 @@ def translate_text():
             'details': 'See server logs for more information'
         }), 500
 
-@track_transcription_metrics
-def transcribe_with_gemini(audio_data, language, model_type="gemini-2.5-pro-preview-03-25"):
+def transcribe_with_gemini(audio_data, language, model_type="gemini"):
     """Helper function to transcribe audio using Google Gemini"""
+    # Start timing for metrics
+    start_time = time.time()
+
     # Check if Gemini is available
     if not GEMINI_AVAILABLE:
         print("Google Generative AI module is not available. Cannot use Gemini for transcription.")
@@ -527,7 +529,12 @@ def transcribe_with_gemini(audio_data, language, model_type="gemini-2.5-pro-prev
         model_name = model_type
         # For metrics tracking, use a simplified model name
         display_model = model_type
-        if 'gemini-2.5-flash-preview' in model_type:
+        if model_type == 'gemini':
+            # Use Gemini 2.0 Flash Lite for transcription
+            model_name = "models/gemini-2.0-flash-lite"
+            display_model = 'gemini-2.0-flash-lite'
+            print(f"Using Gemini 2.0 Flash Lite model for transcription")
+        elif 'gemini-2.5-flash-preview' in model_type:
             display_model = 'gemini-2.5-flash-preview'
         elif 'gemini-2.5-pro-preview' in model_type:
             display_model = 'gemini-2.5-pro-preview'
@@ -587,10 +594,32 @@ def transcribe_with_gemini(audio_data, language, model_type="gemini-2.5-pro-prev
         print(f"Gemini transcription completed: {len(transcription)} characters")
         print(f"Successfully transcribed with {model_type}")
 
+        # Manually track metrics with the correct model name
+        if METRICS_AVAILABLE:
+            # Calculate response time
+            response_time = time.time() - start_time
+            # Get character count
+            char_count = len(transcription)
+            # Track metrics with the display_model name
+            metrics_tracker.track_transcription(
+                display_model, estimated_tokens, char_count, response_time, True
+            )
+            print(f"Tracked metrics for model: {display_model}")
+
         return transcription
 
     except Exception as e:
         print(f"Error in Gemini transcription: {str(e)}")
+
+        # Track the error in metrics
+        if METRICS_AVAILABLE:
+            # Calculate response time
+            response_time = time.time() - start_time
+            # Track metrics with the display_model name and mark as failure
+            metrics_tracker.track_transcription(
+                display_model, estimated_tokens, 0, response_time, False
+            )
+            print(f"Tracked error metrics for model: {display_model}")
 
         # Check if this is a model not found error
         if "not found" in str(e) or "not supported" in str(e):
@@ -601,9 +630,11 @@ def transcribe_with_gemini(audio_data, language, model_type="gemini-2.5-pro-prev
         print("Falling back to OpenAI for transcription.")
         return transcribe_with_openai(audio_data, language)
 
-@track_transcription_metrics
 def transcribe_with_openai(audio_data, language, model_type="whisper-1"):
     """Helper function to transcribe audio using OpenAI"""
+    # Start timing for metrics
+    start_time = time.time()
+
     try:
         # Create a temporary file to store the audio
         with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
@@ -635,15 +666,40 @@ def transcribe_with_openai(audio_data, language, model_type="whisper-1"):
 
         print(f"OpenAI transcription completed: {len(transcription)} characters")
 
+        # Manually track metrics with the correct model name
+        if METRICS_AVAILABLE:
+            # Calculate response time
+            response_time = time.time() - start_time
+            # Get character count
+            char_count = len(transcription)
+            # Track metrics with 'openai' as the model name
+            metrics_tracker.track_transcription(
+                'openai', estimated_tokens, char_count, response_time, True
+            )
+            print(f"Tracked metrics for model: openai")
+
         return transcription
 
     except Exception as e:
         print(f"Error in OpenAI transcription: {str(e)}")
+
+        # Track the error in metrics
+        if METRICS_AVAILABLE:
+            # Calculate response time
+            response_time = time.time() - start_time
+            # Track metrics with 'openai' as the model name and mark as failure
+            metrics_tracker.track_transcription(
+                'openai', estimated_tokens, 0, response_time, False
+            )
+            print(f"Tracked error metrics for model: openai")
+
         raise e
 
-@track_translation_metrics
 def translate_with_openai(text, target_language, prompt, translation_model='openai'):
     """Helper function to translate text using OpenAI"""
+    # Start timing for metrics
+    start_time = time.time()
+
     # Prepare messages
     messages = [
         {"role": "system", "content": prompt},
@@ -672,11 +728,25 @@ def translate_with_openai(text, target_language, prompt, translation_model='open
     total_tokens = input_tokens + output_tokens
     print(f"OpenAI translation token usage: {total_tokens} tokens (input: {input_tokens}, output: {output_tokens})")
 
+    # Manually track metrics with the correct model name
+    if METRICS_AVAILABLE:
+        # Calculate response time
+        response_time = time.time() - start_time
+        # Get character count
+        char_count = len(translated_text)
+        # Track metrics with 'openai' as the model name
+        metrics_tracker.track_translation(
+            'openai', total_tokens, char_count, response_time, True
+        )
+        print(f"Tracked metrics for model: openai")
+
     return translated_text
 
-@track_translation_metrics
 def translate_with_gemini(text, target_language, prompt, translation_model='gemini'):
     """Helper function to translate text using Google Gemini"""
+    # Start timing for metrics
+    start_time = time.time()
+
     # Check if Gemini is available
     if not GEMINI_AVAILABLE:
         print("Google Generative AI module is not available. Falling back to OpenAI for translation.")
@@ -731,9 +801,32 @@ def translate_with_gemini(text, target_language, prompt, translation_model='gemi
         total_tokens = input_tokens + output_tokens
         print(f"Gemini translation token usage: {total_tokens} tokens (input: {input_tokens}, output: {output_tokens})")
 
+        # Manually track metrics with the correct model name
+        if METRICS_AVAILABLE:
+            # Calculate response time
+            response_time = time.time() - start_time
+            # Get character count
+            char_count = len(translated_text)
+            # Track metrics with the display_model name
+            metrics_tracker.track_translation(
+                display_model, total_tokens, char_count, response_time, True
+            )
+            print(f"Tracked metrics for model: {display_model}")
+
         return translated_text
     except Exception as e:
         print(f"Error using Gemini API: {str(e)}. Falling back to OpenAI for translation.")
+
+        # Track the error in metrics
+        if METRICS_AVAILABLE:
+            # Calculate response time
+            response_time = time.time() - start_time
+            # Track metrics with the display_model name and mark as failure
+            metrics_tracker.track_translation(
+                display_model, 0, 0, response_time, False
+            )
+            print(f"Tracked error metrics for model: {display_model}")
+
         return translate_with_openai(text, target_language, prompt)
 
 # For loading static assets
