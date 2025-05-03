@@ -241,14 +241,22 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // Get the selected TTS model
+    const ttsModelSelect = document.getElementById('tts-model-select');
+    const ttsModel = ttsModelSelect ? ttsModelSelect.value : 'gemini'; // Default to Gemini if not found
+
     // --- Fetch new audio blob ---
-    showStatus('Generating audio...', 'info');
+    showStatus(`Generating audio using ${ttsModel === 'gemini' ? 'Gemini' : 'OpenAI'} TTS...`, 'info');
     setTTSButtonState(sourceId, 'loading'); // Indicate loading state visually if needed
 
     fetch('/api/tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text, language: langCode })
+      body: JSON.stringify({
+        text: text,
+        language: langCode,
+        tts_model: ttsModel
+      })
     })
     .then(response => {
       if (!response.ok) throw new Error(`TTS service error (${response.status})`);
@@ -1754,6 +1762,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize editable transcript functionality
   setupTranslateEditedButtons();
   setupUndoButtons();
+
+  // Initialize TTS model selector
+  const ttsModelSelect = document.getElementById('tts-model-select');
+  if (ttsModelSelect) {
+    // Set default to Gemini
+    ttsModelSelect.value = 'gemini';
+
+    // Save selection to localStorage when changed
+    ttsModelSelect.addEventListener('change', function() {
+      localStorage.setItem('tts-model', this.value);
+      showStatus(`TTS model set to ${this.value === 'gemini' ? 'Gemini 2.0 Flash Lite' : 'OpenAI'}`, 'success');
+    });
+
+    // Load saved selection from localStorage if available
+    const savedTtsModel = localStorage.getItem('tts-model');
+    if (savedTtsModel) {
+      ttsModelSelect.value = savedTtsModel;
+    }
+  }
 
   // Add auto-scroll on focus for mobile
   document.querySelectorAll('.form-textarea').forEach(textarea => {

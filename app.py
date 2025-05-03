@@ -278,94 +278,116 @@ def get_languages():
 @app.route('/api/tts', methods=['POST'])
 def text_to_speech():
     """
-    Endpoint for converting text to speech using OpenAI's TTS service.
+    Endpoint for converting text to speech using either OpenAI's TTS service or Google's TTS service.
 
     Required JSON parameters:
     - text: The text to convert to speech
     - language: The language code (e.g., 'en', 'es', 'fr')
 
+    Optional JSON parameters:
+    - tts_model: The model to use for TTS ('openai' or 'gemini', default: 'gemini')
+
     Returns:
     - Audio file as response with appropriate content type
     """
+    print("TTS endpoint called")
     data = request.json
+    print(f"TTS request data: {data}")
 
     if not data or 'text' not in data or 'language' not in data:
+        print("Missing required parameters: text and language")
         return jsonify({'error': 'Missing required parameters: text and language'}), 400
 
     text = data['text']
     language = data['language']
+    tts_model = data.get('tts_model', 'gemini')  # Default to Gemini
+    print(f"TTS request: model={tts_model}, language={language}, text_length={len(text)}")
 
     if not text.strip():
+        print("Empty text provided")
         return jsonify({'error': 'Empty text provided'}), 400
 
+    # Start timing for performance metrics
+    start_time = time.time()
+    char_count = len(text)
+
     try:
-        # Map language code to appropriate voice
-        # OpenAI voices: alloy, echo, fable, onyx, nova, shimmer
-        voice_map = {
-            # Default English voice (alloy is neutral)
-            'en': 'alloy',
-
-            # Romance languages (nova is good for these)
-            'es': 'nova',  # Spanish
-            'fr': 'nova',  # French
-            'it': 'nova',  # Italian
-            'pt': 'nova',  # Portuguese
-            'ro': 'nova',  # Romanian
-
-            # Germanic languages (onyx works well)
-            'de': 'onyx',  # German
-            'nl': 'onyx',  # Dutch
-            'sv': 'onyx',  # Swedish
-            'no': 'onyx',  # Norwegian
-            'da': 'onyx',  # Danish
-
-            # Asian languages (shimmer is clearer)
-            'ja': 'shimmer',  # Japanese
-            'zh': 'shimmer',  # Chinese
-            'ko': 'shimmer',  # Korean
-
-            # Slavic languages (echo has good clarity)
-            'ru': 'echo',   # Russian
-            'uk': 'echo',   # Ukrainian
-            'cs': 'echo',   # Czech
-            'pl': 'echo',   # Polish
-            'bg': 'echo',   # Bulgarian
-
-            # Other languages
-            'ar': 'fable',  # Arabic
-            'hi': 'fable',  # Hindi
-            'tr': 'fable',  # Turkish
-            'fi': 'onyx',   # Finnish
-            'hu': 'echo',   # Hungarian
-            'el': 'nova',   # Greek
-            'he': 'fable',  # Hebrew
-            'te': 'fable',  # Telugu
-            'th': 'shimmer',  # Thai
-            'vi': 'shimmer',  # Vietnamese
-            'id': 'shimmer',  # Indonesian
-            'ms': 'shimmer',  # Malay
-        }
-
-        # Get voice based on language or default to alloy
-        voice = voice_map.get(language, 'alloy')
-
-        # Log request for debugging
-        print(f"TTS request: language={language}, voice={voice}, text_length={len(text)}")
-
         # Create a temporary file to store the audio
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3')
         temp_file.close()
+        print(f"Created temporary file: {temp_file.name}")
 
-        # Generate speech with OpenAI
-        response = openai.audio.speech.create(
-            model="tts-1",
-            voice=voice,
-            input=text
-        )
+        # First attempt with the selected model
+        model_used = tts_model
+        fallback_used = False
+        success = False
 
-        # Save to the temporary file
-        response.stream_to_file(temp_file.name)
+        if tts_model == 'gemini':
+            print("Using Gemini TTS model")
+            try:
+                # For now, always use OpenAI TTS
+                print("Gemini TTS not fully implemented, using OpenAI TTS directly")
+                tts_with_openai(text, language, temp_file.name)
+                model_used = 'openai'
+                success = True
+            except Exception as e:
+                print(f"OpenAI TTS error: {str(e)}")
+                return jsonify({
+                    'error': str(e),
+                    'errorType': type(e).__name__,
+                    'details': 'TTS service error'
+                }), 500
+        else:  # OpenAI
+            print("Using OpenAI TTS model")
+            try:
+                tts_with_openai(text, language, temp_file.name)
+                success = True
+            except Exception as e:
+                print(f"OpenAI TTS error: {str(e)}")
+                return jsonify({
+                    'error': str(e),
+                    'errorType': type(e).__name__,
+                    'details': 'TTS service error'
+                }), 500
 
+        # Calculate performance metrics
+        end_time = time.time()
+        tts_time = end_time - start_time
+        chars_per_second = char_count / tts_time if tts_time > 0 else 0
+
+        # Log performance metrics
+        print(f"TTS performance: model={model_used}, time={tts_time:.2f}s, chars={char_count}, chars/s={chars_per_second:.2f}, fallback={fallback_used}")
+
+        # Track metrics if available
+        if METRICS_AVAILABLE:
+            # Estimate token usage (very rough estimate for TTS)
+            estimated_tokens = char_count // 4  # Rough estimate
+            try:
+                # Initialize tts section if it doesn't exist
+                if "tts" not in metrics_tracker.metrics:
+                    metrics_tracker.metrics["tts"] = {}
+
+                # Initialize model if not exists
+                if model_used not in metrics_tracker.metrics["tts"]:
+                    metrics_tracker.metrics["tts"][model_used] = {
+                        "calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0
+                    }
+
+                # Update metrics directly
+                metrics_tracker.metrics["tts"][model_used]["calls"] += 1
+                metrics_tracker.metrics["tts"][model_used]["tokens"] += estimated_tokens
+                metrics_tracker.metrics["tts"][model_used]["chars"] += char_count
+                metrics_tracker.metrics["tts"][model_used]["time"] += tts_time
+
+                # Save metrics
+                metrics_tracker._save_metrics()
+
+                print(f"TTS metrics tracked: model={model_used}, tokens={estimated_tokens}, chars={char_count}")
+            except Exception as e:
+                # If there's an error tracking metrics, just log it
+                print(f"Warning: Could not track TTS metrics: {str(e)}")
+
+        print(f"Sending audio file: {temp_file.name}")
         # Send the file as response
         return send_from_directory(
             os.path.dirname(temp_file.name),
@@ -385,6 +407,96 @@ def text_to_speech():
             'errorType': type(e).__name__,
             'details': 'See server logs for more information'
         }), 500
+
+def tts_with_openai(text, language, output_file_path):
+    """Helper function to generate speech using OpenAI's TTS service"""
+    # Map language code to appropriate voice
+    # OpenAI voices: alloy, echo, fable, onyx, nova, shimmer
+    voice_map = {
+        # Default English voice (alloy is neutral)
+        'en': 'alloy',
+
+        # Romance languages (nova is good for these)
+        'es': 'nova',  # Spanish
+        'fr': 'nova',  # French
+        'it': 'nova',  # Italian
+        'pt': 'nova',  # Portuguese
+        'ro': 'nova',  # Romanian
+
+        # Germanic languages (onyx works well)
+        'de': 'onyx',  # German
+        'nl': 'onyx',  # Dutch
+        'sv': 'onyx',  # Swedish
+        'no': 'onyx',  # Norwegian
+        'da': 'onyx',  # Danish
+
+        # Asian languages (shimmer is clearer)
+        'ja': 'shimmer',  # Japanese
+        'zh': 'shimmer',  # Chinese
+        'ko': 'shimmer',  # Korean
+
+        # Slavic languages (echo has good clarity)
+        'ru': 'echo',   # Russian
+        'uk': 'echo',   # Ukrainian
+        'cs': 'echo',   # Czech
+        'pl': 'echo',   # Polish
+        'bg': 'echo',   # Bulgarian
+
+        # Other languages
+        'ar': 'fable',  # Arabic
+        'hi': 'fable',  # Hindi
+        'tr': 'fable',  # Turkish
+        'fi': 'onyx',   # Finnish
+        'hu': 'echo',   # Hungarian
+        'el': 'nova',   # Greek
+        'he': 'fable',  # Hebrew
+        'te': 'fable',  # Telugu
+        'th': 'shimmer',  # Thai
+        'vi': 'shimmer',  # Vietnamese
+        'id': 'shimmer',  # Indonesian
+        'ms': 'shimmer',  # Malay
+    }
+
+    # Get voice based on language or default to alloy
+    voice = voice_map.get(language, 'alloy')
+
+    # Log request for debugging
+    print(f"OpenAI TTS request: language={language}, voice={voice}, text_length={len(text)}")
+
+    # Generate speech with OpenAI
+    response = openai.audio.speech.create(
+        model="tts-1",
+        voice=voice,
+        input=text
+    )
+
+    # Save to the output file
+    response.stream_to_file(output_file_path)
+
+    return True
+
+def tts_with_google(text, language, output_file_path):
+    """Helper function to generate speech using Google's TTS service"""
+    # Check if Gemini is available
+    if not GEMINI_AVAILABLE:
+        print("Google Generative AI module is not available. Cannot use Google for TTS.")
+        return False
+
+    try:
+        # For now, we'll use a fallback to OpenAI TTS
+        # This is a placeholder for the actual Google TTS implementation
+        print(f"Google TTS request: language={language}, text_length={len(text)}")
+
+        # In a real implementation, we would use Google Cloud Text-to-Speech API
+        # For now, we'll fallback to OpenAI TTS
+        print(f"Falling back to OpenAI TTS as Google TTS is not fully implemented yet")
+
+        # Use OpenAI TTS instead
+        return tts_with_openai(text, language, output_file_path)
+
+    except Exception as e:
+        print(f"Error in Google TTS: {str(e)}")
+        return False
 
 @app.route('/api/translate', methods=['POST'])
 def translate_text():

@@ -52,6 +52,10 @@ class MetricsTracker:
                         "gemini-2.5-flash-preview": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0},
                         "gemini-2.5-pro-preview": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0}
                     },
+                    "tts": {
+                        "openai": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0},
+                        "gemini": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0}
+                    },
                     "daily_usage": {},
                     "hourly_usage": {}
                 }
@@ -60,6 +64,7 @@ class MetricsTracker:
             return {
                 "translation": {},
                 "transcription": {},
+                "tts": {},
                 "daily_usage": {},
                 "hourly_usage": {}
             }
@@ -142,6 +147,46 @@ class MetricsTracker:
 
         # Log the metrics
         logger.info(f"Transcription metrics - Model: {model}, Tokens: {tokens_used}, "
+                   f"Chars: {char_count}, Time: {response_time:.2f}s, Success: {success}")
+
+    def track_tts(self, model, tokens_used, char_count, response_time, success=True):
+        """
+        Track metrics for a text-to-speech request
+
+        Args:
+            model (str): The model used (openai, gemini, etc.)
+            tokens_used (int): Number of tokens used
+            char_count (int): Number of characters processed
+            response_time (float): Time taken in seconds
+            success (bool): Whether the request was successful
+        """
+        # Initialize tts section if it doesn't exist
+        if "tts" not in self.metrics:
+            self.metrics["tts"] = {}
+
+        # Initialize model if not exists
+        if model not in self.metrics["tts"]:
+            self.metrics["tts"][model] = {
+                "calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0
+            }
+
+        # Update metrics
+        self.metrics["tts"][model]["calls"] += 1
+        self.metrics["tts"][model]["tokens"] += tokens_used
+        self.metrics["tts"][model]["chars"] += char_count
+        self.metrics["tts"][model]["time"] += response_time
+
+        if not success:
+            self.metrics["tts"][model]["failures"] += 1
+
+        # Update daily and hourly usage
+        self._update_time_based_metrics("tts", model, tokens_used)
+
+        # Save metrics
+        self._save_metrics()
+
+        # Log the metrics
+        logger.info(f"TTS metrics - Model: {model}, Tokens: {tokens_used}, "
                    f"Chars: {char_count}, Time: {response_time:.2f}s, Success: {success}")
 
     def _update_time_based_metrics(self, operation_type, model, tokens_used):

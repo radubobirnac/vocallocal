@@ -17,6 +17,12 @@ google-auth-oauthlib>=1.0.0
 googleapis-common-protos>=1.59.0
 protobuf>=4.25.0
 
+# Google Cloud Text-to-Speech
+google-cloud-texttospeech>=2.14.1
+
+# Audio processing
+scipy>=1.10.0
+
 # Desktop app dependencies (not needed for web deployment)
 # PyQt5>=5.15.0
 # numpy>=1.24.0
