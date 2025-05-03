@@ -22,40 +22,13 @@
 <body>
   <div class="container">
     <!-- Header -->
-    <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 mt-6">
-      <div>
-        <h1 class="text-3xl font-bold" style="color: hsl(var(--primary)); font-family: 'Poppins', sans-serif;">Vocal Local</h1>
-        <p id="app-subtitle" class="text-lg text-muted">Accurate Multilingual Speech-to-Text Transcription</p>
+    <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-1 mb-2 mt-1">
+      <div class="header-title-container">
+        <h1 class="text-2xl font-bold" style="color: hsl(var(--primary)); font-family: 'Poppins', sans-serif;">Vocal Local</h1>
+        <p id="app-subtitle" class="text-sm text-muted">Accurate Multilingual Speech-to-Text Transcription</p>
       </div>
 
-      <div class="flex items-center gap-6 mt-4 md:mt-0">
-        <div class="flex items-center gap-2">
-          <select id="global-language" class="form-select">
-            <!-- Will be populated with languages -->
-          </select>
-        </div>
-
-        <!-- Toggle Switch for Bilingual Mode -->
-        <div class="flex items-center gap-2">
-          <label for="bilingual-mode" class="form-checkbox-label cursor-pointer">Bilingual Mode</label>
-          <label class="toggle-switch">
-            <input type="checkbox" id="bilingual-mode">
-            <span class="slider round"></span>
-          </label>
-        </div>
-        <!-- End Toggle Switch -->
-
-        <!-- Translation Model Selector (only visible in bilingual mode) -->
-        <div id="translation-model-container" class="flex items-center gap-2" style="display: none;">
-          <label for="translation-model-select" class="form-checkbox-label">Translation Model:</label>
-          <select id="translation-model-select" class="form-select">
-            <option value="gemini" selected>Gemini 2.0 Flash Lite</option>
-            <option value="gemini-2.5-flash">Gemini 2.5 Flash Preview 04-17</option>
-            <option value="openai">OpenAI GPT-4.1 Mini</option>
-          </select>
-        </div>
-        <!-- End Translation Model Selector -->
-
+      <div class="flex items-center gap-2 mt-0">
         <!-- Theme Selector -->
         <div class="theme-selector">
           <button id="theme-toggle-btn" class="button button-outline button-icon" title="Change theme">
@@ -74,8 +47,63 @@
           </div>
         </div>
         <!-- End Theme Selector -->
+
+        <!-- Bilingual Mode Toggle -->
+        <div class="flex items-center gap-1">
+          <span class="text-sm font-medium bilingual-mode-label">Bilingual Mode</span>
+          <label class="toggle-switch" title="Toggle bilingual mode">
+            <input type="checkbox" id="bilingual-mode">
+            <span class="slider round"></span>
+          </label>
+        </div>
+        <!-- End Bilingual Mode Toggle -->
+
+        <!-- Settings Button -->
+        <button id="settings-toggle" class="button button-outline button-icon" title="Settings">
+          <i class="fas fa-cog"></i>
+        </button>
+        <!-- End Settings Button -->
       </div>
     </header>
+
+    <!-- Settings Panel -->
+    <div id="settings-panel" class="settings-panel mb-4" style="display: none;">
+      <div class="settings-content">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Language Selection -->
+          <div class="form-group">
+            <label for="global-language" class="form-label">Interface Language:</label>
+            <select id="global-language" class="form-select">
+              <!-- Will be populated with languages -->
+            </select>
+          </div>
+
+          <!-- Transcription Model Selector -->
+          <div class="form-group">
+            <label for="global-transcription-model" class="form-label">Transcription Model:</label>
+            <select id="global-transcription-model" class="form-select mt-2">
+              <option value="gpt-4o-mini-transcribe">OpenAI GPT-4o Mini</option>
+              <option value="gpt-4o-transcribe">OpenAI GPT-4o</option>
+              <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview</option>
+              <option value="gemini-2.5-flash-preview-04-17">Gemini 2.5 Flash Preview</option>
+              <option value="gemini" selected>Gemini 2.0 Flash Lite</option>
+            </select>
+          </div>
+
+          <!-- Translation Model Selector (only visible in bilingual mode) -->
+          <div id="translation-model-container" class="form-group" style="display: none;">
+            <label for="translation-model-select" class="form-label">Translation Model:</label>
+            <select id="translation-model-select" class="form-select mt-2">
+              <option value="gemini" selected>Gemini 2.0 Flash Lite</option>
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash Preview 04-17</option>
+              <option value="openai">OpenAI GPT-4.1 Mini</option>
+            </select>
+          </div>
+          <!-- End Translation Model Selector -->
+        </div>
+      </div>
+    </div>
+    <!-- End Settings Panel -->
 
     <!-- Status Message -->
     <div id="status" class="status status-info" style="display: none;">
@@ -106,17 +134,6 @@
               <div class="form-group">
                 <label for="basic-language" class="form-label">Input Language:</label>
                 <select id="basic-language" class="form-select"></select>
-              </div>
-
-              <div class="form-group">
-                <label for="basic-model-select" class="form-label">Model Selection</label>
-                <select id="basic-model-select" class="form-select">
-                  <option value="gpt-4o-mini-transcribe">OpenAI GPT-4o Mini</option>
-                  <option value="gpt-4o-transcribe">OpenAI GPT-4o</option>
-                  <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview</option>
-                  <option value="gemini-2.5-flash-preview-04-17">Gemini 2.5 Flash Preview</option>
-                  <option value="gemini" selected>Gemini 2.0 Flash Lite</option>
-                </select>
               </div>
 
               <div class="flex flex-col items-center mt-4">
@@ -165,17 +182,6 @@
             </div>
 
             <div class="space-y-4">
-              <div class="form-group">
-                <label for="basic-upload-model-select" class="form-label">Model Selection</label>
-                <select id="basic-upload-model-select" class="form-select">
-                  <option value="gpt-4o-mini-transcribe">OpenAI GPT-4o Mini</option>
-                  <option value="gpt-4o-transcribe">OpenAI GPT-4o</option>
-                  <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview</option>
-                  <option value="gemini-2.5-flash-preview-04-17">Gemini 2.5 Flash Preview</option>
-                  <option value="gemini" selected>Gemini 2.0 Flash Lite</option>
-                </select>
-              </div>
-
               <button type="submit" class="button button-primary">
                 Transcribe
               </button>
@@ -199,17 +205,6 @@
               <div class="form-group">
                 <label for="language-1" class="form-label">Your Language:</label>
                 <select id="language-1" class="form-select"></select>
-              </div>
-
-              <div class="form-group">
-                <label for="model-1" class="form-label">Transcription Quality:</label>
-                <select id="model-1" class="form-select">
-                  <option value="gpt-4o-mini-transcribe">OpenAI GPT-4o Mini</option>
-                  <option value="gpt-4o-transcribe">OpenAI GPT-4o</option>
-                  <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview</option>
-                  <option value="gemini-2.5-flash-preview-04-17">Gemini 2.5 Flash Preview</option>
-                  <option value="gemini" selected>Gemini 2.0 Flash Lite</option>
-                </select>
               </div>
 
               <div class="flex flex-col items-center mt-4">
@@ -237,17 +232,6 @@
               <div class="form-group">
                 <label for="language-2" class="form-label">Your Language:</label>
                 <select id="language-2" class="form-select"></select>
-              </div>
-
-              <div class="form-group">
-                <label for="model-2" class="form-label">Transcription Quality:</label>
-                <select id="model-2" class="form-select">
-                  <option value="gpt-4o-mini-transcribe">OpenAI GPT-4o Mini</option>
-                  <option value="gpt-4o-transcribe">OpenAI GPT-4o</option>
-                  <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview</option>
-                  <option value="gemini-2.5-flash-preview-04-17">Gemini 2.5 Flash Preview</option>
-                  <option value="gemini" selected>Gemini 2.0 Flash Lite</option>
-                </select>
               </div>
 
               <div class="flex flex-col items-center mt-4">

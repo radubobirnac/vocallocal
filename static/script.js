@@ -1031,6 +1031,56 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Get the current transcription model
+  function getTranscriptionModel() {
+    // Get the selected value from the dropdown
+    const transcriptionModelSelect = document.getElementById('global-transcription-model');
+    if (transcriptionModelSelect) {
+      return transcriptionModelSelect.value;
+    } else {
+      return 'gemini'; // Default to Gemini if dropdown not found
+    }
+  }
+
+  // Save transcription model preference
+  function saveTranscriptionModelPreference(model) {
+    try {
+      localStorage.setItem('vocal-local-transcription-model', model);
+    } catch (e) {
+      console.warn('LocalStorage is not available. Transcription model preference will not be saved.');
+    }
+  }
+
+  // Load transcription model preference
+  function loadTranscriptionModelPreference() {
+    try {
+      return localStorage.getItem('vocal-local-transcription-model') || 'gemini'; // Default to Gemini
+    } catch (e) {
+      console.warn('LocalStorage is not available. Defaulting to Gemini.');
+      return 'gemini';
+    }
+  }
+
+  // Initialize transcription model dropdown
+  const globalTranscriptionModel = document.getElementById('global-transcription-model');
+  if (globalTranscriptionModel) {
+    // Load saved preference
+    const savedModel = loadTranscriptionModelPreference();
+    globalTranscriptionModel.value = savedModel;
+
+    // Add event listener
+    globalTranscriptionModel.addEventListener('change', () => {
+      const model = globalTranscriptionModel.value;
+      saveTranscriptionModelPreference(model);
+
+      // Get the model display name
+      const selectedOption = globalTranscriptionModel.options[globalTranscriptionModel.selectedIndex];
+      const modelDisplayName = selectedOption ? selectedOption.textContent : model;
+
+      showStatus(`Transcription model changed to ${modelDisplayName}`, 'info');
+    });
+  }
+
   // Initialize mode toggle
   const modeToggle = document.getElementById('bilingual-mode');
   const basicMode = document.getElementById('basic-mode');
@@ -1179,12 +1229,8 @@ document.addEventListener('DOMContentLoaded', () => {
       formData.append('file', fileInput.files[0]);
       formData.append('language', document.getElementById('basic-language').value);
 
-      // Get selected model from dropdown
-      const modelSelect = document.getElementById('basic-upload-model-select');
-      let selectedModel = 'gemini-2.5-flash-preview-04-17'; // Default to Gemini 2.5 Flash Preview
-      if (modelSelect) {
-        selectedModel = modelSelect.value;
-      }
+      // Get selected model from global transcription model
+      let selectedModel = getTranscriptionModel();
       formData.append('model', selectedModel);
 
       showStatus('Transcribing your audio...', 'info');
@@ -1308,12 +1354,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const languageSelect = document.getElementById('basic-language');
             formData.append('language', languageSelect ? languageSelect.value : 'en');
 
-            // Get selected model from dropdown
-            const modelSelect = document.getElementById('basic-model-select');
-            let selectedModel = 'gemini-2.5-flash-preview-04-17'; // Default to Gemini 2.5 Flash Preview
-            if (modelSelect) {
-              selectedModel = modelSelect.value;
-            }
+            // Get selected model from global transcription model
+            let selectedModel = getTranscriptionModel();
             formData.append('model', selectedModel);
 
             // Process the recorded audio after a short delay to ensure all data is collected
@@ -1394,11 +1436,10 @@ document.addEventListener('DOMContentLoaded', () => {
       transcriptEl: document.getElementById('transcript-1'),
       translationEl: document.getElementById('translation-1'),
       languageSelect: document.getElementById('language-1'),
-      modelSelect: document.getElementById('model-1'),
       playTranscriptBtn: document.getElementById('play-transcript-1'),
-      stopTranscriptBtn: document.getElementById('stop-transcript-1'), // Added stop button
+      stopTranscriptBtn: document.getElementById('stop-transcript-1'),
       playTranslationBtn: document.getElementById('play-translation-1'),
-      stopTranslationBtn: document.getElementById('stop-translation-1'), // Added stop button
+      stopTranslationBtn: document.getElementById('stop-translation-1'),
       copyTranscriptBtn: document.getElementById('copy-transcript-1'),
       copyTranslationBtn: document.getElementById('copy-translation-1'),
       enableTTS: document.getElementById('enable-tts-1'),
@@ -1413,11 +1454,10 @@ document.addEventListener('DOMContentLoaded', () => {
       transcriptEl: document.getElementById('transcript-2'),
       translationEl: document.getElementById('translation-2'),
       languageSelect: document.getElementById('language-2'),
-      modelSelect: document.getElementById('model-2'),
       playTranscriptBtn: document.getElementById('play-transcript-2'),
-      stopTranscriptBtn: document.getElementById('stop-transcript-2'), // Added stop button
+      stopTranscriptBtn: document.getElementById('stop-transcript-2'),
       playTranslationBtn: document.getElementById('play-translation-2'),
-      stopTranslationBtn: document.getElementById('stop-translation-2'), // Added stop button
+      stopTranslationBtn: document.getElementById('stop-translation-2'),
       copyTranscriptBtn: document.getElementById('copy-transcript-2'),
       copyTranslationBtn: document.getElementById('copy-translation-2'),
       enableTTS: document.getElementById('enable-tts-2'),
@@ -1482,11 +1522,8 @@ document.addEventListener('DOMContentLoaded', () => {
               const formData = new FormData();
               formData.append('language', speaker.languageSelect.value);
 
-              // Get model value
-              let modelValue = 'gemini-2.5-flash-preview-04-17'; // Default to Gemini 2.5 Flash Preview
-              if (speaker.modelSelect) {
-                modelValue = speaker.modelSelect.value;
-              }
+              // Get model value from global transcription model
+              let modelValue = getTranscriptionModel();
               formData.append('model', modelValue);
 
               // Process the recorded audio after a short delay
@@ -1680,6 +1717,38 @@ document.addEventListener('DOMContentLoaded', () => {
         icon.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
       }
     });
+  }
+
+  // Settings panel toggle
+  const settingsToggle = document.getElementById('settings-toggle');
+  const settingsPanel = document.getElementById('settings-panel');
+
+  if (settingsToggle && settingsPanel) {
+    // Check if we should show settings by default on desktop
+    function updateSettingsPanelVisibility() {
+      if (window.innerWidth >= 768) {
+        // On desktop, show settings by default
+        settingsPanel.style.display = 'block';
+        settingsToggle.classList.add('active');
+      } else {
+        // On mobile, hide settings by default
+        settingsPanel.style.display = 'none';
+        settingsToggle.classList.remove('active');
+      }
+    }
+
+    // Initial setup
+    updateSettingsPanelVisibility();
+
+    // Toggle settings panel when button is clicked
+    settingsToggle.addEventListener('click', () => {
+      const isVisible = settingsPanel.style.display === 'block';
+      settingsPanel.style.display = isVisible ? 'none' : 'block';
+      settingsToggle.classList.toggle('active');
+    });
+
+    // Update on window resize
+    window.addEventListener('resize', updateSettingsPanelVisibility);
   }
 
   // Initialize editable transcript functionality

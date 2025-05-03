@@ -529,6 +529,81 @@ p {
   .transcript-controls button {
     flex: 1;
   }
+
+  /* Hero section mobile optimizations */
+  h1 {
+    font-size: 1.3rem; /* Even smaller title on mobile */
+    margin-bottom: 0;
+    line-height: 1.1;
+  }
+
+  .header-title-container {
+    margin-bottom: 0;
+  }
+
+  #app-subtitle {
+    font-size: 0.7rem;
+    margin-top: 0;
+    line-height: 1.1;
+  }
+
+  /* Optimize header spacing */
+  header {
+    padding: 0.25rem 0;
+    margin-bottom: 0.5rem !important;
+  }
+
+  header .flex.items-center {
+    flex-wrap: wrap;
+    gap: 0.5rem !important;
+  }
+
+  .bilingual-mode-label {
+    font-size: 0.7rem;
+  }
+
+  /* Smaller toggle switch for mobile */
+  .toggle-switch {
+    width: 36px;
+    height: 20px;
+  }
+
+  .slider:before {
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(16px);
+  }
+
+  .settings-panel {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  .settings-panel .form-select,
+  .settings-panel .toggle-switch {
+    margin-bottom: 0.75rem;
+  }
+
+  .settings-toggle {
+    width: 100%;
+    justify-content: space-between;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .settings-content {
+    padding: 0.75rem;
+  }
+
+  /* Make dropdowns full width on mobile */
+  .form-select {
+    width: 100%;
+  }
 }
 
 .translation-title {
@@ -714,9 +789,40 @@ input:checked + .slider:before {
   color: hsl(var(--accent-foreground));
 }
 
-/* Adjust header layout slightly if needed */
+/* Header optimizations */
 header .flex.items-center.gap-6 {
   align-items: center; /* Vertically align items in the header controls */
+}
+
+/* Compact header styles */
+.header-title-container {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Bilingual mode label styling */
+.bilingual-mode-label {
+  white-space: nowrap;
+  color: hsl(var(--foreground));
+}
+
+@media (max-width: 480px) {
+  /* Extra small screens */
+  .bilingual-mode-label {
+    font-size: 0.7rem;
+  }
+
+  header .button.button-outline.button-icon {
+    padding: 0.25rem;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+  }
+
+  header .button.button-outline.button-icon i {
+    font-size: 0.8rem;
+  }
 }
 
 /* Ensure About toggle button blends with card header and text is visible */
@@ -735,4 +841,52 @@ header .flex.items-center.gap-6 {
 /* Ensure chevron icon color is correct in dark mode (already handled, but good to confirm) */
 html[data-theme='dark'] #about-toggle i {
   color: hsl(var(--foreground));
+}
+
+/* Settings Panel */
+.settings-panel {
+  position: relative;
+  margin-top: 1rem;
+}
+
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: hsl(var(--secondary));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.settings-toggle:hover {
+  background-color: hsl(var(--accent));
+}
+
+.settings-toggle i {
+  transition: transform 0.2s ease;
+}
+
+.settings-toggle.active i {
+  transform: rotate(180deg);
+}
+
+.settings-content {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-top: 0.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.settings-content .form-group {
+  margin-bottom: 0.75rem;
+}
+
+.settings-content .form-group:last-child {
+  margin-bottom: 0;
 }
