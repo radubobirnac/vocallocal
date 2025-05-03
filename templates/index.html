@@ -449,5 +449,19 @@
 
   <!-- Scripts -->
   <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+  <!-- Synchronized TTS System -->
+  <script src="{{ url_for('static', filename='sync-tts.js') }}" defer></script>
+
+  <!-- TTS Fix Notification -->
+  <script>
+    // Add a global error handler for TTS-related issues
+    window.addEventListener('error', function(event) {
+      if (event.message && (event.message.includes('TTS') || event.message.includes('audio'))) {
+        console.log('Caught TTS-related error:', event.message);
+        event.preventDefault();
+      }
+    });
+  </script>
 </body>
 </html>

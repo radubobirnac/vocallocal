@@ -1,10 +1,10 @@
 {
   "translation": {
     "openai": {
-      "calls": 2,
-      "tokens": 188,
-      "chars": 208,
-      "time": 5.056585788726807,
+      "calls": 8,
+      "tokens": 1665,
+      "chars": 1084,
+      "time": 19.130837440490723,
       "failures": 0
     },
     "gemini": {
@@ -38,10 +38,10 @@
   },
   "transcription": {
     "openai": {
-      "calls": 0,
-      "tokens": 0,
-      "chars": 0,
-      "time": 0,
+      "calls": 5,
+      "tokens": 536,
+      "chars": 670,
+      "time": 19.499016284942627,
       "failures": 0
     },
     "gemini-2.5-flash-preview": {
@@ -66,11 +66,11 @@
       "failures": 0
     },
     "gemini-2.0-flash-lite": {
-      "calls": 8,
-      "tokens": 1137,
+      "calls": 13,
+      "tokens": 1779,
       "chars": 1442,
-      "time": 9.88132095336914,
-      "failures": 0
+      "time": 12.994860887527466,
+      "failures": 5
     }
   },
   "daily_usage": {
@@ -96,6 +96,15 @@
       },
       "tts": {
         "openai": 11
+      }
+    },
+    "2025-05-03": {
+      "transcription": {
+        "gemini-2.0-flash-lite": 642,
+        "openai": 536
+      },
+      "translation": {
+        "openai": 1477
       }
     }
   },
@@ -149,14 +158,41 @@
       "tts": {
         "openai": 11
       }
+    },
+    "2025-05-03-09": {
+      "transcription": {
+        "gemini-2.0-flash-lite": 426,
+        "openai": 356
+      },
+      "translation": {
+        "openai": 1175
+      }
+    },
+    "2025-05-03-11": {
+      "transcription": {
+        "gemini-2.0-flash-lite": 84,
+        "openai": 70
+      },
+      "translation": {
+        "openai": 62
+      }
+    },
+    "2025-05-03-12": {
+      "transcription": {
+        "gemini-2.0-flash-lite": 132,
+        "openai": 110
+      },
+      "translation": {
+        "openai": 240
+      }
     }
   },
   "tts": {
     "openai": {
-      "calls": 1,
-      "tokens": 11,
-      "chars": 46,
-      "time": 2.629518747329712,
+      "calls": 7,
+      "tokens": 226,
+      "chars": 915,
+      "time": 23.270386934280396,
       "failures": 0
     }
   }
