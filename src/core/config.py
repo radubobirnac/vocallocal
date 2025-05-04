@@ -81,5 +81,13 @@ SUPPORTED_LANGUAGES = {
     "Tajik": "tg",
     "Uzbek": "uz",
     "Yoruba": "yo",
-    "Zulu": "zu"
+    "Zulu": "zu",
+    "Wu Chinese": "wuu",
+    "Hausa": "ha",
+    "Cantonese": "yue",
+    "Odia": "or",
+    "Assamese": "as",
+    "Min Nan Chinese": "nan",
+    "Kurdish": "ku",
+    "Igbo": "ig"
 }

@@ -184,7 +184,15 @@ def get_language_name_from_code(language_code):
         "tg": "Tajik",
         "uz": "Uzbek",
         "yo": "Yoruba",
-        "zu": "Zulu"
+        "zu": "Zulu",
+        "wuu": "Wu Chinese",
+        "ha": "Hausa",
+        "yue": "Cantonese",
+        "or": "Odia",
+        "as": "Assamese",
+        "nan": "Min Nan Chinese",
+        "ku": "Kurdish",
+        "ig": "Igbo"
     }
 
     # Return the language name if found, otherwise return the code
@@ -359,7 +367,15 @@ def get_languages():
         "Tajik": {"code": "tg", "native": "Тоҷикӣ"},
         "Uzbek": {"code": "uz", "native": "O'zbek"},
         "Yoruba": {"code": "yo", "native": "Yorùbá"},
-        "Zulu": {"code": "zu", "native": "isiZulu"}
+        "Zulu": {"code": "zu", "native": "isiZulu"},
+        "Wu Chinese": {"code": "wuu", "native": "吴语"},
+        "Hausa": {"code": "ha", "native": "هَوُسَ"},
+        "Cantonese": {"code": "yue", "native": "粵語"},
+        "Odia": {"code": "or", "native": "ଓଡ଼ିଆ"},
+        "Assamese": {"code": "as", "native": "অসমীয়া"},
+        "Min Nan Chinese": {"code": "nan", "native": "閩南語"},
+        "Kurdish": {"code": "ku", "native": "Kurdî"},
+        "Igbo": {"code": "ig", "native": "Igbo"}
     }
     return jsonify(supported_languages)
 

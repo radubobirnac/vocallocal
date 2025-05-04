@@ -80,7 +80,15 @@ def get_language_name_from_code(language_code):
         "tg": "Tajik",
         "uz": "Uzbek",
         "yo": "Yoruba",
-        "zu": "Zulu"
+        "zu": "Zulu",
+        "wuu": "Wu Chinese",
+        "ha": "Hausa",
+        "yue": "Cantonese",
+        "or": "Odia",
+        "as": "Assamese",
+        "nan": "Min Nan Chinese",
+        "ku": "Kurdish",
+        "ig": "Igbo"
     }
 
     # Return the language name if found, otherwise return the code
