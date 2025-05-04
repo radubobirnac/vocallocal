@@ -126,6 +126,46 @@ app.config['MAX_CONTENT_LENGTH'] = 30 * 1024 * 1024  # 30MB max upload size
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# Helper function to get language name from language code
+def get_language_name_from_code(language_code):
+    # Dictionary mapping language codes to language names
+    language_map = {
+        "en": "English",
+        "es": "Spanish",
+        "fr": "French",
+        "de": "German",
+        "it": "Italian",
+        "pt": "Portuguese",
+        "nl": "Dutch",
+        "ja": "Japanese",
+        "zh": "Chinese",
+        "ko": "Korean",
+        "ru": "Russian",
+        "ar": "Arabic",
+        "hi": "Hindi",
+        "tr": "Turkish",
+        "sv": "Swedish",
+        "pl": "Polish",
+        "no": "Norwegian",
+        "fi": "Finnish",
+        "da": "Danish",
+        "uk": "Ukrainian",
+        "cs": "Czech",
+        "ro": "Romanian",
+        "hu": "Hungarian",
+        "el": "Greek",
+        "he": "Hebrew",
+        "te": "Telugu",
+        "th": "Thai",
+        "vi": "Vietnamese",
+        "id": "Indonesian",
+        "ms": "Malay",
+        "bg": "Bulgarian"
+    }
+
+    # Return the language name if found, otherwise return the code
+    return language_map.get(language_code, language_code)
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -521,8 +561,9 @@ def translate_text():
         model_used = translation_model
         fallback_used = False
 
-        # Translation prompt
-        translation_prompt = f"You are a professional translator. Translate the text into {target_language}. Only respond with the translation, nothing else."
+        # Translation prompt - Use the full language name instead of just the code
+        language_name = get_language_name_from_code(target_language)
+        translation_prompt = f"You are a professional translator. Translate the text into {language_name} (language code: {target_language}). Only respond with the translation, nothing else."
 
         # First attempt with the selected model
         if translation_model.startswith('gemini'):
@@ -799,6 +840,15 @@ def translate_with_openai(text, target_language, prompt, translation_model='open
     # Start timing for metrics
     start_time = time.time()
 
+    # Get language name for better logging
+    language_name = get_language_name_from_code(target_language)
+
+    # Log translation request details
+    print(f"OpenAI translation request:")
+    print(f"  - Target language: {language_name} (code: {target_language})")
+    print(f"  - Text length: {len(text)} characters")
+    print(f"  - Prompt: {prompt}")
+
     # Prepare messages
     messages = [
         {"role": "system", "content": prompt},
@@ -823,9 +873,12 @@ def translate_with_openai(text, target_language, prompt, translation_model='open
     # Count output tokens for metrics
     output_tokens = count_openai_tokens(translated_text, model_name) if METRICS_AVAILABLE else len(translated_text) // 4
 
-    # Log token usage
+    # Log token usage and translation result
     total_tokens = input_tokens + output_tokens
-    print(f"OpenAI translation token usage: {total_tokens} tokens (input: {input_tokens}, output: {output_tokens})")
+    print(f"OpenAI translation completed:")
+    print(f"  - Token usage: {total_tokens} tokens (input: {input_tokens}, output: {output_tokens})")
+    print(f"  - Result length: {len(translated_text)} characters")
+    print(f"  - First 100 chars: {translated_text[:100]}...")
 
     # Manually track metrics with the correct model name
     if METRICS_AVAILABLE:
@@ -845,6 +898,16 @@ def translate_with_gemini(text, target_language, prompt, translation_model='gemi
     """Helper function to translate text using Google Gemini"""
     # Start timing for metrics
     start_time = time.time()
+
+    # Get language name for better logging
+    language_name = get_language_name_from_code(target_language)
+
+    # Log translation request details
+    print(f"Gemini translation request:")
+    print(f"  - Target language: {language_name} (code: {target_language})")
+    print(f"  - Text length: {len(text)} characters")
+    print(f"  - Prompt: {prompt}")
+    print(f"  - Requested model: {translation_model}")
 
     # Check if Gemini is available
     if not GEMINI_AVAILABLE:
@@ -896,9 +959,13 @@ def translate_with_gemini(text, target_language, prompt, translation_model='gemi
         # Count output tokens for metrics
         output_tokens = count_gemini_tokens(translated_text, model_name) if METRICS_AVAILABLE else len(translated_text) // 3
 
-        # Log token usage
+        # Log token usage and translation result
         total_tokens = input_tokens + output_tokens
-        print(f"Gemini translation token usage: {total_tokens} tokens (input: {input_tokens}, output: {output_tokens})")
+        print(f"Gemini translation completed:")
+        print(f"  - Model used: {model_name}")
+        print(f"  - Token usage: {total_tokens} tokens (input: {input_tokens}, output: {output_tokens})")
+        print(f"  - Result length: {len(translated_text)} characters")
+        print(f"  - First 100 chars: {translated_text[:100]}...")
 
         # Manually track metrics with the correct model name
         if METRICS_AVAILABLE:
@@ -915,6 +982,8 @@ def translate_with_gemini(text, target_language, prompt, translation_model='gemi
         return translated_text
     except Exception as e:
         print(f"Error using Gemini API: {str(e)}. Falling back to OpenAI for translation.")
+        print(f"  - Target language: {language_name} (code: {target_language})")
+        print(f"  - Requested model: {translation_model}")
 
         # Track the error in metrics
         if METRICS_AVAILABLE:
@@ -1032,6 +1101,67 @@ def reset_metrics():
             'status': 'error',
             'message': str(e)
         }), 500
+
+@app.route('/api/admin/test-translations', methods=['GET'])
+def test_translations():
+    """Debug endpoint to test translations for all supported languages"""
+    # Sample text to translate (English)
+    sample_text = "Hello, this is a test of the translation system. We are checking if all languages work correctly."
+
+    # Get the translation model from query parameter or default to gemini
+    translation_model = request.args.get('model', 'gemini')
+
+    # Get all supported languages
+    languages_response = get_languages()
+    languages = languages_response.json
+
+    results = {}
+
+    # Test translation to each language
+    for lang_name, lang_details in languages.items():
+        lang_code = lang_details['code']
+        if lang_code == 'en':  # Skip English as it's our source
+            continue
+
+        try:
+            # Get the language name for better prompting
+            language_name = get_language_name_from_code(lang_code)
+
+            # Create translation prompt
+            translation_prompt = f"You are a professional translator. Translate the text into {language_name} (language code: {lang_code}). Only respond with the translation, nothing else."
+
+            # Translate based on selected model
+            if translation_model.startswith('gemini'):
+                translated_text = translate_with_gemini(sample_text, lang_code, translation_prompt, translation_model)
+            else:
+                translated_text = translate_with_openai(sample_text, lang_code, translation_prompt)
+
+            # Store result
+            results[lang_code] = {
+                'language': lang_name,
+                'success': True,
+                'translation': translated_text,
+                'native_name': lang_details['native']
+            }
+
+        except Exception as e:
+            # Log error
+            print(f"Error translating to {lang_name} ({lang_code}): {str(e)}")
+
+            # Store error
+            results[lang_code] = {
+                'language': lang_name,
+                'success': False,
+                'error': str(e),
+                'native_name': lang_details['native']
+            }
+
+    # Return all results
+    return jsonify({
+        'model': translation_model,
+        'source_text': sample_text,
+        'results': results
+    })
 
 if __name__ == '__main__':
     import argparse
