@@ -160,7 +160,22 @@ def get_language_name_from_code(language_code):
         "vi": "Vietnamese",
         "id": "Indonesian",
         "ms": "Malay",
-        "bg": "Bulgarian"
+        "bg": "Bulgarian",
+        "ur": "Urdu",
+        "bn": "Bengali",
+        "fa": "Persian",
+        "sw": "Swahili",
+        "ta": "Tamil",
+        "pa": "Punjabi",
+        "mr": "Marathi",
+        "gu": "Gujarati",
+        "kn": "Kannada",
+        "ml": "Malayalam",
+        "ne": "Nepali",
+        "si": "Sinhala",
+        "km": "Khmer",
+        "lo": "Lao",
+        "my": "Burmese"
     }
 
     # Return the language name if found, otherwise return the code
@@ -311,7 +326,22 @@ def get_languages():
         "Vietnamese": {"code": "vi", "native": "Tiếng Việt"},
         "Indonesian": {"code": "id", "native": "Bahasa Indonesia"},
         "Malay": {"code": "ms", "native": "Bahasa Melayu"},
-        "Bulgarian": {"code": "bg", "native": "Български"}
+        "Bulgarian": {"code": "bg", "native": "Български"},
+        "Urdu": {"code": "ur", "native": "اردو"},
+        "Bengali": {"code": "bn", "native": "বাংলা"},
+        "Persian": {"code": "fa", "native": "فارسی"},
+        "Swahili": {"code": "sw", "native": "Kiswahili"},
+        "Tamil": {"code": "ta", "native": "தமிழ்"},
+        "Punjabi": {"code": "pa", "native": "ਪੰਜਾਬੀ"},
+        "Marathi": {"code": "mr", "native": "मराठी"},
+        "Gujarati": {"code": "gu", "native": "ગુજરાતી"},
+        "Kannada": {"code": "kn", "native": "ಕನ್ನಡ"},
+        "Malayalam": {"code": "ml", "native": "മലയാളം"},
+        "Nepali": {"code": "ne", "native": "नेपाली"},
+        "Sinhala": {"code": "si", "native": "සිංහල"},
+        "Khmer": {"code": "km", "native": "ខ្មែរ"},
+        "Lao": {"code": "lo", "native": "ລາວ"},
+        "Burmese": {"code": "my", "native": "မြန်မာ"}
     }
     return jsonify(supported_languages)
 

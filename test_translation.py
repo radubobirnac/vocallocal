@@ -56,9 +56,24 @@ def get_language_name_from_code(language_code):
         "vi": "Vietnamese",
         "id": "Indonesian",
         "ms": "Malay",
-        "bg": "Bulgarian"
+        "bg": "Bulgarian",
+        "ur": "Urdu",
+        "bn": "Bengali",
+        "fa": "Persian",
+        "sw": "Swahili",
+        "ta": "Tamil",
+        "pa": "Punjabi",
+        "mr": "Marathi",
+        "gu": "Gujarati",
+        "kn": "Kannada",
+        "ml": "Malayalam",
+        "ne": "Nepali",
+        "si": "Sinhala",
+        "km": "Khmer",
+        "lo": "Lao",
+        "my": "Burmese"
     }
-    
+
     # Return the language name if found, otherwise return the code
     return language_map.get(language_code, language_code)
 
@@ -66,10 +81,10 @@ def translate_with_openai(text, target_language):
     """Helper function to translate text using OpenAI"""
     # Get language name for better prompting
     language_name = get_language_name_from_code(target_language)
-    
+
     # Create translation prompt
     prompt = f"You are a professional translator. Translate the text into {language_name} (language code: {target_language}). Only respond with the translation, nothing else."
-    
+
     # Log translation request details
     print(f"OpenAI translation request:")
     print(f"  - Target language: {language_name} (code: {target_language})")
@@ -104,10 +119,10 @@ def translate_with_gemini(text, target_language):
     """Helper function to translate text using Google Gemini"""
     # Get language name for better prompting
     language_name = get_language_name_from_code(target_language)
-    
+
     # Create translation prompt
     prompt = f"You are a professional translator. Translate the text into {language_name} (language code: {target_language}). Only respond with the translation, nothing else."
-    
+
     # Log translation request details
     print(f"Gemini translation request:")
     print(f"  - Target language: {language_name} (code: {target_language})")
@@ -152,10 +167,10 @@ def translate_with_gemini(text, target_language):
 def main():
     # Sample text to translate (English)
     sample_text = "Hello, this is a test of the translation system. We are checking if all languages work correctly."
-    
+
     # Test languages
     test_languages = ["it", "es", "fr", "de", "zh", "ja", "ru"]
-    
+
     print("=== Testing OpenAI Translation ===")
     for lang_code in test_languages:
         print(f"\nTesting translation to {get_language_name_from_code(lang_code)} ({lang_code}):")
@@ -164,7 +179,7 @@ def main():
             print(f"Full translation: {translated}")
         except Exception as e:
             print(f"Error: {str(e)}")
-    
+
     print("\n\n=== Testing Gemini Translation ===")
     for lang_code in test_languages:
         print(f"\nTesting translation to {get_language_name_from_code(lang_code)} ({lang_code}):")

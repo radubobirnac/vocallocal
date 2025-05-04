@@ -56,5 +56,21 @@ SUPPORTED_LANGUAGES = {
     "Vietnamese": "vi",
     "Indonesian": "id",
     "Malay": "ms",
-    "Bulgarian": "bg"
-} 
+    "Bulgarian": "bg",
+    "Urdu": "ur",
+    "Bengali": "bn",
+    "Persian": "fa",
+    "Swahili": "sw",
+    "Tamil": "ta",
+    "Telugu": "te",
+    "Punjabi": "pa",
+    "Marathi": "mr",
+    "Gujarati": "gu",
+    "Kannada": "kn",
+    "Malayalam": "ml",
+    "Nepali": "ne",
+    "Sinhala": "si",
+    "Khmer": "km",
+    "Lao": "lo",
+    "Burmese": "my"
+}
