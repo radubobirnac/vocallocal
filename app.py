@@ -420,55 +420,8 @@ def text_to_speech():
 
 def tts_with_openai(text, language, output_file_path):
     """Helper function to generate speech using OpenAI's TTS service"""
-    # Map language code to appropriate voice
-    # OpenAI voices: alloy, echo, fable, onyx, nova, shimmer
-    voice_map = {
-        # Default English voice (alloy is neutral)
-        'en': 'alloy',
-
-        # Romance languages (nova is good for these)
-        'es': 'nova',  # Spanish
-        'fr': 'nova',  # French
-        'it': 'nova',  # Italian
-        'pt': 'nova',  # Portuguese
-        'ro': 'nova',  # Romanian
-
-        # Germanic languages (onyx works well)
-        'de': 'onyx',  # German
-        'nl': 'onyx',  # Dutch
-        'sv': 'onyx',  # Swedish
-        'no': 'onyx',  # Norwegian
-        'da': 'onyx',  # Danish
-
-        # Asian languages (shimmer is clearer)
-        'ja': 'shimmer',  # Japanese
-        'zh': 'shimmer',  # Chinese
-        'ko': 'shimmer',  # Korean
-
-        # Slavic languages (echo has good clarity)
-        'ru': 'echo',   # Russian
-        'uk': 'echo',   # Ukrainian
-        'cs': 'echo',   # Czech
-        'pl': 'echo',   # Polish
-        'bg': 'echo',   # Bulgarian
-
-        # Other languages
-        'ar': 'fable',  # Arabic
-        'hi': 'fable',  # Hindi
-        'tr': 'fable',  # Turkish
-        'fi': 'onyx',   # Finnish
-        'hu': 'echo',   # Hungarian
-        'el': 'nova',   # Greek
-        'he': 'fable',  # Hebrew
-        'te': 'fable',  # Telugu
-        'th': 'shimmer',  # Thai
-        'vi': 'shimmer',  # Vietnamese
-        'id': 'shimmer',  # Indonesian
-        'ms': 'shimmer',  # Malay
-    }
-
-    # Get voice based on language or default to alloy
-    voice = voice_map.get(language, 'alloy')
+    # Use onyx voice for all languages
+    voice = 'onyx'
 
     # Log request for debugging
     print(f"OpenAI TTS request: language={language}, voice={voice}, text_length={len(text)}")
