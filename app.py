@@ -176,7 +176,15 @@ def get_language_name_from_code(language_code):
         "km": "Khmer",
         "lo": "Lao",
         "my": "Burmese",
-        "ps": "Pashto"
+        "ps": "Pashto",
+        "am": "Amharic",
+        "az": "Azerbaijani",
+        "kk": "Kazakh",
+        "sr": "Serbian",
+        "tg": "Tajik",
+        "uz": "Uzbek",
+        "yo": "Yoruba",
+        "zu": "Zulu"
     }
 
     # Return the language name if found, otherwise return the code
@@ -343,7 +351,15 @@ def get_languages():
         "Khmer": {"code": "km", "native": "ខ្មែរ"},
         "Lao": {"code": "lo", "native": "ລາວ"},
         "Burmese": {"code": "my", "native": "မြန်မာ"},
-        "Pashto": {"code": "ps", "native": "پښتو"}
+        "Pashto": {"code": "ps", "native": "پښتو"},
+        "Amharic": {"code": "am", "native": "አማርኛ"},
+        "Azerbaijani": {"code": "az", "native": "Azərbaycan dili"},
+        "Kazakh": {"code": "kk", "native": "Қазақ тілі"},
+        "Serbian": {"code": "sr", "native": "Српски"},
+        "Tajik": {"code": "tg", "native": "Тоҷикӣ"},
+        "Uzbek": {"code": "uz", "native": "O'zbek"},
+        "Yoruba": {"code": "yo", "native": "Yorùbá"},
+        "Zulu": {"code": "zu", "native": "isiZulu"}
     }
     return jsonify(supported_languages)
 

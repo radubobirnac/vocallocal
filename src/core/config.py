@@ -73,5 +73,13 @@ SUPPORTED_LANGUAGES = {
     "Khmer": "km",
     "Lao": "lo",
     "Burmese": "my",
-    "Pashto": "ps"
+    "Pashto": "ps",
+    "Amharic": "am",
+    "Azerbaijani": "az",
+    "Kazakh": "kk",
+    "Serbian": "sr",
+    "Tajik": "tg",
+    "Uzbek": "uz",
+    "Yoruba": "yo",
+    "Zulu": "zu"
 }

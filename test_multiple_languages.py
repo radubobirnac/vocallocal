@@ -64,7 +64,15 @@ def get_language_name_from_code(language_code):
         "km": "Khmer",
         "lo": "Lao",
         "my": "Burmese",
-        "ps": "Pashto"
+        "ps": "Pashto",
+        "am": "Amharic",
+        "az": "Azerbaijani",
+        "kk": "Kazakh",
+        "sr": "Serbian",
+        "tg": "Tajik",
+        "uz": "Uzbek",
+        "yo": "Yoruba",
+        "zu": "Zulu"
     }
 
     # Return the language name if found, otherwise return the code
