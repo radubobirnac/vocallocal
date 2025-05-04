@@ -481,7 +481,14 @@ def text_to_speech():
                 if "tts" not in metrics_tracker.metrics:
                     metrics_tracker.metrics["tts"] = {}
 
-                # Initialize model if not exists
+                # Ensure both TTS models exist in metrics
+                for model_key in ['gpt4o-mini', 'openai']:
+                    if model_key not in metrics_tracker.metrics["tts"]:
+                        metrics_tracker.metrics["tts"][model_key] = {
+                            "calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0
+                        }
+
+                # Initialize model if not exists (redundant but safe)
                 if model_used not in metrics_tracker.metrics["tts"]:
                     metrics_tracker.metrics["tts"][model_used] = {
                         "calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0
