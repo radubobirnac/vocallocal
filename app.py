@@ -637,7 +637,7 @@ def translate_text():
         translation_prompt = f"You are a professional translator. Translate the text into {language_name} (language code: {target_language}). Only respond with the translation, nothing else."
 
         # First attempt with the selected model
-        if translation_model.startswith('gemini'):
+        if translation_model.startswith('gemini') or translation_model == 'gemini-2.0-flash-lite':
             try:
                 translated_text = translate_with_gemini(text, target_language, translation_prompt, translation_model)
             except Exception as gemini_error:
@@ -645,12 +645,12 @@ def translate_text():
                 # Fallback to OpenAI if Gemini fails
                 try:
                     translated_text = translate_with_openai(text, target_language, translation_prompt)
-                    model_used = 'openai'
+                    model_used = 'gpt-4.1-mini'
                     fallback_used = True
                 except Exception as openai_fallback_error:
                     # If both fail, re-raise the original error
                     raise gemini_error
-        else:  # OpenAI
+        elif translation_model.startswith('gpt'):  # GPT models (like gpt-4.1-mini)
             try:
                 translated_text = translate_with_openai(text, target_language, translation_prompt)
             except Exception as openai_error:
@@ -658,12 +658,39 @@ def translate_text():
                 # Fallback to Gemini if OpenAI fails
                 try:
                     # Default to standard Gemini model for fallback
-                    translated_text = translate_with_gemini(text, target_language, translation_prompt, 'gemini')
-                    model_used = 'gemini'
+                    translated_text = translate_with_gemini(text, target_language, translation_prompt, 'gemini-2.0-flash-lite')
+                    model_used = 'gemini-2.0-flash-lite'
                     fallback_used = True
                 except Exception as gemini_fallback_error:
                     # If both fail, re-raise the original error
                     raise openai_error
+        else:  # Handle legacy model names (for backward compatibility)
+            if translation_model == 'openai':
+                try:
+                    translated_text = translate_with_openai(text, target_language, translation_prompt)
+                except Exception as openai_error:
+                    print(f"OpenAI translation error: {str(openai_error)}")
+                    # Fallback to Gemini if OpenAI fails
+                    try:
+                        translated_text = translate_with_gemini(text, target_language, translation_prompt, 'gemini-2.0-flash-lite')
+                        model_used = 'gemini-2.0-flash-lite'
+                        fallback_used = True
+                    except Exception as gemini_fallback_error:
+                        # If both fail, re-raise the original error
+                        raise openai_error
+            else:  # Default to Gemini for any other model name
+                try:
+                    translated_text = translate_with_gemini(text, target_language, translation_prompt, 'gemini-2.0-flash-lite')
+                except Exception as gemini_error:
+                    print(f"Gemini translation error: {str(gemini_error)}")
+                    # Fallback to OpenAI if Gemini fails
+                    try:
+                        translated_text = translate_with_openai(text, target_language, translation_prompt)
+                        model_used = 'gpt-4.1-mini'
+                        fallback_used = True
+                    except Exception as openai_fallback_error:
+                        # If both fail, re-raise the original error
+                        raise gemini_error
 
         # Calculate performance metrics
         end_time = time.time()
@@ -847,7 +874,7 @@ def transcribe_with_gemini(audio_data, language, model_type="gemini"):
         print("Falling back to OpenAI for transcription.")
         return transcribe_with_openai(audio_data, language)
 
-def transcribe_with_openai(audio_data, language, model_type="whisper-1"):
+def transcribe_with_openai(audio_data, language, model_type="gpt-4o-mini-transcribe"):
     """Helper function to transcribe audio using OpenAI"""
     # Start timing for metrics
     start_time = time.time()
@@ -870,7 +897,7 @@ def transcribe_with_openai(audio_data, language, model_type="whisper-1"):
         with open(temp_file_path, 'rb') as audio_file:
             # Call the OpenAI API to transcribe the audio
             response = openai.audio.transcriptions.create(
-                model="whisper-1",
+                model="gpt-4o-mini-transcribe",  # Use GPT-4o Mini instead of Whisper
                 file=audio_file,
                 language=language if language != "auto" else None
             )
@@ -912,7 +939,7 @@ def transcribe_with_openai(audio_data, language, model_type="whisper-1"):
 
         raise e
 
-def translate_with_openai(text, target_language, prompt, translation_model='openai'):
+def translate_with_openai(text, target_language, prompt, translation_model='gpt-4.1-mini'):
     """Helper function to translate text using OpenAI"""
     # Start timing for metrics
     start_time = time.time()
@@ -925,6 +952,12 @@ def translate_with_openai(text, target_language, prompt, translation_model='open
     print(f"  - Target language: {language_name} (code: {target_language})")
     print(f"  - Text length: {len(text)} characters")
     print(f"  - Prompt: {prompt}")
+
+    # Handle legacy model name
+    display_model = translation_model
+    if translation_model == 'openai':
+        display_model = 'gpt-4.1-mini'
+        print(f"  - Converting legacy model name 'openai' to '{display_model}'")
 
     # Prepare messages
     messages = [
@@ -963,15 +996,15 @@ def translate_with_openai(text, target_language, prompt, translation_model='open
         response_time = time.time() - start_time
         # Get character count
         char_count = len(translated_text)
-        # Track metrics with 'openai' as the model name
+        # Track metrics with the display_model name
         metrics_tracker.track_translation(
-            'openai', total_tokens, char_count, response_time, True
+            display_model, total_tokens, char_count, response_time, True
         )
-        print(f"Tracked metrics for model: openai")
+        print(f"Tracked metrics for model: {display_model}")
 
     return translated_text
 
-def translate_with_gemini(text, target_language, prompt, translation_model='gemini'):
+def translate_with_gemini(text, target_language, prompt, translation_model='gemini-2.0-flash-lite'):
     """Helper function to translate text using Google Gemini"""
     # Start timing for metrics
     start_time = time.time()
@@ -985,6 +1018,11 @@ def translate_with_gemini(text, target_language, prompt, translation_model='gemi
     print(f"  - Text length: {len(text)} characters")
     print(f"  - Prompt: {prompt}")
     print(f"  - Requested model: {translation_model}")
+
+    # Handle legacy model name
+    if translation_model == 'gemini':
+        translation_model = 'gemini-2.0-flash-lite'
+        print(f"  - Converting legacy model name 'gemini' to '{translation_model}'")
 
     # Check if Gemini is available
     if not GEMINI_AVAILABLE:
@@ -1001,21 +1039,28 @@ def translate_with_gemini(text, target_language, prompt, translation_model='gemi
         }
 
         # Select the appropriate model based on the translation_model parameter
-        model_name = "gemini-2.0-flash-lite"  # Default model
+        model_name = "models/gemini-2.0-flash-lite"  # Default model
         display_model = translation_model  # For metrics tracking
 
-        if 'gemini-2.5-flash-preview' in translation_model:
+        if 'gemini-2.5-flash' in translation_model or translation_model == 'gemini-2.5-flash':
             # Use the full model name from the available models list
             model_name = "models/gemini-2.5-flash-preview-04-17"
             display_model = "gemini-2.5-flash"
             print(f"Using Gemini 2.5 Flash Preview model for translation")
-        elif 'gemini-2.5-pro-preview' in translation_model:
+        elif 'gemini-2.5-pro' in translation_model:
             # Use the full model name from the available models list
             model_name = "models/gemini-2.5-pro-preview-03-25"
             display_model = "gemini-2.5-pro"
             print(f"Using Gemini 2.5 Pro Preview model for translation")
-        else:
+        elif translation_model == 'gemini-2.0-flash-lite' or translation_model == 'gemini':
+            model_name = "models/gemini-2.0-flash-lite"
+            display_model = "gemini-2.0-flash-lite"
             print(f"Using Gemini 2.0 Flash Lite model for translation")
+        else:
+            # For any other model name, default to Gemini 2.0 Flash Lite
+            model_name = "models/gemini-2.0-flash-lite"
+            display_model = "gemini-2.0-flash-lite"
+            print(f"Unknown model '{translation_model}', defaulting to Gemini 2.0 Flash Lite for translation")
 
         # Count input tokens for metrics
         input_prompt = f"{prompt}\n\nText to translate: {text}"

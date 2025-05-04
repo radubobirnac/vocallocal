@@ -650,10 +650,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load translation model preference
   function loadTranslationModelPreference() {
     try {
-      return localStorage.getItem('vocal-local-translation-model') || 'gemini'; // Default to Gemini
+      const savedModel = localStorage.getItem('vocal-local-translation-model');
+
+      // Handle old model names for backward compatibility
+      if (savedModel === 'gemini') {
+        return 'gemini-2.0-flash-lite';
+      } else if (savedModel === 'openai') {
+        return 'gpt-4.1-mini';
+      }
+
+      return savedModel || 'gemini-2.0-flash-lite'; // Default to Gemini 2.0 Flash Lite
     } catch (e) {
-      console.warn('LocalStorage is not available. Defaulting to Gemini.');
-      return 'gemini';
+      console.warn('LocalStorage is not available. Defaulting to Gemini 2.0 Flash Lite.');
+      return 'gemini-2.0-flash-lite';
     }
   }
 
