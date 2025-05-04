@@ -1074,7 +1074,22 @@ document.addEventListener('DOMContentLoaded', () => {
   if (globalTranscriptionModel) {
     // Load saved preference
     const savedModel = loadTranscriptionModelPreference();
-    globalTranscriptionModel.value = savedModel;
+
+    // Check if the saved model is Gemini 2.5 Pro Preview which has been removed
+    if (savedModel === 'gemini-2.5-pro-preview-03-25') {
+      // Reset to default model (Gemini 2.0 Flash Lite)
+      saveTranscriptionModelPreference('gemini');
+      globalTranscriptionModel.value = 'gemini';
+      showStatus('Your previously selected transcription model is no longer available. Defaulting to Gemini 2.0 Flash Lite.', 'info');
+    } else {
+      // Set the saved model if it's still available
+      try {
+        globalTranscriptionModel.value = savedModel;
+      } catch (e) {
+        // If there's an error (e.g., option doesn't exist), default to Gemini
+        globalTranscriptionModel.value = 'gemini';
+      }
+    }
 
     // Add event listener
     globalTranscriptionModel.addEventListener('change', () => {

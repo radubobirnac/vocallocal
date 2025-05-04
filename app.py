@@ -733,6 +733,8 @@ def transcribe_with_gemini(audio_data, language, model_type="gemini"):
         model_name = model_type
         # For metrics tracking, use a simplified model name
         display_model = model_type
+
+        # Handle model selection
         if model_type == 'gemini':
             # Use Gemini 2.0 Flash Lite for transcription
             model_name = "models/gemini-2.0-flash-lite"
@@ -741,7 +743,11 @@ def transcribe_with_gemini(audio_data, language, model_type="gemini"):
         elif 'gemini-2.5-flash-preview' in model_type:
             display_model = 'gemini-2.5-flash-preview'
         elif 'gemini-2.5-pro-preview' in model_type:
-            display_model = 'gemini-2.5-pro-preview'
+            # This model has been removed from the UI, but handle it in case it's still in localStorage
+            print(f"Gemini 2.5 Pro Preview model is no longer supported for transcription")
+            print(f"Falling back to Gemini 2.0 Flash Lite")
+            model_name = "models/gemini-2.0-flash-lite"
+            display_model = 'gemini-2.0-flash-lite'
 
         # Estimate audio duration for token counting
         audio_size = len(audio_data)
