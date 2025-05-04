@@ -175,7 +175,8 @@ def get_language_name_from_code(language_code):
         "si": "Sinhala",
         "km": "Khmer",
         "lo": "Lao",
-        "my": "Burmese"
+        "my": "Burmese",
+        "ps": "Pashto"
     }
 
     # Return the language name if found, otherwise return the code
@@ -341,7 +342,8 @@ def get_languages():
         "Sinhala": {"code": "si", "native": "සිංහල"},
         "Khmer": {"code": "km", "native": "ខ្មែរ"},
         "Lao": {"code": "lo", "native": "ລາວ"},
-        "Burmese": {"code": "my", "native": "မြန်မာ"}
+        "Burmese": {"code": "my", "native": "မြန်မာ"},
+        "Pashto": {"code": "ps", "native": "پښتو"}
     }
     return jsonify(supported_languages)
 

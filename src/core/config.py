@@ -72,5 +72,6 @@ SUPPORTED_LANGUAGES = {
     "Sinhala": "si",
     "Khmer": "km",
     "Lao": "lo",
-    "Burmese": "my"
+    "Burmese": "my",
+    "Pashto": "ps"
 }

@@ -81,7 +81,8 @@ SUPPORTED_LANGUAGES = {
     "Sinhala": "si",
     "Khmer": "km",
     "Lao": "lo",
-    "Burmese": "my"
+    "Burmese": "my",
+    "Pashto": "ps"
 }
 
 # Signal class for inter-thread communication

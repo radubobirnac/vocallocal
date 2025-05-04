@@ -71,7 +71,8 @@ def get_language_name_from_code(language_code):
         "si": "Sinhala",
         "km": "Khmer",
         "lo": "Lao",
-        "my": "Burmese"
+        "my": "Burmese",
+        "ps": "Pashto"
     }
 
     # Return the language name if found, otherwise return the code
