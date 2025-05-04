@@ -54,7 +54,7 @@ class MetricsTracker:
                     },
                     "tts": {
                         "openai": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0},
-                        "gemini": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0}
+                        "gpt4o-mini": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0}
                     },
                     "daily_usage": {},
                     "hourly_usage": {}
@@ -266,7 +266,7 @@ class MetricsTracker:
             },
             "tts": {
                 "openai": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0},
-                "gemini": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0}
+                "gpt4o-mini": {"calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0}
             },
             "daily_usage": {},
             "hourly_usage": {}

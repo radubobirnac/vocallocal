@@ -278,14 +278,16 @@ def get_languages():
 @app.route('/api/tts', methods=['POST'])
 def text_to_speech():
     """
-    Endpoint for converting text to speech using either OpenAI's TTS service or Google's TTS service.
+    Endpoint for converting text to speech using OpenAI's TTS services.
 
     Required JSON parameters:
     - text: The text to convert to speech
     - language: The language code (e.g., 'en', 'es', 'fr')
 
     Optional JSON parameters:
-    - tts_model: The model to use for TTS ('openai' or 'gemini', default: 'gemini')
+    - tts_model: The model to use for TTS ('gpt4o-mini' or 'openai', default: 'gpt4o-mini')
+      - 'gpt4o-mini': Uses OpenAI's GPT-4o Mini TTS model (with fallback to standard TTS if it fails)
+      - 'openai': Uses OpenAI's standard TTS model with voice selection based on language
 
     Returns:
     - Audio file as response with appropriate content type
@@ -300,7 +302,7 @@ def text_to_speech():
 
     text = data['text']
     language = data['language']
-    tts_model = data.get('tts_model', 'gemini')  # Default to Gemini
+    tts_model = data.get('tts_model', 'gpt4o-mini')  # Default to GPT-4o Mini
     print(f"TTS request: model={tts_model}, language={language}, text_length={len(text)}")
 
     if not text.strip():
@@ -322,21 +324,29 @@ def text_to_speech():
         fallback_used = False
         success = False
 
-        if tts_model == 'gemini':
-            print("Using Gemini TTS model")
+        if tts_model == 'gpt4o-mini':
+            print("Using GPT-4o Mini TTS model")
             try:
-                # For now, always use OpenAI TTS
-                print("Gemini TTS not fully implemented, using OpenAI TTS directly")
-                tts_with_openai(text, language, temp_file.name)
-                model_used = 'openai'
+                # Use the GPT-4o Mini TTS model
+                tts_with_gpt4o_mini(text, language, temp_file.name)
+                model_used = 'gpt4o-mini'
                 success = True
             except Exception as e:
-                print(f"OpenAI TTS error: {str(e)}")
-                return jsonify({
-                    'error': str(e),
-                    'errorType': type(e).__name__,
-                    'details': 'TTS service error'
-                }), 500
+                print(f"GPT-4o Mini TTS error: {str(e)}")
+                print("Falling back to standard OpenAI TTS")
+                try:
+                    # Fallback to standard OpenAI TTS
+                    tts_with_openai(text, language, temp_file.name)
+                    model_used = 'openai'
+                    fallback_used = True
+                    success = True
+                except Exception as fallback_e:
+                    print(f"Fallback OpenAI TTS error: {str(fallback_e)}")
+                    return jsonify({
+                        'error': str(e),
+                        'errorType': type(e).__name__,
+                        'details': 'TTS service error (both primary and fallback failed)'
+                    }), 500
         else:  # OpenAI
             print("Using OpenAI TTS model")
             try:
@@ -471,7 +481,31 @@ def tts_with_openai(text, language, output_file_path):
     )
 
     # Save to the output file
-    response.stream_to_file(output_file_path)
+    with open(output_file_path, 'wb') as f:
+        for chunk in response.iter_bytes():
+            f.write(chunk)
+
+    return True
+
+def tts_with_gpt4o_mini(text, language, output_file_path):
+    """Helper function to generate speech using OpenAI's GPT-4o Mini TTS service"""
+    # For GPT-4o Mini TTS, we'll use a simple approach without voice mapping
+    # Just use 'alloy' voice for all languages
+
+    # Log request for debugging
+    print(f"GPT-4o Mini TTS request: language={language}, text_length={len(text)}")
+
+    # Generate speech with OpenAI's GPT-4o Mini TTS
+    response = openai.audio.speech.create(
+        model="gpt-4o-mini-tts",  # Use the GPT-4o Mini TTS model
+        voice="alloy",  # Use alloy voice for all languages
+        input=text
+    )
+
+    # Save to the output file
+    with open(output_file_path, 'wb') as f:
+        for chunk in response.iter_bytes():
+            f.write(chunk)
 
     return True
 

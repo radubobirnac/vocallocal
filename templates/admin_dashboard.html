@@ -126,6 +126,7 @@
                 <button class="tab-button active" data-tab="overview">Overview</button>
                 <button class="tab-button" data-tab="translation">Translation</button>
                 <button class="tab-button" data-tab="transcription">Transcription</button>
+                <button class="tab-button" data-tab="tts">Text-to-Speech</button>
                 <button class="tab-button" data-tab="daily">Daily Usage</button>
             </div>
             <div class="admin-actions">
@@ -284,6 +285,30 @@
                 </div>
             </div>
 
+            <div id="tts" class="tab-content">
+                <div class="metrics-card">
+                    <div class="metrics-header">
+                        <div class="metrics-title">Text-to-Speech Metrics</div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Calls</th>
+                                <th>Tokens</th>
+                                <th>Characters</th>
+                                <th>Avg. Time (s)</th>
+                                <th>Chars/Second</th>
+                                <th>Success Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tts-table-body">
+                            <!-- Table rows will be populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div id="daily" class="tab-content">
                 <div class="metrics-card">
                     <div class="metrics-header">
@@ -341,6 +366,9 @@
 
             // Update transcription table
             updateTranscriptionTable(metrics.transcription);
+
+            // Update TTS table
+            updateTTSTable(metrics.tts);
 
             // Update daily usage
             updateDailyUsage(metrics.daily_usage);
@@ -459,6 +487,31 @@
             }
         }
 
+        function updateTTSTable(ttsMetrics) {
+            const tableBody = document.getElementById('tts-table-body');
+            tableBody.innerHTML = '';
+
+            for (const model in ttsMetrics) {
+                const data = ttsMetrics[model];
+                const avgTime = data.calls > 0 ? data.time / data.calls : 0;
+                const charsPerSecond = data.time > 0 ? data.chars / data.time : 0;
+                const successRate = data.calls > 0 ? ((data.calls - data.failures) / data.calls) * 100 : 0;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${model}</td>
+                    <td>${data.calls}</td>
+                    <td>${data.tokens.toLocaleString()}</td>
+                    <td>${data.chars.toLocaleString()}</td>
+                    <td>${avgTime.toFixed(2)}</td>
+                    <td>${charsPerSecond.toFixed(2)}</td>
+                    <td>${successRate.toFixed(1)}%</td>
+                `;
+
+                tableBody.appendChild(row);
+            }
+        }
+
         function updateDailyUsage(dailyUsage) {
             const dateInput = document.getElementById('daily-date-picker');
             const selectedDate = dateInput.value;
@@ -502,6 +555,12 @@
             for (const model in metrics.transcription) {
                 models.push(`${model} (Transcription)`);
                 tokenCounts.push(metrics.transcription[model].tokens);
+            }
+
+            // Add TTS models
+            for (const model in metrics.tts) {
+                models.push(`${model} (TTS)`);
+                tokenCounts.push(metrics.tts[model].tokens);
             }
 
             // Create the chart
