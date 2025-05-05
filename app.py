@@ -118,7 +118,7 @@ def add_security_headers(response):
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     return response
 
-# Add this before_request handler to ensure HTTPS
+# Force HTTPS redirect
 @app.before_request
 def redirect_https():
     # Check if we're already using HTTPS

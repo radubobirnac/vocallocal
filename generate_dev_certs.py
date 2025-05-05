@@ -25,3 +25,4 @@ with open("ssl/key.pem", "wb") as f:
     f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
 
 print("Self-signed certificates generated in ssl/ directory")
+print("Run 'python run_dev_secure.py' to start the server with HTTPS")
