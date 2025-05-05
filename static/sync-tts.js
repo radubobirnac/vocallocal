@@ -595,10 +595,7 @@ function initializeSyncTTS() {
 
   syncTTS.log('Synchronized TTS system initialized successfully');
 
-  // Show a notification
-  setTimeout(() => {
-    showStatus('Enhanced TTS system activated', 'success');
-  }, 1000);
+  // TTS system activated silently without notification
 }
 
 // Initialize when the DOM is loaded

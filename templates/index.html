@@ -126,6 +126,9 @@
         <div class="card-header">
           <h2 class="card-title">Voice Transcription</h2>
           <div class="flex items-center gap-2">
+            <button id="basic-upload-btn" class="button button-outline button-icon" title="Upload audio file" onclick="document.getElementById('basic-file-input').click()">
+              <i class="fas fa-paperclip"></i>
+            </button>
             <button id="basic-play-btn" class="button button-outline button-icon" title="Play transcription">
               <i class="fas fa-play"></i>
             </button>
@@ -158,7 +161,6 @@
               <textarea id="basic-transcript" class="form-textarea w-full" placeholder="Your transcription will appear here..."></textarea>
               <div class="transcript-controls mt-2 flex justify-between">
                 <div>
-                  <button id="basic-translate-btn" class="button button-small">Translate Edited Text</button>
                   <button id="basic-undo-btn" class="button button-outline button-small">Undo Edits</button>
                 </div>
               </div>
@@ -167,44 +169,8 @@
         </div>
       </div>
 
-      <!-- File Upload Card -->
-      <div class="card">
-        <div class="card-header">
-          <h2 class="card-title">Upload Audio File</h2>
-          <div class="flex items-center gap-2">
-            <button id="basic-upload-btn" class="button button-outline button-icon" title="Upload audio file" onclick="document.getElementById('basic-file-input').click()">
-              <i class="fas fa-paperclip"></i>
-            </button>
-          </div>
-        </div>
-        <div class="card-content">
-          <form id="basic-upload-form">
-            <div class="file-upload-area mb-6">
-              <div class="file-upload-icon">
-                <i class="fas fa-file-audio fa-3x"></i>
-              </div>
-              <p id="basic-file-name" data-for="basic-file-input" class="font-medium mb-2">
-                No file chosen
-              </p>
-              <button type="button" class="button button-outline" onclick="document.getElementById('basic-file-input').click()">
-                Choose File
-              </button>
-              <input type="file" id="basic-file-input" accept="audio/*" class="file-upload-input">
-              <p class="text-sm text-muted mt-2">
-                Maximum file size: 30MB
-              </p>
-            </div>
-
-            <div class="mb-4">
-              <p class="text-sm">
-                <span class="font-medium">Current transcription model:</span>
-                <span id="upload-model-display" class="text-primary">Gemini 2.0 Flash Lite</span>
-                <span class="text-muted">(uses global setting from settings panel)</span>
-              </p>
-            </div>
-          </form>
-        </div>
-      </div>
+      <!-- Hidden file input for upload -->
+      <input type="file" id="basic-file-input" accept="audio/*" class="visually-hidden">
     </div>
 
     <!-- BILINGUAL MODE -->
@@ -391,11 +357,11 @@
               </li>
               <li class="flex items-start gap-2">
                 <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                <span>File upload support - Process pre-recorded audio files</span>
+                <span>File upload support - Process pre-recorded audio files up to 2GB with Gemini models</span>
               </li>
               <li class="flex items-start gap-2">
                 <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                <span>Multilingual capabilities - Support for 30+ languages</span>
+                <span>Multilingual capabilities - Support for 50+ languages</span>
               </li>
               <li class="flex items-start gap-2">
                 <i class="fas fa-check-circle text-green-600 mt-1"></i>
@@ -408,6 +374,10 @@
               <li class="flex items-start gap-2">
                 <i class="fas fa-check-circle text-green-600 mt-1"></i>
                 <span>Text-to-speech playback - Listen to transcriptions and translations</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i class="fas fa-check-circle text-green-600 mt-1"></i>
+                <span>Multiple AI models - Choose between Gemini and OpenAI models for optimal results</span>
               </li>
             </ul>
           </div>
@@ -425,15 +395,19 @@
               </li>
               <li class="flex items-start gap-2">
                 <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
-                <span>Maximum file size of 30MB per upload</span>
+                <span>OpenAI models: Maximum file size of 25MB per upload</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
+                <span>Gemini models: Maximum file size of 2GB for Flash and Flash-Lite</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
+                <span>OpenAI GPT-4o transcription may truncate longer recordings</span>
               </li>
               <li class="flex items-start gap-2">
                 <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
                 <span>Some rare languages or dialects may have lower accuracy</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
-                <span>Recordings are limited to 25 minutes maximum duration</span>
               </li>
               <li class="flex items-start gap-2">
                 <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
@@ -445,6 +419,10 @@
               <a href="https://openai.com/index/introducing-our-next-generation-audio-models/" target="_blank"
                  style="color: hsl(var(--primary)); text-decoration: underline;">
                 OpenAI's research on word error rates
+              </a> and
+              <a href="https://ai.google.dev/gemini-api/docs/audio" target="_blank"
+                 style="color: hsl(var(--primary)); text-decoration: underline;">
+                Google's Gemini audio capabilities
               </a>.
             </p>
           </div>

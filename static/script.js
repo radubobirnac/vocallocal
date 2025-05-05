@@ -728,38 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Function to handle translate edited text button clicks
   function setupTranslateEditedButtons() {
-    // Basic mode translate button
-    const basicTranslateBtn = document.getElementById('basic-translate-btn');
-    if (basicTranslateBtn) {
-      basicTranslateBtn.addEventListener('click', async () => {
-        const transcriptEl = document.getElementById('basic-transcript');
-        if (!transcriptEl || !transcriptEl.value.trim()) {
-          showStatus('Please enter some text to translate', 'warning');
-          return;
-        }
-
-        // Get target language from global language selector
-        const targetLang = document.getElementById('global-language').value;
-
-        // Show translating status
-        showStatus('Translating edited text...', 'info');
-
-        try {
-          const translatedText = await translateText(transcriptEl.value, targetLang);
-          if (translatedText) {
-            // Update translation textarea
-            const translationEl = document.getElementById('basic-translation');
-            if (translationEl) {
-              translationEl.value = translatedText;
-            }
-            showStatus('Translation complete!', 'success');
-          }
-        } catch (error) {
-          console.error('Translation error:', error);
-          showStatus('Translation failed. Please try again.', 'error');
-        }
-      });
-    }
+    // Basic mode translate button removed as per UI requirements
 
     // Bilingual mode translate buttons
     const translateEdited1 = document.getElementById('translate-edited-1');
@@ -1261,14 +1230,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Basic Mode Implementation
   // ========================
 
-  // Basic mode file upload form (now handled by file input change event)
-  const basicUploadForm = document.getElementById('basic-upload-form');
-  if (basicUploadForm) {
-    basicUploadForm.addEventListener('submit', async (e) => {
-      // Prevent default form submission since we now handle transcription on file selection
-      e.preventDefault();
-    });
-  }
+  // Basic mode file upload is now handled by file input change event
+  // No form submission needed as we removed the form
 
   // Basic mode copy button
   const basicCopyBtn = document.getElementById('basic-copy-btn');
@@ -1709,50 +1672,42 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileInputs = document.querySelectorAll('input[type="file"]');
   fileInputs.forEach(input => {
     input.addEventListener('change', () => {
-      const fileNameDisplay = document.querySelector(`[data-for="${input.id}"]`);
-      if (fileNameDisplay) {
-        fileNameDisplay.textContent = input.files.length ? input.files[0].name : 'No file chosen';
-      }
-
-      // Update the upload model display when a file is selected
-      if (input.id === 'basic-file-input') {
-        const globalTranscriptionModel = document.getElementById('global-transcription-model');
-        updateUploadModelDisplay(globalTranscriptionModel);
+      // Show file name in status message
+      if (input.id === 'basic-file-input' && input.files.length) {
+        showStatus(`Selected file: ${input.files[0].name}`, 'info');
 
         // Auto-start transcription when a file is selected
-        if (input.files.length) {
-          // Create FormData object
-          const formData = new FormData();
-          formData.append('file', input.files[0]);
-          formData.append('language', document.getElementById('basic-language').value);
+        // Create FormData object
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+        formData.append('language', document.getElementById('basic-language').value);
 
-          // Get selected model from global transcription model
-          let selectedModel = getTranscriptionModel();
-          formData.append('model', selectedModel);
+        // Get selected model from global transcription model
+        let selectedModel = getTranscriptionModel();
+        formData.append('model', selectedModel);
 
-          // Show status message
-          showStatus('Transcribing your audio...', 'info');
+        // Show status message
+        showStatus('Transcribing your audio...', 'info');
 
-          // Send to server
-          sendToServer(formData)
-            .then(result => {
-              // Update transcript
-              updateTranscript('basic-transcript', result.text || "No transcript received.");
-              showStatus('Transcription complete!', 'success');
-            })
-            .catch(error => {
-              console.error('Upload error:', error);
+        // Send to server
+        sendToServer(formData)
+          .then(result => {
+            // Update transcript
+            updateTranscript('basic-transcript', result.text || "No transcript received.");
+            showStatus('Transcription complete!', 'success');
+          })
+          .catch(error => {
+            console.error('Upload error:', error);
 
-              // User-friendly error messages
-              if (error.name === 'AbortError') {
-                showStatus('The request took too long to complete. Please try with a smaller file or check your connection.', 'warning');
-              } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-                showStatus('Network error. Please check your internet connection and try again.', 'error');
-              } else {
-                showStatus(`Error: ${error.message}`, 'error');
-              }
-            });
-        }
+            // User-friendly error messages
+            if (error.name === 'AbortError') {
+              showStatus('The request took too long to complete. Please try with a smaller file or check your connection.', 'warning');
+            } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+              showStatus('Network error. Please check your internet connection and try again.', 'error');
+            } else {
+              showStatus(`Error: ${error.message}`, 'error');
+            }
+          });
       }
     });
   });

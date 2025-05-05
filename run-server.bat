@@ -1,0 +1,4 @@
+@echo off
+echo Starting VocalLocal server on port 5001...
+python app.py --port 5001
+pause
