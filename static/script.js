@@ -1261,48 +1261,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Basic Mode Implementation
   // ========================
 
-  // Basic mode file upload
+  // Basic mode file upload form (now handled by file input change event)
   const basicUploadForm = document.getElementById('basic-upload-form');
   if (basicUploadForm) {
     basicUploadForm.addEventListener('submit', async (e) => {
+      // Prevent default form submission since we now handle transcription on file selection
       e.preventDefault();
-
-      const fileInput = document.getElementById('basic-file-input');
-      if (!fileInput || !fileInput.files.length) {
-        showStatus('Please select a file', 'warning');
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('file', fileInput.files[0]);
-      formData.append('language', document.getElementById('basic-language').value);
-
-      // Get selected model from global transcription model
-      let selectedModel = getTranscriptionModel();
-      formData.append('model', selectedModel);
-
-      showStatus('Transcribing your audio...', 'info');
-
-      try {
-        // Get transcription
-        const result = await sendToServer(formData);
-
-        // Update transcript
-        updateTranscript('basic-transcript', result.text || "No transcript received.");
-
-        showStatus('Transcription complete!', 'success');
-      } catch (error) {
-        console.error('Upload error:', error);
-
-        // User-friendly error messages
-        if (error.name === 'AbortError') {
-          showStatus('The request took too long to complete. Please try with a smaller file or check your connection.', 'warning');
-        } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-          showStatus('Network error. Please check your internet connection and try again.', 'error');
-        } else {
-          showStatus(`Error: ${error.message}`, 'error');
-        }
-      }
     });
   }
 
@@ -1741,7 +1705,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // File selection display
+  // File selection display and auto-transcription
   const fileInputs = document.querySelectorAll('input[type="file"]');
   fileInputs.forEach(input => {
     input.addEventListener('change', () => {
@@ -1754,6 +1718,41 @@ document.addEventListener('DOMContentLoaded', () => {
       if (input.id === 'basic-file-input') {
         const globalTranscriptionModel = document.getElementById('global-transcription-model');
         updateUploadModelDisplay(globalTranscriptionModel);
+
+        // Auto-start transcription when a file is selected
+        if (input.files.length) {
+          // Create FormData object
+          const formData = new FormData();
+          formData.append('file', input.files[0]);
+          formData.append('language', document.getElementById('basic-language').value);
+
+          // Get selected model from global transcription model
+          let selectedModel = getTranscriptionModel();
+          formData.append('model', selectedModel);
+
+          // Show status message
+          showStatus('Transcribing your audio...', 'info');
+
+          // Send to server
+          sendToServer(formData)
+            .then(result => {
+              // Update transcript
+              updateTranscript('basic-transcript', result.text || "No transcript received.");
+              showStatus('Transcription complete!', 'success');
+            })
+            .catch(error => {
+              console.error('Upload error:', error);
+
+              // User-friendly error messages
+              if (error.name === 'AbortError') {
+                showStatus('The request took too long to complete. Please try with a smaller file or check your connection.', 'warning');
+              } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                showStatus('Network error. Please check your internet connection and try again.', 'error');
+              } else {
+                showStatus(`Error: ${error.message}`, 'error');
+              }
+            });
+        }
       }
     });
   });

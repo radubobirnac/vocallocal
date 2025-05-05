@@ -171,6 +171,11 @@
       <div class="card">
         <div class="card-header">
           <h2 class="card-title">Upload Audio File</h2>
+          <div class="flex items-center gap-2">
+            <button id="basic-upload-btn" class="button button-outline button-icon" title="Upload audio file" onclick="document.getElementById('basic-file-input').click()">
+              <i class="fas fa-paperclip"></i>
+            </button>
+          </div>
         </div>
         <div class="card-content">
           <form id="basic-upload-form">
@@ -196,12 +201,6 @@
                 <span id="upload-model-display" class="text-primary">Gemini 2.0 Flash Lite</span>
                 <span class="text-muted">(uses global setting from settings panel)</span>
               </p>
-            </div>
-
-            <div class="space-y-4">
-              <button type="submit" class="button button-primary">
-                Transcribe
-              </button>
             </div>
           </form>
         </div>
