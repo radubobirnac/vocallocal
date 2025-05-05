@@ -1,3 +1,9 @@
+# ===== DEVELOPMENT WORKFLOW =====
+# Git push workflow: Use the git-push.py script in the root directory
+# Run: python git-push.py "Your commit message"
+# This handles staging all changes, committing, and pushing to GitHub
+# =================================
+
 # Web server
 flask>=2.3.3
 gunicorn>=21.2.0

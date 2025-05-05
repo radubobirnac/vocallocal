@@ -1,24 +1,24 @@
 {
   "translation": {
     "openai": {
-      "calls": 8,
-      "tokens": 1665,
-      "chars": 1084,
-      "time": 19.130837440490723,
+      "calls": 9,
+      "tokens": 1877,
+      "chars": 1343,
+      "time": 20.989309072494507,
       "failures": 0
     },
     "gemini": {
-      "calls": 2,
-      "tokens": 229,
-      "chars": 219,
-      "time": 1.06028151512146,
+      "calls": 36,
+      "tokens": 4729,
+      "chars": 4418,
+      "time": 24.545247554779053,
       "failures": 0
     },
     "gemini-2.5-flash": {
-      "calls": 6,
-      "tokens": 1331,
-      "chars": 1713,
-      "time": 4.237314939498901,
+      "calls": 12,
+      "tokens": 3265,
+      "chars": 4379,
+      "time": 13.527712106704712,
       "failures": 0
     },
     "gemini-2.5-pro": {
@@ -104,7 +104,9 @@
         "openai": 536
       },
       "translation": {
-        "openai": 1477
+        "openai": 1689,
+        "gemini-2.5-flash": 1934,
+        "gemini": 4500
       }
     }
   },
@@ -185,14 +187,33 @@
       "translation": {
         "openai": 240
       }
+    },
+    "2025-05-03-18": {
+      "translation": {
+        "gemini-2.5-flash": 1150
+      }
+    },
+    "2025-05-03-19": {
+      "translation": {
+        "gemini": 4500,
+        "gemini-2.5-flash": 784,
+        "openai": 212
+      }
     }
   },
   "tts": {
     "openai": {
-      "calls": 7,
-      "tokens": 226,
-      "chars": 915,
-      "time": 23.270386934280396,
+      "calls": 18,
+      "tokens": 1403,
+      "chars": 5645,
+      "time": 109.42247462272644,
+      "failures": 0
+    },
+    "gpt4o-mini": {
+      "calls": 14,
+      "tokens": 1521,
+      "chars": 6114,
+      "time": 99.30945205688477,
       "failures": 0
     }
   }

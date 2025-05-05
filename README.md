@@ -109,6 +109,24 @@ If you encounter issues with PyAudio installation on Render, try these steps:
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
+## Development Workflow
+
+### Git Operations
+
+For quick and efficient git operations, use the `git-push.py` script:
+
+```bash
+# Stage, commit, and push all changes in one command
+python git-push.py "Your commit message"
+```
+
+This script handles:
+1. Staging all changes
+2. Committing with your message
+3. Pushing to the default remote branch
+
+No need for separate git add, commit, and push commands!
+
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/) 
+[MIT](https://choosealicense.com/licenses/mit/)
