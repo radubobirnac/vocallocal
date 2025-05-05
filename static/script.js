@@ -1100,6 +1100,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // Update the upload model display
+    updateUploadModelDisplay(globalTranscriptionModel);
+
     // Add event listener
     globalTranscriptionModel.addEventListener('change', () => {
       const model = globalTranscriptionModel.value;
@@ -1109,8 +1112,21 @@ document.addEventListener('DOMContentLoaded', () => {
       const selectedOption = globalTranscriptionModel.options[globalTranscriptionModel.selectedIndex];
       const modelDisplayName = selectedOption ? selectedOption.textContent : model;
 
+      // Update the upload model display
+      updateUploadModelDisplay(globalTranscriptionModel);
+
       showStatus(`Transcription model changed to ${modelDisplayName}`, 'info');
     });
+  }
+
+  // Function to update the upload model display
+  function updateUploadModelDisplay(modelSelect) {
+    const uploadModelDisplay = document.getElementById('upload-model-display');
+    if (uploadModelDisplay && modelSelect) {
+      const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+      const modelDisplayName = selectedOption ? selectedOption.textContent : modelSelect.value;
+      uploadModelDisplay.textContent = modelDisplayName;
+    }
   }
 
   // Initialize mode toggle
@@ -1732,6 +1748,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const fileNameDisplay = document.querySelector(`[data-for="${input.id}"]`);
       if (fileNameDisplay) {
         fileNameDisplay.textContent = input.files.length ? input.files[0].name : 'No file chosen';
+      }
+
+      // Update the upload model display when a file is selected
+      if (input.id === 'basic-file-input') {
+        const globalTranscriptionModel = document.getElementById('global-transcription-model');
+        updateUploadModelDisplay(globalTranscriptionModel);
       }
     });
   });
