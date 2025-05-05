@@ -7,7 +7,7 @@ import io
 import time
 import tempfile
 import datetime
-from flask import Flask, request, jsonify, render_template, send_from_directory, session
+from flask import Flask, request, jsonify, render_template, send_from_directory, session, redirect
 from werkzeug.utils import secure_filename
 import openai
 from dotenv import load_dotenv
@@ -102,6 +102,37 @@ load_dotenv()
 # Initialize Flask application
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', os.urandom(24).hex())
+
+# Add security configurations
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+)
+
+# Add security headers to all responses
+@app.after_request
+def add_security_headers(response):
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    return response
+
+# Add this before_request handler to ensure HTTPS
+@app.before_request
+def redirect_https():
+    # Check if we're already using HTTPS
+    if not request.is_secure:
+        # Check if this is a Render deployment (they set X-Forwarded-Proto)
+        if 'X-Forwarded-Proto' in request.headers:
+            # If the forwarded protocol is http, redirect to https
+            if request.headers.get('X-Forwarded-Proto') == 'http':
+                url = request.url.replace('http://', 'https://', 1)
+                return redirect(url, code=301)
+        # For local development without X-Forwarded headers
+        elif not request.is_secure and 'localhost' not in request.host and '127.0.0.1' not in request.host:
+            url = request.url.replace('http://', 'https://', 1)
+            return redirect(url, code=301)
 
 # OpenAI API configuration
 openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -369,7 +400,7 @@ def get_languages():
         "Yoruba": {"code": "yo", "native": "Yorùbá"},
         "Zulu": {"code": "zu", "native": "isiZulu"},
         "Wu Chinese": {"code": "wuu", "native": "吴语"},
-        "Hausa": {"code": "ha", "native": "هَوُسَ"},
+        "Hausa": {"code": "ha", "native": "هَوُ"},
         "Cantonese": {"code": "yue", "native": "粵語"},
         "Odia": {"code": "or", "native": "ଓଡ଼ିଆ"},
         "Assamese": {"code": "as", "native": "অসমীয়া"},
