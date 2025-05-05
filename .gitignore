@@ -34,3 +34,6 @@ logs/*
 .env
 .env.*
 !.env.example 
+ssl/*.key
+ssl/*.crt
+ssl/*.pem
