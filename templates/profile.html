@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - Vocal Local</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-1 mb-2 mt-1">
+      <div class="header-title-container">
+        <h1 class="text-2xl font-bold" style="color: hsl(var(--primary)); font-family: 'Poppins', sans-serif;">Vocal Local</h1>
+        <p id="app-subtitle" class="text-sm text-muted">Accurate Multilingual Speech-to-Text Transcription</p>
+      </div>
+
+      <div class="flex items-center gap-2 mt-0">
+        <!-- User Avatar Menu -->
+        {% if current_user.is_authenticated %}
+        <div class="user-avatar-menu">
+          <button id="avatar-button" class="avatar-button" aria-expanded="false">
+            <div class="avatar-circle">{{ current_user.username[0]|upper }}</div>
+            <i class="fas fa-chevron-down dropdown-arrow"></i>
+          </button>
+          <div id="user-dropdown" class="user-dropdown">
+            <a href="{{ url_for('auth.profile') }}" class="dropdown-item">
+              <i class="fas fa-user"></i> Profile
+            </a>
+            {% if current_user.is_admin %}
+            <div class="dropdown-divider"></div>
+            <a href="{{ url_for('admin_dashboard') }}" class="dropdown-item">
+              <i class="fas fa-chart-line"></i> Admin Dashboard
+            </a>
+            <a href="{{ url_for('admin_users') }}" class="dropdown-item">
+              <i class="fas fa-users"></i> User Management
+            </a>
+            {% endif %}
+            <div class="dropdown-divider"></div>
+            <a href="{{ url_for('auth.logout') }}" class="dropdown-item">
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Theme Selector -->
+        <div class="theme-selector">
+          <button id="theme-toggle-btn" class="button button-outline button-icon" title="Change theme">
+            <i class="fas fa-sun"></i> <!-- Default icon, will change dynamically -->
+          </button>
+          <div id="theme-options" class="theme-options-dropdown" style="display: none;">
+            <button class="theme-option" data-theme="light">
+              <i class="fas fa-sun"></i> Light Mode
+            </button>
+            <button class="theme-option" data-theme="dark">
+              <i class="fas fa-moon"></i> Dark Mode
+            </button>
+            <button class="theme-option" data-theme="system">
+              <i class="fas fa-desktop"></i> System
+            </button>
+          </div>
+        </div>
+        <!-- End Theme Selector -->
+
+        <!-- Navigation Links -->
+        <a href="{{ url_for('index') }}" class="button button-outline">Home</a>
+        <a href="{{ url_for('auth.logout') }}" class="button button-outline">Logout</a>
+      </div>
+    </header>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Profile Content -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+      <!-- User Info Card -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">User Information</h2>
+        </div>
+        <div class="card-content">
+          <div class="user-info">
+            <div class="user-avatar-large">
+              <div class="avatar-circle-large">{{ user.username[0]|upper }}</div>
+            </div>
+            <div class="user-details">
+              <h3>{{ user.username }}</h3>
+              <p><i class="fas fa-envelope"></i> {{ user.email }}</p>
+              {% if user.created_at is defined %}
+                <p><i class="fas fa-calendar-alt"></i> Joined: {{ user.created_at.strftime('%B %d, %Y') }}</p>
+              {% endif %}
+              {% if user.last_login is defined and user.last_login %}
+                <p><i class="fas fa-clock"></i> Last login: {{ user.last_login.strftime('%B %d, %Y %H:%M') }}</p>
+              {% endif %}
+              {% if user.oauth_provider is defined and user.oauth_provider %}
+                <p><i class="fas fa-key"></i> Login method: {{ user.oauth_provider|capitalize }}</p>
+              {% endif %}
+              {% if user.is_admin %}
+                <p><i class="fas fa-user-shield"></i> Admin: Yes</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Change Password Card (only for non-OAuth users) -->
+      {% if not user.oauth_provider %}
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Change Password</h2>
+        </div>
+        <div class="card-content">
+          <form method="POST" action="{{ url_for('auth.change_password') }}">
+            <div class="form-group">
+              <label for="current_password" class="form-label">Current Password</label>
+              <div class="password-input-container">
+                <input type="password" id="current_password" name="current_password" class="form-input" required>
+                <button type="button" class="password-toggle-btn" tabindex="-1" aria-label="Toggle password visibility">
+                  <i class="fas fa-eye" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="new_password" class="form-label">New Password</label>
+              <div class="password-input-container">
+                <input type="password" id="new_password" name="new_password" class="form-input" required>
+                <button type="button" class="password-toggle-btn" tabindex="-1" aria-label="Toggle password visibility">
+                  <i class="fas fa-eye" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="confirm_password" class="form-label">Confirm New Password</label>
+              <div class="password-input-container">
+                <input type="password" id="confirm_password" name="confirm_password" class="form-input" required>
+                <button type="button" class="password-toggle-btn" tabindex="-1" aria-label="Toggle password visibility">
+                  <i class="fas fa-eye" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <button type="submit" class="button button-primary w-full">Update Password</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script src="{{ url_for('static', filename='auth.js') }}"></script>
+</body>
+</html>
+
+
+
+

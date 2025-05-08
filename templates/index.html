@@ -18,6 +18,7 @@
 
   <!-- Styles -->
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
 </head>
 <body>
   <div class="container">
@@ -29,6 +30,37 @@
       </div>
 
       <div class="flex items-center gap-2 mt-0">
+        <!-- Authentication Links -->
+        {% if current_user.is_authenticated %}
+          <div class="user-avatar-menu">
+            <button id="avatar-button" class="avatar-button" aria-expanded="false">
+              <div class="avatar-circle">{{ current_user.username[0]|upper }}</div>
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </button>
+            <div id="user-dropdown" class="user-dropdown">
+              <a href="{{ url_for('auth.profile') }}" class="dropdown-item">
+                <i class="fas fa-user"></i> Profile
+              </a>
+              {% if current_user.is_admin %}
+              <div class="dropdown-divider"></div>
+              <a href="{{ url_for('admin_dashboard') }}" class="dropdown-item">
+                <i class="fas fa-chart-line"></i> Admin Dashboard
+              </a>
+              <a href="{{ url_for('admin_users') }}" class="dropdown-item">
+                <i class="fas fa-users"></i> User Management
+              </a>
+              {% endif %}
+              <div class="dropdown-divider"></div>
+              <a href="{{ url_for('auth.logout') }}" class="dropdown-item">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </a>
+            </div>
+          </div>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="button button-outline">Login</a>
+          <a href="{{ url_for('auth.register') }}" class="button button-primary">Register</a>
+        {% endif %}
+
         <!-- Theme Selector -->
         <div class="theme-selector">
           <button id="theme-toggle-btn" class="button button-outline button-icon" title="Change theme">
@@ -433,6 +465,7 @@
 
   <!-- Scripts -->
   <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script src="{{ url_for('static', filename='auth.js') }}"></script>
 
   <!-- Synchronized TTS System -->
   <script src="{{ url_for('static', filename='sync-tts.js') }}" defer></script>
@@ -447,5 +480,25 @@
       }
     });
   </script>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-messages">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      <script>
+        // Auto-hide flash messages after 5 seconds
+        setTimeout(function() {
+          const flashMessages = document.querySelector('.flash-messages');
+          if (flashMessages) {
+            flashMessages.style.display = 'none';
+          }
+        }, 5000);
+      </script>
+    {% endif %}
+  {% endwith %}
 </body>
 </html>

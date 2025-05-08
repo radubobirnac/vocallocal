@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login - Vocal Local</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+
+  <style>
+    .admin-login-container {
+      max-width: 500px;
+      margin: 2rem auto;
+    }
+
+    .admin-login-card {
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .admin-header {
+      background-color: hsl(var(--primary));
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    .admin-header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .admin-header p {
+      margin: 0.5rem 0 0;
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
+
+    .admin-form {
+      padding: 2rem;
+    }
+
+    .admin-form .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .admin-form .form-label {
+      font-weight: 600;
+    }
+
+    .admin-form .form-input {
+      padding: 0.75rem;
+      font-size: 1rem;
+    }
+
+    .admin-form .button {
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 1rem;
+      color: hsl(var(--primary));
+      text-decoration: none;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-1 mb-2 mt-1">
+      <div class="header-title-container">
+        <h1 class="text-2xl font-bold" style="color: hsl(var(--primary)); font-family: 'Poppins', sans-serif;">Vocal Local</h1>
+        <p id="app-subtitle" class="text-sm text-muted">Accurate Multilingual Speech-to-Text Transcription</p>
+      </div>
+
+      <div class="flex items-center gap-2 mt-0">
+        <!-- Theme Selector -->
+        <div class="theme-selector">
+          <button id="theme-toggle-btn" class="button button-outline button-icon" title="Change theme">
+            <i class="fas fa-sun"></i> <!-- Default icon, will change dynamically -->
+          </button>
+          <div id="theme-options" class="theme-options-dropdown" style="display: none;">
+            <button class="theme-option" data-theme="light">
+              <i class="fas fa-sun"></i> Light Mode
+            </button>
+            <button class="theme-option" data-theme="dark">
+              <i class="fas fa-moon"></i> Dark Mode
+            </button>
+            <button class="theme-option" data-theme="system">
+              <i class="fas fa-desktop"></i> System
+            </button>
+          </div>
+        </div>
+        <!-- End Theme Selector -->
+      </div>
+    </header>
+
+    <!-- Admin Login Form -->
+    <div class="admin-login-container">
+      <div class="admin-header">
+        <h1>VocalLocal Admin Access</h1>
+        <p>Restricted area - Authorized personnel only</p>
+      </div>
+
+      <div class="card admin-login-card">
+        <div class="admin-form">
+          <!-- Flash Messages -->
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+
+          <form method="POST" action="{{ url_for('admin_users') }}">
+            <div class="form-group">
+              <label for="username" class="form-label">Username</label>
+              <input type="text" id="username" name="username" class="form-input" required autofocus>
+            </div>
+
+            <div class="form-group">
+              <label for="password" class="form-label">Password</label>
+              <div class="password-input-container">
+                <input type="password" id="password" name="password" class="form-input" required>
+                <button type="button" class="password-toggle-btn" tabindex="-1" aria-label="Toggle password visibility">
+                  <i class="fas fa-eye" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" class="button button-primary">Access Admin Area</button>
+          </form>
+
+          <a href="{{ url_for('index') }}" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Main Application
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='auth.js') }}"></script>
+</body>
+</html>

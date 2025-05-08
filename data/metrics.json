@@ -38,11 +38,11 @@
   },
   "transcription": {
     "openai": {
-      "calls": 5,
-      "tokens": 536,
+      "calls": 6,
+      "tokens": 562,
       "chars": 670,
-      "time": 19.499016284942627,
-      "failures": 0
+      "time": 20.053111791610718,
+      "failures": 1
     },
     "gemini-2.5-flash-preview": {
       "calls": 2,
@@ -66,11 +66,11 @@
       "failures": 0
     },
     "gemini-2.0-flash-lite": {
-      "calls": 13,
-      "tokens": 1779,
+      "calls": 14,
+      "tokens": 1810,
       "chars": 1442,
-      "time": 12.994860887527466,
-      "failures": 5
+      "time": 16.022790908813477,
+      "failures": 6
     }
   },
   "daily_usage": {
@@ -107,6 +107,12 @@
         "openai": 1689,
         "gemini-2.5-flash": 1934,
         "gemini": 4500
+      }
+    },
+    "2025-05-08": {
+      "transcription": {
+        "gemini-2.0-flash-lite": 31,
+        "openai": 26
       }
     }
   },
@@ -198,6 +204,12 @@
         "gemini": 4500,
         "gemini-2.5-flash": 784,
         "openai": 212
+      }
+    },
+    "2025-05-08-21": {
+      "transcription": {
+        "gemini-2.0-flash-lite": 31,
+        "openai": 26
       }
     }
   },

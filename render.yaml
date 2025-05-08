@@ -20,6 +20,10 @@ services:
         sync: false
       - key: SECRET_KEY
         generateValue: true
+      - key: FIREBASE_DATABASE_URL
+        value: https://vocal-local-e1e70-default-rtdb.firebaseio.com
+      - key: FIREBASE_CREDENTIALS
+        sync: false
     # Add this section to ensure HTTPS is enforced
     headers:
       - path: /*

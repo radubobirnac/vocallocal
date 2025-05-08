@@ -7,7 +7,8 @@ import io
 import time
 import tempfile
 import datetime
-from flask import Flask, request, jsonify, render_template, send_from_directory, session, redirect
+from flask import Flask, request, jsonify, render_template, send_from_directory, session, redirect, url_for, flash
+from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 import openai
 from dotenv import load_dotenv
@@ -103,55 +104,18 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', os.urandom(24).hex())
 
-# Add security configurations
-app.config.update(
-    SESSION_COOKIE_SECURE=True,
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='Lax',
-)
-
-# Add security headers to all responses
-@app.after_request
-def add_security_headers(response):
-    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
-    return response
-
-# Force HTTPS redirect
-@app.before_request
-def redirect_https():
-    # Check if we're already using HTTPS
-    if not request.is_secure:
-        # Check if this is a Render deployment (they set X-Forwarded-Proto)
-        if 'X-Forwarded-Proto' in request.headers:
-            # If the forwarded protocol is http, redirect to https
-            if request.headers.get('X-Forwarded-Proto') == 'http':
-                url = request.url.replace('http://', 'https://', 1)
-                return redirect(url, code=301)
-        # For local development without X-Forwarded headers
-        elif not request.is_secure and 'localhost' not in request.host and '127.0.0.1' not in request.host:
-            url = request.url.replace('http://', 'https://', 1)
-            return redirect(url, code=301)
-
-# OpenAI API configuration
-openai.api_key = os.getenv('OPENAI_API_KEY')
-if not openai.api_key:
-    print("Warning: OpenAI API key not found. Set OPENAI_API_KEY environment variable.")
-
-# Google Gemini API configuration
-gemini_api_key = os.getenv('Gemini_Api_Key') or os.getenv('GEMINI_API_KEY')
-if not gemini_api_key:
-    print("Warning: Gemini API key not found. Set Gemini_Api_Key or GEMINI_API_KEY environment variable.")
-elif GEMINI_AVAILABLE:
-    genai.configure(api_key=gemini_api_key)
-    print("Gemini API configured successfully")
+# Initialize Firebase
+from firebase_config import initialize_firebase
+initialize_firebase()
 
 # Configure upload settings
 UPLOAD_FOLDER = tempfile.gettempdir()
 ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg', 'm4a', 'mp4', 'webm'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 30 * 1024 * 1024  # 30MB max upload size
+
+# Add Firebase models for transcription and translation
+from firebase_models import User, UserActivity, Transcription, Translation
 
 # Helper function to check allowed file extensions
 def allowed_file(filename):
@@ -229,11 +193,52 @@ def get_language_name_from_code(language_code):
     # Return the language name if found, otherwise return the code
     return language_map.get(language_code, language_code)
 
+# Import database models and authentication
+# Remove SQLAlchemy models import
+from firebase_models import User, UserActivity
+import auth
+
+# Initialize authentication
+auth.init_app(app)
+
+# Register routes for auth directly at the root level
+@app.route('/auth/google')
+def root_google_login():
+    """Redirect to the auth blueprint's Google login route."""
+    return redirect(url_for('auth.google_login'))
+
+@app.route('/auth/callback')
+def root_auth_callback():
+    """Handle the Google OAuth callback directly."""
+    try:
+        # Import the callback handler function
+        from auth import _handle_google_callback
+
+        # Call the handler function directly
+        return _handle_google_callback()
+    except Exception as e:
+        print(f"Error in root_auth_callback: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        flash("Error during authentication. Please try again.", "danger")
+        return redirect(url_for('auth.login'))
+
+# Remove SQLAlchemy initialization
+# db.init_app(app)
+# db.create_all()
+
 @app.route('/')
 def index():
-    return render_template('index.html')
+    """Main index route - handles both authenticated and non-authenticated users."""
+    if current_user.is_authenticated:
+        # User is logged in, show the main application
+        return render_template('index.html')
+    else:
+        # User is not logged in, redirect to login page
+        return redirect(url_for('auth.login'))
 
 @app.route('/api/transcribe', methods=['POST'])
+@login_required
 def transcribe_audio():
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
@@ -411,6 +416,7 @@ def get_languages():
     return jsonify(supported_languages)
 
 @app.route('/api/tts', methods=['POST'])
+@login_required
 def text_to_speech():
     """
     Endpoint for converting text to speech using OpenAI's TTS services.
@@ -731,6 +737,17 @@ def translate_text():
         # Log performance metrics
         print(f"Translation performance: model={model_used}, time={translation_time:.2f}s, chars={char_count}, chars/s={chars_per_second:.2f}, fallback={fallback_used}")
 
+        if current_user.is_authenticated:
+            # Save translation to Firebase
+            Translation.save(
+                user_email=current_user.email,
+                original_text=text,
+                translated_text=translated_text,
+                source_language='auto-detect',
+                target_language=target_language,
+                model=model_used
+            )
+
         return jsonify({
             'text': translated_text,
             'source_language': 'auto-detect',
@@ -881,6 +898,16 @@ def transcribe_with_gemini(audio_data, language, model_type="gemini"):
             )
             print(f"Tracked metrics for model: {display_model}")
 
+        if current_user.is_authenticated:
+            # Save transcription to Firebase
+            Transcription.save(
+                user_email=current_user.email,
+                text=transcription,
+                language=language,
+                model=model_type,
+                audio_duration=estimated_duration
+            )
+
         return transcription
 
     except Exception as e:
@@ -952,6 +979,16 @@ def transcribe_with_openai(audio_data, language, model_type="gpt-4o-mini-transcr
                 'openai', estimated_tokens, char_count, response_time, True
             )
             print(f"Tracked metrics for model: openai")
+
+        if current_user.is_authenticated:
+            # Save transcription to Firebase
+            Transcription.save(
+                user_email=current_user.email,
+                text=transcription,
+                language=language,
+                model=model_type,
+                audio_duration=estimated_duration
+            )
 
         return transcription
 
@@ -1156,6 +1193,7 @@ def serve_static(path):
     return send_from_directory('static', path)
 
 @app.route('/api/test-openai', methods=['GET'])
+@login_required
 def test_openai_api():
     """
     Test endpoint to verify OpenAI API key is working
@@ -1203,6 +1241,67 @@ def admin_dashboard():
     from datetime import datetime
     today_date = datetime.now().strftime("%Y-%m-%d")
     return render_template('admin_dashboard.html', today_date=today_date)
+
+@app.route('/admin/logout', methods=['GET'])
+def admin_logout():
+    """Logout from special admin session"""
+    if 'special_admin_auth' in session:
+        session.pop('special_admin_auth')
+        flash("You have been logged out from the admin area.", "info")
+    return redirect(url_for('index'))
+
+@app.route('/admin/users', methods=['GET', 'POST'])
+def admin_users():
+    """Admin dashboard for viewing registered users with special authentication"""
+    # Check if already authenticated with special admin credentials
+    if session.get('special_admin_auth') == True:
+        # User is authenticated with special admin credentials
+        # Get all users from Firebase
+        users = User.get_all_users()
+
+        # Get recent user activities
+        activities = []
+        try:
+            activities_data = UserActivity.get_ref('user_activities').order_by_child('timestamp').limit_to_last(50).get()
+            if activities_data:
+                for activity_id, activity in activities_data.items():
+                    activities.append(activity)
+                # Sort activities by timestamp (newest first)
+                activities.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+        except Exception as e:
+            print(f"Error fetching user activities: {str(e)}")
+
+        return render_template('admin_users.html', users=users, activities=activities)
+
+    # Not authenticated with special admin credentials yet
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        # Check for specific credentials
+        if username == 'Radu' and password == 'Fasteasy':
+            # Set session variable to indicate special admin authentication
+            session['special_admin_auth'] = True
+
+            # Log this special admin login
+            if current_user.is_authenticated:
+                user_email = current_user.email
+            else:
+                user_email = 'special_admin@vocallocal.com'
+
+            UserActivity.log(
+                user_email=user_email,
+                activity_type='admin_login',
+                details='Special admin authentication'
+            )
+
+            # Redirect to the same page to show the admin dashboard
+            return redirect(url_for('admin_users'))
+        else:
+            flash("Invalid admin credentials. Please try again.", "danger")
+
+    # Show the admin login form
+    return render_template('admin_login.html')
 
 @app.route('/api/admin/metrics', methods=['GET'])
 def get_metrics():
@@ -1316,8 +1415,18 @@ def test_translations():
         'results': results
     })
 
+# Add direct profile route at the root level
+@app.route('/profile')
+@login_required
+def root_profile():
+    """Redirect to the auth blueprint's profile route."""
+    return render_template('profile.html', user=current_user)
+
 if __name__ == '__main__':
     import argparse
+    import webbrowser
+    from threading import Timer
+    import json
 
     # Set up command-line argument parsing
     parser = argparse.ArgumentParser(description='VocalLocal Web Service')
@@ -1327,13 +1436,90 @@ if __name__ == '__main__':
                         help='Host to run the server on (default: 0.0.0.0)')
     parser.add_argument('--debug', action='store_true', default=True,
                         help='Run in debug mode (default: True)')
+    parser.add_argument('--secure', action='store_true', default=False,
+                        help='Run with HTTPS (default: False)')
+    parser.add_argument('--open-browser', action='store_true', default=False,
+                        help='Automatically open browser (default: False)')
 
     # Parse arguments
     args = parser.parse_args()
 
+    # Check if we should use HTTPS based on OAuth.json
+    oauth_file_path = os.path.join(os.path.dirname(__file__), 'Oauth.json')
+    if os.path.exists(oauth_file_path) and not args.secure:
+        try:
+            with open(oauth_file_path, 'r') as f:
+                oauth_data = json.load(f)
+
+            # Check if redirect URIs use HTTPS
+            if 'web' in oauth_data and 'redirect_uris' in oauth_data['web']:
+                for uri in oauth_data['web']['redirect_uris']:
+                    if uri.startswith('https://'):
+                        print("OAuth.json contains HTTPS redirect URIs. Enabling secure mode.")
+                        args.secure = True
+                        break
+        except Exception as e:
+            print(f"Error reading OAuth.json: {str(e)}")
+
+    # Function to open browser
+    def open_browser():
+        protocol = "https" if args.secure else "http"
+        url = f"{protocol}://localhost:{args.port}"
+        print(f"Opening browser at {url}")
+        webbrowser.open_new(url)
+
+    # Check if secure mode is enabled
+    ssl_context = None
+    if args.secure:
+        # Check if certificates exist
+        import os
+        os.makedirs('ssl', exist_ok=True)
+        if not (os.path.exists('ssl/cert.pem') and os.path.exists('ssl/key.pem')):
+            print("SSL certificates not found. Generating self-signed certificates...")
+            try:
+                from OpenSSL import crypto
+                # Generate a key pair
+                key = crypto.PKey()
+                key.generate_key(crypto.TYPE_RSA, 2048)
+
+                # Create a self-signed cert
+                cert = crypto.X509()
+                cert.get_subject().CN = "localhost"
+                cert.set_serial_number(1000)
+                cert.gmtime_adj_notBefore(0)
+                cert.gmtime_adj_notAfter(365*24*60*60)  # Valid for a year
+                cert.set_issuer(cert.get_subject())
+                cert.set_pubkey(key)
+                cert.sign(key, 'sha256')
+
+                # Write to disk
+                with open("ssl/cert.pem", "wb") as f:
+                    f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
+                with open("ssl/key.pem", "wb") as f:
+                    f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
+
+                print("Self-signed certificates generated in ssl/ directory")
+            except ImportError:
+                print("PyOpenSSL not installed. Please run 'pip install pyopenssl' or use --secure=False")
+                exit(1)
+            except Exception as e:
+                print(f"Error generating certificates: {str(e)}")
+                exit(1)
+
+        ssl_context = ('ssl/cert.pem', 'ssl/key.pem')
+        print("Running with HTTPS enabled")
+
     # Print startup message
-    print(f"Starting VocalLocal on http://localhost:{args.port}")
+    protocol = "https" if args.secure else "http"
+    print(f"Starting VocalLocal on {protocol}://localhost:{args.port}")
     print(f"Press Ctrl+C to quit")
 
+    # Open browser after a short delay only if --open-browser flag is set
+    if args.open_browser:
+        Timer(1.5, open_browser).start()
+        print("Browser will open automatically in a moment...")
+    else:
+        print(f"Access the application at {protocol}://localhost:{args.port}")
+
     # Run the application
-    app.run(debug=args.debug, host=args.host, port=args.port)
+    app.run(debug=args.debug, host=args.host, port=args.port, ssl_context=ssl_context)

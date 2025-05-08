@@ -1,3 +1,28 @@
+# Security files
+.env
+.env.*
+!.env.example
+Oauth.json
+OAuth.json
+oauth.json
+*.pem
+ssl/
+certificates/
+private_key.json
+service_account.json
+firebase_credentials.json
+firebase-credentials.json
+firebase-admin.json
+firebase_config.json
+firebase-config.json
+google_credentials.json
+google-credentials.json
+google_api_key.json
+google-api-key.json
+openai_api_key.txt
+openai-api-key.txt
+
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -18,24 +43,96 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
-*.log
-.env
-.venv
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.coverage.*
+.cache/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Virtual Environment
 venv/
 ENV/
+env/
+.venv/
+.ENV/
+.env/
+env.bak/
+venv.bak/
+
+# IDE files
 .idea/
 .vscode/
-*.bak
+*.swp
+*.swo
 *~
-transcripts/*
-!transcripts/.gitkeep
-logs/*
-!logs/.gitkeep
-.env
-.env.*
-!.env.example 
-ssl/*.key
-ssl/*.crt
-ssl/*.pem
-ssl/
+.DS_Store
+.project
+.pydevproject
+.settings/
+.classpath
+.factorypath
 
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.temp/
+.tmp/
+temp/
+tmp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Firebase
+firebase-debug.log
+firebase-debug.*.log
+.firebase/
+.firebaserc
+firebase.json
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+package-lock.json
+yarn.lock
+
+# Audio files
+*.mp3
+*.wav
+*.ogg
+*.m4a
+*.webm
