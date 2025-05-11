@@ -77,13 +77,13 @@ def init_app(app):
             "/etc/secrets/Oauth.json",  # Render secret file
             "/etc/secrets/oauth-json"   # Render secret file (no extension)
         ]
-        
+
         for path in possible_oauth_paths:
             if os.path.exists(path):
                 oauth_file_path = path
                 app.logger.info(f"Found OAuth.json at: {path}")
                 break
-                
+
         if oauth_file_path:
             import json
             with open(oauth_file_path, 'r') as f:
@@ -95,9 +95,9 @@ def init_app(app):
                 client_secret = web_config.get('client_secret')
                 auth_uri = web_config.get('auth_uri', 'https://accounts.google.com/o/oauth2/auth')
                 token_uri = web_config.get('token_uri', 'https://oauth2.googleapis.com/token')
-                
+
                 app.logger.info(f"Using OAuth client ID from file: {client_id[:5]}...{client_id[-5:] if client_id else 'None'}")
-                
+
                 if client_id and client_secret:
                     # Register the OAuth provider with credentials from file
                     oauth.register(
@@ -119,14 +119,14 @@ def init_app(app):
                     google = oauth.google
                     app.logger.info("Google OAuth configured successfully from OAuth.json")
                     return  # Exit early if successful
-        
+
         # Fall back to environment variables
         app.logger.info("OAuth.json not found or invalid, using environment variables")
         google_client_id = os.getenv('GOOGLE_CLIENT_ID')
         google_client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
-        
+
         app.logger.info(f"Using OAuth client ID from env: {google_client_id[:5]}...{google_client_id[-5:] if google_client_id else 'None'}")
-        
+
         if google_client_id and google_client_secret:
             # Register the OAuth provider with credentials from environment
             oauth.register(
@@ -328,7 +328,7 @@ def google_login():
 
         # Get the current host from the request
         host = request.host_url.rstrip('/')
-        
+
         # If we're on Render, use the specific domain
         if 'onrender.com' in host:
             if 'vocallocal-aj6b.onrender.com' in host:
@@ -339,9 +339,9 @@ def google_login():
         else:
             # Local development
             redirect_uri = url_for('auth.google_callback', _external=True)
-        
+
         print(f"Using redirect URI: {redirect_uri}")
-        
+
         # Use the specific redirect URI
         return google.authorize_redirect(redirect_uri)
     except Exception as e:
@@ -357,7 +357,7 @@ def google_callback():
     try:
         print("Google callback route called")
         print(f"Request args: {request.args}")
-        
+
         # Get token without ID token validation
         print("Attempting to authorize access token...")
         token = None
@@ -371,11 +371,11 @@ def google_callback():
                 code = request.args.get('code')
                 if not code:
                     raise ValueError("No authorization code received")
-                
+
                 # Manually exchange the code for a token
                 token_endpoint = 'https://oauth2.googleapis.com/token'
                 redirect_uri = "https://vocallocal-aj6b.onrender.com/auth/callback"
-                
+
                 token_data = {
                     'code': code,
                     'client_id': google.client_id,
@@ -383,7 +383,7 @@ def google_callback():
                     'redirect_uri': redirect_uri,
                     'grant_type': 'authorization_code'
                 }
-                
+
                 import requests
                 token_response = requests.post(token_endpoint, data=token_data)
                 token_response.raise_for_status()
@@ -392,45 +392,148 @@ def google_callback():
             except Exception as manual_error:
                 print(f"Error with manual token fetching: {str(manual_error)}")
                 raise
-        
+
         if not token:
             raise ValueError("Failed to obtain access token")
-            
+
         print(f"Token received: {token}")
-        
+
         # Get user info - use the full URL for the userinfo endpoint
         print("Fetching user info...")
         access_token = token.get('access_token')
         if not access_token:
             raise ValueError("No access token in response")
-            
+
         # Use requests directly to get user info
         import requests
         headers = {'Authorization': f'Bearer {access_token}'}
         userinfo_response = requests.get('https://www.googleapis.com/oauth2/v3/userinfo', headers=headers)
         userinfo_response.raise_for_status()
         user_info = userinfo_response.json()
-        
+
         print(f"Google OAuth callback received. User info: {user_info.get('email')}")
-        
+
         # Check if user exists in Firebase
         email = user_info.get('email')
         name = user_info.get('name', '')
         picture = user_info.get('picture', '')
-        
+
         if not email:
             flash("Could not get email from Google. Please try again.", "danger")
             return redirect(url_for('auth.login'))
-            
+
         # Get or create user
         user = User.get_or_create(email, name, picture)
-        
+
         # Log the user in
         login_user(user)
-        
+
         # Log user activity
         UserActivity.log(email, 'login', {'method': 'google'})
-        
+
+        # Redirect to home page
+        return redirect(url_for('index'))
+    except Exception as e:
+        flash(f"Error during Google authentication: {str(e)}", "danger")
+        print(f"Google OAuth callback error: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        return redirect(url_for('auth.login'))
+
+def _handle_google_callback():
+    """Handle Google OAuth callback for direct calls from app.py.
+
+    This function is similar to google_callback but designed to be called
+    directly from app.py's root_auth_callback route.
+    """
+    try:
+        print("Google callback handler called directly")
+        print(f"Request args: {request.args}")
+
+        # Get token without ID token validation
+        print("Attempting to authorize access token...")
+        token = None
+        try:
+            # Try to get the token with ID token validation
+            token = google.authorize_access_token()
+        except Exception as token_error:
+            print(f"Error with standard token authorization: {str(token_error)}")
+            # Fall back to manual token fetching without ID token validation
+            try:
+                code = request.args.get('code')
+                if not code:
+                    raise ValueError("No authorization code received")
+
+                # Manually exchange the code for a token
+                token_endpoint = 'https://oauth2.googleapis.com/token'
+
+                # Determine the appropriate redirect URI based on the host
+                host = request.host_url.rstrip('/')
+                if 'onrender.com' in host:
+                    if 'vocallocal-aj6b.onrender.com' in host:
+                        redirect_uri = "https://vocallocal-aj6b.onrender.com/auth/callback"
+                    else:
+                        # Fallback for any other Render domain
+                        redirect_uri = f"{host}/auth/callback"
+                else:
+                    # Local development
+                    redirect_uri = url_for('auth.google_callback', _external=True)
+
+                token_data = {
+                    'code': code,
+                    'client_id': google.client_id,
+                    'client_secret': google.client_secret,
+                    'redirect_uri': redirect_uri,
+                    'grant_type': 'authorization_code'
+                }
+
+                import requests
+                token_response = requests.post(token_endpoint, data=token_data)
+                token_response.raise_for_status()
+                token = token_response.json()
+                print(f"Manually obtained token: {token}")
+            except Exception as manual_error:
+                print(f"Error with manual token fetching: {str(manual_error)}")
+                raise
+
+        if not token:
+            raise ValueError("Failed to obtain access token")
+
+        print(f"Token received: {token}")
+
+        # Get user info - use the full URL for the userinfo endpoint
+        print("Fetching user info...")
+        access_token = token.get('access_token')
+        if not access_token:
+            raise ValueError("No access token in response")
+
+        # Use requests directly to get user info
+        import requests
+        headers = {'Authorization': f'Bearer {access_token}'}
+        userinfo_response = requests.get('https://www.googleapis.com/oauth2/v3/userinfo', headers=headers)
+        userinfo_response.raise_for_status()
+        user_info = userinfo_response.json()
+
+        print(f"Google OAuth callback received. User info: {user_info.get('email')}")
+
+        # Check if user exists in Firebase
+        email = user_info.get('email')
+        name = user_info.get('name', '')
+        picture = user_info.get('picture', '')
+
+        if not email:
+            flash("Could not get email from Google. Please try again.", "danger")
+            return redirect(url_for('auth.login'))
+
+        # Get or create user
+        user = User.get_or_create(email, name, picture)
+
+        # Log the user in
+        login_user(user)
+
+        # Log user activity
+        UserActivity.log(email, 'login', {'method': 'google'})
+
         # Redirect to home page
         return redirect(url_for('index'))
     except Exception as e:

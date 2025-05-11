@@ -74,6 +74,70 @@ class User(FirebaseModel):
         })
 
     @staticmethod
+    def get_or_create(email, name=None, picture=None):
+        """Get an existing user or create a new one if it doesn't exist.
+
+        Args:
+            email: User's email address
+            name: User's display name (optional)
+            picture: URL to user's profile picture (optional)
+
+        Returns:
+            A UserObject instance compatible with Flask-Login
+        """
+        # Check if user exists
+        user_data = User.get_by_email(email)
+
+        if not user_data:
+            # Create a new user with OAuth information
+            username = name or email.split('@')[0]
+            User.create(
+                username=username,
+                email=email,
+                oauth_provider='google',
+                oauth_id=email,  # Use email as OAuth ID for simplicity
+                is_admin=False
+            )
+            # Get the newly created user
+            user_data = User.get_by_email(email)
+        else:
+            # Update OAuth information if needed
+            if not user_data.get('oauth_provider'):
+                User.update_oauth(email, 'google', email)
+
+        # Update last login time
+        User.update_last_login(email)
+
+        # Create user object compatible with Flask-Login
+        class UserObject:
+            def __init__(self, email, data):
+                self.id = email
+                self.email = email
+                self.username = data.get('username')
+                self.is_admin = data.get('is_admin', False)
+                self._data = data  # Store the full user data
+
+            def is_authenticated(self):
+                return True
+
+            def is_active(self):
+                return True
+
+            def is_anonymous(self):
+                return False
+
+            def get_id(self):
+                return self.id
+
+            def check_password(self, password):
+                """Check if the provided password matches the stored hash."""
+                password_hash = self._data.get('password_hash', '')
+                from werkzeug.security import check_password_hash
+                return check_password_hash(password_hash, password) if password_hash else False
+
+        return UserObject(email, user_data)
+
+    @staticmethod
     def get_all_users():
         """Get all users from Firebase."""
         users_data = User.get_ref('users').get()
