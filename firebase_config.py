@@ -17,32 +17,29 @@ def initialize_firebase():
             # Get database URL from environment or use default for development
             db_url = os.getenv('FIREBASE_DATABASE_URL')
             if not db_url:
-                # Fallback URL for development - remove in production
                 db_url = "https://vocal-local-e1e70-default-rtdb.firebaseio.com"
                 print(f"Warning: Using default Firebase URL: {db_url}")
-
-            # Try multiple authentication methods in order of preference
+            
             cred = None
             auth_methods_tried = []
-
-            # Method 1: Use service account credentials from environment variable
-            cred_json = os.getenv('FIREBASE_CREDENTIALS')
-            if cred_json and not cred:
-                auth_methods_tried.append("FIREBASE_CREDENTIALS env var")
-                # If the credentials are provided as a JSON string
-                try:
-                    # Check if it's a JSON string
-                    if cred_json.startswith('{'):
-                        cred_dict = json.loads(cred_json)
-                        cred = credentials.Certificate(cred_dict)
-                        print("Using Firebase credentials from environment variable")
-                    else:
-                        # Assume it's a file path
-                        if os.path.exists(cred_json):
-                            cred = credentials.Certificate(cred_json)
-                            print(f"Using Firebase credentials from file: {cred_json}")
-                except Exception as e:
-                    print(f"Error using credentials from environment: {str(e)}")
+            
+            # Try multiple possible paths for the secret file
+            possible_paths = [
+                "/etc/secrets/firebase-credentials.json",
+                "/etc/secrets/firebase-credentials",
+                "/etc/secrets/firebase-credentials.json.txt"
+            ]
+            
+            for path in possible_paths:
+                if os.path.exists(path):
+                    auth_methods_tried.append(f"Secret file: {path}")
+                    try:
+                        print(f"Found credentials at: {path}")
+                        cred = credentials.Certificate(path)
+                        print(f"Using Firebase credentials from: {path}")
+                        break
+                    except Exception as e:
+                        print(f"Error using credentials from {path}: {str(e)}")
 
             # Method 2: For local development with service account file
             if not cred:
@@ -97,6 +94,7 @@ def initialize_firebase():
     # Import db after initialization to avoid circular imports
     from firebase_admin import db
     return db.reference()
+
 
 
 
