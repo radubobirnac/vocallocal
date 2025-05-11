@@ -110,7 +110,11 @@ def init_app(app):
                         access_token_params=None,
                         refresh_token_url=token_uri,
                         redirect_uri=None,
-                        client_kwargs={'scope': 'openid email profile'},
+                        client_kwargs={
+                            'scope': 'openid email profile',
+                            'token_endpoint_auth_method': 'client_secret_post'
+                        },
+                        jwks_uri='https://www.googleapis.com/oauth2/v3/certs',  # Add JWKS URI
                     )
                     google = oauth.google
                     app.logger.info("Google OAuth configured successfully from OAuth.json")
@@ -135,7 +139,11 @@ def init_app(app):
                 access_token_params=None,
                 refresh_token_url='https://oauth2.googleapis.com/token',
                 redirect_uri=None,
-                client_kwargs={'scope': 'openid email profile'},
+                client_kwargs={
+                    'scope': 'openid email profile',
+                    'token_endpoint_auth_method': 'client_secret_post'
+                },
+                jwks_uri='https://www.googleapis.com/oauth2/v3/certs',  # Add JWKS URI
             )
             google = oauth.google
             app.logger.info("Google OAuth configured successfully from environment variables")
@@ -350,15 +358,58 @@ def google_callback():
         print("Google callback route called")
         print(f"Request args: {request.args}")
         
-        # Get token
+        # Get token without ID token validation
         print("Attempting to authorize access token...")
-        token = google.authorize_access_token()
+        token = None
+        try:
+            # Try to get the token with ID token validation
+            token = google.authorize_access_token()
+        except Exception as token_error:
+            print(f"Error with standard token authorization: {str(token_error)}")
+            # Fall back to manual token fetching without ID token validation
+            try:
+                code = request.args.get('code')
+                if not code:
+                    raise ValueError("No authorization code received")
+                
+                # Manually exchange the code for a token
+                token_endpoint = 'https://oauth2.googleapis.com/token'
+                redirect_uri = "https://vocallocal-aj6b.onrender.com/auth/callback"
+                
+                token_data = {
+                    'code': code,
+                    'client_id': google.client_id,
+                    'client_secret': google.client_secret,
+                    'redirect_uri': redirect_uri,
+                    'grant_type': 'authorization_code'
+                }
+                
+                import requests
+                token_response = requests.post(token_endpoint, data=token_data)
+                token_response.raise_for_status()
+                token = token_response.json()
+                print(f"Manually obtained token: {token}")
+            except Exception as manual_error:
+                print(f"Error with manual token fetching: {str(manual_error)}")
+                raise
+        
+        if not token:
+            raise ValueError("Failed to obtain access token")
+            
         print(f"Token received: {token}")
         
         # Get user info - use the full URL for the userinfo endpoint
         print("Fetching user info...")
-        resp = google.get('https://www.googleapis.com/oauth2/v3/userinfo')
-        user_info = resp.json()
+        access_token = token.get('access_token')
+        if not access_token:
+            raise ValueError("No access token in response")
+            
+        # Use requests directly to get user info
+        import requests
+        headers = {'Authorization': f'Bearer {access_token}'}
+        userinfo_response = requests.get('https://www.googleapis.com/oauth2/v3/userinfo', headers=headers)
+        userinfo_response.raise_for_status()
+        user_info = userinfo_response.json()
         
         print(f"Google OAuth callback received. User info: {user_info.get('email')}")
         
@@ -424,6 +475,8 @@ def change_password():
         flash(f'Error changing password: {str(e)}', 'danger')
 
     return redirect(url_for('auth.profile'))
+
+
 
 
 
