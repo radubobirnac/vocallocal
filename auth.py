@@ -70,9 +70,21 @@ def init_app(app):
 
     # Configure Google OAuth
     try:
-        # Try to load OAuth credentials from Oauth.json file
-        oauth_file_path = os.path.join(os.path.dirname(__file__), 'Oauth.json')
-        if os.path.exists(oauth_file_path):
+        # Try multiple possible paths for OAuth.json
+        possible_oauth_paths = [
+            "/etc/secrets/Oauth.json",  # Render secret file
+            "/etc/secrets/oauth-json",  # Render secret file (no extension)
+            os.path.join(os.path.dirname(__file__), 'Oauth.json')  # Local file
+        ]
+        
+        oauth_file_path = None
+        for path in possible_oauth_paths:
+            if os.path.exists(path):
+                oauth_file_path = path
+                app.logger.info(f"Found OAuth.json at: {path}")
+                break
+                
+        if oauth_file_path:
             import json
             with open(oauth_file_path, 'r') as f:
                 oauth_data = json.load(f)
@@ -82,6 +94,9 @@ def init_app(app):
                 client_id = web_config.get('client_id')
                 client_secret = web_config.get('client_secret')
                 redirect_uris = web_config.get('redirect_uris', [])
+
+                app.logger.info(f"Using OAuth client ID: {client_id[:5]}...{client_id[-5:] if client_id else 'None'}")
+                app.logger.info(f"Configured redirect URIs: {redirect_uris}")
 
                 if client_id and client_secret:
                     # Register the OAuth provider
@@ -93,16 +108,14 @@ def init_app(app):
                         client_kwargs={'scope': 'openid email profile'},
                     )
                     google = oauth.google
-                    app.logger.info("Google OAuth configured successfully from Oauth.json")
-
-                    # Log the redirect URIs for debugging
-                    app.logger.info(f"Configured redirect URIs: {redirect_uris}")
+                    app.logger.info("Google OAuth configured successfully from OAuth.json")
                 else:
                     app.logger.warning("Invalid OAuth.json: missing client_id or client_secret")
             else:
                 app.logger.warning("Invalid OAuth.json format: missing 'web' key")
         else:
             # Fall back to environment variables
+            app.logger.info("OAuth.json not found, using environment variables")
             google_client_id = os.getenv('GOOGLE_CLIENT_ID')
             google_client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
 
@@ -466,6 +479,7 @@ def change_password():
         flash(f'Error changing password: {str(e)}', 'danger')
 
     return redirect(url_for('auth.profile'))
+
 
 
 
