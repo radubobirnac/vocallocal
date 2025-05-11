@@ -70,67 +70,30 @@ def init_app(app):
 
     # Configure Google OAuth
     try:
-        # Try multiple possible paths for OAuth.json
-        possible_oauth_paths = [
-            "/etc/secrets/Oauth.json",  # Render secret file
-            "/etc/secrets/oauth-json",  # Render secret file (no extension)
-            os.path.join(os.path.dirname(__file__), 'Oauth.json')  # Local file
-        ]
+        # Get client ID and secret from environment variables
+        google_client_id = os.getenv('GOOGLE_CLIENT_ID')
+        google_client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
         
-        oauth_file_path = None
-        for path in possible_oauth_paths:
-            if os.path.exists(path):
-                oauth_file_path = path
-                app.logger.info(f"Found OAuth.json at: {path}")
-                break
-                
-        if oauth_file_path:
-            import json
-            with open(oauth_file_path, 'r') as f:
-                oauth_data = json.load(f)
-
-            if 'web' in oauth_data:
-                web_config = oauth_data['web']
-                client_id = web_config.get('client_id')
-                client_secret = web_config.get('client_secret')
-                redirect_uris = web_config.get('redirect_uris', [])
-
-                app.logger.info(f"Using OAuth client ID: {client_id[:5]}...{client_id[-5:] if client_id else 'None'}")
-                app.logger.info(f"Configured redirect URIs: {redirect_uris}")
-
-                if client_id and client_secret:
-                    # Register the OAuth provider
-                    oauth.register(
-                        name='google',
-                        client_id=client_id,
-                        client_secret=client_secret,
-                        server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-                        client_kwargs={'scope': 'openid email profile'},
-                    )
-                    google = oauth.google
-                    app.logger.info("Google OAuth configured successfully from OAuth.json")
-                else:
-                    app.logger.warning("Invalid OAuth.json: missing client_id or client_secret")
-            else:
-                app.logger.warning("Invalid OAuth.json format: missing 'web' key")
+        # Log configuration attempt
+        app.logger.info(f"Configuring Google OAuth with client ID: {google_client_id[:5]}...{google_client_id[-5:] if google_client_id else 'None'}")
+        
+        if google_client_id and google_client_secret:
+            # Register the OAuth provider with explicit configuration
+            oauth.register(
+                name='google',
+                client_id=google_client_id,
+                client_secret=google_client_secret,
+                server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+                client_kwargs={'scope': 'openid email profile'},
+                authorize_params={
+                    'access_type': 'offline',  # Get refresh token
+                    'prompt': 'select_account'  # Force account selection
+                }
+            )
+            google = oauth.google
+            app.logger.info("Google OAuth configured successfully")
         else:
-            # Fall back to environment variables
-            app.logger.info("OAuth.json not found, using environment variables")
-            google_client_id = os.getenv('GOOGLE_CLIENT_ID')
-            google_client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
-
-            if google_client_id and google_client_secret:
-                oauth.register(
-                    name='google',
-                    client_id=google_client_id,
-                    client_secret=google_client_secret,
-                    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-                    client_kwargs={'scope': 'openid email profile'},
-                )
-                google = oauth.google
-                app.logger.info("Google OAuth configured successfully from environment variables")
-            else:
-                app.logger.warning("Google OAuth not configured: missing client ID or secret")
+            app.logger.warning("Google OAuth not configured: missing client ID or secret")
     except Exception as e:
         app.logger.error(f"Error configuring Google OAuth: {str(e)}")
         import traceback
@@ -300,7 +263,6 @@ def logout():
     return redirect(url_for('index'))
 
 @auth_bp.route('/google')
-@auth_bp.route('/auth/google')  # Add this route to match potential OAuth.json redirect URI
 def google_login():
     """Google OAuth login route."""
     try:
@@ -309,140 +271,70 @@ def google_login():
             flash("Google OAuth is not configured properly. Please contact the administrator.", "danger")
             return redirect(url_for('auth.login'))
 
-        # Try to get redirect URI from OAuth.json
-        oauth_file_path = os.path.join(os.path.dirname(__file__), 'Oauth.json')
-        redirect_uri = None
-
-        if os.path.exists(oauth_file_path):
-            try:
-                import json
-                with open(oauth_file_path, 'r') as f:
-                    oauth_data = json.load(f)
-
-                if 'web' in oauth_data and 'redirect_uris' in oauth_data['web']:
-                    # Find the callback URI that matches our route
-                    for uri in oauth_data['web']['redirect_uris']:
-                        if '/auth/callback' in uri:
-                            redirect_uri = uri
-                            break
-            except Exception as json_error:
-                print(f"Error reading OAuth.json: {str(json_error)}")
-
-        # If we couldn't get a redirect URI from the file, try environment or build dynamically
-        if not redirect_uri:
-            redirect_uri = os.getenv('GOOGLE_REDIRECT_URI')
-
-        if not redirect_uri:
-            # Build the URI dynamically as a last resort
+        # Get the current host from the request
+        host = request.host_url.rstrip('/')
+        
+        # If we're on Render, use the specific domain
+        if 'onrender.com' in host:
+            if 'vocallocal-aj6b.onrender.com' in host:
+                redirect_uri = "https://vocallocal-aj6b.onrender.com/auth/callback"
+            else:
+                # Fallback for any other Render domain
+                redirect_uri = f"{host}/auth/callback"
+        else:
+            # Local development
             redirect_uri = url_for('auth.google_callback', _external=True)
-
-        print(f"Google OAuth redirect URI: {redirect_uri}")
+        
+        print(f"Using redirect URI: {redirect_uri}")
+        
+        # Use the specific redirect URI
         return google.authorize_redirect(redirect_uri)
     except Exception as e:
         flash(f"Error with Google login: {str(e)}", "danger")
         print(f"Google OAuth error: {str(e)}")
-        return redirect(url_for('auth.login'))
-
-# These routes handle the Google OAuth callback
-@auth_bp.route('/google/callback')
-def google_callback():
-    """Google OAuth callback route."""
-    return _handle_google_callback()
-
-@auth_bp.route('/auth/callback')  # This matches the URI in OAuth.json
-def auth_callback():
-    """Alternative Google OAuth callback route."""
-    return _handle_google_callback()
-
-# Make this function accessible from outside the module
-def _handle_google_callback():
-    """Google OAuth callback route."""
-    # Make sure Google OAuth is configured
-    if not google:
-        flash("Google OAuth is not configured properly. Please contact the administrator.", "danger")
-        return redirect(url_for('auth.login'))
-
-    # Get token and user info from Google
-    try:
-        token = google.authorize_access_token()
-        # Use the full URL for userinfo endpoint
-        userinfo_endpoint = 'https://www.googleapis.com/oauth2/v2/userinfo'
-        resp = google.get(userinfo_endpoint)
-        user_info = resp.json()
-        print(f"Google user info received: {user_info.get('email')}")
-    except Exception as oauth_error:
-        print(f"Google OAuth error: {str(oauth_error)}")
         import traceback
         print(traceback.format_exc())
-        flash("Error authenticating with Google. Please try again or use email login.", "danger")
         return redirect(url_for('auth.login'))
 
-    # Check if user exists
+@auth_bp.route('/callback')
+def google_callback():
+    """Google OAuth callback route."""
     try:
-        user_data = User.get_by_oauth('google', user_info['id'])
-    except Exception as db_error:
-        print(f"Database error checking OAuth user: {str(db_error)}")
-        flash("Error accessing user database. Please try again later.", "danger")
+        # Get token
+        token = google.authorize_access_token()
+        
+        # Get user info
+        resp = google.get('userinfo')
+        user_info = resp.json()
+        
+        print(f"Google OAuth callback received. User info: {user_info.get('email')}")
+        
+        # Check if user exists in Firebase
+        email = user_info.get('email')
+        name = user_info.get('name', '')
+        picture = user_info.get('picture', '')
+        
+        if not email:
+            flash("Could not get email from Google. Please try again.", "danger")
+            return redirect(url_for('auth.login'))
+            
+        # Get or create user
+        user = User.get_or_create(email, name, picture)
+        
+        # Log the user in
+        login_user(user)
+        
+        # Log user activity
+        UserActivity.log(email, 'login', {'method': 'google'})
+        
+        # Redirect to home page
+        return redirect(url_for('index'))
+    except Exception as e:
+        flash(f"Error during Google authentication: {str(e)}", "danger")
+        print(f"Google OAuth callback error: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
         return redirect(url_for('auth.login'))
-
-    if not user_data:
-        # Check if email already exists
-        existing_user = User.get_by_email(user_info['email'])
-        if existing_user:
-            # Update existing user with OAuth info
-            User.update_oauth(
-                email=user_info['email'],
-                oauth_provider='google',
-                oauth_id=user_info['id']
-            )
-            user_data = existing_user
-        else:
-            # Create new user
-            User.create(
-                username=user_info['email'].split('@')[0],  # Use part before @ as username
-                email=user_info['email'],
-                oauth_provider='google',
-                oauth_id=user_info['id']
-            )
-            user_data = User.get_by_email(user_info['email'])
-
-    # Create user object
-    class UserObject:
-        def __init__(self, email, data):
-            self.id = email
-            self.email = email
-            self.username = data.get('username')
-            self.is_admin = data.get('is_admin', False)
-            self._data = data  # Store the full user data
-
-        def is_authenticated(self):
-            return True
-
-        def is_active(self):
-            return True
-
-        def is_anonymous(self):
-            return False
-
-        def get_id(self):
-            return self.id
-
-        def check_password(self, password):
-            """Check if the provided password matches the stored hash."""
-            password_hash = self._data.get('password_hash', '')
-            return check_password_hash(password_hash, password)
-
-    user = UserObject(user_data.get('email'), user_data)
-    login_user(user)
-
-    # Log activity
-    UserActivity.log(
-        user_email=user_data.get('email'),
-        activity_type='login',
-        details='Google OAuth login'
-    )
-
-    return redirect(url_for('index'))
 
 @auth_bp.route('/profile')
 @login_required
@@ -479,6 +371,8 @@ def change_password():
         flash(f'Error changing password: {str(e)}', 'danger')
 
     return redirect(url_for('auth.profile'))
+
+
 
 
 
