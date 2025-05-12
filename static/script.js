@@ -638,6 +638,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Get the current interpretation model
+  function getInterpretationModel() {
+    // Get the selected value from the dropdown
+    const interpretationModelSelect = document.getElementById('interpretation-model-select');
+    if (interpretationModelSelect) {
+      return interpretationModelSelect.value;
+    } else {
+      return 'gemini-2.0-flash-lite'; // Default to Gemini 2.0 Flash Lite if dropdown not found
+    }
+  }
+
+  // Save interpretation model preference
+  function saveInterpretationModelPreference(model) {
+    try {
+      localStorage.setItem('vocal-local-interpretation-model', model);
+    } catch (e) {
+      console.warn('LocalStorage is not available. Interpretation model preference will not be saved.');
+    }
+  }
+
+  // Load interpretation model preference
+  function loadInterpretationModelPreference() {
+    try {
+      return localStorage.getItem('vocal-local-interpretation-model') || 'gemini-2.0-flash-lite'; // Default to Gemini 2.0 Flash Lite
+    } catch (e) {
+      console.warn('LocalStorage is not available. Defaulting to Gemini 2.0 Flash Lite.');
+      return 'gemini-2.0-flash-lite';
+    }
+  }
+
   // Function to interpret text using AI
   async function interpretText(text, tone) {
     if (!text || text.trim() === '') {
@@ -646,7 +676,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      showStatus('Generating AI interpretation...', 'info');
+      // Get the current interpretation model
+      const interpretationModel = getInterpretationModel();
+
+      // Log which model is being used
+      console.log(`Interpreting with ${interpretationModel} model`);
+
+      showStatus(`Generating AI interpretation using ${interpretationModel.includes('2.5') ? 'Gemini 2.5 Flash' : 'Gemini 2.0 Flash Lite'}...`, 'info');
 
       const response = await fetch('/api/interpret', {
         method: 'POST',
@@ -655,7 +691,8 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         body: JSON.stringify({
           text: text,
-          tone: tone
+          tone: tone,
+          interpretation_model: interpretationModel
         })
       });
 
@@ -666,7 +703,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const result = await response.json();
 
       if (result.interpretation) {
-        showStatus('Interpretation complete!', 'success');
+        // Show a message if fallback was used
+        if (result.fallback_used) {
+          showStatus(`Interpretation completed using ${result.model_used} as fallback`, 'info');
+        } else {
+          showStatus('Interpretation complete!', 'success');
+        }
         return result.interpretation;
       } else if (result.error) {
         throw new Error(result.error);
@@ -1899,6 +1941,35 @@ document.addEventListener('DOMContentLoaded', () => {
     if (savedTtsModel) {
       ttsModelSelect.value = savedTtsModel;
     }
+  }
+
+  // Initialize interpretation model selector
+  const interpretationModelSelect = document.getElementById('interpretation-model-select');
+  if (interpretationModelSelect) {
+    // Load saved preference
+    const savedModel = loadInterpretationModelPreference();
+    interpretationModelSelect.value = savedModel;
+
+    // Add event listener
+    interpretationModelSelect.addEventListener('change', () => {
+      const model = interpretationModelSelect.value;
+      saveInterpretationModelPreference(model);
+
+      // Get the model display name
+      const selectedOption = interpretationModelSelect.options[interpretationModelSelect.selectedIndex];
+      const modelDisplayName = selectedOption ? selectedOption.textContent : model;
+
+      showStatus(`Interpretation model changed to ${modelDisplayName}`, 'info');
+
+      // If interpretation is enabled and there's text in the transcript, update the interpretation
+      const isEnabled = loadInterpretationEnabledPreference();
+      if (isEnabled) {
+        const transcriptEl = document.getElementById('basic-transcript');
+        if (transcriptEl && transcriptEl.value.trim() !== '') {
+          updateInterpretation(transcriptEl.value);
+        }
+      }
+    });
   }
 
   // Initialize interpretation tone selector

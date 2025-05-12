@@ -142,6 +142,26 @@
           </div>
           <!-- End TTS Model Selector -->
 
+          <!-- Interpretation Model Selector -->
+          <div class="form-group">
+            <label for="interpretation-model-select" class="form-label">AI Interpretation Model:</label>
+            <select id="interpretation-model-select" class="form-select mt-2">
+              <option value="gemini-2.0-flash-lite" selected>Gemini 2.0 Flash Lite</option>
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+            </select>
+          </div>
+          <!-- End Interpretation Model Selector -->
+
+          <!-- Interpretation Model Selector -->
+          <div class="form-group">
+            <label for="interpretation-model-select" class="form-label">Interpretation Model:</label>
+            <select id="interpretation-model-select" class="form-select mt-2">
+              <option value="gemini-2.0-flash-lite" selected>Gemini 2.0 Flash Lite</option>
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+            </select>
+          </div>
+          <!-- End Interpretation Model Selector -->
+
           <!-- Interpretation Tone Selector -->
           <div class="form-group">
             <label for="interpretation-tone-select" class="form-label">AI Interpretation Tone:</label>
@@ -185,6 +205,9 @@
             <button id="basic-upload-btn" class="button button-outline button-icon" title="Upload audio file" onclick="document.getElementById('basic-file-input').click()">
               <i class="fas fa-paperclip"></i>
             </button>
+            <button id="basic-record-btn" class="header-record-button" title="Record audio">
+              <i class="fas fa-microphone"></i>
+            </button>
             <button id="basic-play-btn" class="button button-outline button-icon" title="Play transcription">
               <i class="fas fa-play"></i>
             </button>
@@ -204,12 +227,7 @@
                 <select id="basic-language" class="form-select"></select>
               </div>
 
-              <div class="flex flex-col items-center mt-4">
-                <button id="basic-record-btn" class="record-button mb-2">
-                  <i class="fas fa-microphone text-lg"></i>
-                </button>
-                <div id="basic-recording-status" class="text-sm text-center">Click to start recording</div>
-              </div>
+
             </div>
 
             <div class="col-span-2">
@@ -258,6 +276,11 @@
         <div class="card speaker-card-1">
           <div class="card-header">
             <h2 class="card-title">Speaker 1</h2>
+            <div class="flex items-center gap-2">
+              <button id="record-btn-1" class="header-record-button" title="Record audio">
+                <i class="fas fa-microphone"></i>
+              </button>
+            </div>
           </div>
           <div class="card-content">
             <div class="space-y-4">
@@ -266,12 +289,7 @@
                 <select id="language-1" class="form-select"></select>
               </div>
 
-              <div class="flex flex-col items-center mt-4">
-                <button id="record-btn-1" class="record-button mb-2">
-                  <i class="fas fa-microphone text-lg"></i>
-                </button>
-                <div id="recording-status-1" class="text-sm text-center">Click to start recording</div>
-              </div>
+
 
               <div class="form-checkbox mt-4">
                 <input type="checkbox" id="enable-tts-1" class="form-checkbox-input">
@@ -285,6 +303,11 @@
         <div class="card speaker-card-2">
           <div class="card-header">
             <h2 class="card-title">Speaker 2</h2>
+            <div class="flex items-center gap-2">
+              <button id="record-btn-2" class="header-record-button" title="Record audio">
+                <i class="fas fa-microphone"></i>
+              </button>
+            </div>
           </div>
           <div class="card-content">
             <div class="space-y-4">
@@ -293,12 +316,7 @@
                 <select id="language-2" class="form-select"></select>
               </div>
 
-              <div class="flex flex-col items-center mt-4">
-                <button id="record-btn-2" class="record-button mb-2">
-                  <i class="fas fa-microphone text-lg"></i>
-                </button>
-                <div id="recording-status-2" class="text-sm text-center">Click to start recording</div>
-              </div>
+
 
               <div class="form-checkbox mt-4">
                 <input type="checkbox" id="enable-tts-2" class="form-checkbox-input">

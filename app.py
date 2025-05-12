@@ -646,6 +646,9 @@ def interpret_text():
     - text: The text to interpret
     - tone: The tone to use for interpretation (e.g., 'professional', 'casual', 'formal')
 
+    Optional JSON parameters:
+    - interpretation_model: The model to use for interpretation (default: 'gemini-2.0-flash-lite')
+
     Returns:
     - JSON with the interpreted text and performance metrics
     """
@@ -656,6 +659,7 @@ def interpret_text():
 
     text = data['text']
     tone = data.get('tone', 'professional')  # Default to professional tone
+    interpretation_model = data.get('interpretation_model', 'gemini-2.0-flash-lite')  # Default to Gemini 2.0 Flash Lite
 
     if not text.strip():
         return jsonify({'error': 'Empty text provided'}), 400
@@ -664,33 +668,37 @@ def interpret_text():
     start_time = time.time()
     char_count = len(text)
 
+    # Check if Gemini is available
+    if not GEMINI_AVAILABLE:
+        return jsonify({'error': 'Gemini API is not available. Cannot perform interpretation.'}), 500
+
     try:
-        # Create interpretation prompt based on the selected tone
-        if tone == 'professional':
-            prompt = "You are an AI assistant that reformulates text into a professional tone. Remove any curse words, slang, or informal language. Make the text clear, concise, and suitable for a business environment. Only respond with the reformulated text, nothing else."
-        elif tone == 'casual':
-            prompt = "You are an AI assistant that reformulates text into a casual, friendly tone. Make the text conversational and approachable, but still clear and respectful. Only respond with the reformulated text, nothing else."
-        elif tone == 'formal':
-            prompt = "You are an AI assistant that reformulates text into a formal tone. Use proper grammar, sophisticated vocabulary, and a structured approach. Make the text suitable for academic or official documents. Only respond with the reformulated text, nothing else."
-        elif tone == 'simplified':
-            prompt = "You are an AI assistant that reformulates text into a simplified, easy-to-understand tone. Use short sentences, simple words, and clear explanations. Avoid jargon and complex terminology. Only respond with the reformulated text, nothing else."
-        elif tone == 'academic':
-            prompt = "You are an AI assistant that reformulates text into an academic tone. Use scholarly language, precise terminology, and a structured approach. Make the text suitable for academic papers or presentations. Only respond with the reformulated text, nothing else."
-        else:
-            # Default to professional if an unknown tone is provided
-            prompt = "You are an AI assistant that reformulates text into a professional tone. Remove any curse words, slang, or informal language. Make the text clear, concise, and suitable for a business environment. Only respond with the reformulated text, nothing else."
-
-        # Always use Gemini 2.0 Flash Lite for interpretation
-        model_name = "models/gemini-2.0-flash-lite"
-        display_model = "gemini-2.0-flash-lite"
-
         # Configure the model
         generation_config = {
-            "temperature": 0.2,
+            "temperature": 0.3,
             "top_p": 0.95,
             "top_k": 0,
             "max_output_tokens": 8192,
         }
+
+        # Select the appropriate model based on the interpretation_model parameter
+        model_name = "models/gemini-2.0-flash-lite"  # Default model
+        display_model = interpretation_model  # For metrics tracking
+
+        if 'gemini-2.5-flash' in interpretation_model:
+            # Use the full model name from the available models list
+            model_name = "models/gemini-2.5-flash-preview-04-17"
+            display_model = "gemini-2.5-flash"
+            print(f"Using Gemini 2.5 Flash Preview model for interpretation")
+        elif interpretation_model == 'gemini-2.0-flash-lite' or interpretation_model == 'gemini':
+            model_name = "models/gemini-2.0-flash-lite"
+            display_model = "gemini-2.0-flash-lite"
+            print(f"Using Gemini 2.0 Flash Lite model for interpretation")
+        else:
+            # For any other model name, default to Gemini 2.0 Flash Lite
+            model_name = "models/gemini-2.0-flash-lite"
+            display_model = "gemini-2.0-flash-lite"
+            print(f"Unknown model '{interpretation_model}', defaulting to Gemini 2.0 Flash Lite for interpretation")
 
         # Initialize the Gemini model
         model = genai.GenerativeModel(
@@ -698,12 +706,33 @@ def interpret_text():
             generation_config=generation_config
         )
 
+        # Create interpretation prompt based on the selected tone
+        if tone == 'professional':
+            prompt = "You are an AI assistant that reformulates text into a professional tone. Remove any curse words, slang, or informal language. Make the text clear, concise, and suitable for a business environment. Only respond with the reformulated text, nothing else."
+        elif tone == 'casual':
+            prompt = "You are an AI assistant that reformulates text into a casual, friendly tone. Make the text conversational and approachable, but still clear and respectful. Only respond with the reformulated text, nothing else."
+        elif tone == 'formal':
+            prompt = "You are an AI assistant that reformulates text into a formal tone. Use proper grammar, sophisticated vocabulary, and a structured approach. Make the text suitable for academic or official contexts. Only respond with the reformulated text, nothing else."
+        elif tone == 'simple':
+            prompt = "You are an AI assistant that reformulates text into simple, easy-to-understand language. Use short sentences, common words, and clear explanations. Aim for a reading level accessible to most people. Only respond with the reformulated text, nothing else."
+        elif tone == 'technical':
+            prompt = "You are an AI assistant that reformulates text into a technical tone. Use precise terminology, detailed explanations, and structured presentation. Make the text suitable for technical documentation or expert audiences. Only respond with the reformulated text, nothing else."
+        else:
+            # Default to professional tone if an unknown tone is provided
+            prompt = "You are an AI assistant that reformulates text into a professional tone. Remove any curse words, slang, or informal language. Make the text clear, concise, and suitable for a business environment. Only respond with the reformulated text, nothing else."
+
         # Create the full prompt
         input_prompt = f"{prompt}\n\nText to reformulate: {text}"
+
+        # Count input tokens for metrics
+        input_tokens = count_gemini_tokens(input_prompt, model_name) if METRICS_AVAILABLE else len(input_prompt) // 3
 
         # Generate the interpretation
         response = model.generate_content(input_prompt)
         interpretation = response.text
+
+        # Count output tokens for metrics
+        output_tokens = count_gemini_tokens(interpretation, model_name) if METRICS_AVAILABLE else len(interpretation) // 3
 
         # Calculate performance metrics
         end_time = time.time()
@@ -711,15 +740,12 @@ def interpret_text():
         chars_per_second = char_count / interpretation_time if interpretation_time > 0 else 0
 
         # Log performance metrics
+        total_tokens = input_tokens + output_tokens
         print(f"Interpretation performance: model={display_model}, time={interpretation_time:.2f}s, chars={char_count}, chars/s={chars_per_second:.2f}")
+        print(f"Token usage: {total_tokens} tokens (input: {input_tokens}, output: {output_tokens})")
 
         # Track metrics if available
         if METRICS_AVAILABLE:
-            # Estimate token usage
-            input_tokens = count_gemini_tokens(input_prompt, model_name)
-            output_tokens = count_gemini_tokens(interpretation, model_name)
-            total_tokens = input_tokens + output_tokens
-
             try:
                 # Initialize interpretation section if it doesn't exist
                 if "interpretation" not in metrics_tracker.metrics:
@@ -731,7 +757,7 @@ def interpret_text():
                         "calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0
                     }
 
-                # Update metrics
+                # Update metrics directly
                 metrics_tracker.metrics["interpretation"][display_model]["calls"] += 1
                 metrics_tracker.metrics["interpretation"][display_model]["tokens"] += total_tokens
                 metrics_tracker.metrics["interpretation"][display_model]["chars"] += char_count
