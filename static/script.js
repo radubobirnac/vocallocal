@@ -778,6 +778,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const interpretationEl = document.getElementById('basic-interpretation');
     if (!interpretationEl) return;
 
+    // Check if interpretation is enabled
+    const isEnabled = loadInterpretationEnabledPreference();
+
+    // If interpretation is disabled, don't process anything
+    if (!isEnabled) {
+      return;
+    }
+
     // Only interpret if there's text to interpret
     if (!text || text.trim() === '') {
       interpretationEl.value = '';
@@ -793,6 +801,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (interpretation) {
       interpretationEl.value = interpretation;
+    }
+  }
+
+  // Function to toggle the visibility of the interpretation section
+  function toggleInterpretationSection(isEnabled) {
+    const interpretationSection = document.querySelector('.interpretation-section');
+    if (interpretationSection) {
+      interpretationSection.style.display = isEnabled ? 'block' : 'none';
     }
   }
 
@@ -1133,6 +1149,27 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
       console.warn('LocalStorage is not available. Defaulting to professional tone.');
       return 'professional';
+    }
+  }
+
+  // Save interpretation enabled preference
+  function saveInterpretationEnabledPreference(enabled) {
+    try {
+      localStorage.setItem('vocal-local-interpretation-enabled', enabled ? 'true' : 'false');
+    } catch (e) {
+      console.warn('LocalStorage is not available. Interpretation enabled preference will not be saved.');
+    }
+  }
+
+  // Load interpretation enabled preference
+  function loadInterpretationEnabledPreference() {
+    try {
+      const savedPreference = localStorage.getItem('vocal-local-interpretation-enabled');
+      // If no preference is saved, default to enabled (true)
+      return savedPreference === null ? true : savedPreference === 'true';
+    } catch (e) {
+      console.warn('LocalStorage is not available. Defaulting to interpretation enabled.');
+      return true;
     }
   }
 
@@ -1881,6 +1918,46 @@ document.addEventListener('DOMContentLoaded', () => {
       const toneDisplayName = selectedOption ? selectedOption.textContent : tone;
 
       showStatus(`Interpretation tone changed to ${toneDisplayName}`, 'info');
+
+      // If interpretation is enabled and there's text in the transcript, update the interpretation
+      const isEnabled = loadInterpretationEnabledPreference();
+      if (isEnabled) {
+        const transcriptEl = document.getElementById('basic-transcript');
+        if (transcriptEl && transcriptEl.value.trim() !== '') {
+          updateInterpretation(transcriptEl.value);
+        }
+      }
+    });
+  }
+
+  // Initialize interpretation toggle
+  const enableInterpretationToggle = document.getElementById('enable-interpretation');
+  if (enableInterpretationToggle) {
+    // Load saved preference
+    const isEnabled = loadInterpretationEnabledPreference();
+    enableInterpretationToggle.checked = isEnabled;
+
+    // Set initial visibility
+    toggleInterpretationSection(isEnabled);
+
+    // Add event listener
+    enableInterpretationToggle.addEventListener('change', () => {
+      const isEnabled = enableInterpretationToggle.checked;
+      saveInterpretationEnabledPreference(isEnabled);
+
+      // Toggle visibility of interpretation section
+      toggleInterpretationSection(isEnabled);
+
+      // Show status message
+      showStatus(`AI Interpretation ${isEnabled ? 'enabled' : 'disabled'}`, 'info');
+
+      // If enabled and there's text in the transcript, update the interpretation
+      if (isEnabled) {
+        const transcriptEl = document.getElementById('basic-transcript');
+        if (transcriptEl && transcriptEl.value.trim() !== '') {
+          updateInterpretation(transcriptEl.value);
+        }
+      }
     });
   }
 
@@ -1888,6 +1965,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const basicInterpretBtn = document.getElementById('basic-interpret-btn');
   if (basicInterpretBtn) {
     basicInterpretBtn.addEventListener('click', async () => {
+      // Check if interpretation is enabled
+      const isEnabled = loadInterpretationEnabledPreference();
+      if (!isEnabled) {
+        showStatus('AI Interpretation is disabled. Enable it in settings to use this feature.', 'warning');
+        return;
+      }
+
       const transcriptEl = document.getElementById('basic-transcript');
       const interpretationEl = document.getElementById('basic-interpretation');
 
