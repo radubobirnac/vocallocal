@@ -627,6 +627,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Make the showStatus function available globally
+  window.showStatus = showStatus;
+
   // Get the current translation model
   function getTranslationModel() {
     // Get the selected value from the dropdown
@@ -1868,25 +1871,62 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show status message
         showStatus('Transcribing your audio...', 'info');
 
-        // Send to server
-        sendToServer(formData)
-          .then(result => {
-            // Update transcript
-            updateTranscript('basic-transcript', result.text || "No transcript received.");
-            showStatus('Transcription complete!', 'success');
-          })
-          .catch(error => {
-            console.error('Upload error:', error);
+        // Use the upload progress indicator
+        if (window.sendToServerWithProgress) {
+          // Store a reference to the upload button for state updates
+          const uploadBtn = document.getElementById('basic-upload-btn');
+          const uploadProgressInstance = uploadBtn._progressInstance;
 
-            // User-friendly error messages
-            if (error.name === 'AbortError') {
-              showStatus('The request took too long to complete. Please try with a smaller file or check your connection.', 'warning');
-            } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-              showStatus('Network error. Please check your internet connection and try again.', 'error');
-            } else {
-              showStatus(`Error: ${error.message}`, 'error');
-            }
-          });
+          sendToServerWithProgress(formData, 'basic-upload-btn')
+            .then(result => {
+              // Update transcript
+              updateTranscript('basic-transcript', result.text || "No transcript received.");
+
+              // Wait a moment to ensure the transcript is visible before removing the spinner
+              setTimeout(() => {
+                // Signal completion to the progress indicator
+                if (uploadBtn && uploadBtn._progressInstance && uploadBtn._progressInstance.updateState) {
+                  uploadBtn._progressInstance.updateState('completed');
+                }
+              }, 500);
+
+              showStatus('Transcription complete!', 'success');
+            })
+            .catch(error => {
+              console.error('Upload error:', error);
+
+              // User-friendly error messages
+              if (error.name === 'AbortError' || error.message === 'Upload cancelled') {
+                showStatus('Upload cancelled.', 'warning');
+              } else if (error.name === 'AbortError') {
+                showStatus('The request took too long to complete. Please try with a smaller file or check your connection.', 'warning');
+              } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                showStatus('Network error. Please check your internet connection and try again.', 'error');
+              } else {
+                showStatus(`Error: ${error.message}`, 'error');
+              }
+            });
+        } else {
+          // Fallback to original method if progress indicator not available
+          sendToServer(formData)
+            .then(result => {
+              // Update transcript
+              updateTranscript('basic-transcript', result.text || "No transcript received.");
+              showStatus('Transcription complete!', 'success');
+            })
+            .catch(error => {
+              console.error('Upload error:', error);
+
+              // User-friendly error messages
+              if (error.name === 'AbortError') {
+                showStatus('The request took too long to complete. Please try with a smaller file or check your connection.', 'warning');
+              } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                showStatus('Network error. Please check your internet connection and try again.', 'error');
+              } else {
+                showStatus(`Error: ${error.message}`, 'error');
+              }
+            });
+        }
       }
       // Bilingual mode file upload for Speaker 1
       else if (input.id === 'file-input-1' && input.files.length) {
@@ -1904,17 +1944,48 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show status message
         showStatus('Transcribing Speaker 1 audio...', 'info');
 
-        // Send to server
-        sendToServer(formData)
-          .then(result => {
-            // Update transcript
-            updateTranscript('transcript-1', result.text || "No transcript received.");
-            showStatus('Speaker 1 transcription complete!', 'success');
-          })
-          .catch(error => {
-            console.error('Upload error:', error);
-            showStatus(`Error: ${error.message}`, 'error');
-          });
+        // Use the upload progress indicator
+        if (window.sendToServerWithProgress) {
+          // Store a reference to the upload button for state updates
+          const uploadBtn = document.getElementById('upload-btn-1');
+
+          sendToServerWithProgress(formData, 'upload-btn-1')
+            .then(result => {
+              // Update transcript
+              updateTranscript('transcript-1', result.text || "No transcript received.");
+
+              // Wait a moment to ensure the transcript is visible before removing the spinner
+              setTimeout(() => {
+                // Signal completion to the progress indicator
+                if (uploadBtn && uploadBtn._progressInstance && uploadBtn._progressInstance.updateState) {
+                  uploadBtn._progressInstance.updateState('completed');
+                }
+              }, 500);
+
+              showStatus('Speaker 1 transcription complete!', 'success');
+            })
+            .catch(error => {
+              console.error('Upload error:', error);
+
+              if (error.message === 'Upload cancelled') {
+                showStatus('Upload cancelled.', 'warning');
+              } else {
+                showStatus(`Error: ${error.message}`, 'error');
+              }
+            });
+        } else {
+          // Fallback to original method if progress indicator not available
+          sendToServer(formData)
+            .then(result => {
+              // Update transcript
+              updateTranscript('transcript-1', result.text || "No transcript received.");
+              showStatus('Speaker 1 transcription complete!', 'success');
+            })
+            .catch(error => {
+              console.error('Upload error:', error);
+              showStatus(`Error: ${error.message}`, 'error');
+            });
+        }
       }
       // Bilingual mode file upload for Speaker 2
       else if (input.id === 'file-input-2' && input.files.length) {
@@ -1932,17 +2003,48 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show status message
         showStatus('Transcribing Speaker 2 audio...', 'info');
 
-        // Send to server
-        sendToServer(formData)
-          .then(result => {
-            // Update transcript
-            updateTranscript('transcript-2', result.text || "No transcript received.");
-            showStatus('Speaker 2 transcription complete!', 'success');
-          })
-          .catch(error => {
-            console.error('Upload error:', error);
-            showStatus(`Error: ${error.message}`, 'error');
-          });
+        // Use the upload progress indicator
+        if (window.sendToServerWithProgress) {
+          // Store a reference to the upload button for state updates
+          const uploadBtn = document.getElementById('upload-btn-2');
+
+          sendToServerWithProgress(formData, 'upload-btn-2')
+            .then(result => {
+              // Update transcript
+              updateTranscript('transcript-2', result.text || "No transcript received.");
+
+              // Wait a moment to ensure the transcript is visible before removing the spinner
+              setTimeout(() => {
+                // Signal completion to the progress indicator
+                if (uploadBtn && uploadBtn._progressInstance && uploadBtn._progressInstance.updateState) {
+                  uploadBtn._progressInstance.updateState('completed');
+                }
+              }, 500);
+
+              showStatus('Speaker 2 transcription complete!', 'success');
+            })
+            .catch(error => {
+              console.error('Upload error:', error);
+
+              if (error.message === 'Upload cancelled') {
+                showStatus('Upload cancelled.', 'warning');
+              } else {
+                showStatus(`Error: ${error.message}`, 'error');
+              }
+            });
+        } else {
+          // Fallback to original method if progress indicator not available
+          sendToServer(formData)
+            .then(result => {
+              // Update transcript
+              updateTranscript('transcript-2', result.text || "No transcript received.");
+              showStatus('Speaker 2 transcription complete!', 'success');
+            })
+            .catch(error => {
+              console.error('Upload error:', error);
+              showStatus(`Error: ${error.message}`, 'error');
+            });
+        }
       }
     });
   });
