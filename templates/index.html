@@ -64,7 +64,7 @@
         <!-- Theme Selector -->
         <div class="theme-selector">
           <button id="theme-toggle-btn" class="button button-outline button-icon" title="Change theme">
-            <i class="fas fa-sun"></i> <!-- Default icon, will change dynamically -->
+            <i class="fas fa-lightbulb"></i> <!-- Changed to lightbulb icon -->
           </button>
           <div id="theme-options" class="theme-options-dropdown" style="display: none;">
             <button class="theme-option" data-theme="light">
@@ -74,7 +74,7 @@
               <i class="fas fa-moon"></i> Dark Mode
             </button>
             <button class="theme-option" data-theme="system">
-              <i class="fas fa-desktop"></i> System
+              <i class="fas fa-circle-half-stroke"></i> System
             </button>
           </div>
         </div>
@@ -143,7 +143,7 @@
           <!-- End TTS Model Selector -->
 
           <!-- Interpretation Model Selector -->
-          <div class="form-group">
+          <div class="form-group interpretation-setting">
             <label for="interpretation-model-select" class="form-label">AI Interpretation Model:</label>
             <select id="interpretation-model-select" class="form-select mt-2">
               <option value="gemini-2.0-flash-lite" selected>Gemini 2.0 Flash Lite</option>
@@ -152,18 +152,8 @@
           </div>
           <!-- End Interpretation Model Selector -->
 
-          <!-- Interpretation Model Selector -->
-          <div class="form-group">
-            <label for="interpretation-model-select" class="form-label">Interpretation Model:</label>
-            <select id="interpretation-model-select" class="form-select mt-2">
-              <option value="gemini-2.0-flash-lite" selected>Gemini 2.0 Flash Lite</option>
-              <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-            </select>
-          </div>
-          <!-- End Interpretation Model Selector -->
-
           <!-- Interpretation Tone Selector -->
-          <div class="form-group">
+          <div class="form-group interpretation-setting">
             <label for="interpretation-tone-select" class="form-label">AI Interpretation Tone:</label>
             <select id="interpretation-tone-select" class="form-select mt-2">
               <option value="professional" selected>Professional</option>
@@ -445,9 +435,11 @@
       </div>
       <div id="about-content" class="card-content" style="display: none;">
         <p class="mb-6">
-          Vocal Local is a multilingual speech-to-text transcription tool designed to provide accurate
-          transcriptions in multiple languages. Using advanced AI technology, it converts spoken
-          language from audio recordings or microphone input into written text.
+          Vocal Local is a comprehensive multilingual speech-to-text platform designed to provide accurate
+          transcriptions, translations, and AI interpretations in 50+ languages. Using state-of-the-art AI models
+          from Gemini and OpenAI, it converts spoken language from audio recordings or microphone input into
+          written text, offers contextual interpretations, and facilitates bilingual conversations with
+          real-time translation.
         </p>
 
         <div class="grid md:grid-cols-2 gap-6">
@@ -468,6 +460,14 @@
               </li>
               <li class="flex items-start gap-2">
                 <i class="fas fa-check-circle text-green-600 mt-1"></i>
+                <span>AI interpretation - Get context-aware interpretations of your transcripts</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i class="fas fa-check-circle text-green-600 mt-1"></i>
+                <span>Customizable interpretation tones - Professional, simplified, academic, or AI prompts</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i class="fas fa-check-circle text-green-600 mt-1"></i>
                 <span>Easy copying - One-click copying of transcription results</span>
               </li>
               <li class="flex items-start gap-2">
@@ -481,6 +481,14 @@
               <li class="flex items-start gap-2">
                 <i class="fas fa-check-circle text-green-600 mt-1"></i>
                 <span>Multiple AI models - Choose between Gemini and OpenAI models for optimal results</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i class="fas fa-check-circle text-green-600 mt-1"></i>
+                <span>Model selection - Choose from Gemini 2.0 Flash Lite, Gemini 2.5 Flash, GPT-4o Mini, and more</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i class="fas fa-check-circle text-green-600 mt-1"></i>
+                <span>Editable transcripts - Edit and correct transcriptions before translation</span>
               </li>
             </ul>
           </div>
@@ -515,6 +523,14 @@
               <li class="flex items-start gap-2">
                 <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
                 <span>Speaking in multiple languages at once may result in mixed results</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
+                <span>AI interpretation requires clear, well-structured transcripts for best results</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
+                <span>Gemini 2.5 Flash Preview may have limited availability during peak usage times</span>
               </li>
             </ul>
             <p class="text-sm text-muted mt-4">

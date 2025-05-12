@@ -66,10 +66,10 @@
       "failures": 0
     },
     "gemini-2.0-flash-lite": {
-      "calls": 14,
-      "tokens": 1810,
-      "chars": 1442,
-      "time": 16.022790908813477,
+      "calls": 16,
+      "tokens": 19080,
+      "chars": 20595,
+      "time": 49.745400190353394,
       "failures": 6
     }
   },
@@ -113,6 +113,11 @@
       "transcription": {
         "gemini-2.0-flash-lite": 31,
         "openai": 26
+      }
+    },
+    "2025-05-12": {
+      "transcription": {
+        "gemini-2.0-flash-lite": 17270
       }
     }
   },
@@ -211,6 +216,11 @@
         "gemini-2.0-flash-lite": 31,
         "openai": 26
       }
+    },
+    "2025-05-12-14": {
+      "transcription": {
+        "gemini-2.0-flash-lite": 17270
+      }
     }
   },
   "tts": {
@@ -226,6 +236,15 @@
       "tokens": 1521,
       "chars": 6114,
       "time": 99.30945205688477,
+      "failures": 0
+    }
+  },
+  "interpretation": {
+    "gemini-2.0-flash-lite": {
+      "calls": 4,
+      "tokens": 31152,
+      "chars": 56447,
+      "time": 47.822903633117676,
       "failures": 0
     }
   }

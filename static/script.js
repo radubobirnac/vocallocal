@@ -846,12 +846,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Function to toggle the visibility of the interpretation section
+  // Function to toggle the visibility of the interpretation section and settings
   function toggleInterpretationSection(isEnabled) {
+    // Toggle the interpretation section in the main UI
     const interpretationSection = document.querySelector('.interpretation-section');
     if (interpretationSection) {
       interpretationSection.style.display = isEnabled ? 'block' : 'none';
     }
+
+    // Toggle all interpretation-related settings in the settings panel
+    const interpretationSettings = document.querySelectorAll('.interpretation-setting');
+    interpretationSettings.forEach(setting => {
+      setting.style.display = isEnabled ? 'block' : 'none';
+    });
   }
 
   // Function to handle translate edited text button clicks
@@ -1019,11 +1026,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update the toggle button icon
     const icon = themeToggleButton.querySelector('i');
     if (theme === 'light') {
-      icon.className = 'fas fa-sun';
+      icon.className = 'fas fa-lightbulb'; // Changed to lightbulb
     } else if (theme === 'dark') {
       icon.className = 'fas fa-moon';
     } else { // system
-      icon.className = 'fas fa-desktop';
+      icon.className = 'fas fa-circle-half-stroke'; // Changed to circle-half-stroke
     }
 
     // Update active state in dropdown
@@ -1124,6 +1131,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Check browser compatibility first
   const isBrowserCompatible = checkBrowserCompatibility();
+
+  // Initialize interpretation settings visibility based on saved preference
+  const isInterpretationEnabled = loadInterpretationEnabledPreference();
+  toggleInterpretationSection(isInterpretationEnabled);
 
   // Initialize translation model dropdown
   const translationModelSelect = document.getElementById('translation-model-select');
@@ -2064,7 +2075,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isEnabled = loadInterpretationEnabledPreference();
     enableInterpretationToggle.checked = isEnabled;
 
-    // Set initial visibility
+    // Set initial visibility of interpretation section and settings
     toggleInterpretationSection(isEnabled);
 
     // Add event listener
@@ -2072,7 +2083,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const isEnabled = enableInterpretationToggle.checked;
       saveInterpretationEnabledPreference(isEnabled);
 
-      // Toggle visibility of interpretation section
+      // Toggle visibility of interpretation section and settings
       toggleInterpretationSection(isEnabled);
 
       // Show status message
