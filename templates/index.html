@@ -202,11 +202,11 @@
         <div class="card-header">
           <h2 class="card-title">Voice Transcription</h2>
           <div class="flex items-center gap-2">
-            <button id="basic-upload-btn" class="button button-outline button-icon" title="Upload audio file" onclick="document.getElementById('basic-file-input').click()">
-              <i class="fas fa-paperclip"></i>
-            </button>
             <button id="basic-record-btn" class="header-record-button" title="Record audio">
               <i class="fas fa-microphone"></i>
+            </button>
+            <button id="basic-upload-btn" class="button button-outline button-icon" title="Upload audio file" onclick="document.getElementById('basic-file-input').click()">
+              <i class="fas fa-paperclip"></i>
             </button>
             <button id="basic-play-btn" class="button button-outline button-icon" title="Play transcription">
               <i class="fas fa-play"></i>
@@ -220,17 +220,15 @@
           </div>
         </div>
         <div class="card-content">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div class="space-y-4">
               <div class="form-group">
                 <label for="basic-language" class="form-label">Input Language:</label>
                 <select id="basic-language" class="form-select"></select>
               </div>
-
-
             </div>
 
-            <div class="col-span-2">
+            <div class="col-span-3">
               <label for="basic-transcript" class="form-label">Transcript</label>
               <textarea id="basic-transcript" class="form-textarea w-full" placeholder="Your transcription will appear here..."></textarea>
               <div class="transcript-controls mt-2 flex justify-between">
@@ -280,6 +278,9 @@
               <button id="record-btn-1" class="header-record-button" title="Record audio">
                 <i class="fas fa-microphone"></i>
               </button>
+              <button id="upload-btn-1" class="button button-outline button-icon" title="Upload audio file" onclick="document.getElementById('file-input-1').click()">
+                <i class="fas fa-paperclip"></i>
+              </button>
             </div>
           </div>
           <div class="card-content">
@@ -306,6 +307,9 @@
             <div class="flex items-center gap-2">
               <button id="record-btn-2" class="header-record-button" title="Record audio">
                 <i class="fas fa-microphone"></i>
+              </button>
+              <button id="upload-btn-2" class="button button-outline button-icon" title="Upload audio file" onclick="document.getElementById('file-input-2').click()">
+                <i class="fas fa-paperclip"></i>
               </button>
             </div>
           </div>
@@ -425,6 +429,10 @@
           </div>
         </div>
       </div>
+
+      <!-- Hidden file inputs for bilingual mode -->
+      <input type="file" id="file-input-1" accept="audio/*" class="visually-hidden">
+      <input type="file" id="file-input-2" accept="audio/*" class="visually-hidden">
     </div>
 
     <!-- About Section -->

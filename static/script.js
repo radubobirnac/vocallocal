@@ -1840,7 +1840,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileInputs = document.querySelectorAll('input[type="file"]');
   fileInputs.forEach(input => {
     input.addEventListener('change', () => {
-      // Show file name in status message
+      // Basic mode file upload
       if (input.id === 'basic-file-input' && input.files.length) {
         showStatus(`Selected file: ${input.files[0].name}`, 'info');
 
@@ -1875,6 +1875,62 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
               showStatus(`Error: ${error.message}`, 'error');
             }
+          });
+      }
+      // Bilingual mode file upload for Speaker 1
+      else if (input.id === 'file-input-1' && input.files.length) {
+        showStatus(`Selected file for Speaker 1: ${input.files[0].name}`, 'info');
+
+        // Create FormData object
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+        formData.append('language', document.getElementById('language-1').value);
+
+        // Get selected model from global transcription model
+        let selectedModel = getTranscriptionModel();
+        formData.append('model', selectedModel);
+
+        // Show status message
+        showStatus('Transcribing Speaker 1 audio...', 'info');
+
+        // Send to server
+        sendToServer(formData)
+          .then(result => {
+            // Update transcript
+            updateTranscript('transcript-1', result.text || "No transcript received.");
+            showStatus('Speaker 1 transcription complete!', 'success');
+          })
+          .catch(error => {
+            console.error('Upload error:', error);
+            showStatus(`Error: ${error.message}`, 'error');
+          });
+      }
+      // Bilingual mode file upload for Speaker 2
+      else if (input.id === 'file-input-2' && input.files.length) {
+        showStatus(`Selected file for Speaker 2: ${input.files[0].name}`, 'info');
+
+        // Create FormData object
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+        formData.append('language', document.getElementById('language-2').value);
+
+        // Get selected model from global transcription model
+        let selectedModel = getTranscriptionModel();
+        formData.append('model', selectedModel);
+
+        // Show status message
+        showStatus('Transcribing Speaker 2 audio...', 'info');
+
+        // Send to server
+        sendToServer(formData)
+          .then(result => {
+            // Update transcript
+            updateTranscript('transcript-2', result.text || "No transcript received.");
+            showStatus('Speaker 2 transcription complete!', 'success');
+          })
+          .catch(error => {
+            console.error('Upload error:', error);
+            showStatus(`Error: ${error.message}`, 'error');
           });
       }
     });
