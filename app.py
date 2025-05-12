@@ -633,6 +633,141 @@ def tts_with_google(text, language, output_file_path):
         print(f"Error in Google TTS: {str(e)}")
         return False
 
+@app.route('/api/interpret', methods=['POST'])
+@login_required
+def interpret_text():
+    """
+    Endpoint for AI interpretation of text using Gemini 2.0 Flash Lite.
+
+    This endpoint takes a text input and generates an AI interpretation based on the specified tone.
+    It always uses Gemini 2.0 Flash Lite model for consistency.
+
+    Required JSON parameters:
+    - text: The text to interpret
+    - tone: The tone to use for interpretation (e.g., 'professional', 'casual', 'formal')
+
+    Returns:
+    - JSON with the interpreted text and performance metrics
+    """
+    data = request.json
+
+    if not data or 'text' not in data:
+        return jsonify({'error': 'Missing required parameter: text'}), 400
+
+    text = data['text']
+    tone = data.get('tone', 'professional')  # Default to professional tone
+
+    if not text.strip():
+        return jsonify({'error': 'Empty text provided'}), 400
+
+    # Start timing for performance metrics
+    start_time = time.time()
+    char_count = len(text)
+
+    try:
+        # Create interpretation prompt based on the selected tone
+        if tone == 'professional':
+            prompt = "You are an AI assistant that reformulates text into a professional tone. Remove any curse words, slang, or informal language. Make the text clear, concise, and suitable for a business environment. Only respond with the reformulated text, nothing else."
+        elif tone == 'casual':
+            prompt = "You are an AI assistant that reformulates text into a casual, friendly tone. Make the text conversational and approachable, but still clear and respectful. Only respond with the reformulated text, nothing else."
+        elif tone == 'formal':
+            prompt = "You are an AI assistant that reformulates text into a formal tone. Use proper grammar, sophisticated vocabulary, and a structured approach. Make the text suitable for academic or official documents. Only respond with the reformulated text, nothing else."
+        elif tone == 'simplified':
+            prompt = "You are an AI assistant that reformulates text into a simplified, easy-to-understand tone. Use short sentences, simple words, and clear explanations. Avoid jargon and complex terminology. Only respond with the reformulated text, nothing else."
+        elif tone == 'academic':
+            prompt = "You are an AI assistant that reformulates text into an academic tone. Use scholarly language, precise terminology, and a structured approach. Make the text suitable for academic papers or presentations. Only respond with the reformulated text, nothing else."
+        else:
+            # Default to professional if an unknown tone is provided
+            prompt = "You are an AI assistant that reformulates text into a professional tone. Remove any curse words, slang, or informal language. Make the text clear, concise, and suitable for a business environment. Only respond with the reformulated text, nothing else."
+
+        # Always use Gemini 2.0 Flash Lite for interpretation
+        model_name = "models/gemini-2.0-flash-lite"
+        display_model = "gemini-2.0-flash-lite"
+
+        # Configure the model
+        generation_config = {
+            "temperature": 0.2,
+            "top_p": 0.95,
+            "top_k": 0,
+            "max_output_tokens": 8192,
+        }
+
+        # Initialize the Gemini model
+        model = genai.GenerativeModel(
+            model_name=model_name,
+            generation_config=generation_config
+        )
+
+        # Create the full prompt
+        input_prompt = f"{prompt}\n\nText to reformulate: {text}"
+
+        # Generate the interpretation
+        response = model.generate_content(input_prompt)
+        interpretation = response.text
+
+        # Calculate performance metrics
+        end_time = time.time()
+        interpretation_time = end_time - start_time
+        chars_per_second = char_count / interpretation_time if interpretation_time > 0 else 0
+
+        # Log performance metrics
+        print(f"Interpretation performance: model={display_model}, time={interpretation_time:.2f}s, chars={char_count}, chars/s={chars_per_second:.2f}")
+
+        # Track metrics if available
+        if METRICS_AVAILABLE:
+            # Estimate token usage
+            input_tokens = count_gemini_tokens(input_prompt, model_name)
+            output_tokens = count_gemini_tokens(interpretation, model_name)
+            total_tokens = input_tokens + output_tokens
+
+            try:
+                # Initialize interpretation section if it doesn't exist
+                if "interpretation" not in metrics_tracker.metrics:
+                    metrics_tracker.metrics["interpretation"] = {}
+
+                # Ensure the model exists in metrics
+                if display_model not in metrics_tracker.metrics["interpretation"]:
+                    metrics_tracker.metrics["interpretation"][display_model] = {
+                        "calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0
+                    }
+
+                # Update metrics
+                metrics_tracker.metrics["interpretation"][display_model]["calls"] += 1
+                metrics_tracker.metrics["interpretation"][display_model]["tokens"] += total_tokens
+                metrics_tracker.metrics["interpretation"][display_model]["chars"] += char_count
+                metrics_tracker.metrics["interpretation"][display_model]["time"] += interpretation_time
+
+                # Save metrics
+                metrics_tracker._save_metrics()
+
+                print(f"Interpretation metrics tracked: model={display_model}, tokens={total_tokens}, chars={char_count}")
+            except Exception as e:
+                # If there's an error tracking metrics, just log it
+                print(f"Warning: Could not track interpretation metrics: {str(e)}")
+
+        return jsonify({
+            'interpretation': interpretation,
+            'tone': tone,
+            'model_used': display_model,
+            'performance': {
+                'time_seconds': round(interpretation_time, 2),
+                'character_count': char_count,
+                'characters_per_second': round(chars_per_second, 2)
+            },
+            'success': True
+        })
+
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Interpretation error: {str(e)}\n{error_details}")
+
+        return jsonify({
+            'error': str(e),
+            'errorType': type(e).__name__,
+            'details': 'See server logs for more information'
+        }), 500
+
 @app.route('/api/translate', methods=['POST'])
 def translate_text():
     """

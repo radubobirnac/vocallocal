@@ -502,6 +502,20 @@ p {
   margin-top: 1rem;
 }
 
+/* Interpretation section */
+.interpretation-section {
+  margin-top: 1rem;
+  border-top: 1px solid hsl(var(--border));
+  padding-top: 1rem;
+}
+
+.interpretation-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
 /* Transcript controls */
 .transcript-controls {
   margin-top: 0.5rem;
