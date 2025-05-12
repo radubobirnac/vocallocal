@@ -331,7 +331,9 @@ def google_login():
 
         # If we're on Render, use the specific domain
         if 'onrender.com' in host:
-            if 'vocallocal-aj6b.onrender.com' in host:
+            if 'vocallocal.onrender.com' in host:
+                redirect_uri = "https://vocallocal.onrender.com/auth/callback"
+            elif 'vocallocal-aj6b.onrender.com' in host:
                 redirect_uri = "https://vocallocal-aj6b.onrender.com/auth/callback"
             else:
                 # Fallback for any other Render domain
@@ -441,11 +443,7 @@ def google_callback():
         return redirect(url_for('auth.login'))
 
 def _handle_google_callback():
-    """Handle Google OAuth callback for direct calls from app.py.
-
-    This function is similar to google_callback but designed to be called
-    directly from app.py's root_auth_callback route.
-    """
+    """Handle Google OAuth callback for direct calls from app.py's root_auth_callback route."""
     try:
         print("Google callback handler called directly")
         print(f"Request args: {request.args}")
@@ -470,7 +468,9 @@ def _handle_google_callback():
                 # Determine the appropriate redirect URI based on the host
                 host = request.host_url.rstrip('/')
                 if 'onrender.com' in host:
-                    if 'vocallocal-aj6b.onrender.com' in host:
+                    if 'vocallocal.onrender.com' in host:
+                        redirect_uri = "https://vocallocal.onrender.com/auth/callback"
+                    elif 'vocallocal-aj6b.onrender.com' in host:
                         redirect_uri = "https://vocallocal-aj6b.onrender.com/auth/callback"
                     else:
                         # Fallback for any other Render domain
@@ -579,13 +579,19 @@ def change_password():
 
     return redirect(url_for('auth.profile'))
 
-
-
-
-
-
-
-
-
-
+@auth_bp.route('/debug')
+def oauth_debug():
+    """Debug route to check OAuth configuration."""
+    debug_info = {
+        "google_configured": google is not None,
+        "client_id": google.client_id if google else None,
+        "redirect_uris_in_code": [
+            url_for('auth.google_callback', _external=True),
+            "https://vocallocal.onrender.com/auth/callback",
+            "https://vocallocal-aj6b.onrender.com/auth/callback"
+        ],
+        "current_host": request.host_url,
+        "is_secure": request.is_secure
+    }
+    return jsonify(debug_info)
 
