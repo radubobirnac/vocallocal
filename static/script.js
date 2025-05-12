@@ -638,6 +638,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Function to interpret text using AI
+  async function interpretText(text, tone) {
+    if (!text || text.trim() === '') {
+      showStatus('No text to interpret', 'warning');
+      return null;
+    }
+
+    try {
+      showStatus('Generating AI interpretation...', 'info');
+
+      const response = await fetch('/api/interpret', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: text,
+          tone: tone
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.interpretation) {
+        showStatus('Interpretation complete!', 'success');
+        return result.interpretation;
+      } else if (result.error) {
+        throw new Error(result.error);
+      } else {
+        throw new Error('No interpretation received');
+      }
+    } catch (error) {
+      console.error('Interpretation error:', error);
+      showStatus(`Interpretation failed: ${error.message}`, 'error');
+      return null;
+    }
+  }
+
   // Save translation model preference
   function saveTranslationModelPreference(model) {
     try {
@@ -724,6 +766,34 @@ document.addEventListener('DOMContentLoaded', () => {
     transcriptEl.dataset.originalText = text; // Store original for undo
 
     console.log(`Updated transcript ${elementId} with ${text.length} characters`);
+
+    // If this is the basic transcript, also update the interpretation
+    if (elementId === 'basic-transcript') {
+      updateInterpretation(text);
+    }
+  }
+
+  // Update interpretation based on transcript text
+  async function updateInterpretation(text) {
+    const interpretationEl = document.getElementById('basic-interpretation');
+    if (!interpretationEl) return;
+
+    // Only interpret if there's text to interpret
+    if (!text || text.trim() === '') {
+      interpretationEl.value = '';
+      return;
+    }
+
+    // Get the selected tone
+    const toneSelect = document.getElementById('interpretation-tone-select');
+    const tone = toneSelect ? toneSelect.value : 'professional';
+
+    // Generate interpretation
+    const interpretation = await interpretText(text, tone);
+
+    if (interpretation) {
+      interpretationEl.value = interpretation;
+    }
   }
 
   // Function to handle translate edited text button clicks
@@ -1044,6 +1114,25 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
       console.warn('LocalStorage is not available. Defaulting to Gemini.');
       return 'gemini';
+    }
+  }
+
+  // Save interpretation tone preference
+  function saveInterpretationTonePreference(tone) {
+    try {
+      localStorage.setItem('vocal-local-interpretation-tone', tone);
+    } catch (e) {
+      console.warn('LocalStorage is not available. Interpretation tone preference will not be saved.');
+    }
+  }
+
+  // Load interpretation tone preference
+  function loadInterpretationTonePreference() {
+    try {
+      return localStorage.getItem('vocal-local-interpretation-tone') || 'professional'; // Default to professional
+    } catch (e) {
+      console.warn('LocalStorage is not available. Defaulting to professional tone.');
+      return 'professional';
     }
   }
 
@@ -1773,6 +1862,96 @@ document.addEventListener('DOMContentLoaded', () => {
     if (savedTtsModel) {
       ttsModelSelect.value = savedTtsModel;
     }
+  }
+
+  // Initialize interpretation tone selector
+  const interpretationToneSelect = document.getElementById('interpretation-tone-select');
+  if (interpretationToneSelect) {
+    // Load saved preference
+    const savedTone = loadInterpretationTonePreference();
+    interpretationToneSelect.value = savedTone;
+
+    // Add event listener
+    interpretationToneSelect.addEventListener('change', () => {
+      const tone = interpretationToneSelect.value;
+      saveInterpretationTonePreference(tone);
+
+      // Get the tone display name
+      const selectedOption = interpretationToneSelect.options[interpretationToneSelect.selectedIndex];
+      const toneDisplayName = selectedOption ? selectedOption.textContent : tone;
+
+      showStatus(`Interpretation tone changed to ${toneDisplayName}`, 'info');
+    });
+  }
+
+  // Basic mode interpretation button
+  const basicInterpretBtn = document.getElementById('basic-interpret-btn');
+  if (basicInterpretBtn) {
+    basicInterpretBtn.addEventListener('click', async () => {
+      const transcriptEl = document.getElementById('basic-transcript');
+      const interpretationEl = document.getElementById('basic-interpretation');
+
+      if (!transcriptEl || !interpretationEl) return;
+
+      const text = transcriptEl.value;
+      if (!text || text.trim() === '') {
+        showStatus('No text to interpret', 'warning');
+        return;
+      }
+
+      // Get the selected tone
+      const toneSelect = document.getElementById('interpretation-tone-select');
+      const tone = toneSelect ? toneSelect.value : 'professional';
+
+      // Generate interpretation
+      const interpretation = await interpretText(text, tone);
+
+      if (interpretation) {
+        interpretationEl.value = interpretation;
+      }
+    });
+  }
+
+  // Basic mode interpretation play/stop buttons
+  const basicPlayInterpretationBtn = document.getElementById('basic-play-interpretation-btn');
+  const basicStopInterpretationBtn = document.getElementById('basic-stop-interpretation-btn');
+
+  if (basicPlayInterpretationBtn) {
+    basicPlayInterpretationBtn.addEventListener('click', () => {
+      const interpretationEl = document.getElementById('basic-interpretation');
+      if (!interpretationEl) return;
+
+      const text = interpretationEl.value;
+      const langSelect = document.getElementById('basic-language');
+      const lang = langSelect ? langSelect.value : 'en';
+
+      if (isMobileDevice()) {
+        setTimeout(() => {
+          const currentText = interpretationEl.value;
+          speakText('basic-interpretation', currentText, lang);
+        }, 50);
+      } else {
+        speakText('basic-interpretation', text, lang);
+      }
+    });
+  }
+
+  if (basicStopInterpretationBtn) {
+    basicStopInterpretationBtn.addEventListener('click', () => {
+      stopSpeakText('basic-interpretation');
+    });
+  }
+
+  // Basic mode copy interpretation button
+  const basicCopyInterpretationBtn = document.getElementById('basic-copy-interpretation-btn');
+  if (basicCopyInterpretationBtn) {
+    basicCopyInterpretationBtn.addEventListener('click', () => {
+      const interpretationEl = document.getElementById('basic-interpretation');
+      if (!interpretationEl) return;
+
+      const text = interpretationEl.value;
+      copyTextToClipboard(text, 'Interpretation copied to clipboard!');
+    });
   }
 
   // Add auto-scroll on focus for mobile

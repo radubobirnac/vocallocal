@@ -141,6 +141,19 @@
             </select>
           </div>
           <!-- End TTS Model Selector -->
+
+          <!-- Interpretation Tone Selector -->
+          <div class="form-group">
+            <label for="interpretation-tone-select" class="form-label">AI Interpretation Tone:</label>
+            <select id="interpretation-tone-select" class="form-select mt-2">
+              <option value="professional" selected>Professional</option>
+              <option value="casual">Casual</option>
+              <option value="formal">Formal</option>
+              <option value="simplified">Simplified</option>
+              <option value="academic">Academic</option>
+            </select>
+          </div>
+          <!-- End Interpretation Tone Selector -->
         </div>
       </div>
     </div>
@@ -196,6 +209,27 @@
                   <button id="basic-undo-btn" class="button button-outline button-small">Undo Edits</button>
                 </div>
               </div>
+
+              <!-- AI Interpretation Section -->
+              <div class="interpretation-section mt-4">
+                <div class="interpretation-title">
+                  <label class="form-label">AI Interpretation:</label>
+                  <div class="flex items-center gap-2">
+                    <button id="basic-interpret-btn" class="button button-small">Interpret Text</button>
+                    <button id="basic-play-interpretation-btn" class="button button-outline button-icon" title="Play interpretation">
+                      <i class="fas fa-play"></i>
+                    </button>
+                    <button id="basic-stop-interpretation-btn" class="button button-outline button-icon" title="Stop playback" style="display: none;">
+                      <i class="fas fa-stop"></i>
+                    </button>
+                    <button id="basic-copy-interpretation-btn" class="button button-outline button-icon" title="Copy interpretation">
+                      <i class="fas fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+                <textarea id="basic-interpretation" class="form-textarea w-full" placeholder="AI interpretation will appear here..." readonly></textarea>
+              </div>
+              <!-- End AI Interpretation Section -->
             </div>
           </div>
         </div>
