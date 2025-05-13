@@ -30,6 +30,8 @@ google-cloud-texttospeech>=2.14.1
 
 # Audio processing
 scipy>=1.10.0
+python-magic>=0.4.27
+python-magic-bin>=0.4.14; platform_system=="Windows"
 
 # Desktop app dependencies (not needed for web deployment)
 # PyQt5>=5.15.0

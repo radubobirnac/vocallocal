@@ -66,10 +66,10 @@
       "failures": 0
     },
     "gemini-2.0-flash-lite": {
-      "calls": 26,
-      "tokens": 137606,
-      "chars": 152606,
-      "time": 258.8221709728241,
+      "calls": 28,
+      "tokens": 143613,
+      "chars": 154873,
+      "time": 266.91964387893677,
       "failures": 6
     }
   },
@@ -117,7 +117,7 @@
     },
     "2025-05-12": {
       "transcription": {
-        "gemini-2.0-flash-lite": 135796
+        "gemini-2.0-flash-lite": 141803
       }
     }
   },
@@ -224,7 +224,7 @@
     },
     "2025-05-12-15": {
       "transcription": {
-        "gemini-2.0-flash-lite": 50208
+        "gemini-2.0-flash-lite": 56215
       }
     }
   },
@@ -253,10 +253,10 @@
       "failures": 0
     },
     "gemini-2.5-flash": {
-      "calls": 6,
-      "tokens": 20217,
-      "chars": 57537,
-      "time": 107.81293654441833,
+      "calls": 8,
+      "tokens": 26960,
+      "chars": 76758,
+      "time": 142.58676266670227,
       "failures": 0
     }
   }

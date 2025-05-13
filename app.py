@@ -112,7 +112,8 @@ initialize_firebase()
 UPLOAD_FOLDER = tempfile.gettempdir()
 ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg', 'm4a', 'mp4', 'webm'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 30 * 1024 * 1024  # 30MB max upload size
+app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200MB max upload size for Gemini models
+# OpenAI models still have a 30MB limit, enforced in the transcribe_audio route
 
 # Add Firebase models for transcription and translation
 from firebase_models import User, UserActivity, Transcription, Translation
@@ -253,11 +254,24 @@ def transcribe_audio():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
+        # Get file size
+        file_size = os.path.getsize(filepath)
+
         # Get language code from form
         language = request.form.get('language', 'en')
 
         # Get model from form or use default
         model = request.form.get('model', 'gemini')
+
+        # Check file size limits based on model
+        # OpenAI models have a 30MB limit
+        if not (model.startswith('gemini-') or model == 'gemini') and file_size > 30 * 1024 * 1024:
+            os.remove(filepath)  # Clean up
+            return jsonify({
+                'error': 'File too large for OpenAI models (max 30MB)',
+                'errorType': 'FileSizeLimitExceeded',
+                'details': 'Please use a Gemini model for files larger than 30MB or reduce your file size.'
+            }), 413  # 413 Payload Too Large
 
         # Process with OpenAI or Gemini based on the model
         try:
@@ -633,167 +647,6 @@ def tts_with_google(text, language, output_file_path):
         print(f"Error in Google TTS: {str(e)}")
         return False
 
-@app.route('/api/interpret', methods=['POST'])
-@login_required
-def interpret_text():
-    """
-    Endpoint for AI interpretation of text using Gemini 2.0 Flash Lite.
-
-    This endpoint takes a text input and generates an AI interpretation based on the specified tone.
-    It always uses Gemini 2.0 Flash Lite model for consistency.
-
-    Required JSON parameters:
-    - text: The text to interpret
-    - tone: The tone to use for interpretation (e.g., 'professional', 'casual', 'formal')
-
-    Optional JSON parameters:
-    - interpretation_model: The model to use for interpretation (default: 'gemini-2.0-flash-lite')
-
-    Returns:
-    - JSON with the interpreted text and performance metrics
-    """
-    data = request.json
-
-    if not data or 'text' not in data:
-        return jsonify({'error': 'Missing required parameter: text'}), 400
-
-    text = data['text']
-    tone = data.get('tone', 'professional')  # Default to professional tone
-    interpretation_model = data.get('interpretation_model', 'gemini-2.0-flash-lite')  # Default to Gemini 2.0 Flash Lite
-
-    if not text.strip():
-        return jsonify({'error': 'Empty text provided'}), 400
-
-    # Start timing for performance metrics
-    start_time = time.time()
-    char_count = len(text)
-
-    # Check if Gemini is available
-    if not GEMINI_AVAILABLE:
-        return jsonify({'error': 'Gemini API is not available. Cannot perform interpretation.'}), 500
-
-    try:
-        # Configure the model
-        generation_config = {
-            "temperature": 0.3,
-            "top_p": 0.95,
-            "top_k": 0,
-            "max_output_tokens": 8192,
-        }
-
-        # Select the appropriate model based on the interpretation_model parameter
-        model_name = "models/gemini-2.0-flash-lite"  # Default model
-        display_model = interpretation_model  # For metrics tracking
-
-        if 'gemini-2.5-flash' in interpretation_model:
-            # Use the full model name from the available models list
-            model_name = "models/gemini-2.5-flash-preview-04-17"
-            display_model = "gemini-2.5-flash"
-            print(f"Using Gemini 2.5 Flash Preview model for interpretation")
-        elif interpretation_model == 'gemini-2.0-flash-lite' or interpretation_model == 'gemini':
-            model_name = "models/gemini-2.0-flash-lite"
-            display_model = "gemini-2.0-flash-lite"
-            print(f"Using Gemini 2.0 Flash Lite model for interpretation")
-        else:
-            # For any other model name, default to Gemini 2.0 Flash Lite
-            model_name = "models/gemini-2.0-flash-lite"
-            display_model = "gemini-2.0-flash-lite"
-            print(f"Unknown model '{interpretation_model}', defaulting to Gemini 2.0 Flash Lite for interpretation")
-
-        # Initialize the Gemini model
-        model = genai.GenerativeModel(
-            model_name=model_name,
-            generation_config=generation_config
-        )
-
-        # Create interpretation prompt based on the selected tone
-        if tone == 'professional':
-            prompt = "You are an AI assistant that reformulates text into a professional tone. Remove any curse words, slang, or informal language. Make the text clear, concise, and suitable for a business environment. Only respond with the reformulated text, nothing else."
-        elif tone == 'casual':
-            prompt = "You are an AI assistant that reformulates text into a casual, friendly tone. Make the text conversational and approachable, but still clear and respectful. Only respond with the reformulated text, nothing else."
-        elif tone == 'formal':
-            prompt = "You are an AI assistant that reformulates text into a formal tone. Use proper grammar, sophisticated vocabulary, and a structured approach. Make the text suitable for academic or official contexts. Only respond with the reformulated text, nothing else."
-        elif tone == 'simple':
-            prompt = "You are an AI assistant that reformulates text into simple, easy-to-understand language. Use short sentences, common words, and clear explanations. Aim for a reading level accessible to most people. Only respond with the reformulated text, nothing else."
-        elif tone == 'technical':
-            prompt = "You are an AI assistant that reformulates text into a technical tone. Use precise terminology, detailed explanations, and structured presentation. Make the text suitable for technical documentation or expert audiences. Only respond with the reformulated text, nothing else."
-        else:
-            # Default to professional tone if an unknown tone is provided
-            prompt = "You are an AI assistant that reformulates text into a professional tone. Remove any curse words, slang, or informal language. Make the text clear, concise, and suitable for a business environment. Only respond with the reformulated text, nothing else."
-
-        # Create the full prompt
-        input_prompt = f"{prompt}\n\nText to reformulate: {text}"
-
-        # Count input tokens for metrics
-        input_tokens = count_gemini_tokens(input_prompt, model_name) if METRICS_AVAILABLE else len(input_prompt) // 3
-
-        # Generate the interpretation
-        response = model.generate_content(input_prompt)
-        interpretation = response.text
-
-        # Count output tokens for metrics
-        output_tokens = count_gemini_tokens(interpretation, model_name) if METRICS_AVAILABLE else len(interpretation) // 3
-
-        # Calculate performance metrics
-        end_time = time.time()
-        interpretation_time = end_time - start_time
-        chars_per_second = char_count / interpretation_time if interpretation_time > 0 else 0
-
-        # Log performance metrics
-        total_tokens = input_tokens + output_tokens
-        print(f"Interpretation performance: model={display_model}, time={interpretation_time:.2f}s, chars={char_count}, chars/s={chars_per_second:.2f}")
-        print(f"Token usage: {total_tokens} tokens (input: {input_tokens}, output: {output_tokens})")
-
-        # Track metrics if available
-        if METRICS_AVAILABLE:
-            try:
-                # Initialize interpretation section if it doesn't exist
-                if "interpretation" not in metrics_tracker.metrics:
-                    metrics_tracker.metrics["interpretation"] = {}
-
-                # Ensure the model exists in metrics
-                if display_model not in metrics_tracker.metrics["interpretation"]:
-                    metrics_tracker.metrics["interpretation"][display_model] = {
-                        "calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0
-                    }
-
-                # Update metrics directly
-                metrics_tracker.metrics["interpretation"][display_model]["calls"] += 1
-                metrics_tracker.metrics["interpretation"][display_model]["tokens"] += total_tokens
-                metrics_tracker.metrics["interpretation"][display_model]["chars"] += char_count
-                metrics_tracker.metrics["interpretation"][display_model]["time"] += interpretation_time
-
-                # Save metrics
-                metrics_tracker._save_metrics()
-
-                print(f"Interpretation metrics tracked: model={display_model}, tokens={total_tokens}, chars={char_count}")
-            except Exception as e:
-                # If there's an error tracking metrics, just log it
-                print(f"Warning: Could not track interpretation metrics: {str(e)}")
-
-        return jsonify({
-            'interpretation': interpretation,
-            'tone': tone,
-            'model_used': display_model,
-            'performance': {
-                'time_seconds': round(interpretation_time, 2),
-                'character_count': char_count,
-                'characters_per_second': round(chars_per_second, 2)
-            },
-            'success': True
-        })
-
-    except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        print(f"Interpretation error: {str(e)}\n{error_details}")
-
-        return jsonify({
-            'error': str(e),
-            'errorType': type(e).__name__,
-            'details': 'See server logs for more information'
-        }), 500
-
 @app.route('/api/translate', methods=['POST'])
 def translate_text():
     """
@@ -1019,8 +872,38 @@ def transcribe_with_gemini(audio_data, language, model_type="gemini"):
             generation_config=generation_config
         )
 
+        # Determine the file extension based on the first few bytes
+        try:
+            import magic
+            mime = magic.Magic(mime=True)
+            file_mime = mime.from_buffer(audio_data[:4096])
+
+            print(f"Detected MIME type: {file_mime}")
+
+            # Choose appropriate file extension and mime type
+            if 'mp4' in file_mime or 'video' in file_mime:
+                file_ext = '.mp4'
+                mime_type = 'video/mp4'
+                print("Handling MP4 file for transcription")
+            else:
+                file_ext = '.mp3'
+                mime_type = 'audio/mp3'
+        except ImportError:
+            # If python-magic is not available, try to guess from the first few bytes
+            print("python-magic not available, attempting to detect file type from header")
+
+            # Simple MP4 detection based on file signature
+            if audio_data[:8].startswith(b'\x00\x00\x00\x18ftyp') or audio_data[:8].startswith(b'\x00\x00\x00\x20ftyp'):
+                file_ext = '.mp4'
+                mime_type = 'video/mp4'
+                print("Detected MP4 file from header signature")
+            else:
+                file_ext = '.mp3'
+                mime_type = 'audio/mp3'
+                print("Defaulting to MP3 format")
+
         # Create a temporary file to store the audio
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as temp_file:
             temp_file.write(audio_data)
             temp_file_path = temp_file.name
 
@@ -1038,7 +921,7 @@ def transcribe_with_gemini(audio_data, language, model_type="gemini"):
         # Create a multimodal content message with the audio
         response = model.generate_content([
             prompt,
-            {"mime_type": "audio/mp3", "data": audio_base64}
+            {"mime_type": mime_type, "data": audio_base64}
         ])
 
         # Extract the transcription from the response
