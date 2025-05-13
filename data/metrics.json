@@ -71,6 +71,13 @@
       "chars": 154873,
       "time": 266.91964387893677,
       "failures": 6
+    },
+    "gemini": {
+      "calls": 2,
+      "tokens": 0,
+      "chars": 64,
+      "time": 1.6433906555175781,
+      "failures": 0
     }
   },
   "daily_usage": {

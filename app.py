@@ -84,6 +84,14 @@ try:
     from metrics_tracker import (
         metrics_tracker, track_translation_metrics, track_transcription_metrics
     )
+    # Import our service classes
+    from src.services import TranscriptionService, TranslationService, TTSService
+    # Import error types
+    from src.services.base_service import (
+        ServiceError, ProviderError, ValidationError, ConfigurationError,
+        AuthenticationError, RateLimitError, ResourceError
+    )
+
     METRICS_AVAILABLE = True
     print("Metrics tracking enabled")
 except ImportError as e:
@@ -112,8 +120,7 @@ initialize_firebase()
 UPLOAD_FOLDER = tempfile.gettempdir()
 ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg', 'm4a', 'mp4', 'webm'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200MB max upload size for Gemini models
-# OpenAI models still have a 30MB limit, enforced in the transcribe_audio route
+app.config['MAX_CONTENT_LENGTH'] = 30 * 1024 * 1024  # 30MB max upload size
 
 # Add Firebase models for transcription and translation
 from firebase_models import User, UserActivity, Transcription, Translation
@@ -254,24 +261,11 @@ def transcribe_audio():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
-        # Get file size
-        file_size = os.path.getsize(filepath)
-
         # Get language code from form
         language = request.form.get('language', 'en')
 
         # Get model from form or use default
         model = request.form.get('model', 'gemini')
-
-        # Check file size limits based on model
-        # OpenAI models have a 30MB limit
-        if not (model.startswith('gemini-') or model == 'gemini') and file_size > 30 * 1024 * 1024:
-            os.remove(filepath)  # Clean up
-            return jsonify({
-                'error': 'File too large for OpenAI models (max 30MB)',
-                'errorType': 'FileSizeLimitExceeded',
-                'details': 'Please use a Gemini model for files larger than 30MB or reduce your file size.'
-            }), 413  # 413 Payload Too Large
 
         # Process with OpenAI or Gemini based on the model
         try:
@@ -433,16 +427,15 @@ def get_languages():
 @login_required
 def text_to_speech():
     """
-    Endpoint for converting text to speech using OpenAI's TTS services.
+    Endpoint for converting text to speech using the TTSService.
 
     Required JSON parameters:
     - text: The text to convert to speech
     - language: The language code (e.g., 'en', 'es', 'fr')
 
     Optional JSON parameters:
-    - tts_model: The model to use for TTS ('gpt4o-mini' or 'openai', default: 'gpt4o-mini')
-      - 'gpt4o-mini': Uses OpenAI's GPT-4o Mini TTS model (with fallback to standard TTS if it fails)
-      - 'openai': Uses OpenAI's standard TTS model with voice selection based on language
+    - tts_model: The model to use for TTS ('gpt4o-mini', 'openai', or 'google', default: 'gpt4o-mini')
+    - voice: The voice to use (provider-dependent, default depends on provider)
 
     Returns:
     - Audio file as response with appropriate content type
@@ -458,7 +451,8 @@ def text_to_speech():
     text = data['text']
     language = data['language']
     tts_model = data.get('tts_model', 'gpt4o-mini')  # Default to GPT-4o Mini
-    print(f"TTS request: model={tts_model}, language={language}, text_length={len(text)}")
+    voice = data.get('voice')  # Optional voice parameter
+    print(f"TTS request: model={tts_model}, language={language}, voice={voice}, text_length={len(text)}")
 
     if not text.strip():
         print("Empty text provided")
@@ -469,51 +463,36 @@ def text_to_speech():
     char_count = len(text)
 
     try:
+        # Initialize the TTS service
+        tts_service = TTSService()
+
         # Create a temporary file to store the audio
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3')
         temp_file.close()
         print(f"Created temporary file: {temp_file.name}")
 
-        # First attempt with the selected model
+        # Use the TTS service to synthesize speech
+        audio_data = tts_service.synthesize(
+            text=text,
+            language=language,
+            provider=tts_model,
+            voice=voice
+        )
+
+        # Save the audio data to the temporary file
+        with open(temp_file.name, 'wb') as f:
+            f.write(audio_data)
+
+        # Get metrics from the service
+        service_metrics = tts_service.get_metrics()
+
+        # Determine which model was actually used (for metrics)
         model_used = tts_model
         fallback_used = False
-        success = False
 
-        if tts_model == 'gpt4o-mini':
-            print("Using GPT-4o Mini TTS model")
-            try:
-                # Use the GPT-4o Mini TTS model
-                tts_with_gpt4o_mini(text, language, temp_file.name)
-                model_used = 'gpt4o-mini'
-                success = True
-            except Exception as e:
-                print(f"GPT-4o Mini TTS error: {str(e)}")
-                print("Falling back to standard OpenAI TTS")
-                try:
-                    # Fallback to standard OpenAI TTS
-                    tts_with_openai(text, language, temp_file.name)
-                    model_used = 'openai'
-                    fallback_used = True
-                    success = True
-                except Exception as fallback_e:
-                    print(f"Fallback OpenAI TTS error: {str(fallback_e)}")
-                    return jsonify({
-                        'error': str(e),
-                        'errorType': type(e).__name__,
-                        'details': 'TTS service error (both primary and fallback failed)'
-                    }), 500
-        else:  # OpenAI
-            print("Using OpenAI TTS model")
-            try:
-                tts_with_openai(text, language, temp_file.name)
-                success = True
-            except Exception as e:
-                print(f"OpenAI TTS error: {str(e)}")
-                return jsonify({
-                    'error': str(e),
-                    'errorType': type(e).__name__,
-                    'details': 'TTS service error'
-                }), 500
+        # Check if fallback was used by examining the metrics
+        if 'synthesize' in service_metrics and 'fallback' in service_metrics['synthesize']:
+            fallback_used = service_metrics['synthesize']['fallback'] > 0
 
         # Calculate performance metrics
         end_time = time.time()
@@ -532,18 +511,12 @@ def text_to_speech():
                 if "tts" not in metrics_tracker.metrics:
                     metrics_tracker.metrics["tts"] = {}
 
-                # Ensure both TTS models exist in metrics
-                for model_key in ['gpt4o-mini', 'openai']:
+                # Ensure TTS models exist in metrics
+                for model_key in ['gpt4o-mini', 'openai', 'google']:
                     if model_key not in metrics_tracker.metrics["tts"]:
                         metrics_tracker.metrics["tts"][model_key] = {
                             "calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0
                         }
-
-                # Initialize model if not exists (redundant but safe)
-                if model_used not in metrics_tracker.metrics["tts"]:
-                    metrics_tracker.metrics["tts"][model_used] = {
-                        "calls": 0, "tokens": 0, "chars": 0, "time": 0, "failures": 0
-                    }
 
                 # Update metrics directly
                 metrics_tracker.metrics["tts"][model_used]["calls"] += 1
@@ -569,15 +542,89 @@ def text_to_speech():
             mimetype="audio/mpeg"
         )
 
-    except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        print(f"TTS error: {str(e)}\n{error_details}")
-
+    except ValidationError as e:
+        # Handle validation errors (400 Bad Request)
+        print(f"Validation error: {str(e)}")
         return jsonify({
             'error': str(e),
+            'errorType': 'ValidationError',
+            'details': e.details if hasattr(e, 'details') else {}
+        }), 400
+
+    except ConfigurationError as e:
+        # Handle configuration errors (500 Server Error)
+        print(f"Configuration error: {str(e)}")
+        return jsonify({
+            'error': str(e),
+            'errorType': 'ConfigurationError',
+            'details': e.details if hasattr(e, 'details') else {},
+            'help': 'Please check your API keys and configuration'
+        }), 500
+
+    except AuthenticationError as e:
+        # Handle authentication errors (401 Unauthorized)
+        print(f"Authentication error: {str(e)}")
+        return jsonify({
+            'error': str(e),
+            'errorType': 'AuthenticationError',
+            'provider': e.provider if hasattr(e, 'provider') else 'unknown',
+            'details': e.details if hasattr(e, 'details') else {},
+            'help': 'Please check your API key for the specified provider'
+        }), 401
+
+    except RateLimitError as e:
+        # Handle rate limit errors (429 Too Many Requests)
+        print(f"Rate limit error: {str(e)}")
+        return jsonify({
+            'error': str(e),
+            'errorType': 'RateLimitError',
+            'provider': e.provider if hasattr(e, 'provider') else 'unknown',
+            'details': e.details if hasattr(e, 'details') else {},
+            'help': 'Please try again later'
+        }), 429
+
+    except ResourceError as e:
+        # Handle resource errors (503 Service Unavailable)
+        print(f"Resource error: {str(e)}")
+        return jsonify({
+            'error': str(e),
+            'errorType': 'ResourceError',
+            'details': e.details if hasattr(e, 'details') else {},
+            'help': 'A required resource was unavailable'
+        }), 503
+
+    except ProviderError as e:
+        # Handle provider errors (502 Bad Gateway)
+        print(f"Provider error: {str(e)}")
+        return jsonify({
+            'error': str(e),
+            'errorType': 'ProviderError',
+            'provider': e.provider if hasattr(e, 'provider') else 'unknown',
+            'details': e.details if hasattr(e, 'details') else {},
+            'help': 'The service provider encountered an error'
+        }), 502
+
+    except ServiceError as e:
+        # Handle other service errors (500 Server Error)
+        print(f"Service error: {str(e)}")
+        return jsonify({
+            'error': str(e),
+            'errorType': 'ServiceError',
+            'details': e.details if hasattr(e, 'details') else {},
+            'help': 'An error occurred in the TTS service'
+        }), 500
+
+    except Exception as e:
+        # Handle unexpected errors
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Unexpected TTS error: {str(e)}\n{error_details}")
+
+        return jsonify({
+            'error': 'An unexpected error occurred',
             'errorType': type(e).__name__,
-            'details': 'See server logs for more information'
+            'message': str(e),
+            'help': 'Please try again or contact support if the issue persists'
         }), 500
 
 def tts_with_openai(text, language, output_file_path):
@@ -872,38 +919,8 @@ def transcribe_with_gemini(audio_data, language, model_type="gemini"):
             generation_config=generation_config
         )
 
-        # Determine the file extension based on the first few bytes
-        try:
-            import magic
-            mime = magic.Magic(mime=True)
-            file_mime = mime.from_buffer(audio_data[:4096])
-
-            print(f"Detected MIME type: {file_mime}")
-
-            # Choose appropriate file extension and mime type
-            if 'mp4' in file_mime or 'video' in file_mime:
-                file_ext = '.mp4'
-                mime_type = 'video/mp4'
-                print("Handling MP4 file for transcription")
-            else:
-                file_ext = '.mp3'
-                mime_type = 'audio/mp3'
-        except ImportError:
-            # If python-magic is not available, try to guess from the first few bytes
-            print("python-magic not available, attempting to detect file type from header")
-
-            # Simple MP4 detection based on file signature
-            if audio_data[:8].startswith(b'\x00\x00\x00\x18ftyp') or audio_data[:8].startswith(b'\x00\x00\x00\x20ftyp'):
-                file_ext = '.mp4'
-                mime_type = 'video/mp4'
-                print("Detected MP4 file from header signature")
-            else:
-                file_ext = '.mp3'
-                mime_type = 'audio/mp3'
-                print("Defaulting to MP3 format")
-
         # Create a temporary file to store the audio
-        with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as temp_file:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
             temp_file.write(audio_data)
             temp_file_path = temp_file.name
 
@@ -921,7 +938,7 @@ def transcribe_with_gemini(audio_data, language, model_type="gemini"):
         # Create a multimodal content message with the audio
         response = model.generate_content([
             prompt,
-            {"mime_type": mime_type, "data": audio_base64}
+            {"mime_type": "audio/mp3", "data": audio_base64}
         ])
 
         # Extract the transcription from the response

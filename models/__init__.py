@@ -1,0 +1,3 @@
+"""
+Model modules for VocalLocal
+"""
