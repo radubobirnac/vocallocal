@@ -142,14 +142,16 @@ def root_auth_callback():
 
 # Register blueprints
 from routes import main, transcription, translation, tts, admin
-from auth import auth_bp
 
 app.register_blueprint(main.bp)
 app.register_blueprint(transcription.bp)
 app.register_blueprint(translation.bp)
 app.register_blueprint(tts.bp)
 app.register_blueprint(admin.bp)
-app.register_blueprint(auth_bp)
+
+# Register auth blueprint with a different name to avoid conflicts
+from auth import auth_bp
+app.register_blueprint(auth_bp, name='auth_blueprint')
 
 if __name__ == '__main__':
     import argparse
