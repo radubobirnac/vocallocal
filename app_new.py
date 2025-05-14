@@ -6,7 +6,7 @@ import os
 import sys
 import subprocess
 import tempfile
-from flask import Flask, redirect, url_for, flash, render_template
+from flask import Flask, redirect, url_for, flash
 from config import Config
 
 # Try to import Google Generative AI, install if missing
@@ -98,31 +98,11 @@ initialize_firebase()
 import auth
 auth.init_app(app)
 
-# Add a global error handler
-@app.errorhandler(Exception)
-def handle_exception(e):
-    app.logger.error(f"Unhandled exception: {str(e)}")
-    import traceback
-    app.logger.error(traceback.format_exc())
-    return render_template('error.html', error=str(e)), 500
-
-# Define a simple index route at the root level
-@app.route('/')
-def index():
-    """Main index route - handles both authenticated and non-authenticated users."""
-    from flask_login import current_user
-    if current_user.is_authenticated:
-        # User is logged in, show the main application
-        return render_template('index.html')
-    else:
-        # User is not logged in, redirect to login page
-        return redirect(url_for('auth.login'))
-
 # Register routes for auth directly at the root level
 @app.route('/auth/google')
 def root_google_login():
     """Redirect to the auth blueprint's Google login route."""
-    return redirect(url_for('auth.google_login'))
+    return redirect(url_for('auth_routes.google_login'))
 
 @app.route('/auth/callback')
 def root_auth_callback():
@@ -138,20 +118,17 @@ def root_auth_callback():
         import traceback
         print(traceback.format_exc())
         flash("Error during authentication. Please try again.", "danger")
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('auth_routes.login'))
 
 # Register blueprints
-from routes import main, transcription, translation, tts, admin
+from routes import main, transcription, translation, tts, admin, auth as auth_routes
 
 app.register_blueprint(main.bp)
 app.register_blueprint(transcription.bp)
 app.register_blueprint(translation.bp)
 app.register_blueprint(tts.bp)
 app.register_blueprint(admin.bp)
-
-# Register auth blueprint with a different name to avoid conflicts
-from auth import auth_bp
-app.register_blueprint(auth_bp, name='auth_blueprint')
+app.register_blueprint(auth_routes.bp)
 
 if __name__ == '__main__':
     import argparse

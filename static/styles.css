@@ -328,12 +328,27 @@ p {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.record-button:hover {
+.header-record-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.record-button:hover, .header-record-button:hover {
   transform: scale(1.05);
   box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
 }
 
-.record-button.recording {
+.record-button.recording, .header-record-button.recording {
   animation: pulse 1.5s infinite;
   background-color: hsl(var(--destructive));
 }
@@ -502,6 +517,20 @@ p {
   margin-top: 1rem;
 }
 
+/* Interpretation section */
+.interpretation-section {
+  margin-top: 1rem;
+  border-top: 1px solid hsl(var(--border));
+  padding-top: 1rem;
+}
+
+.interpretation-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
 /* Transcript controls */
 .transcript-controls {
   margin-top: 0.5rem;
@@ -620,6 +649,28 @@ p {
 
 .speaker-card-2 .card-header {
   background-color: hsla(170, 100%, 97%, 0.5);
+}
+
+/* Upload progress indicator */
+.upload-progress-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  max-width: 18px;
+  max-height: 18px;
+  margin: 0 auto;
+}
+
+.button-outline .upload-progress-container {
+  width: 18px;
+  height: 18px;
+}
+
+/* Ensure the progress indicator is properly centered */
+.button-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* File upload area */

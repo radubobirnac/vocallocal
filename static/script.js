@@ -627,6 +627,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Make the showStatus function available globally
+  window.showStatus = showStatus;
+
   // Get the current translation model
   function getTranslationModel() {
     // Get the selected value from the dropdown
@@ -635,6 +638,90 @@ document.addEventListener('DOMContentLoaded', () => {
       return translationModelSelect.value;
     } else {
       return 'gemini'; // Default to Gemini if dropdown not found
+    }
+  }
+
+  // Get the current interpretation model
+  function getInterpretationModel() {
+    // Get the selected value from the dropdown
+    const interpretationModelSelect = document.getElementById('interpretation-model-select');
+    if (interpretationModelSelect) {
+      return interpretationModelSelect.value;
+    } else {
+      return 'gemini-2.0-flash-lite'; // Default to Gemini 2.0 Flash Lite if dropdown not found
+    }
+  }
+
+  // Save interpretation model preference
+  function saveInterpretationModelPreference(model) {
+    try {
+      localStorage.setItem('vocal-local-interpretation-model', model);
+    } catch (e) {
+      console.warn('LocalStorage is not available. Interpretation model preference will not be saved.');
+    }
+  }
+
+  // Load interpretation model preference
+  function loadInterpretationModelPreference() {
+    try {
+      return localStorage.getItem('vocal-local-interpretation-model') || 'gemini-2.0-flash-lite'; // Default to Gemini 2.0 Flash Lite
+    } catch (e) {
+      console.warn('LocalStorage is not available. Defaulting to Gemini 2.0 Flash Lite.');
+      return 'gemini-2.0-flash-lite';
+    }
+  }
+
+  // Function to interpret text using AI
+  async function interpretText(text, tone) {
+    if (!text || text.trim() === '') {
+      showStatus('No text to interpret', 'warning');
+      return null;
+    }
+
+    try {
+      // Get the current interpretation model
+      const interpretationModel = getInterpretationModel();
+
+      // Log which model is being used
+      console.log(`Interpreting with ${interpretationModel} model`);
+
+      showStatus(`Generating AI interpretation using ${interpretationModel.includes('2.5') ? 'Gemini 2.5 Flash' : 'Gemini 2.0 Flash Lite'}...`, 'info');
+
+      const response = await fetch('/api/interpret', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: text,
+          tone: tone,
+          interpretation_model: interpretationModel
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.interpretation) {
+        // Show a message if fallback was used
+        if (result.fallback_used) {
+          showStatus(`Interpretation completed using ${result.model_used} as fallback`, 'info');
+        } else {
+          showStatus('Interpretation complete!', 'success');
+        }
+        return result.interpretation;
+      } else if (result.error) {
+        throw new Error(result.error);
+      } else {
+        throw new Error('No interpretation received');
+      }
+    } catch (error) {
+      console.error('Interpretation error:', error);
+      showStatus(`Interpretation failed: ${error.message}`, 'error');
+      return null;
     }
   }
 
@@ -724,6 +811,57 @@ document.addEventListener('DOMContentLoaded', () => {
     transcriptEl.dataset.originalText = text; // Store original for undo
 
     console.log(`Updated transcript ${elementId} with ${text.length} characters`);
+
+    // If this is the basic transcript, also update the interpretation
+    if (elementId === 'basic-transcript') {
+      updateInterpretation(text);
+    }
+  }
+
+  // Update interpretation based on transcript text
+  async function updateInterpretation(text) {
+    const interpretationEl = document.getElementById('basic-interpretation');
+    if (!interpretationEl) return;
+
+    // Check if interpretation is enabled
+    const isEnabled = loadInterpretationEnabledPreference();
+
+    // If interpretation is disabled, don't process anything
+    if (!isEnabled) {
+      return;
+    }
+
+    // Only interpret if there's text to interpret
+    if (!text || text.trim() === '') {
+      interpretationEl.value = '';
+      return;
+    }
+
+    // Get the selected tone
+    const toneSelect = document.getElementById('interpretation-tone-select');
+    const tone = toneSelect ? toneSelect.value : 'professional';
+
+    // Generate interpretation
+    const interpretation = await interpretText(text, tone);
+
+    if (interpretation) {
+      interpretationEl.value = interpretation;
+    }
+  }
+
+  // Function to toggle the visibility of the interpretation section and settings
+  function toggleInterpretationSection(isEnabled) {
+    // Toggle the interpretation section in the main UI
+    const interpretationSection = document.querySelector('.interpretation-section');
+    if (interpretationSection) {
+      interpretationSection.style.display = isEnabled ? 'block' : 'none';
+    }
+
+    // Toggle all interpretation-related settings in the settings panel
+    const interpretationSettings = document.querySelectorAll('.interpretation-setting');
+    interpretationSettings.forEach(setting => {
+      setting.style.display = isEnabled ? 'block' : 'none';
+    });
   }
 
   // Function to handle translate edited text button clicks
@@ -891,11 +1029,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update the toggle button icon
     const icon = themeToggleButton.querySelector('i');
     if (theme === 'light') {
-      icon.className = 'fas fa-sun';
+      icon.className = 'fas fa-lightbulb'; // Changed to lightbulb
     } else if (theme === 'dark') {
       icon.className = 'fas fa-moon';
     } else { // system
-      icon.className = 'fas fa-desktop';
+      icon.className = 'fas fa-circle-half-stroke'; // Changed to circle-half-stroke
     }
 
     // Update active state in dropdown
@@ -997,6 +1135,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Check browser compatibility first
   const isBrowserCompatible = checkBrowserCompatibility();
 
+  // Initialize interpretation settings visibility based on saved preference
+  const isInterpretationEnabled = loadInterpretationEnabledPreference();
+  toggleInterpretationSection(isInterpretationEnabled);
+
   // Initialize translation model dropdown
   const translationModelSelect = document.getElementById('translation-model-select');
   if (translationModelSelect) {
@@ -1044,6 +1186,46 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
       console.warn('LocalStorage is not available. Defaulting to Gemini.');
       return 'gemini';
+    }
+  }
+
+  // Save interpretation tone preference
+  function saveInterpretationTonePreference(tone) {
+    try {
+      localStorage.setItem('vocal-local-interpretation-tone', tone);
+    } catch (e) {
+      console.warn('LocalStorage is not available. Interpretation tone preference will not be saved.');
+    }
+  }
+
+  // Load interpretation tone preference
+  function loadInterpretationTonePreference() {
+    try {
+      return localStorage.getItem('vocal-local-interpretation-tone') || 'professional'; // Default to professional
+    } catch (e) {
+      console.warn('LocalStorage is not available. Defaulting to professional tone.');
+      return 'professional';
+    }
+  }
+
+  // Save interpretation enabled preference
+  function saveInterpretationEnabledPreference(enabled) {
+    try {
+      localStorage.setItem('vocal-local-interpretation-enabled', enabled ? 'true' : 'false');
+    } catch (e) {
+      console.warn('LocalStorage is not available. Interpretation enabled preference will not be saved.');
+    }
+  }
+
+  // Load interpretation enabled preference
+  function loadInterpretationEnabledPreference() {
+    try {
+      const savedPreference = localStorage.getItem('vocal-local-interpretation-enabled');
+      // If no preference is saved, default to enabled (true)
+      return savedPreference === null ? true : savedPreference === 'true';
+    } catch (e) {
+      console.warn('LocalStorage is not available. Defaulting to interpretation enabled.');
+      return true;
     }
   }
 
@@ -1672,7 +1854,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileInputs = document.querySelectorAll('input[type="file"]');
   fileInputs.forEach(input => {
     input.addEventListener('change', () => {
-      // Show file name in status message
+      // Basic mode file upload
       if (input.id === 'basic-file-input' && input.files.length) {
         showStatus(`Selected file: ${input.files[0].name}`, 'info');
 
@@ -1689,25 +1871,180 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show status message
         showStatus('Transcribing your audio...', 'info');
 
-        // Send to server
-        sendToServer(formData)
-          .then(result => {
-            // Update transcript
-            updateTranscript('basic-transcript', result.text || "No transcript received.");
-            showStatus('Transcription complete!', 'success');
-          })
-          .catch(error => {
-            console.error('Upload error:', error);
+        // Use the upload progress indicator
+        if (window.sendToServerWithProgress) {
+          // Store a reference to the upload button for state updates
+          const uploadBtn = document.getElementById('basic-upload-btn');
+          const uploadProgressInstance = uploadBtn._progressInstance;
 
-            // User-friendly error messages
-            if (error.name === 'AbortError') {
-              showStatus('The request took too long to complete. Please try with a smaller file or check your connection.', 'warning');
-            } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-              showStatus('Network error. Please check your internet connection and try again.', 'error');
-            } else {
+          sendToServerWithProgress(formData, 'basic-upload-btn')
+            .then(result => {
+              // Update transcript
+              updateTranscript('basic-transcript', result.text || "No transcript received.");
+
+              // Wait a moment to ensure the transcript is visible before removing the spinner
+              setTimeout(() => {
+                // Signal completion to the progress indicator
+                if (uploadBtn && uploadBtn._progressInstance && uploadBtn._progressInstance.updateState) {
+                  uploadBtn._progressInstance.updateState('completed');
+                }
+              }, 500);
+
+              showStatus('Transcription complete!', 'success');
+            })
+            .catch(error => {
+              console.error('Upload error:', error);
+
+              // User-friendly error messages
+              if (error.name === 'AbortError' || error.message === 'Upload cancelled') {
+                showStatus('Upload cancelled.', 'warning');
+              } else if (error.name === 'AbortError') {
+                showStatus('The request took too long to complete. Please try with a smaller file or check your connection.', 'warning');
+              } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                showStatus('Network error. Please check your internet connection and try again.', 'error');
+              } else {
+                showStatus(`Error: ${error.message}`, 'error');
+              }
+            });
+        } else {
+          // Fallback to original method if progress indicator not available
+          sendToServer(formData)
+            .then(result => {
+              // Update transcript
+              updateTranscript('basic-transcript', result.text || "No transcript received.");
+              showStatus('Transcription complete!', 'success');
+            })
+            .catch(error => {
+              console.error('Upload error:', error);
+
+              // User-friendly error messages
+              if (error.name === 'AbortError') {
+                showStatus('The request took too long to complete. Please try with a smaller file or check your connection.', 'warning');
+              } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                showStatus('Network error. Please check your internet connection and try again.', 'error');
+              } else {
+                showStatus(`Error: ${error.message}`, 'error');
+              }
+            });
+        }
+      }
+      // Bilingual mode file upload for Speaker 1
+      else if (input.id === 'file-input-1' && input.files.length) {
+        showStatus(`Selected file for Speaker 1: ${input.files[0].name}`, 'info');
+
+        // Create FormData object
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+        formData.append('language', document.getElementById('language-1').value);
+
+        // Get selected model from global transcription model
+        let selectedModel = getTranscriptionModel();
+        formData.append('model', selectedModel);
+
+        // Show status message
+        showStatus('Transcribing Speaker 1 audio...', 'info');
+
+        // Use the upload progress indicator
+        if (window.sendToServerWithProgress) {
+          // Store a reference to the upload button for state updates
+          const uploadBtn = document.getElementById('upload-btn-1');
+
+          sendToServerWithProgress(formData, 'upload-btn-1')
+            .then(result => {
+              // Update transcript
+              updateTranscript('transcript-1', result.text || "No transcript received.");
+
+              // Wait a moment to ensure the transcript is visible before removing the spinner
+              setTimeout(() => {
+                // Signal completion to the progress indicator
+                if (uploadBtn && uploadBtn._progressInstance && uploadBtn._progressInstance.updateState) {
+                  uploadBtn._progressInstance.updateState('completed');
+                }
+              }, 500);
+
+              showStatus('Speaker 1 transcription complete!', 'success');
+            })
+            .catch(error => {
+              console.error('Upload error:', error);
+
+              if (error.message === 'Upload cancelled') {
+                showStatus('Upload cancelled.', 'warning');
+              } else {
+                showStatus(`Error: ${error.message}`, 'error');
+              }
+            });
+        } else {
+          // Fallback to original method if progress indicator not available
+          sendToServer(formData)
+            .then(result => {
+              // Update transcript
+              updateTranscript('transcript-1', result.text || "No transcript received.");
+              showStatus('Speaker 1 transcription complete!', 'success');
+            })
+            .catch(error => {
+              console.error('Upload error:', error);
               showStatus(`Error: ${error.message}`, 'error');
-            }
-          });
+            });
+        }
+      }
+      // Bilingual mode file upload for Speaker 2
+      else if (input.id === 'file-input-2' && input.files.length) {
+        showStatus(`Selected file for Speaker 2: ${input.files[0].name}`, 'info');
+
+        // Create FormData object
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+        formData.append('language', document.getElementById('language-2').value);
+
+        // Get selected model from global transcription model
+        let selectedModel = getTranscriptionModel();
+        formData.append('model', selectedModel);
+
+        // Show status message
+        showStatus('Transcribing Speaker 2 audio...', 'info');
+
+        // Use the upload progress indicator
+        if (window.sendToServerWithProgress) {
+          // Store a reference to the upload button for state updates
+          const uploadBtn = document.getElementById('upload-btn-2');
+
+          sendToServerWithProgress(formData, 'upload-btn-2')
+            .then(result => {
+              // Update transcript
+              updateTranscript('transcript-2', result.text || "No transcript received.");
+
+              // Wait a moment to ensure the transcript is visible before removing the spinner
+              setTimeout(() => {
+                // Signal completion to the progress indicator
+                if (uploadBtn && uploadBtn._progressInstance && uploadBtn._progressInstance.updateState) {
+                  uploadBtn._progressInstance.updateState('completed');
+                }
+              }, 500);
+
+              showStatus('Speaker 2 transcription complete!', 'success');
+            })
+            .catch(error => {
+              console.error('Upload error:', error);
+
+              if (error.message === 'Upload cancelled') {
+                showStatus('Upload cancelled.', 'warning');
+              } else {
+                showStatus(`Error: ${error.message}`, 'error');
+              }
+            });
+        } else {
+          // Fallback to original method if progress indicator not available
+          sendToServer(formData)
+            .then(result => {
+              // Update transcript
+              updateTranscript('transcript-2', result.text || "No transcript received.");
+              showStatus('Speaker 2 transcription complete!', 'success');
+            })
+            .catch(error => {
+              console.error('Upload error:', error);
+              showStatus(`Error: ${error.message}`, 'error');
+            });
+        }
       }
     });
   });
@@ -1773,6 +2110,172 @@ document.addEventListener('DOMContentLoaded', () => {
     if (savedTtsModel) {
       ttsModelSelect.value = savedTtsModel;
     }
+  }
+
+  // Initialize interpretation model selector
+  const interpretationModelSelect = document.getElementById('interpretation-model-select');
+  if (interpretationModelSelect) {
+    // Load saved preference
+    const savedModel = loadInterpretationModelPreference();
+    interpretationModelSelect.value = savedModel;
+
+    // Add event listener
+    interpretationModelSelect.addEventListener('change', () => {
+      const model = interpretationModelSelect.value;
+      saveInterpretationModelPreference(model);
+
+      // Get the model display name
+      const selectedOption = interpretationModelSelect.options[interpretationModelSelect.selectedIndex];
+      const modelDisplayName = selectedOption ? selectedOption.textContent : model;
+
+      showStatus(`Interpretation model changed to ${modelDisplayName}`, 'info');
+
+      // If interpretation is enabled and there's text in the transcript, update the interpretation
+      const isEnabled = loadInterpretationEnabledPreference();
+      if (isEnabled) {
+        const transcriptEl = document.getElementById('basic-transcript');
+        if (transcriptEl && transcriptEl.value.trim() !== '') {
+          updateInterpretation(transcriptEl.value);
+        }
+      }
+    });
+  }
+
+  // Initialize interpretation tone selector
+  const interpretationToneSelect = document.getElementById('interpretation-tone-select');
+  if (interpretationToneSelect) {
+    // Load saved preference
+    const savedTone = loadInterpretationTonePreference();
+    interpretationToneSelect.value = savedTone;
+
+    // Add event listener
+    interpretationToneSelect.addEventListener('change', () => {
+      const tone = interpretationToneSelect.value;
+      saveInterpretationTonePreference(tone);
+
+      // Get the tone display name
+      const selectedOption = interpretationToneSelect.options[interpretationToneSelect.selectedIndex];
+      const toneDisplayName = selectedOption ? selectedOption.textContent : tone;
+
+      showStatus(`Interpretation tone changed to ${toneDisplayName}`, 'info');
+
+      // If interpretation is enabled and there's text in the transcript, update the interpretation
+      const isEnabled = loadInterpretationEnabledPreference();
+      if (isEnabled) {
+        const transcriptEl = document.getElementById('basic-transcript');
+        if (transcriptEl && transcriptEl.value.trim() !== '') {
+          updateInterpretation(transcriptEl.value);
+        }
+      }
+    });
+  }
+
+  // Initialize interpretation toggle
+  const enableInterpretationToggle = document.getElementById('enable-interpretation');
+  if (enableInterpretationToggle) {
+    // Load saved preference
+    const isEnabled = loadInterpretationEnabledPreference();
+    enableInterpretationToggle.checked = isEnabled;
+
+    // Set initial visibility of interpretation section and settings
+    toggleInterpretationSection(isEnabled);
+
+    // Add event listener
+    enableInterpretationToggle.addEventListener('change', () => {
+      const isEnabled = enableInterpretationToggle.checked;
+      saveInterpretationEnabledPreference(isEnabled);
+
+      // Toggle visibility of interpretation section and settings
+      toggleInterpretationSection(isEnabled);
+
+      // Show status message
+      showStatus(`AI Interpretation ${isEnabled ? 'enabled' : 'disabled'}`, 'info');
+
+      // If enabled and there's text in the transcript, update the interpretation
+      if (isEnabled) {
+        const transcriptEl = document.getElementById('basic-transcript');
+        if (transcriptEl && transcriptEl.value.trim() !== '') {
+          updateInterpretation(transcriptEl.value);
+        }
+      }
+    });
+  }
+
+  // Basic mode interpretation button
+  const basicInterpretBtn = document.getElementById('basic-interpret-btn');
+  if (basicInterpretBtn) {
+    basicInterpretBtn.addEventListener('click', async () => {
+      // Check if interpretation is enabled
+      const isEnabled = loadInterpretationEnabledPreference();
+      if (!isEnabled) {
+        showStatus('AI Interpretation is disabled. Enable it in settings to use this feature.', 'warning');
+        return;
+      }
+
+      const transcriptEl = document.getElementById('basic-transcript');
+      const interpretationEl = document.getElementById('basic-interpretation');
+
+      if (!transcriptEl || !interpretationEl) return;
+
+      const text = transcriptEl.value;
+      if (!text || text.trim() === '') {
+        showStatus('No text to interpret', 'warning');
+        return;
+      }
+
+      // Get the selected tone
+      const toneSelect = document.getElementById('interpretation-tone-select');
+      const tone = toneSelect ? toneSelect.value : 'professional';
+
+      // Generate interpretation
+      const interpretation = await interpretText(text, tone);
+
+      if (interpretation) {
+        interpretationEl.value = interpretation;
+      }
+    });
+  }
+
+  // Basic mode interpretation play/stop buttons
+  const basicPlayInterpretationBtn = document.getElementById('basic-play-interpretation-btn');
+  const basicStopInterpretationBtn = document.getElementById('basic-stop-interpretation-btn');
+
+  if (basicPlayInterpretationBtn) {
+    basicPlayInterpretationBtn.addEventListener('click', () => {
+      const interpretationEl = document.getElementById('basic-interpretation');
+      if (!interpretationEl) return;
+
+      const text = interpretationEl.value;
+      const langSelect = document.getElementById('basic-language');
+      const lang = langSelect ? langSelect.value : 'en';
+
+      if (isMobileDevice()) {
+        setTimeout(() => {
+          const currentText = interpretationEl.value;
+          speakText('basic-interpretation', currentText, lang);
+        }, 50);
+      } else {
+        speakText('basic-interpretation', text, lang);
+      }
+    });
+  }
+
+  if (basicStopInterpretationBtn) {
+    basicStopInterpretationBtn.addEventListener('click', () => {
+      stopSpeakText('basic-interpretation');
+    });
+  }
+
+  // Basic mode copy interpretation button
+  const basicCopyInterpretationBtn = document.getElementById('basic-copy-interpretation-btn');
+  if (basicCopyInterpretationBtn) {
+    basicCopyInterpretationBtn.addEventListener('click', () => {
+      const interpretationEl = document.getElementById('basic-interpretation');
+      if (!interpretationEl) return;
+
+      const text = interpretationEl.value;
+      copyTextToClipboard(text, 'Interpretation copied to clipboard!');
+    });
   }
 
   // Add auto-scroll on focus for mobile

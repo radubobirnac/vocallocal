@@ -15,7 +15,7 @@ login_manager.login_view = 'auth.login'
 oauth = OAuth()
 
 # Create blueprint
-auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
+auth_bp = Blueprint('auth', __name__)
 
 # Google OAuth instance
 google = None
@@ -66,7 +66,7 @@ def init_app(app):
     oauth.init_app(app)
 
     # Register blueprint
-    app.register_blueprint(auth_bp)
+    app.register_blueprint(auth_bp, url_prefix='/auth')
 
     # Configure Google OAuth
     try:
@@ -199,7 +199,7 @@ def init_app(app):
 def login():
     """Login route."""
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
 
     if request.method == 'POST':
         username = request.form.get('username')
@@ -264,7 +264,7 @@ def login():
             next_page = request.args.get('next')
             if next_page:
                 return redirect(next_page)
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
 
         flash('Invalid email or password', 'danger')
 
@@ -274,7 +274,7 @@ def login():
 def register():
     """Register route."""
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
 
     if request.method == 'POST':
         username = request.form.get('username')
@@ -315,7 +315,7 @@ def logout():
     """Logout route."""
     logout_user()
     flash('You have been logged out.', 'info')
-    return redirect(url_for('index'))
+    return redirect(url_for('main.index'))
 
 @auth_bp.route('/google')
 def google_login():
@@ -434,7 +434,7 @@ def google_callback():
         UserActivity.log(email, 'login', {'method': 'google'})
 
         # Redirect to home page
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
     except Exception as e:
         flash(f"Error during Google authentication: {str(e)}", "danger")
         print(f"Google OAuth callback error: {str(e)}")
@@ -535,7 +535,7 @@ def _handle_google_callback():
         UserActivity.log(email, 'login', {'method': 'google'})
 
         # Redirect to home page
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
     except Exception as e:
         flash(f"Error during Google authentication: {str(e)}", "danger")
         print(f"Google OAuth callback error: {str(e)}")
