@@ -492,9 +492,9 @@ class TranscriptionService(BaseService):
         # Calculate file size in MB
         file_size_mb = len(audio_data) / (1024 * 1024)
 
-        # For files over 15MB, use chunking to avoid memory issues and "not in an ACTIVE state" errors
-        # Lower threshold to prevent memory issues on Render's free tier
-        CHUNKING_THRESHOLD_MB = 15
+        # For files over 20MB, use chunking to avoid memory issues and "not in an ACTIVE state" errors
+        # This threshold worked well previously, so we're restoring it
+        CHUNKING_THRESHOLD_MB = 20
 
         # Use smaller chunks for larger files to reduce memory usage
         chunk_size_mb = 5  # Default to 5MB chunks
@@ -592,9 +592,9 @@ class TranscriptionService(BaseService):
                     file_size_mb = len(audio_bytes) / (1024 * 1024)
                     self.logger.info(f"Audio file size: {file_size_mb:.2f} MB")
 
-                    # Set threshold for using Files API directly (15MB)
-                    # Increased from 5MB to 15MB to avoid worker timeouts with the Files API
-                    FILES_API_THRESHOLD_MB = 15
+                    # Set threshold for using Files API directly (20MB)
+                    # Increased to 20MB to match the chunking threshold
+                    FILES_API_THRESHOLD_MB = 20
 
                     # For larger files, use Files API directly
                     if file_size_mb > FILES_API_THRESHOLD_MB:
@@ -614,9 +614,9 @@ class TranscriptionService(BaseService):
 
                                 # Wait for file to be processed (reach ACTIVE state)
                                 # This is necessary for large files to avoid "not in an ACTIVE state" errors
-                                max_wait_time = 20  # Maximum wait time in seconds (reduced to avoid worker timeout)
-                                wait_interval = 1   # Check interval in seconds (reduced to check more frequently)
-                                max_attempts = 5    # Maximum number of attempts to check file state
+                                max_wait_time = 60  # Maximum wait time in seconds (increased for larger files)
+                                wait_interval = 2   # Check interval in seconds
+                                max_attempts = 10   # Maximum number of attempts to check file state
                                 wait_start_time = time.time()
                                 attempts = 0
 
@@ -638,10 +638,13 @@ class TranscriptionService(BaseService):
                                             self.logger.warning(f"Timed out waiting for file to become ACTIVE after {elapsed_wait:.1f} seconds")
                                             break
 
-                                        # For files over 10MB, we'll try to use it anyway after a few attempts
-                                        # since waiting longer risks worker timeout
-                                        if file_size_mb > 10 and attempts >= 3:
-                                            self.logger.warning(f"Large file ({file_size_mb:.2f} MB): proceeding after {attempts} attempts to avoid timeout")
+                                        # For files between 10-20MB, we'll try to use it after a few attempts
+                                        # For files over 20MB, we'll be more patient and wait longer
+                                        if file_size_mb > 20 and attempts >= 8:
+                                            self.logger.warning(f"Very large file ({file_size_mb:.2f} MB): proceeding after {attempts} attempts")
+                                            break
+                                        elif file_size_mb > 10 and file_size_mb <= 20 and attempts >= 5:
+                                            self.logger.warning(f"Large file ({file_size_mb:.2f} MB): proceeding after {attempts} attempts")
                                             break
 
                                         self.logger.info(f"File is not yet ACTIVE (current state: {file_obj.state}). Attempt {attempts}/{max_attempts}, waiting {wait_interval}s...")
@@ -777,9 +780,9 @@ class TranscriptionService(BaseService):
 
                                     # Wait for file to be processed (reach ACTIVE state)
                                     # This is necessary for large files to avoid "not in an ACTIVE state" errors
-                                    max_wait_time = 20  # Maximum wait time in seconds (reduced to avoid worker timeout)
-                                    wait_interval = 1   # Check interval in seconds (reduced to check more frequently)
-                                    max_attempts = 5    # Maximum number of attempts to check file state
+                                    max_wait_time = 60  # Maximum wait time in seconds (increased for larger files)
+                                    wait_interval = 2   # Check interval in seconds
+                                    max_attempts = 10   # Maximum number of attempts to check file state
                                     wait_start_time = time.time()
                                     attempts = 0
 
@@ -801,10 +804,13 @@ class TranscriptionService(BaseService):
                                                 self.logger.warning(f"Timed out waiting for file to become ACTIVE after {elapsed_wait:.1f} seconds")
                                                 break
 
-                                            # For files over 10MB, we'll try to use it anyway after a few attempts
-                                            # since waiting longer risks worker timeout
-                                            if file_size_mb > 10 and attempts >= 3:
-                                                self.logger.warning(f"Large file ({file_size_mb:.2f} MB): proceeding after {attempts} attempts to avoid timeout")
+                                            # For files between 10-20MB, we'll try to use it after a few attempts
+                                            # For files over 20MB, we'll be more patient and wait longer
+                                            if file_size_mb > 20 and attempts >= 8:
+                                                self.logger.warning(f"Very large file ({file_size_mb:.2f} MB): proceeding after {attempts} attempts")
+                                                break
+                                            elif file_size_mb > 10 and file_size_mb <= 20 and attempts >= 5:
+                                                self.logger.warning(f"Large file ({file_size_mb:.2f} MB): proceeding after {attempts} attempts")
                                                 break
 
                                             self.logger.info(f"File is not yet ACTIVE (current state: {file_obj.state}). Attempt {attempts}/{max_attempts}, waiting {wait_interval}s...")

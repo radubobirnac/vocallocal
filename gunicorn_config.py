@@ -5,11 +5,10 @@ import os
 import multiprocessing
 
 # Worker settings
-# For memory-constrained environments like Render's free tier,
-# use fewer workers with a longer timeout
-workers = 2  # Reduced from default to conserve memory
+# For paid tier with more resources, we can use better settings
+workers = 2  # Keep at 2 for stability
 worker_class = 'sync'  # Use sync workers for better memory management
-timeout = 300  # Increased timeout for processing large files (5 minutes)
+timeout = 600  # Increased timeout for processing large files (10 minutes)
 keepalive = 5
 
 # Server settings
@@ -19,8 +18,13 @@ graceful_timeout = 120
 
 # Memory management
 # Restart workers after processing a certain number of requests to prevent memory leaks
-max_requests = 100
-max_requests_jitter = 50  # Add randomness to prevent all workers from restarting at once
+max_requests = 50  # Reduced to restart workers more frequently and free memory
+max_requests_jitter = 25  # Add randomness to prevent all workers from restarting at once
+
+# Worker memory management
+# These settings help prevent memory issues with large files
+worker_connections = 10  # Limit concurrent connections per worker
+threads = 1  # Single-threaded workers for better memory isolation
 
 # Logging
 accesslog = '-'  # Log to stdout
