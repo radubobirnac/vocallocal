@@ -212,12 +212,13 @@ class TranscriptionService(BaseService):
                     start_time = time.time()
 
                     # Determine which method to use based on file size
-                    # For files larger than 5MB, use Files API directly
+                    # For files larger than 15MB, use Files API directly
                     file_size_mb = len(audio_bytes) / (1024 * 1024)
                     self.logger.info(f"Audio file size: {file_size_mb:.2f} MB")
 
-                    # Set threshold for using Files API directly (5MB)
-                    FILES_API_THRESHOLD_MB = 5
+                    # Set threshold for using Files API directly (15MB)
+                    # Increased from 5MB to 15MB to avoid worker timeouts with the Files API
+                    FILES_API_THRESHOLD_MB = 15
 
                     # For larger files, use Files API directly
                     if file_size_mb > FILES_API_THRESHOLD_MB:
@@ -237,33 +238,64 @@ class TranscriptionService(BaseService):
 
                                 # Wait for file to be processed (reach ACTIVE state)
                                 # This is necessary for large files to avoid "not in an ACTIVE state" errors
-                                max_wait_time = 60  # Maximum wait time in seconds
-                                wait_interval = 2   # Check interval in seconds
+                                max_wait_time = 20  # Maximum wait time in seconds (reduced to avoid worker timeout)
+                                wait_interval = 1   # Check interval in seconds (reduced to check more frequently)
+                                max_attempts = 5    # Maximum number of attempts to check file state
                                 wait_start_time = time.time()
+                                attempts = 0
 
-                                self.logger.info(f"Checking file state: {file_obj.state}")
-                                while (not file_obj.state or file_obj.state != "ACTIVE"):
-                                    elapsed_wait = time.time() - wait_start_time
-                                    if elapsed_wait > max_wait_time:
-                                        self.logger.warning(f"Timed out waiting for file to become ACTIVE after {elapsed_wait:.1f} seconds")
-                                        break
+                                # Check if file is already in ACTIVE state (could be numeric 2 or string "ACTIVE")
+                                is_active = (
+                                    (isinstance(file_obj.state, str) and file_obj.state == "ACTIVE") or
+                                    (isinstance(file_obj.state, int) and file_obj.state == 2)  # 2 appears to be the numeric code for ACTIVE
+                                )
 
-                                    self.logger.info(f"File is not yet ACTIVE (current state: {file_obj.state}). Waiting {wait_interval}s...")
-                                    time.sleep(wait_interval)
+                                self.logger.info(f"Checking file state: {file_obj.state} (type: {type(file_obj.state).__name__})")
 
-                                    # Get updated file state
-                                    try:
-                                        file_obj = genai.get_file(name=file_obj.name)
-                                        self.logger.info(f"Updated file state: {file_obj.state}")
-                                    except Exception as state_error:
-                                        self.logger.error(f"Error checking file state: {str(state_error)}")
-                                        # Continue with the file we have
-                                        break
+                                # Only wait if file is not already active
+                                if not is_active:
+                                    while attempts < max_attempts:
+                                        attempts += 1
+                                        elapsed_wait = time.time() - wait_start_time
 
-                                if file_obj.state == "ACTIVE":
-                                    self.logger.info(f"File is now ACTIVE and ready for processing")
+                                        if elapsed_wait > max_wait_time:
+                                            self.logger.warning(f"Timed out waiting for file to become ACTIVE after {elapsed_wait:.1f} seconds")
+                                            break
+
+                                        # For files over 10MB, we'll try to use it anyway after a few attempts
+                                        # since waiting longer risks worker timeout
+                                        if file_size_mb > 10 and attempts >= 3:
+                                            self.logger.warning(f"Large file ({file_size_mb:.2f} MB): proceeding after {attempts} attempts to avoid timeout")
+                                            break
+
+                                        self.logger.info(f"File is not yet ACTIVE (current state: {file_obj.state}). Attempt {attempts}/{max_attempts}, waiting {wait_interval}s...")
+                                        time.sleep(wait_interval)
+
+                                        # Get updated file state
+                                        try:
+                                            file_obj = genai.get_file(name=file_obj.name)
+                                            self.logger.info(f"Updated file state: {file_obj.state} (type: {type(file_obj.state).__name__})")
+
+                                            # Check if file is now active
+                                            is_active = (
+                                                (isinstance(file_obj.state, str) and file_obj.state == "ACTIVE") or
+                                                (isinstance(file_obj.state, int) and file_obj.state == 2)
+                                            )
+
+                                            if is_active:
+                                                self.logger.info("File is now ACTIVE and ready for processing")
+                                                break
+
+                                        except Exception as state_error:
+                                            self.logger.error(f"Error checking file state: {str(state_error)}")
+                                            # Continue with the file we have
+                                            break
+
+                                # Log final state
+                                if is_active:
+                                    self.logger.info(f"File is in ACTIVE state and ready for processing")
                                 else:
-                                    self.logger.warning(f"Proceeding with file in state: {file_obj.state}")
+                                    self.logger.warning(f"Proceeding with file in non-ACTIVE state: {file_obj.state}")
 
                                 # Create content with the file
                                 prompt = f"Please transcribe the following audio. The language is {language}." if language and language != "auto" else "Please transcribe this audio."
@@ -290,10 +322,35 @@ class TranscriptionService(BaseService):
                                 self.logger.error("Possible memory limitation reached during Files API processing")
                             elif "size" in error_msg:
                                 self.logger.error("File size limitation reached in Files API")
-                            elif "not in an active state" in error_msg:
+                            elif "not in an active state" in error_msg or "failedprecondition" in error_msg:
                                 self.logger.error("File is not in an ACTIVE state - the file was uploaded but not fully processed")
-                                self.logger.info("This usually happens with large files. Try increasing the wait time or reducing file size.")
+                                self.logger.info("This usually happens with large files. The system will try to use the file anyway.")
 
+                                # Try to use the file anyway as a last resort
+                                try:
+                                    self.logger.warning("Attempting to use file despite non-ACTIVE state...")
+                                    prompt = f"Please transcribe the following audio. The language is {language}." if language and language != "auto" else "Please transcribe this audio."
+
+                                    # Generate content with the file
+                                    response = model.generate_content([
+                                        prompt,
+                                        file_obj
+                                    ], generation_config=generation_config)
+
+                                    # Extract the transcription
+                                    transcription = response.text
+
+                                    # Clean up any bracketed artifacts at the end
+                                    cleaned_transcription = self._clean_gemini_transcription(transcription)
+
+                                    self.logger.info(f"Successfully transcribed despite file state issue: {len(cleaned_transcription)} characters")
+                                    return cleaned_transcription
+
+                                except Exception as retry_error:
+                                    self.logger.error(f"Failed retry attempt with non-ACTIVE file: {str(retry_error)}")
+                                    # Continue to the original exception
+
+                            # If we get here, all attempts have failed
                             raise Exception(f"Files API method failed for large file ({file_size_mb:.2f} MB). Error: {str(files_error)}")
                     else:
                         # For smaller files, try inline_data first, then fall back to Files API
@@ -344,33 +401,64 @@ class TranscriptionService(BaseService):
 
                                     # Wait for file to be processed (reach ACTIVE state)
                                     # This is necessary for large files to avoid "not in an ACTIVE state" errors
-                                    max_wait_time = 60  # Maximum wait time in seconds
-                                    wait_interval = 2   # Check interval in seconds
+                                    max_wait_time = 20  # Maximum wait time in seconds (reduced to avoid worker timeout)
+                                    wait_interval = 1   # Check interval in seconds (reduced to check more frequently)
+                                    max_attempts = 5    # Maximum number of attempts to check file state
                                     wait_start_time = time.time()
+                                    attempts = 0
 
-                                    self.logger.info(f"Checking file state: {file_obj.state}")
-                                    while (not file_obj.state or file_obj.state != "ACTIVE"):
-                                        elapsed_wait = time.time() - wait_start_time
-                                        if elapsed_wait > max_wait_time:
-                                            self.logger.warning(f"Timed out waiting for file to become ACTIVE after {elapsed_wait:.1f} seconds")
-                                            break
+                                    # Check if file is already in ACTIVE state (could be numeric 2 or string "ACTIVE")
+                                    is_active = (
+                                        (isinstance(file_obj.state, str) and file_obj.state == "ACTIVE") or
+                                        (isinstance(file_obj.state, int) and file_obj.state == 2)  # 2 appears to be the numeric code for ACTIVE
+                                    )
 
-                                        self.logger.info(f"File is not yet ACTIVE (current state: {file_obj.state}). Waiting {wait_interval}s...")
-                                        time.sleep(wait_interval)
+                                    self.logger.info(f"Checking file state: {file_obj.state} (type: {type(file_obj.state).__name__})")
 
-                                        # Get updated file state
-                                        try:
-                                            file_obj = genai.get_file(name=file_obj.name)
-                                            self.logger.info(f"Updated file state: {file_obj.state}")
-                                        except Exception as state_error:
-                                            self.logger.error(f"Error checking file state: {str(state_error)}")
-                                            # Continue with the file we have
-                                            break
+                                    # Only wait if file is not already active
+                                    if not is_active:
+                                        while attempts < max_attempts:
+                                            attempts += 1
+                                            elapsed_wait = time.time() - wait_start_time
 
-                                    if file_obj.state == "ACTIVE":
-                                        self.logger.info(f"File is now ACTIVE and ready for processing")
+                                            if elapsed_wait > max_wait_time:
+                                                self.logger.warning(f"Timed out waiting for file to become ACTIVE after {elapsed_wait:.1f} seconds")
+                                                break
+
+                                            # For files over 10MB, we'll try to use it anyway after a few attempts
+                                            # since waiting longer risks worker timeout
+                                            if file_size_mb > 10 and attempts >= 3:
+                                                self.logger.warning(f"Large file ({file_size_mb:.2f} MB): proceeding after {attempts} attempts to avoid timeout")
+                                                break
+
+                                            self.logger.info(f"File is not yet ACTIVE (current state: {file_obj.state}). Attempt {attempts}/{max_attempts}, waiting {wait_interval}s...")
+                                            time.sleep(wait_interval)
+
+                                            # Get updated file state
+                                            try:
+                                                file_obj = genai.get_file(name=file_obj.name)
+                                                self.logger.info(f"Updated file state: {file_obj.state} (type: {type(file_obj.state).__name__})")
+
+                                                # Check if file is now active
+                                                is_active = (
+                                                    (isinstance(file_obj.state, str) and file_obj.state == "ACTIVE") or
+                                                    (isinstance(file_obj.state, int) and file_obj.state == 2)
+                                                )
+
+                                                if is_active:
+                                                    self.logger.info("File is now ACTIVE and ready for processing")
+                                                    break
+
+                                            except Exception as state_error:
+                                                self.logger.error(f"Error checking file state: {str(state_error)}")
+                                                # Continue with the file we have
+                                                break
+
+                                    # Log final state
+                                    if is_active:
+                                        self.logger.info(f"File is in ACTIVE state and ready for processing")
                                     else:
-                                        self.logger.warning(f"Proceeding with file in state: {file_obj.state}")
+                                        self.logger.warning(f"Proceeding with file in non-ACTIVE state: {file_obj.state}")
 
                                     # Create content with the file
                                     prompt = f"Please transcribe the following audio. The language is {language}." if language and language != "auto" else "Please transcribe this audio."
@@ -397,10 +485,35 @@ class TranscriptionService(BaseService):
                                     self.logger.error("Possible memory limitation reached during Files API processing")
                                 elif "size" in error_msg:
                                     self.logger.error("File size limitation reached in Files API")
-                                elif "not in an active state" in error_msg:
+                                elif "not in an active state" in error_msg or "failedprecondition" in error_msg:
                                     self.logger.error("File is not in an ACTIVE state - the file was uploaded but not fully processed")
-                                    self.logger.info("This usually happens with large files. Try increasing the wait time or reducing file size.")
+                                    self.logger.info("This usually happens with large files. The system will try to use the file anyway.")
 
+                                    # Try to use the file anyway as a last resort
+                                    try:
+                                        self.logger.warning("Attempting to use file despite non-ACTIVE state...")
+                                        prompt = f"Please transcribe the following audio. The language is {language}." if language and language != "auto" else "Please transcribe this audio."
+
+                                        # Generate content with the file
+                                        response = model.generate_content([
+                                            prompt,
+                                            file_obj
+                                        ], generation_config=generation_config)
+
+                                        # Extract the transcription
+                                        transcription = response.text
+
+                                        # Clean up any bracketed artifacts at the end
+                                        cleaned_transcription = self._clean_gemini_transcription(transcription)
+
+                                        self.logger.info(f"Successfully transcribed despite file state issue: {len(cleaned_transcription)} characters")
+                                        return cleaned_transcription
+
+                                    except Exception as retry_error:
+                                        self.logger.error(f"Failed retry attempt with non-ACTIVE file: {str(retry_error)}")
+                                        # Continue to the original exception
+
+                                # If we get here, all attempts have failed
                                 raise Exception(f"All Gemini transcription methods failed. Last error: {str(files_error)}")
 
                     elapsed_time = time.time() - start_time
