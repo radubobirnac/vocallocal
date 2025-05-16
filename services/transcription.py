@@ -3,11 +3,13 @@ import os
 import io
 import re
 import time
+import math
 import tempfile
 import subprocess
 import logging
 import openai
 import google.generativeai as genai
+from pydub import AudioSegment
 from services.base_service import BaseService
 from metrics_tracker import track_transcription_metrics
 
@@ -63,6 +65,92 @@ class TranscriptionService(BaseService):
             self.logger.info(f"Removed bracketed artifact from end of Gemini transcription")
 
         return cleaned_text
+
+    def _chunk_audio_file(self, audio_bytes, chunk_size_mb=10, format="webm"):
+        """
+        Split a large audio file into smaller chunks for more reliable processing.
+
+        Args:
+            audio_bytes (bytes): The audio data to split
+            chunk_size_mb (int): Target size for each chunk in MB
+            format (str): Audio format (webm, mp3, etc.)
+
+        Returns:
+            list: List of byte arrays containing the audio chunks
+        """
+        self.logger.info(f"Chunking audio file of size {len(audio_bytes)/(1024*1024):.2f} MB into {chunk_size_mb}MB chunks")
+
+        # Create a temporary file to store the audio
+        temp_file_path = None
+        chunks = []
+
+        try:
+            # Save the audio bytes to a temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=f'.{format}') as temp_file:
+                temp_file.write(audio_bytes)
+                temp_file_path = temp_file.name
+
+            # Load the audio file using pydub
+            audio = AudioSegment.from_file(temp_file_path)
+
+            # Calculate chunk duration based on size
+            total_size_bytes = len(audio_bytes)
+            total_duration_ms = len(audio)
+
+            # Calculate bytes per millisecond (approximate)
+            bytes_per_ms = total_size_bytes / total_duration_ms if total_duration_ms > 0 else 0
+
+            # Calculate chunk duration to achieve target chunk size
+            chunk_size_bytes = chunk_size_mb * 1024 * 1024
+            chunk_duration_ms = int(chunk_size_bytes / bytes_per_ms) if bytes_per_ms > 0 else 60000
+
+            # Ensure chunk duration is reasonable (between 30 seconds and 5 minutes)
+            chunk_duration_ms = max(30000, min(chunk_duration_ms, 300000))
+
+            self.logger.info(f"Calculated chunk duration: {chunk_duration_ms/1000:.1f} seconds")
+
+            # Calculate number of chunks
+            num_chunks = math.ceil(len(audio) / chunk_duration_ms)
+            self.logger.info(f"Splitting audio into {num_chunks} chunks")
+
+            # Split the audio into chunks
+            for i in range(num_chunks):
+                start_ms = i * chunk_duration_ms
+                end_ms = min((i + 1) * chunk_duration_ms, len(audio))
+
+                chunk = audio[start_ms:end_ms]
+
+                # Export chunk to a temporary file
+                chunk_file = tempfile.NamedTemporaryFile(delete=False, suffix=f'.{format}')
+                chunk_path = chunk_file.name
+                chunk_file.close()
+
+                chunk.export(chunk_path, format=format)
+
+                # Read the chunk back as bytes
+                with open(chunk_path, 'rb') as f:
+                    chunk_bytes = f.read()
+                    chunks.append(chunk_bytes)
+
+                # Clean up the temporary chunk file
+                os.remove(chunk_path)
+
+                self.logger.info(f"Created chunk {i+1}/{num_chunks}: {len(chunk_bytes)/(1024*1024):.2f} MB")
+
+            return chunks
+
+        except Exception as e:
+            self.logger.error(f"Error chunking audio file: {str(e)}")
+            # If chunking fails, return the original file as a single chunk
+            return [audio_bytes]
+
+        finally:
+            # Clean up the temporary file
+            if temp_file_path and os.path.exists(temp_file_path):
+                try:
+                    os.remove(temp_file_path)
+                except Exception as e:
+                    self.logger.warning(f"Failed to remove temporary file: {str(e)}")
 
     @track_transcription_metrics
     def transcribe(self, audio_data, language, model="gemini"):
@@ -145,9 +233,78 @@ class TranscriptionService(BaseService):
             self.logger.warning("FFmpeg is not available")
             return False
 
+    def _transcribe_chunked_audio(self, audio_data, language, model_name="gemini", chunk_size_mb=10):
+        """
+        Transcribe a large audio file by splitting it into smaller chunks and combining the results.
+
+        Args:
+            audio_data (bytes): The audio data to transcribe
+            language (str): The language code
+            model_name (str): The model name to use
+            chunk_size_mb (int): Size of each chunk in MB
+
+        Returns:
+            str: The combined transcribed text
+        """
+        self.logger.info(f"Using chunked transcription for large file ({len(audio_data)/(1024*1024):.2f} MB)")
+
+        # Split the audio into chunks
+        chunks = self._chunk_audio_file(audio_data, chunk_size_mb=chunk_size_mb)
+
+        if len(chunks) == 1:
+            self.logger.info("Chunking resulted in a single chunk, proceeding with normal transcription")
+            return self._transcribe_with_gemini_internal(chunks[0], language, model_name)
+
+        # Transcribe each chunk
+        transcriptions = []
+        for i, chunk in enumerate(chunks):
+            self.logger.info(f"Transcribing chunk {i+1}/{len(chunks)} ({len(chunk)/(1024*1024):.2f} MB)")
+            try:
+                # Use inline_data method for chunks since they're smaller
+                chunk_transcription = self._transcribe_with_gemini_internal(chunk, language, model_name)
+                transcriptions.append(chunk_transcription)
+                self.logger.info(f"Successfully transcribed chunk {i+1}: {len(chunk_transcription)} characters")
+            except Exception as e:
+                self.logger.error(f"Error transcribing chunk {i+1}: {str(e)}")
+                # Continue with other chunks even if one fails
+                transcriptions.append(f"[Error transcribing part {i+1}]")
+
+        # Combine the transcriptions
+        combined_transcription = " ".join(transcriptions)
+        self.logger.info(f"Combined transcription from {len(chunks)} chunks: {len(combined_transcription)} characters")
+
+        return combined_transcription
+
     def transcribe_with_gemini(self, audio_data, language, model_name="gemini"):
         """
         Transcribe audio using Google's Gemini model.
+        For large files, this method will automatically use chunking to improve reliability.
+
+        Args:
+            audio_data (bytes): The audio data to transcribe
+            language (str): The language code
+            model_name (str): The model name to use
+
+        Returns:
+            str: The transcribed text
+        """
+        # Calculate file size in MB
+        file_size_mb = len(audio_data) / (1024 * 1024)
+
+        # For very large files (>20MB), use chunking to avoid "not in an ACTIVE state" errors
+        CHUNKING_THRESHOLD_MB = 20
+
+        if file_size_mb > CHUNKING_THRESHOLD_MB:
+            self.logger.info(f"Large file detected ({file_size_mb:.2f} MB). Using chunked transcription to improve reliability.")
+            return self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=10)
+        else:
+            # For smaller files, use the standard transcription method
+            return self._transcribe_with_gemini_internal(audio_data, language, model_name)
+
+    def _transcribe_with_gemini_internal(self, audio_data, language, model_name="gemini"):
+        """
+        Internal method to transcribe audio using Google's Gemini model.
+        Used by both the main transcribe_with_gemini method and the chunked transcription method.
 
         Args:
             audio_data (bytes): The audio data to transcribe
