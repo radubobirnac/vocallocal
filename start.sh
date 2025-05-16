@@ -49,6 +49,19 @@ else
   echo "GEMINI_API_KEY is NOT set"
 fi
 
-# Start the application
-echo "Starting Gunicorn server..."
-gunicorn app:app
+# Install pydub for audio chunking
+echo "Installing pydub for audio chunking..."
+python -m pip install --target=/opt/render/project/src/.venv/lib/python3.11/site-packages pydub
+
+# Check if FFmpeg is installed
+echo "Checking for FFmpeg..."
+if command -v ffmpeg &> /dev/null; then
+  echo "FFmpeg is available"
+else
+  echo "FFmpeg is not available. Installing..."
+  apt-get update && apt-get install -y ffmpeg
+fi
+
+# Start the application with our custom Gunicorn configuration
+echo "Starting Gunicorn server with memory optimization..."
+gunicorn app:app --config gunicorn_config.py

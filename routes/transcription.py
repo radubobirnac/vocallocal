@@ -83,8 +83,10 @@ def transcribe_audio():
             error_details = traceback.format_exc()
             print(f"Transcription error: {str(e)}\n{error_details}")
 
+            # Check for specific error types
+            error_message = str(e).lower()
+
             # Check for duration limit error
-            error_message = str(e)
             if "audio duration" in error_message and "longer than" in error_message and "seconds" in error_message:
                 return jsonify({
                     'error': 'Audio file exceeds the maximum duration limit of 25 minutes.',
@@ -92,6 +94,34 @@ def transcribe_audio():
                     'details': 'Please upload a shorter audio file or split your recording into smaller segments.'
                 }), 413  # 413 Payload Too Large
 
+            # Check for memory-related errors
+            elif "memory" in error_message or "sigkill" in error_message or "out of memory" in error_message:
+                # Get file size for better error message
+                file_size_mb = os.path.getsize(filepath) / (1024 * 1024) if os.path.exists(filepath) else "unknown"
+
+                return jsonify({
+                    'error': f'Server memory limit exceeded while processing {file_size_mb:.1f}MB file.',
+                    'errorType': 'MemoryLimitExceeded',
+                    'details': 'Please try a smaller file (under 20MB) or split your audio into smaller segments.'
+                }), 413  # 413 Payload Too Large
+
+            # Check for file size errors
+            elif "size" in error_message and "limit" in error_message:
+                return jsonify({
+                    'error': 'File size exceeds the maximum limit.',
+                    'errorType': 'FileSizeLimitExceeded',
+                    'details': 'Please upload a smaller file or split your audio into smaller segments.'
+                }), 413  # 413 Payload Too Large
+
+            # Check for timeout errors
+            elif "timeout" in error_message or "deadline" in error_message:
+                return jsonify({
+                    'error': 'Request timed out while processing the audio file.',
+                    'errorType': 'RequestTimeout',
+                    'details': 'Please try a smaller file or split your audio into smaller segments.'
+                }), 408  # 408 Request Timeout
+
+            # Generic error response
             return jsonify({
                 'error': str(e),
                 'errorType': type(e).__name__,
