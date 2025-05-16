@@ -33,6 +33,7 @@ scipy>=1.10.0
 python-magic>=0.4.27
 python-magic-bin>=0.4.14; platform_system=="Windows"
 pydub>=0.25.1
+ffmpeg-python>=0.2.0  # For advanced FFmpeg-based audio chunking
 
 # Desktop app dependencies (not needed for web deployment)
 # PyQt5>=5.15.0

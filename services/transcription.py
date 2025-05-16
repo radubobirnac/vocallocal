@@ -7,8 +7,11 @@ import math
 import tempfile
 import subprocess
 import logging
+import threading
 import openai
 import google.generativeai as genai
+from pathlib import Path
+from typing import List, Dict, Any, Optional, Tuple
 from services.base_service import BaseService
 from metrics_tracker import track_transcription_metrics
 
@@ -19,6 +22,14 @@ try:
 except ImportError:
     PYDUB_AVAILABLE = False
     logging.getLogger("transcription").warning("pydub not available. Audio chunking will be disabled.")
+
+# Try to import ffmpeg-python for advanced chunking
+try:
+    import ffmpeg
+    FFMPEG_PYTHON_AVAILABLE = True
+except ImportError:
+    FFMPEG_PYTHON_AVAILABLE = False
+    logging.getLogger("transcription").warning("ffmpeg-python not available. Will use subprocess for FFmpeg operations.")
 
 # Configure logging
 logging.basicConfig(
@@ -280,6 +291,112 @@ class TranscriptionService(BaseService):
         self.logger.warning("Simple byte-based chunking may result in corrupted audio chunks. Results may be unreliable.")
         return chunks
 
+    def _chunk_audio_with_ffmpeg_segment(self, audio_bytes, chunk_duration_seconds=300, format="webm"):
+        """
+        Split a large audio file into smaller chunks using FFmpeg's segment muxer.
+        This is a more reliable method that avoids loading the entire file into memory.
+
+        Args:
+            audio_bytes (bytes): The audio data to split
+            chunk_duration_seconds (int): Duration of each chunk in seconds
+            format (str): Audio format (webm, mp3, etc.)
+
+        Returns:
+            list: List of byte arrays containing the audio chunks
+        """
+        self.logger.info(f"Using FFmpeg segment muxer for chunking audio file of size {len(audio_bytes)/(1024*1024):.2f} MB")
+
+        # Create a temporary directory to store chunks
+        temp_dir = tempfile.mkdtemp()
+        input_file_path = None
+        chunks = []
+
+        try:
+            # Save the audio bytes to a temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=f'.{format}') as temp_file:
+                temp_file.write(audio_bytes)
+                input_file_path = temp_file.name
+
+            # Free up memory by clearing the original audio bytes
+            del audio_bytes
+
+            # Create output pattern for chunks
+            output_pattern = os.path.join(temp_dir, f"chunk_%03d.{format}")
+
+            # Run FFmpeg to split the file into chunks
+            self.logger.info(f"Splitting audio into {chunk_duration_seconds}-second chunks using FFmpeg")
+
+            # Command to split audio into equal-duration chunks without re-encoding
+            cmd = [
+                'ffmpeg',
+                '-i', input_file_path,
+                '-f', 'segment',
+                '-segment_time', str(chunk_duration_seconds),
+                '-c', 'copy',  # Copy without re-encoding to save CPU
+                '-reset_timestamps', '1',
+                '-map', '0',
+                '-y',  # Overwrite output files
+                output_pattern
+            ]
+
+            self.logger.info(f"Running FFmpeg command: {' '.join(cmd)}")
+            result = subprocess.run(cmd, capture_output=True, text=True)
+
+            if result.returncode != 0:
+                self.logger.error(f"FFmpeg segmentation failed: {result.stderr}")
+                raise Exception(f"FFmpeg segmentation failed: {result.stderr}")
+
+            # Get all created chunk files
+            chunk_files = sorted([os.path.join(temp_dir, f) for f in os.listdir(temp_dir) if f.startswith("chunk_")])
+
+            if not chunk_files:
+                self.logger.error("No chunks were created by FFmpeg")
+                raise Exception("No chunks were created by FFmpeg")
+
+            self.logger.info(f"FFmpeg created {len(chunk_files)} chunks")
+
+            # Read each chunk file into memory
+            for i, chunk_file in enumerate(chunk_files):
+                with open(chunk_file, 'rb') as f:
+                    chunk_bytes = f.read()
+                    chunk_size = len(chunk_bytes) / (1024 * 1024)
+                    self.logger.info(f"Reading chunk {i+1}/{len(chunk_files)}: {chunk_size:.2f} MB")
+                    chunks.append(chunk_bytes)
+
+                # Remove the chunk file after reading it
+                try:
+                    os.remove(chunk_file)
+                except Exception as e:
+                    self.logger.warning(f"Failed to remove chunk file {chunk_file}: {str(e)}")
+
+            return chunks
+
+        except Exception as e:
+            self.logger.error(f"Error in FFmpeg chunking: {str(e)}")
+            # Fall back to the simple chunking method
+            if input_file_path and os.path.exists(input_file_path):
+                self.logger.info("Falling back to simple chunking")
+                return self._simple_chunk_audio_file_stream(input_file_path)
+            elif 'audio_bytes' in locals() and audio_bytes:
+                return self._simple_chunk_audio_file(audio_bytes)
+            else:
+                raise
+
+        finally:
+            # Clean up temporary files
+            if input_file_path and os.path.exists(input_file_path):
+                try:
+                    os.remove(input_file_path)
+                except Exception as e:
+                    self.logger.warning(f"Failed to remove temporary input file: {str(e)}")
+
+            # Clean up temporary directory
+            try:
+                import shutil
+                shutil.rmtree(temp_dir, ignore_errors=True)
+            except Exception as e:
+                self.logger.warning(f"Failed to remove temporary directory: {str(e)}")
+
     def _simple_chunk_audio_file(self, audio_bytes, chunk_size_mb=5):
         """
         A simpler fallback method to split audio data into chunks based on byte size.
@@ -401,6 +518,84 @@ class TranscriptionService(BaseService):
             self.logger.warning("FFmpeg is not available")
             return False
 
+    def _transcribe_chunked_audio_ffmpeg(self, audio_data, language, model_name="gemini", chunk_duration_seconds=300):
+        """
+        Transcribe a large audio file by splitting it into smaller chunks using FFmpeg's segment muxer.
+        This method is more reliable for large files as it avoids loading the entire file into memory.
+
+        Args:
+            audio_data (bytes): The audio data to transcribe
+            language (str): The language code
+            model_name (str): The model name to use
+            chunk_duration_seconds (int): Duration of each chunk in seconds
+
+        Returns:
+            str: The combined transcribed text
+        """
+        file_size_mb = len(audio_data) / (1024 * 1024)
+        self.logger.info(f"Using FFmpeg-based chunked transcription for large file ({file_size_mb:.2f} MB) with {chunk_duration_seconds}s chunks")
+
+        # Split the audio into chunks using FFmpeg segment muxer
+        chunks = self._chunk_audio_with_ffmpeg_segment(audio_data, chunk_duration_seconds=chunk_duration_seconds)
+
+        # Free up memory by clearing the original audio data
+        del audio_data
+
+        if len(chunks) == 1:
+            self.logger.info("Chunking resulted in a single chunk, proceeding with normal transcription")
+            result = self._transcribe_with_gemini_internal(chunks[0], language, model_name)
+            # Free memory
+            del chunks
+            return result
+
+        # Process chunks in a separate thread to avoid blocking the main thread
+        self.logger.info(f"Processing {len(chunks)} chunks in sequence")
+
+        # Transcribe each chunk with memory cleanup after each
+        transcriptions = []
+        total_chunks = len(chunks)
+
+        for i in range(total_chunks):
+            # Get the current chunk
+            chunk = chunks[i]
+
+            # Log progress
+            chunk_size_mb = len(chunk) / (1024 * 1024)
+            self.logger.info(f"Transcribing chunk {i+1}/{total_chunks} ({chunk_size_mb:.2f} MB)")
+
+            try:
+                # Transcribe this chunk
+                chunk_transcription = self._transcribe_with_gemini_internal(chunk, language, model_name)
+                transcriptions.append(chunk_transcription)
+                self.logger.info(f"Successfully transcribed chunk {i+1}: {len(chunk_transcription)} characters")
+
+                # Free memory
+                del chunk_transcription
+            except Exception as e:
+                self.logger.error(f"Error transcribing chunk {i+1}: {str(e)}")
+                # Continue with other chunks even if one fails
+                transcriptions.append(f"[Error transcribing part {i+1}]")
+            finally:
+                # Free memory for this chunk
+                del chunk
+
+                # Force garbage collection to free memory
+                try:
+                    import gc
+                    gc.collect()
+                except:
+                    pass
+
+        # Combine the transcriptions
+        combined_transcription = " ".join(transcriptions)
+        self.logger.info(f"Combined transcription from {total_chunks} chunks: {len(combined_transcription)} characters")
+
+        # Free memory
+        del chunks
+        del transcriptions
+
+        return combined_transcription
+
     def _transcribe_chunked_audio(self, audio_data, language, model_name="gemini", chunk_size_mb=5):
         """
         Transcribe a large audio file by splitting it into smaller chunks and combining the results.
@@ -496,26 +691,47 @@ class TranscriptionService(BaseService):
         # This threshold worked well previously, so we're restoring it
         CHUNKING_THRESHOLD_MB = 20
 
-        # Use smaller chunks for larger files to reduce memory usage
-        chunk_size_mb = 5  # Default to 5MB chunks
-
-        # Adjust chunk size based on file size
-        if file_size_mb > 100:
-            chunk_size_mb = 3  # Use smaller chunks for very large files
-        elif file_size_mb > 50:
-            chunk_size_mb = 4  # Use medium chunks for large files
+        # Check if FFmpeg is available for chunking
+        ffmpeg_available = self._check_ffmpeg_available()
 
         if file_size_mb > CHUNKING_THRESHOLD_MB:
-            self.logger.info(f"Large file detected ({file_size_mb:.2f} MB). Using chunked transcription with {chunk_size_mb}MB chunks.")
+            self.logger.info(f"Large file detected ({file_size_mb:.2f} MB). Using chunked transcription.")
 
-            # Always try to use chunking for files over the threshold
-            # For extremely large files (>50MB), force chunking even if pydub is not available
-            if not PYDUB_AVAILABLE:
-                self.logger.warning(f"Pydub not available. Using simple byte-based chunking for {file_size_mb:.2f} MB file.")
+            # Determine the best chunking method based on file size and available tools
+
+            # For very large files (>50MB), use FFmpeg segment muxer if available
+            if file_size_mb > 50 and ffmpeg_available:
+                self.logger.info(f"Using FFmpeg segment muxer for large file ({file_size_mb:.2f} MB)")
+
+                # Calculate optimal chunk duration based on file size
+                # Larger files get longer chunks to reduce the number of API calls
+                if file_size_mb > 100:
+                    chunk_duration = 600  # 10 minutes for very large files
+                else:
+                    chunk_duration = 300  # 5 minutes for large files
+
+                # Use FFmpeg segment muxer for chunking
+                return self._transcribe_chunked_audio_ffmpeg(audio_data, language, model_name, chunk_duration_seconds=chunk_duration)
+
+            # For medium-sized files (20-50MB), use memory-optimized chunking
+            else:
+                # Use smaller chunks for larger files to reduce memory usage
+                chunk_size_mb = 5  # Default to 5MB chunks
+
+                # Adjust chunk size based on file size
+                if file_size_mb > 100:
+                    chunk_size_mb = 3  # Use smaller chunks for very large files
+                elif file_size_mb > 50:
+                    chunk_size_mb = 4  # Use medium chunks for large files
+
+                self.logger.info(f"Using memory-optimized chunking with {chunk_size_mb}MB chunks")
+
+                # If pydub is not available, use simple chunking
+                if not PYDUB_AVAILABLE:
+                    self.logger.warning(f"Pydub not available. Using simple byte-based chunking for {file_size_mb:.2f} MB file.")
+
+                # Use memory-optimized chunking
                 return self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=chunk_size_mb)
-
-            # Use memory-optimized chunking
-            return self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=chunk_size_mb)
 
         # For smaller files or when chunking is not available, use the standard transcription method
         return self._transcribe_with_gemini_internal(audio_data, language, model_name)
