@@ -237,10 +237,10 @@
   },
   "tts": {
     "openai": {
-      "calls": 18,
-      "tokens": 1403,
-      "chars": 5645,
-      "time": 109.42247462272644,
+      "calls": 19,
+      "tokens": 1419,
+      "chars": 5709,
+      "time": 111.63961935043335,
       "failures": 0
     },
     "gpt4o-mini": {
