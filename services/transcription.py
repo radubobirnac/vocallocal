@@ -147,46 +147,94 @@ class TranscriptionService(BaseService):
                 self.logger.info(f"Initializing Gemini model: {gemini_model_id}")
                 model = genai.GenerativeModel(gemini_model_id)
 
-                # Read the audio file
-                self.logger.info(f"Reading audio file: {temp_file_path}")
-                with open(temp_file_path, 'rb') as f:
-                    audio_bytes = f.read()
-                    self.logger.info(f"Read {len(audio_bytes)} bytes from audio file")
-
                 # Prepare generation config with language hint if provided
                 generation_config = {
                     "temperature": 0,
                 }
 
-                # Add language hint if specified
-                prompt_parts = []
-                if language and language != "auto":
-                    prompt = f"Please transcribe the following audio. The language is {language}."
-                    prompt_parts.append(prompt)
-                    self.logger.info(f"Added language hint to prompt: {language}")
-
-                # Add the audio data
-                prompt_parts.append(audio_bytes)
-
-                # Generate content with the audio
-                self.logger.info("Sending audio to Gemini for transcription")
-                start_time = time.time()
+                # Prepare for audio transcription
+                self.logger.info(f"Preparing audio file for Gemini: {temp_file_path}")
 
                 try:
-                    if prompt_parts and len(prompt_parts) > 1:
-                        # Use prompt with language hint
+                    # Prepare the prompt parts
+                    prompt_parts = []
+
+                    # Add language hint if specified
+                    if language and language != "auto":
+                        prompt = f"Please transcribe the following audio. The language is {language}."
+                        prompt_parts.append(prompt)
+                        self.logger.info(f"Added language hint to prompt: {language}")
+
+                    # Read the audio file
+                    with open(temp_file_path, 'rb') as f:
+                        audio_bytes = f.read()
+                        self.logger.info(f"Read {len(audio_bytes)} bytes from audio file")
+
+                    # Use the audio bytes directly
+                    self.logger.info("Sending audio to Gemini for transcription")
+                    start_time = time.time()
+
+                    try:
+                        # Method 1: Using inline_data with base64 encoding
+                        import base64
+
+                        # Convert audio bytes to base64
+                        audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+
+                        # Create content parts
+                        parts = []
+
+                        # Add language hint if specified
+                        if language and language != "auto":
+                            parts.append({"text": f"Please transcribe the following audio. The language is {language}."})
+
+                        # Add the audio data
+                        parts.append({
+                            "inline_data": {
+                                "mime_type": "audio/webm",
+                                "data": audio_b64
+                            }
+                        })
+
+                        # Generate content with the audio
+                        self.logger.info("Using inline_data method for Gemini transcription")
                         response = model.generate_content(
-                            prompt_parts,
-                            generation_config=generation_config,
-                            stream=False
+                            parts,
+                            generation_config=generation_config
                         )
-                    else:
-                        # Use just the audio
-                        response = model.generate_content(
-                            audio_bytes,
-                            generation_config=generation_config,
-                            stream=False
-                        )
+                    except Exception as inline_error:
+                        self.logger.warning(f"Inline data method failed: {str(inline_error)}")
+                        self.logger.info("Trying Files API method as fallback")
+
+                        # Method 2: Using the Files API
+                        try:
+                            # Create a temporary file with the audio data
+                            with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as temp_file:
+                                temp_file.write(audio_bytes)
+                                temp_file_path = temp_file.name
+
+                            try:
+                                # Upload the file using the Files API
+                                self.logger.info(f"Uploading temporary file: {temp_file_path}")
+                                file_obj = genai.upload_file(path=temp_file_path)
+
+                                # Create content with the file
+                                prompt = f"Please transcribe the following audio. The language is {language}." if language and language != "auto" else "Please transcribe this audio."
+
+                                # Generate content with the file
+                                self.logger.info("Using Files API method for Gemini transcription")
+                                response = model.generate_content([
+                                    prompt,
+                                    file_obj
+                                ], generation_config=generation_config)
+                            finally:
+                                # Clean up the temporary file
+                                if os.path.exists(temp_file_path):
+                                    os.remove(temp_file_path)
+                                    self.logger.info(f"Removed temporary file: {temp_file_path}")
+                        except Exception as files_error:
+                            self.logger.error(f"Files API method failed: {str(files_error)}")
+                            raise Exception(f"All Gemini transcription methods failed. Last error: {str(files_error)}")
 
                     elapsed_time = time.time() - start_time
                     self.logger.info(f"Gemini API call completed in {elapsed_time:.2f} seconds")
@@ -215,6 +263,13 @@ class TranscriptionService(BaseService):
                         self.logger.error("Gemini API rate limit or quota exceeded")
                     elif "invalid" in error_msg and "api key" in error_msg:
                         self.logger.error("Invalid Gemini API key")
+                    elif "file_data" in error_msg or "mime_type" in error_msg:
+                        self.logger.error("Error with audio file format for Gemini")
+                    elif "audio" in error_msg and "format" in error_msg:
+                        self.logger.error("Unsupported audio format for Gemini")
+
+                    # No temporary files to clean up in this implementation
+
                     raise
 
             finally:
