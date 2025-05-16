@@ -88,7 +88,8 @@ app.secret_key = Config.SECRET_KEY
 
 # Configure upload settings
 app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = Config.MAX_CONTENT_LENGTH
+# No MAX_CONTENT_LENGTH set to allow larger files
+# API-specific limits are handled in the service layer
 
 # Initialize Firebase
 from firebase_config import initialize_firebase

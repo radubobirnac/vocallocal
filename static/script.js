@@ -1856,16 +1856,43 @@ document.addEventListener('DOMContentLoaded', () => {
     input.addEventListener('change', () => {
       // Basic mode file upload
       if (input.id === 'basic-file-input' && input.files.length) {
-        showStatus(`Selected file: ${input.files[0].name}`, 'info');
+        const file = input.files[0];
+        const fileSizeMB = file.size / (1024 * 1024);
+        const fileName = file.name;
+
+        // Check file size and show appropriate warnings based on selected model
+        const selectedModel = getTranscriptionModel();
+        const isOpenAIModel = selectedModel.startsWith('gpt-') || selectedModel.startsWith('whisper-');
+
+        // Show file info
+        showStatus(`Selected file: ${fileName} (${fileSizeMB.toFixed(2)} MB)`, 'info');
+
+        // Show warnings based on file size and selected model
+        if (isOpenAIModel && fileSizeMB > 25) {
+          showStatus(`Warning: File size (${fileSizeMB.toFixed(2)} MB) exceeds OpenAI's 25MB limit. Will automatically switch to Gemini.`, 'warning', true);
+        } else if (fileSizeMB > 150) {
+          showStatus(`Warning: Very large file (${fileSizeMB.toFixed(2)} MB). Consider splitting into smaller segments for better reliability.`, 'warning', true);
+        } else if (fileSizeMB > 100) {
+          showStatus(`Warning: Large file (${fileSizeMB.toFixed(2)} MB). Processing may take longer.`, 'warning');
+        }
+
+        // For extremely large files, show a more prominent warning
+        if (fileSizeMB > 200) {
+          if (!confirm(`This file is ${fileSizeMB.toFixed(2)} MB, which exceeds Gemini's 200MB limit. The transcription will likely fail. Do you want to continue anyway?`)) {
+            // User chose to cancel
+            input.value = ''; // Clear the file input
+            showStatus('File upload cancelled. Please select a smaller file.', 'info');
+            return;
+          }
+        }
 
         // Auto-start transcription when a file is selected
         // Create FormData object
         const formData = new FormData();
-        formData.append('file', input.files[0]);
+        formData.append('file', file);
         formData.append('language', document.getElementById('basic-language').value);
 
         // Get selected model from global transcription model
-        let selectedModel = getTranscriptionModel();
         formData.append('model', selectedModel);
 
         // Show status message
@@ -1930,15 +1957,42 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       // Bilingual mode file upload for Speaker 1
       else if (input.id === 'file-input-1' && input.files.length) {
-        showStatus(`Selected file for Speaker 1: ${input.files[0].name}`, 'info');
+        const file = input.files[0];
+        const fileSizeMB = file.size / (1024 * 1024);
+        const fileName = file.name;
+
+        // Check file size and show appropriate warnings based on selected model
+        const selectedModel = getTranscriptionModel();
+        const isOpenAIModel = selectedModel.startsWith('gpt-') || selectedModel.startsWith('whisper-');
+
+        // Show file info
+        showStatus(`Selected file for Speaker 1: ${fileName} (${fileSizeMB.toFixed(2)} MB)`, 'info');
+
+        // Show warnings based on file size and selected model
+        if (isOpenAIModel && fileSizeMB > 25) {
+          showStatus(`Warning: File size (${fileSizeMB.toFixed(2)} MB) exceeds OpenAI's 25MB limit. Will automatically switch to Gemini.`, 'warning', true);
+        } else if (fileSizeMB > 150) {
+          showStatus(`Warning: Very large file (${fileSizeMB.toFixed(2)} MB). Consider splitting into smaller segments for better reliability.`, 'warning', true);
+        } else if (fileSizeMB > 100) {
+          showStatus(`Warning: Large file (${fileSizeMB.toFixed(2)} MB). Processing may take longer.`, 'warning');
+        }
+
+        // For extremely large files, show a more prominent warning
+        if (fileSizeMB > 200) {
+          if (!confirm(`This file is ${fileSizeMB.toFixed(2)} MB, which exceeds Gemini's 200MB limit. The transcription will likely fail. Do you want to continue anyway?`)) {
+            // User chose to cancel
+            input.value = ''; // Clear the file input
+            showStatus('File upload cancelled. Please select a smaller file.', 'info');
+            return;
+          }
+        }
 
         // Create FormData object
         const formData = new FormData();
-        formData.append('file', input.files[0]);
+        formData.append('file', file);
         formData.append('language', document.getElementById('language-1').value);
 
         // Get selected model from global transcription model
-        let selectedModel = getTranscriptionModel();
         formData.append('model', selectedModel);
 
         // Show status message
@@ -1989,15 +2043,42 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       // Bilingual mode file upload for Speaker 2
       else if (input.id === 'file-input-2' && input.files.length) {
-        showStatus(`Selected file for Speaker 2: ${input.files[0].name}`, 'info');
+        const file = input.files[0];
+        const fileSizeMB = file.size / (1024 * 1024);
+        const fileName = file.name;
+
+        // Check file size and show appropriate warnings based on selected model
+        const selectedModel = getTranscriptionModel();
+        const isOpenAIModel = selectedModel.startsWith('gpt-') || selectedModel.startsWith('whisper-');
+
+        // Show file info
+        showStatus(`Selected file for Speaker 2: ${fileName} (${fileSizeMB.toFixed(2)} MB)`, 'info');
+
+        // Show warnings based on file size and selected model
+        if (isOpenAIModel && fileSizeMB > 25) {
+          showStatus(`Warning: File size (${fileSizeMB.toFixed(2)} MB) exceeds OpenAI's 25MB limit. Will automatically switch to Gemini.`, 'warning', true);
+        } else if (fileSizeMB > 150) {
+          showStatus(`Warning: Very large file (${fileSizeMB.toFixed(2)} MB). Consider splitting into smaller segments for better reliability.`, 'warning', true);
+        } else if (fileSizeMB > 100) {
+          showStatus(`Warning: Large file (${fileSizeMB.toFixed(2)} MB). Processing may take longer.`, 'warning');
+        }
+
+        // For extremely large files, show a more prominent warning
+        if (fileSizeMB > 200) {
+          if (!confirm(`This file is ${fileSizeMB.toFixed(2)} MB, which exceeds Gemini's 200MB limit. The transcription will likely fail. Do you want to continue anyway?`)) {
+            // User chose to cancel
+            input.value = ''; // Clear the file input
+            showStatus('File upload cancelled. Please select a smaller file.', 'info');
+            return;
+          }
+        }
 
         // Create FormData object
         const formData = new FormData();
-        formData.append('file', input.files[0]);
+        formData.append('file', file);
         formData.append('language', document.getElementById('language-2').value);
 
         // Get selected model from global transcription model
-        let selectedModel = getTranscriptionModel();
         formData.append('model', selectedModel);
 
         // Show status message

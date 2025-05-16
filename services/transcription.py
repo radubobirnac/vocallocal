@@ -233,6 +233,37 @@ class TranscriptionService(BaseService):
                                 # Upload the file using the Files API
                                 self.logger.info(f"Uploading temporary file: {temp_file_path}")
                                 file_obj = genai.upload_file(path=temp_file_path)
+                                self.logger.info(f"File uploaded successfully with name: {file_obj.name}")
+
+                                # Wait for file to be processed (reach ACTIVE state)
+                                # This is necessary for large files to avoid "not in an ACTIVE state" errors
+                                max_wait_time = 60  # Maximum wait time in seconds
+                                wait_interval = 2   # Check interval in seconds
+                                wait_start_time = time.time()
+
+                                self.logger.info(f"Checking file state: {file_obj.state}")
+                                while (not file_obj.state or file_obj.state != "ACTIVE"):
+                                    elapsed_wait = time.time() - wait_start_time
+                                    if elapsed_wait > max_wait_time:
+                                        self.logger.warning(f"Timed out waiting for file to become ACTIVE after {elapsed_wait:.1f} seconds")
+                                        break
+
+                                    self.logger.info(f"File is not yet ACTIVE (current state: {file_obj.state}). Waiting {wait_interval}s...")
+                                    time.sleep(wait_interval)
+
+                                    # Get updated file state
+                                    try:
+                                        file_obj = genai.get_file(name=file_obj.name)
+                                        self.logger.info(f"Updated file state: {file_obj.state}")
+                                    except Exception as state_error:
+                                        self.logger.error(f"Error checking file state: {str(state_error)}")
+                                        # Continue with the file we have
+                                        break
+
+                                if file_obj.state == "ACTIVE":
+                                    self.logger.info(f"File is now ACTIVE and ready for processing")
+                                else:
+                                    self.logger.warning(f"Proceeding with file in state: {file_obj.state}")
 
                                 # Create content with the file
                                 prompt = f"Please transcribe the following audio. The language is {language}." if language and language != "auto" else "Please transcribe this audio."
@@ -259,6 +290,9 @@ class TranscriptionService(BaseService):
                                 self.logger.error("Possible memory limitation reached during Files API processing")
                             elif "size" in error_msg:
                                 self.logger.error("File size limitation reached in Files API")
+                            elif "not in an active state" in error_msg:
+                                self.logger.error("File is not in an ACTIVE state - the file was uploaded but not fully processed")
+                                self.logger.info("This usually happens with large files. Try increasing the wait time or reducing file size.")
 
                             raise Exception(f"Files API method failed for large file ({file_size_mb:.2f} MB). Error: {str(files_error)}")
                     else:
@@ -306,6 +340,37 @@ class TranscriptionService(BaseService):
                                     # Upload the file using the Files API
                                     self.logger.info(f"Uploading temporary file: {temp_file_path}")
                                     file_obj = genai.upload_file(path=temp_file_path)
+                                    self.logger.info(f"File uploaded successfully with name: {file_obj.name}")
+
+                                    # Wait for file to be processed (reach ACTIVE state)
+                                    # This is necessary for large files to avoid "not in an ACTIVE state" errors
+                                    max_wait_time = 60  # Maximum wait time in seconds
+                                    wait_interval = 2   # Check interval in seconds
+                                    wait_start_time = time.time()
+
+                                    self.logger.info(f"Checking file state: {file_obj.state}")
+                                    while (not file_obj.state or file_obj.state != "ACTIVE"):
+                                        elapsed_wait = time.time() - wait_start_time
+                                        if elapsed_wait > max_wait_time:
+                                            self.logger.warning(f"Timed out waiting for file to become ACTIVE after {elapsed_wait:.1f} seconds")
+                                            break
+
+                                        self.logger.info(f"File is not yet ACTIVE (current state: {file_obj.state}). Waiting {wait_interval}s...")
+                                        time.sleep(wait_interval)
+
+                                        # Get updated file state
+                                        try:
+                                            file_obj = genai.get_file(name=file_obj.name)
+                                            self.logger.info(f"Updated file state: {file_obj.state}")
+                                        except Exception as state_error:
+                                            self.logger.error(f"Error checking file state: {str(state_error)}")
+                                            # Continue with the file we have
+                                            break
+
+                                    if file_obj.state == "ACTIVE":
+                                        self.logger.info(f"File is now ACTIVE and ready for processing")
+                                    else:
+                                        self.logger.warning(f"Proceeding with file in state: {file_obj.state}")
 
                                     # Create content with the file
                                     prompt = f"Please transcribe the following audio. The language is {language}." if language and language != "auto" else "Please transcribe this audio."
@@ -323,6 +388,19 @@ class TranscriptionService(BaseService):
                                         self.logger.info(f"Removed temporary file: {temp_file_path}")
                             except Exception as files_error:
                                 self.logger.error(f"Files API method failed: {str(files_error)}")
+
+                                # Add more detailed error logging
+                                error_msg = str(files_error).lower()
+                                if "timeout" in error_msg:
+                                    self.logger.error("Files API request timed out - file may be too large or network issues")
+                                elif "memory" in error_msg:
+                                    self.logger.error("Possible memory limitation reached during Files API processing")
+                                elif "size" in error_msg:
+                                    self.logger.error("File size limitation reached in Files API")
+                                elif "not in an active state" in error_msg:
+                                    self.logger.error("File is not in an ACTIVE state - the file was uploaded but not fully processed")
+                                    self.logger.info("This usually happens with large files. Try increasing the wait time or reducing file size.")
+
                                 raise Exception(f"All Gemini transcription methods failed. Last error: {str(files_error)}")
 
                     elapsed_time = time.time() - start_time
@@ -371,6 +449,9 @@ class TranscriptionService(BaseService):
                         self.logger.error("Request timed out - file may be too large or processing took too long")
                     elif "size" in error_msg and "limit" in error_msg:
                         self.logger.error("File size limitation reached in Gemini API")
+                    elif "not in an active state" in error_msg:
+                        self.logger.error("File is not in an ACTIVE state - the file was uploaded but not fully processed")
+                        self.logger.info("This usually happens with large files. Try increasing the wait time or reducing file size.")
 
                     # No temporary files to clean up in this implementation
 
