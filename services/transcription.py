@@ -1,6 +1,7 @@
 """Transcription service for VocalLocal."""
 import os
 import io
+import re
 import time
 import tempfile
 import subprocess
@@ -43,6 +44,26 @@ class TranscriptionService(BaseService):
             self.gemini_available = False
             self.logger.warning("Gemini API key not found. Gemini transcription will not be available.")
 
+    def _clean_gemini_transcription(self, text):
+        """
+        Clean up Gemini transcription by removing bracketed artifacts at the end.
+
+        Args:
+            text (str): The transcription text from Gemini
+
+        Returns:
+            str: Cleaned transcription text
+        """
+        # Pattern to match bracketed text at the end of the string
+        pattern = r'\s*\[[^\]]+\]\s*$'
+        cleaned_text = re.sub(pattern, '', text)
+
+        # Log if we removed something
+        if cleaned_text != text:
+            self.logger.info(f"Removed bracketed artifact from end of Gemini transcription")
+
+        return cleaned_text
+
     @track_transcription_metrics
     def transcribe(self, audio_data, language, model="gemini"):
         """
@@ -56,13 +77,29 @@ class TranscriptionService(BaseService):
         Returns:
             str: The transcribed text
         """
-        self.logger.info(f"Transcribing audio with model: {model}, language: {language}, size: {len(audio_data)} bytes")
+        # Calculate file size in MB for better logging
+        file_size_mb = len(audio_data) / (1024 * 1024)
+        self.logger.info(f"Transcribing audio with model: {model}, language: {language}, size: {len(audio_data)} bytes ({file_size_mb:.2f} MB)")
+
+        # Check if file is very large (over 100MB) and log a warning
+        if file_size_mb > 100:
+            self.logger.warning(f"Very large file detected: {file_size_mb:.2f} MB. This may cause memory issues.")
+
+        # For extremely large files (over 150MB), recommend chunking
+        if file_size_mb > 150:
+            self.logger.warning(f"Extremely large file detected: {file_size_mb:.2f} MB. Consider splitting into smaller segments for better reliability.")
+            # We'll still try to process it, but with a warning
 
         # Check if FFmpeg is available if we're planning to use OpenAI
         ffmpeg_available = self._check_ffmpeg_available()
         if not ffmpeg_available and not (model.startswith('gemini-') or model == 'gemini'):
             self.logger.warning("FFmpeg not available and OpenAI model requested. Automatically switching to Gemini.")
             model = "gemini"  # Force using Gemini when FFmpeg is not available
+
+        # For OpenAI models, check if file is too large and switch to Gemini if needed
+        if (model.startswith('gpt-') or model.startswith('whisper-')) and file_size_mb > 25:
+            self.logger.warning(f"File size ({file_size_mb:.2f} MB) exceeds OpenAI's recommended limit. Automatically switching to Gemini.")
+            model = "gemini"  # Force using Gemini for large files
 
         try:
             # Check if we should use Gemini
@@ -174,39 +211,18 @@ class TranscriptionService(BaseService):
                     self.logger.info("Sending audio to Gemini for transcription")
                     start_time = time.time()
 
-                    try:
-                        # Method 1: Using inline_data with base64 encoding
-                        import base64
+                    # Determine which method to use based on file size
+                    # For files larger than 5MB, use Files API directly
+                    file_size_mb = len(audio_bytes) / (1024 * 1024)
+                    self.logger.info(f"Audio file size: {file_size_mb:.2f} MB")
 
-                        # Convert audio bytes to base64
-                        audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+                    # Set threshold for using Files API directly (5MB)
+                    FILES_API_THRESHOLD_MB = 5
 
-                        # Create content parts
-                        parts = []
+                    # For larger files, use Files API directly
+                    if file_size_mb > FILES_API_THRESHOLD_MB:
+                        self.logger.info(f"File size ({file_size_mb:.2f} MB) exceeds {FILES_API_THRESHOLD_MB} MB threshold, using Files API method directly")
 
-                        # Add language hint if specified
-                        if language and language != "auto":
-                            parts.append({"text": f"Please transcribe the following audio. The language is {language}."})
-
-                        # Add the audio data
-                        parts.append({
-                            "inline_data": {
-                                "mime_type": "audio/webm",
-                                "data": audio_b64
-                            }
-                        })
-
-                        # Generate content with the audio
-                        self.logger.info("Using inline_data method for Gemini transcription")
-                        response = model.generate_content(
-                            parts,
-                            generation_config=generation_config
-                        )
-                    except Exception as inline_error:
-                        self.logger.warning(f"Inline data method failed: {str(inline_error)}")
-                        self.logger.info("Trying Files API method as fallback")
-
-                        # Method 2: Using the Files API
                         try:
                             # Create a temporary file with the audio data
                             with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as temp_file:
@@ -234,7 +250,80 @@ class TranscriptionService(BaseService):
                                     self.logger.info(f"Removed temporary file: {temp_file_path}")
                         except Exception as files_error:
                             self.logger.error(f"Files API method failed: {str(files_error)}")
-                            raise Exception(f"All Gemini transcription methods failed. Last error: {str(files_error)}")
+
+                            # Add more detailed error logging
+                            error_msg = str(files_error).lower()
+                            if "timeout" in error_msg:
+                                self.logger.error("Files API request timed out - file may be too large or network issues")
+                            elif "memory" in error_msg:
+                                self.logger.error("Possible memory limitation reached during Files API processing")
+                            elif "size" in error_msg:
+                                self.logger.error("File size limitation reached in Files API")
+
+                            raise Exception(f"Files API method failed for large file ({file_size_mb:.2f} MB). Error: {str(files_error)}")
+                    else:
+                        # For smaller files, try inline_data first, then fall back to Files API
+                        try:
+                            # Method 1: Using inline_data with base64 encoding
+                            import base64
+
+                            # Convert audio bytes to base64
+                            audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+
+                            # Create content parts
+                            parts = []
+
+                            # Add language hint if specified
+                            if language and language != "auto":
+                                parts.append({"text": f"Please transcribe the following audio. The language is {language}."})
+
+                            # Add the audio data
+                            parts.append({
+                                "inline_data": {
+                                    "mime_type": "audio/webm",
+                                    "data": audio_b64
+                                }
+                            })
+
+                            # Generate content with the audio
+                            self.logger.info("Using inline_data method for Gemini transcription")
+                            response = model.generate_content(
+                                parts,
+                                generation_config=generation_config
+                            )
+                        except Exception as inline_error:
+                            self.logger.warning(f"Inline data method failed: {str(inline_error)}")
+                            self.logger.info("Trying Files API method as fallback")
+
+                            # Method 2: Using the Files API as fallback
+                            try:
+                                # Create a temporary file with the audio data
+                                with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as temp_file:
+                                    temp_file.write(audio_bytes)
+                                    temp_file_path = temp_file.name
+
+                                try:
+                                    # Upload the file using the Files API
+                                    self.logger.info(f"Uploading temporary file: {temp_file_path}")
+                                    file_obj = genai.upload_file(path=temp_file_path)
+
+                                    # Create content with the file
+                                    prompt = f"Please transcribe the following audio. The language is {language}." if language and language != "auto" else "Please transcribe this audio."
+
+                                    # Generate content with the file
+                                    self.logger.info("Using Files API method for Gemini transcription")
+                                    response = model.generate_content([
+                                        prompt,
+                                        file_obj
+                                    ], generation_config=generation_config)
+                                finally:
+                                    # Clean up the temporary file
+                                    if os.path.exists(temp_file_path):
+                                        os.remove(temp_file_path)
+                                        self.logger.info(f"Removed temporary file: {temp_file_path}")
+                            except Exception as files_error:
+                                self.logger.error(f"Files API method failed: {str(files_error)}")
+                                raise Exception(f"All Gemini transcription methods failed. Last error: {str(files_error)}")
 
                     elapsed_time = time.time() - start_time
                     self.logger.info(f"Gemini API call completed in {elapsed_time:.2f} seconds")
@@ -242,16 +331,19 @@ class TranscriptionService(BaseService):
                     # Extract the transcription
                     transcription = response.text
 
+                    # Clean up any bracketed artifacts at the end
+                    cleaned_transcription = self._clean_gemini_transcription(transcription)
+
                     # Log success with details
-                    self.logger.info(f"Gemini transcription successful: {len(transcription)} characters")
-                    if len(transcription) < 100:
+                    self.logger.info(f"Gemini transcription successful: {len(cleaned_transcription)} characters")
+                    if len(cleaned_transcription) < 100:
                         # Log the full transcription if it's short
-                        self.logger.info(f"Transcription content: {transcription}")
+                        self.logger.info(f"Transcription content: {cleaned_transcription}")
                     else:
                         # Log just the beginning if it's long
-                        self.logger.info(f"Transcription begins with: {transcription[:100]}...")
+                        self.logger.info(f"Transcription begins with: {cleaned_transcription[:100]}...")
 
-                    return transcription
+                    return cleaned_transcription
 
                 except Exception as api_error:
                     self.logger.error(f"Gemini API error: {str(api_error)}")
@@ -267,6 +359,18 @@ class TranscriptionService(BaseService):
                         self.logger.error("Error with audio file format for Gemini")
                     elif "audio" in error_msg and "format" in error_msg:
                         self.logger.error("Unsupported audio format for Gemini")
+                    elif "memory" in error_msg or "out of memory" in error_msg:
+                        self.logger.error("Memory limitation reached during Gemini processing")
+                        # Try to provide a helpful message about file size
+                        try:
+                            file_size_mb = len(audio_bytes) / (1024 * 1024)
+                            self.logger.error(f"File size was {file_size_mb:.2f} MB which may be too large for current memory constraints")
+                        except:
+                            pass
+                    elif "timeout" in error_msg or "deadline exceeded" in error_msg:
+                        self.logger.error("Request timed out - file may be too large or processing took too long")
+                    elif "size" in error_msg and "limit" in error_msg:
+                        self.logger.error("File size limitation reached in Gemini API")
 
                     # No temporary files to clean up in this implementation
 
@@ -374,7 +478,17 @@ class TranscriptionService(BaseService):
                 elif "api key" in error_msg or "authentication" in error_msg:
                     self.logger.error("OpenAI API key authentication error")
                 elif "too large" in error_msg or "file size" in error_msg:
-                    self.logger.error("Audio file too large for OpenAI")
+                    # Get file size for better error reporting
+                    try:
+                        file_size_mb = os.path.getsize(mp3_file_path) / (1024 * 1024)
+                        self.logger.error(f"Audio file too large for OpenAI: {file_size_mb:.2f} MB (limit is 25MB)")
+                        self.logger.info("Consider using Gemini for larger files (up to 200MB)")
+                    except:
+                        self.logger.error("Audio file too large for OpenAI (limit is 25MB)")
+                elif "timeout" in error_msg or "deadline" in error_msg:
+                    self.logger.error("Request timed out - file may be too large or processing took too long")
+                elif "memory" in error_msg:
+                    self.logger.error("Memory limitation reached during OpenAI processing")
                 raise
 
         except Exception as e:
