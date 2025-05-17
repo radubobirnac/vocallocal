@@ -59,10 +59,10 @@
       "failures": 0
     },
     "unknown": {
-      "calls": 44,
-      "tokens": 61506,
-      "chars": 4457,
-      "time": 105.1471016407013,
+      "calls": 54,
+      "tokens": 81269,
+      "chars": 63755,
+      "time": 620.579742193222,
       "failures": 0
     },
     "gemini-2.0-flash-lite": {
@@ -130,6 +130,11 @@
     "2025-05-16": {
       "transcription": {
         "unknown": 135
+      }
+    },
+    "2025-05-17": {
+      "transcription": {
+        "unknown": 19763
       }
     }
   },
@@ -243,6 +248,16 @@
       "transcription": {
         "unknown": 135
       }
+    },
+    "2025-05-17-15": {
+      "transcription": {
+        "unknown": 3691
+      }
+    },
+    "2025-05-17-21": {
+      "transcription": {
+        "unknown": 16072
+      }
     }
   },
   "tts": {
@@ -254,11 +269,11 @@
       "failures": 0
     },
     "gpt4o-mini": {
-      "calls": 14,
-      "tokens": 1521,
-      "chars": 6114,
-      "time": 99.30945205688477,
-      "failures": 0
+      "calls": 20,
+      "tokens": 2939,
+      "chars": 11787,
+      "time": 197.08012557029724,
+      "failures": 3
     }
   },
   "interpretation": {

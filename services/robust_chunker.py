@@ -115,9 +115,6 @@ class RobustChunker:
     def chunk_audio(self) -> Tuple[bool, List[str], str]:
         """
         Chunk the audio file using FFmpeg with retries.
-
-        Returns:
-            Tuple[bool, List[str], str]: (success, chunk_files, error_message)
         """
         if not self.input_path:
             return False, [], "No input path specified"
@@ -131,14 +128,23 @@ class RobustChunker:
 
         # Build FFmpeg command
         output_pattern = os.path.join(self.output_dir, f"chunk_%03d.{self.input_ext}")
+        
+        # Get FFmpeg path from transcription service if available
+        ffmpeg_cmd = "ffmpeg"
+        if hasattr(self, 'transcription_service') and self.transcription_service and hasattr(self.transcription_service, 'ffmpeg_path'):
+            ffmpeg_cmd = self.transcription_service.ffmpeg_path
+        
         cmd = [
-            "ffmpeg", "-y",
+            ffmpeg_cmd, "-y",
             "-i", self.input_path,
             "-f", "segment",
             "-segment_time", str(self.chunk_seconds),
             "-c", "copy",
             output_pattern
         ]
+        
+        # Log the full command for debugging
+        self.logger.info(f"FFmpeg command: {' '.join(cmd)}")
 
         # Try to run FFmpeg with retries
         success = False

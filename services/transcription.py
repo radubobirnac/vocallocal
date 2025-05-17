@@ -532,6 +532,13 @@ class TranscriptionService(BaseService):
             self.logger.info("FFmpeg is available")
             return True
         except (subprocess.SubprocessError, FileNotFoundError):
+            # Try with custom path if defined in environment
+            ffmpeg_path = os.getenv("FFMPEG_PATH", "C:\\Users\\91630\\Downloads\\ffmpeg-master-latest-win64-gpl-shared\\ffmpeg-master-latest-win64-gpl-shared\\bin\\ffmpeg.exe")
+            if os.path.exists(ffmpeg_path):
+                self.logger.info(f"Found FFmpeg at custom path: {ffmpeg_path}")
+                # Store the path for later use
+                self.ffmpeg_path = ffmpeg_path
+                return True
             self.logger.warning("FFmpeg is not available")
             return False
 
@@ -818,63 +825,53 @@ class TranscriptionService(BaseService):
         """
         Transcribe audio using Google's Gemini model.
         For large files, this method will automatically use chunking to improve reliability.
-
-        Args:
-            audio_data (bytes): The audio data to transcribe
-            language (str): The language code
-            model_name (str): The model name to use
-
-        Returns:
-            str: The transcribed text
         """
         # Calculate file size in MB
         file_size_mb = len(audio_data) / (1024 * 1024)
-
-        # For files over 20MB, use chunking to avoid memory issues and "not in an ACTIVE state" errors
-        CHUNKING_THRESHOLD_MB = 20
-
+        
+        # Lower the chunking threshold to ensure better reliability
+        CHUNKING_THRESHOLD_MB = 15  # Reduced from 20MB to 15MB
+        
         # Check if FFmpeg is available for chunking
         ffmpeg_available = self._check_ffmpeg_available()
-
+        
+        # For files over the threshold, use chunking to avoid memory issues
         if file_size_mb > CHUNKING_THRESHOLD_MB:
             self.logger.info(f"Large file detected ({file_size_mb:.2f} MB). Using chunked transcription.")
-
-            # For all large files, use the production-ready RobustChunker if FFmpeg is available
-            if ffmpeg_available:
-                self.logger.info(f"Using production-ready RobustChunker for large file ({file_size_mb:.2f} MB)")
-
-                # Calculate optimal chunk duration based on file size
-                # Larger files get longer chunks to reduce the number of API calls
-                if file_size_mb > 100:
-                    chunk_duration = 600  # 10 minutes for very large files
-                else:
-                    chunk_duration = 300  # 5 minutes for large files
-
-                # Configure the chunker with the appropriate duration
-                self.robust_chunker.chunk_duration = chunk_duration
-
-                # Use the production-ready RobustChunker for chunking
-                return self._transcribe_with_production_chunker(audio_data, language, model_name)
-
+            
+            # For very large files (>25MB), split into smaller chunks before sending to API
+            if file_size_mb > 25:
+                self.logger.info(f"Very large file detected ({file_size_mb:.2f} MB). Using manual chunking.")
+                
+                # Use memory-optimized chunking with smaller chunks
+                chunk_size_mb = 3  # Use smaller chunks for very large files
+                
+                self.logger.info(f"Using memory-optimized chunking with {chunk_size_mb}MB chunks")
+                return self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=chunk_size_mb)
+            
+            # For moderately large files, try the production chunker if FFmpeg is available
+            elif ffmpeg_available:
+                try:
+                    self.logger.info(f"Using production-ready RobustChunker for large file ({file_size_mb:.2f} MB)")
+                    
+                    # Pass the FFmpeg path to the chunker
+                    if hasattr(self, 'ffmpeg_path'):
+                        self.robust_chunker.ffmpeg_path = self.ffmpeg_path
+                    
+                    # Use the production-ready RobustChunker for chunking
+                    return self._transcribe_with_production_chunker(audio_data, language, model_name)
+                except Exception as e:
+                    self.logger.error(f"RobustChunker failed: {str(e)}")
+                    # Fall back to memory-optimized chunking
+                    self.logger.info("Falling back to memory-optimized chunking")
+                    return self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=5)
+            
             # Fall back to memory-optimized chunking if FFmpeg is not available
             else:
-                self.logger.warning("FFmpeg not available. Falling back to memory-optimized chunking.")
-
-                # Use smaller chunks for larger files to reduce memory usage
-                chunk_size_mb = 5  # Default to 5MB chunks
-
-                # Adjust chunk size based on file size
-                if file_size_mb > 100:
-                    chunk_size_mb = 3  # Use smaller chunks for very large files
-                elif file_size_mb > 50:
-                    chunk_size_mb = 4  # Use medium chunks for large files
-
-                self.logger.info(f"Using memory-optimized chunking with {chunk_size_mb}MB chunks")
-
-                # Use memory-optimized chunking
-                return self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=chunk_size_mb)
-
-        # For smaller files or when chunking is not available, use the standard transcription method
+                self.logger.warning("FFmpeg not available. Using memory-optimized chunking.")
+                return self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=5)
+        
+        # For smaller files, use the standard transcription method
         return self._transcribe_with_gemini_internal(audio_data, language, model_name)
 
     def _transcribe_with_gemini_internal(self, audio_data, language, model_name="gemini"):
@@ -971,64 +968,50 @@ class TranscriptionService(BaseService):
 
                                 # Wait for file to be processed (reach ACTIVE state)
                                 # This is necessary for large files to avoid "not in an ACTIVE state" errors
-                                max_wait_time = 60  # Maximum wait time in seconds (increased for larger files)
-                                wait_interval = 2   # Check interval in seconds
-                                max_attempts = 10   # Maximum number of attempts to check file state
+                                max_wait_time = 120  # Increased maximum wait time to 2 minutes
+                                wait_interval = 2    # Check interval in seconds
+                                max_attempts = 20    # Increased maximum attempts
                                 wait_start_time = time.time()
                                 attempts = 0
 
-                                # Check if file is already in ACTIVE state (could be numeric 2 or string "ACTIVE")
-                                is_active = (
-                                    (isinstance(file_obj.state, str) and file_obj.state == "ACTIVE") or
-                                    (isinstance(file_obj.state, int) and file_obj.state == 2)  # 2 appears to be the numeric code for ACTIVE
-                                )
-
-                                self.logger.info(f"Checking file state: {file_obj.state} (type: {type(file_obj.state).__name__})")
-
-                                # Only wait if file is not already active
-                                if not is_active:
-                                    while attempts < max_attempts:
-                                        attempts += 1
-                                        elapsed_wait = time.time() - wait_start_time
-
-                                        if elapsed_wait > max_wait_time:
-                                            self.logger.warning(f"Timed out waiting for file to become ACTIVE after {elapsed_wait:.1f} seconds")
+                                # Check file state in a loop
+                                while attempts < max_attempts:
+                                    attempts += 1
+                                    try:
+                                        # Get file state
+                                        file_state = file_obj.state
+                                        self.logger.info(f"Checking file state: {file_state} (type: {type(file_state).__name__})")
+                                        
+                                        # Check if file is in ACTIVE state (state 2)
+                                        if file_state == 2:  # ACTIVE state
+                                            self.logger.info(f"File is now ACTIVE after {attempts} attempts")
                                             break
-
-                                        # For files between 10-20MB, we'll try to use it after a few attempts
-                                        # For files over 20MB, we'll be more patient and wait longer
-                                        if file_size_mb > 20 and attempts >= 8:
+                                        
+                                        # Check if we've waited too long
+                                        elapsed = time.time() - wait_start_time
+                                        if elapsed > max_wait_time:
+                                            self.logger.warning(f"Maximum wait time ({max_wait_time}s) exceeded")
+                                            break
+                                        
+                                        # For very large files, proceed after a reasonable number of attempts
+                                        if file_size_mb > 25 and attempts >= 10:
                                             self.logger.warning(f"Very large file ({file_size_mb:.2f} MB): proceeding after {attempts} attempts")
                                             break
-                                        elif file_size_mb > 10 and file_size_mb <= 20 and attempts >= 5:
-                                            self.logger.warning(f"Large file ({file_size_mb:.2f} MB): proceeding after {attempts} attempts")
-                                            break
-
-                                        self.logger.info(f"File is not yet ACTIVE (current state: {file_obj.state}). Attempt {attempts}/{max_attempts}, waiting {wait_interval}s...")
+                                        
+                                        # Wait before checking again
+                                        self.logger.info(f"File is not yet ACTIVE (current state: {file_state}). Attempt {attempts}/{max_attempts}, waiting {wait_interval}s...")
                                         time.sleep(wait_interval)
-
-                                        # Get updated file state
-                                        try:
-                                            file_obj = genai.get_file(name=file_obj.name)
-                                            self.logger.info(f"Updated file state: {file_obj.state} (type: {type(file_obj.state).__name__})")
-
-                                            # Check if file is now active
-                                            is_active = (
-                                                (isinstance(file_obj.state, str) and file_obj.state == "ACTIVE") or
-                                                (isinstance(file_obj.state, int) and file_obj.state == 2)
-                                            )
-
-                                            if is_active:
-                                                self.logger.info("File is now ACTIVE and ready for processing")
-                                                break
-
-                                        except Exception as state_error:
-                                            self.logger.error(f"Error checking file state: {str(state_error)}")
-                                            # Continue with the file we have
-                                            break
+                                        
+                                        # Refresh file state
+                                        file_obj = genai.get_file(file_obj.name)
+                                        self.logger.info(f"Updated file state: {file_obj.state} (type: {type(file_obj.state).__name__})")
+                                        
+                                    except Exception as e:
+                                        self.logger.error(f"Error checking file state: {str(e)}")
+                                        break
 
                                 # Log final state
-                                if is_active:
+                                if file_obj.state == 2:  # ACTIVE state
                                     self.logger.info(f"File is in ACTIVE state and ready for processing")
                                 else:
                                     self.logger.warning(f"Proceeding with file in non-ACTIVE state: {file_obj.state}")

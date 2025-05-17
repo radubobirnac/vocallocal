@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 from flask import Flask, redirect, url_for, flash, render_template
 from config import Config
+import jinja2
 
 # Try to import Google Generative AI, install if missing
 try:
@@ -105,7 +106,22 @@ def handle_exception(e):
     app.logger.error(f"Unhandled exception: {str(e)}")
     import traceback
     app.logger.error(traceback.format_exc())
-    return render_template('error.html', error=str(e)), 500
+    
+    # Try to render the error template, but have a fallback if it's missing
+    try:
+        return render_template('error.html', error=str(e)), 500
+    except jinja2.exceptions.TemplateNotFound:
+        # Fallback for missing template
+        return f"""
+        <html>
+            <head><title>Error</title></head>
+            <body>
+                <h1>An error occurred</h1>
+                <p>{str(e)}</p>
+                <p><a href="/">Return to home</a></p>
+            </body>
+        </html>
+        """, 500
 
 # Define a simple index route at the root level
 @app.route('/')
@@ -142,13 +158,14 @@ def root_auth_callback():
         return redirect(url_for('auth.login'))
 
 # Register blueprints
-from routes import main, transcription, translation, tts, admin
+from routes import main, transcription, translation, tts, admin, interpretation
 
 app.register_blueprint(main.bp)
 app.register_blueprint(transcription.bp)
 app.register_blueprint(translation.bp)
 app.register_blueprint(tts.bp)
 app.register_blueprint(admin.bp)
+app.register_blueprint(interpretation.bp)
 
 # Register auth blueprint with a different name to avoid conflicts
 from auth import auth_bp

@@ -2,6 +2,7 @@
 Transcription routes for VocalLocal
 """
 import os
+import time
 import traceback
 from flask import Blueprint, request, jsonify, current_app
 from flask_login import current_user, login_required
@@ -15,6 +16,20 @@ bp = Blueprint('transcription', __name__, url_prefix='/api')
 
 # Initialize the transcription service
 transcription_service = TranscriptionService()
+
+def safe_remove_file(filepath, max_retries=3, retry_delay=0.5):
+    """Safely remove a file with retries for Windows file locking issues"""
+    for attempt in range(max_retries):
+        try:
+            os.remove(filepath)
+            return True
+        except PermissionError:
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+            else:
+                # Log the error but don't crash
+                print(f"Warning: Could not remove temporary file {filepath} after {max_retries} attempts")
+                return False
 
 @bp.route('/transcribe', methods=['POST'])
 def transcribe_audio():
@@ -65,7 +80,7 @@ def transcribe_audio():
                     print(f"Error saving transcription to Firebase: {str(auth_error)}")
 
                 # Remove temporary file
-                os.remove(filepath)
+                safe_remove_file(filepath)
 
                 # Return results
                 return jsonify({

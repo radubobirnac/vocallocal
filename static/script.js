@@ -103,6 +103,59 @@ document.addEventListener('DOMContentLoaded', () => {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   }
 
+  // Global variable to track the current audio element
+  let currentAudio = null;
+
+  // Function to stop all audio playback
+  function stopAllAudio() {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      currentAudio = null;
+      showStatus('Audio playback stopped', 'info');
+    }
+  }
+
+  // Add a function to create a stop button
+  function addStopButton() {
+    // Check if stop button already exists
+    if (document.getElementById('stop-audio-btn')) {
+      return;
+    }
+    
+    // Find the container where the TTS controls are
+    const controlsContainer = document.querySelector('.controls-container') || 
+                             document.querySelector('.action-buttons') ||
+                             document.querySelector('.toolbar');
+    
+    if (controlsContainer) {
+      // Create stop button
+      const stopButton = document.createElement('button');
+      stopButton.id = 'stop-audio-btn';
+      stopButton.className = 'btn btn-danger btn-sm';
+      stopButton.innerHTML = '<i class="fas fa-stop"></i> Stop Audio';
+      stopButton.onclick = stopAllAudio;
+      
+      // Add to container
+      controlsContainer.appendChild(stopButton);
+    }
+  }
+
+  // Add keyboard shortcut for stopping audio
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      stopAllAudio();
+    }
+  });
+
+  // Initialize when the document is ready
+  document.addEventListener('DOMContentLoaded', function() {
+    // Add the stop button
+    addStopButton();
+    
+    // Other initialization code...
+  });
+
   // Speak text using TTS with play/pause/resume
   function speakText(sourceId, text, langCode) {
     // For mobile devices or when sourceId refers to a DOM element, always get the latest text
@@ -136,119 +189,18 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Initialize player state if it doesn't exist
-    if (!ttsPlayers[sourceId]) {
-      ttsPlayers[sourceId] = {
-        audio: null,
-        paused: false,
-        blobUrl: null,
-        lang: null,
-        text: null,
-        error: false
-      };
-    }
-
-    const player = ttsPlayers[sourceId];
-
-    // --- Resume Logic ---
-    if (player.audio && player.paused && player.text === text && player.lang === langCode) {
-      player.audio.play()
-        .then(() => {
-          player.paused = false;
-          setTTSButtonState(sourceId, 'playing');
-          showStatus('Resuming audio...', 'info');
-        })
-        .catch(error => {
-          showStatus('Error resuming audio: ' + error.message, 'error');
-          console.error('Audio resume error:', error);
-          setTTSButtonState(sourceId, 'error');
-          player.error = true;
-        });
-      return; // Don't fetch new audio if resuming
-    }
-
-    // --- Stop any currently playing audio for this source ---
-    if (player.audio && !player.audio.paused) {
-      player.audio.pause();
-      player.audio.currentTime = 0; // Reset playback position
-      if (player.blobUrl) {
-        URL.revokeObjectURL(player.blobUrl); // Clean up old blob URL
-        player.blobUrl = null;
-      }
-    }
-    // Also stop any other playing audio to prevent overlap
-    Object.keys(ttsPlayers).forEach(id => {
-        if (id !== sourceId && ttsPlayers[id].audio && !ttsPlayers[id].audio.paused) {
-            ttsPlayers[id].audio.pause();
-            ttsPlayers[id].paused = true; // Mark as paused
-            setTTSButtonState(id, 'paused');
-        }
-    });
-
-
-    player.text = text;
-    player.lang = langCode;
-    player.paused = false;
-    player.error = false;
-
-    // --- Play from existing blob if available ---
-    if (player.blobUrl) {
-      try {
-        player.audio = new Audio(player.blobUrl);
-        player.audio.playbackRate = 1.10;
-
-        player.audio.onplay = () => {
-          setTTSButtonState(sourceId, 'playing');
-          showStatus('Playing audio...', 'info');
-        };
-        player.audio.onpause = () => {
-          // Only set to paused if not at the end
-          if (!player.audio.ended) {
-            player.paused = true;
-            setTTSButtonState(sourceId, 'paused');
-          }
-        };
-        player.audio.onended = () => {
-          player.paused = false;
-          setTTSButtonState(sourceId, 'ended');
-          // Don't revoke URL here, allow replaying
-        };
-        player.audio.onerror = (e) => {
-          showStatus('Error playing audio', 'error');
-          console.error('Audio playback error:', e);
-          setTTSButtonState(sourceId, 'error');
-          player.error = true;
-          if (player.blobUrl) URL.revokeObjectURL(player.blobUrl); // Clean up on error
-          player.blobUrl = null;
-        };
-
-        player.audio.play().catch(error => {
-          showStatus('Error playing audio: ' + error.message, 'error');
-          console.error('Audio playback error:', error);
-          setTTSButtonState(sourceId, 'error');
-          player.error = true;
-          if (player.blobUrl) URL.revokeObjectURL(player.blobUrl);
-          player.blobUrl = null;
-        });
-      } catch (e) {
-          showStatus('Error creating audio player', 'error');
-          console.error('Audio element creation error:', e);
-          setTTSButtonState(sourceId, 'error');
-          player.error = true;
-          if (player.blobUrl) URL.revokeObjectURL(player.blobUrl);
-          player.blobUrl = null;
-      }
-      return;
-    }
+    // Stop any currently playing audio
+    stopAllAudio();
 
     // Get the selected TTS model
     const ttsModelSelect = document.getElementById('tts-model-select');
-    const ttsModel = ttsModelSelect ? ttsModelSelect.value : 'gemini'; // Default to Gemini if not found
+    const ttsModel = ttsModelSelect ? ttsModelSelect.value : 'auto'; // Default to auto if not found
 
-    // --- Fetch new audio blob ---
-    showStatus(`Generating audio using ${ttsModel === 'gemini' ? 'Gemini' : 'OpenAI'} TTS...`, 'info');
-    setTTSButtonState(sourceId, 'loading'); // Indicate loading state visually if needed
+    // Show loading status
+    showStatus(`Generating audio using ${ttsModel} TTS...`, 'info');
+    setTTSButtonState(sourceId, 'loading');
 
+    // Make API request
     fetch('/api/tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -259,54 +211,50 @@ document.addEventListener('DOMContentLoaded', () => {
       })
     })
     .then(response => {
-      if (!response.ok) throw new Error(`TTS service error (${response.status})`);
+      if (!response.ok) {
+        throw new Error(`TTS service error (${response.status})`);
+      }
       return response.blob();
     })
     .then(audioBlob => {
-      player.blobUrl = URL.createObjectURL(audioBlob);
-      player.audio = new Audio(player.blobUrl);
-      player.audio.playbackRate = 1.10;
-
-      player.audio.onplay = () => {
-        setTTSButtonState(sourceId, 'playing');
-        showStatus('Playing audio...', 'info');
+      // Create URL for the audio blob
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      // Create and play the audio
+      const audio = new Audio(audioUrl);
+      
+      // Store the audio element globally so we can stop it later
+      currentAudio = audio;
+      
+      // Set playback rate to 1.10 (10% faster)
+      audio.playbackRate = 1.10;
+      
+      // Play the audio
+      audio.play()
+        .then(() => {
+          showStatus('Playing audio...', 'info');
+        })
+        .catch(error => {
+          showStatus('Error playing audio: ' + error.message, 'danger');
+          console.error('Audio playback error:', error);
+          fallbackSpeakText(text, langCode);
+        });
+      
+      // Clean up when done
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        currentAudio = null;
       };
-      player.audio.onpause = () => {
-        if (!player.audio.ended) {
-          player.paused = true;
-          setTTSButtonState(sourceId, 'paused');
-        }
-      };
-      player.audio.onended = () => {
-        player.paused = false;
-        setTTSButtonState(sourceId, 'ended');
-        // Don't revoke URL here, allow replaying
-      };
-      player.audio.onerror = (e) => {
-        showStatus('Error playing generated audio', 'error');
-        console.error('Audio playback error:', e);
-        setTTSButtonState(sourceId, 'error');
-        player.error = true;
-        if (player.blobUrl) URL.revokeObjectURL(player.blobUrl);
-        player.blobUrl = null;
-      };
-
-      player.audio.play().catch(error => {
-        showStatus('Error playing audio: ' + error.message, 'error');
-        console.error('Audio playback error:', error);
-        setTTSButtonState(sourceId, 'error');
-        player.error = true;
-        if (player.blobUrl) URL.revokeObjectURL(player.blobUrl);
-        player.blobUrl = null;
-      });
     })
     .catch(error => {
-      showStatus('Error generating speech: ' + error.message, 'error');
+      showStatus('Error generating speech: ' + error.message, 'danger');
       console.error('TTS error:', error);
-      setTTSButtonState(sourceId, 'error');
-      player.error = true;
-      // Consider fallbackSpeakText here if desired, but it won't have pause/resume
-      // fallbackSpeakText(sourceId, text, langCode);
+      
+      // Fallback to browser's speech synthesis
+      fallbackSpeakText(text, langCode);
+    })
+    .finally(() => {
+      setTTSButtonState(sourceId, 'ready');
     });
   }
 
