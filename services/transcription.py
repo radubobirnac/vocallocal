@@ -77,7 +77,7 @@ class TranscriptionService(BaseService):
         self.robust_chunker = RobustChunker(
             max_retries=2,
             retry_delay=2,
-            chunk_duration=300,  # 5 minutes
+            chunk_seconds=300,  # 5 minutes
             transcription_service=self
         )
 
