@@ -34,10 +34,11 @@ loglevel = 'info'
 
 # Limit the maximum request body size (in bytes)
 # This helps prevent memory issues with large file uploads
-# 30MB limit (adjust as needed)
-limit_request_line = 0
+# No limit on request body size - we handle this in the application
+# We set MAX_CONTENT_LENGTH to 150MB in the Flask app
+limit_request_line = 8190
 limit_request_fields = 100
-limit_request_field_size = 0
+limit_request_field_size = 8190
 
 # Preload the application to save memory across workers
 preload_app = True

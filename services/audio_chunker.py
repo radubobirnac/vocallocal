@@ -207,21 +207,29 @@ class RobustChunker:
     """
     Production-ready audio chunking service for VocalLocal.
     Processes audio files using FFmpeg's segment muxer.
+    Designed to be flexible with parameter naming to avoid deployment issues.
     """
 
-    def __init__(self, input_path=None, output_dir=None, chunk_seconds=300):
+    def __init__(self, **kwargs):
         """
-        Initialize the RobustChunker.
+        Initialize with flexible parameters to avoid TypeError on deployment.
 
         Args:
-            input_path: Path to input audio file
-            output_dir: Directory for output chunks
-            chunk_seconds: Duration of each chunk in seconds
+            **kwargs: Can include input_path, output_dir, and any of:
+                     chunk_seconds, chunk_duration, or chunk_duration_seconds
         """
-        self.input_path = input_path
-        self.output_dir = output_dir
-        self.chunk_seconds = chunk_seconds
+        # Extract parameters with fallbacks
+        self.input_path = kwargs.get('input_path')
+        self.output_dir = kwargs.get('output_dir')
+
+        # Handle various forms of chunk duration parameter
+        self.chunk_seconds = kwargs.get('chunk_seconds',
+                           kwargs.get('chunk_duration',
+                           kwargs.get('chunk_duration_seconds', 300)))
+
+        # Set up logging
         self.logger = logging.getLogger("robust_chunker")
+        self.logger.info(f"Initialized RobustChunker with: chunk_seconds={self.chunk_seconds}")
 
     def prepare_output_directory(self):
         """Ensure the output directory exists."""
@@ -258,14 +266,15 @@ class RobustChunker:
         if not file_ext:
             file_ext = "mp3"  # Default extension
 
-        # Build FFmpeg command
+        # Build FFmpeg command with recommended flags
         output_pattern = os.path.join(self.output_dir, f"chunk_%03d.{file_ext}")
         cmd = [
             "ffmpeg", "-y",
             "-i", self.input_path,
             "-f", "segment",
             "-segment_time", str(self.chunk_seconds),
-            "-c", "copy",
+            "-avoid_negative_ts", "make_zero",  # Ensure clean timestamp boundaries
+            "-c", "copy",  # Copy codec (no re-encoding)
             output_pattern
         ]
 

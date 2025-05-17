@@ -4,9 +4,10 @@ services:
     env: python
     buildCommand: |
       apt-get update
-      apt-get install -y portaudio19-dev python3-pyaudio
+      apt-get install -y ffmpeg portaudio19-dev python3-pyaudio
       pip install --upgrade pip
       pip install -r requirements.txt
+      pip install -r requirements_render.txt
       chmod +x postbuild.sh
       ./postbuild.sh
     startCommand: bash ./start.sh
@@ -24,6 +25,14 @@ services:
         value: https://vocal-local-e1e70-default-rtdb.firebaseio.com
       - key: FIREBASE_CREDENTIALS
         sync: false
+      - key: GUNICORN_CMD_ARGS
+        value: "--worker-class gthread --threads 4 --timeout 120 --graceful-timeout 120"
+      - key: INPUT_PATH
+        value: /tmp/input
+      - key: OUTPUT_DIR
+        value: /tmp/output
+      - key: CHUNK_SECONDS
+        value: "300"
     # Add this section to ensure HTTPS is enforced
     headers:
       - path: /*

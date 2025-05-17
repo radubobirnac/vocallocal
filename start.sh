@@ -62,6 +62,31 @@ else
   apt-get update && apt-get install -y ffmpeg
 fi
 
-# Start the application with our custom Gunicorn configuration
-echo "Starting Gunicorn server with memory optimization..."
-gunicorn app:app --config gunicorn_config.py
+# Check for required environment variables
+echo "Checking required environment variables for audio chunking..."
+if [ -z "$INPUT_PATH" ]; then
+  echo "INPUT_PATH is not set, creating default directory"
+  mkdir -p /tmp/input
+  export INPUT_PATH=/tmp/input
+fi
+
+if [ -z "$OUTPUT_DIR" ]; then
+  echo "OUTPUT_DIR is not set, creating default directory"
+  mkdir -p /tmp/output
+  export OUTPUT_DIR=/tmp/output
+fi
+
+if [ -z "$CHUNK_SECONDS" ]; then
+  echo "CHUNK_SECONDS is not set, using default value of 300"
+  export CHUNK_SECONDS=300
+fi
+
+# Check if we should use the Render-specific app
+if [ -f "app_render_deploy.py" ]; then
+  echo "Starting Gunicorn server with Render-specific app..."
+  gunicorn app_render_deploy:app --config gunicorn_config.py
+else
+  # Start the application with our custom Gunicorn configuration
+  echo "Starting Gunicorn server with memory optimization..."
+  gunicorn app:app --config gunicorn_config.py
+fi
