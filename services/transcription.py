@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 from services.base_service import BaseService
 from services.audio_chunker import AudioChunker
+from services.robust_chunker import RobustChunker
 from metrics_tracker import track_transcription_metrics
 
 # Try to import pydub for audio chunking, but make it optional
@@ -65,11 +66,19 @@ class TranscriptionService(BaseService):
             self.gemini_available = False
             self.logger.warning("Gemini API key not found. Gemini transcription will not be available.")
 
-        # Initialize the audio chunker
+        # Initialize the audio chunkers
         self.audio_chunker = AudioChunker(
             max_retries=2,
             retry_delay=2,
             chunk_duration=300  # 5 minutes
+        )
+
+        # Initialize the robust chunker
+        self.robust_chunker = RobustChunker(
+            max_retries=2,
+            retry_delay=2,
+            chunk_duration=300,  # 5 minutes
+            transcription_service=self
         )
 
     def _clean_gemini_transcription(self, text):
@@ -526,6 +535,96 @@ class TranscriptionService(BaseService):
             self.logger.warning("FFmpeg is not available")
             return False
 
+    def _transcribe_with_production_chunker(self, audio_data, language, model_name="gemini"):
+        """
+        Transcribe a large audio file using the production-ready RobustChunker.
+        This method follows a strict protocol for error handling, resource management,
+        and parallel processing.
+
+        Args:
+            audio_data (bytes): The audio data to transcribe
+            language (str): The language code
+            model_name (str): The model name to use
+
+        Returns:
+            str: The combined transcribed text
+        """
+        file_size_mb = len(audio_data) / (1024 * 1024)
+        self.logger.info(f"Using production-ready RobustChunker for large file ({file_size_mb:.2f} MB)")
+
+        # Create a temporary file to store the audio data
+        with tempfile.NamedTemporaryFile(delete=False, suffix=self._get_file_extension(audio_data)) as temp_file:
+            temp_file.write(audio_data)
+            temp_file_path = temp_file.name
+
+        # Free up memory by clearing the original audio data
+        del audio_data
+
+        try:
+            # Process the audio file using the RobustChunker
+            self.logger.info(f"Processing audio file with RobustChunker: {temp_file_path}")
+            result = self.robust_chunker.process_audio_file(temp_file_path, language, model_name)
+
+            # Check if processing was successful
+            if result["status"] == "ok":
+                self.logger.info(f"Successfully transcribed audio file with {len(result['chunks'])} chunks")
+                return result["transcript"]
+            else:
+                # If processing failed, log the error and fall back to normal transcription
+                self.logger.error(f"RobustChunker failed: {result.get('message', 'Unknown error')}")
+
+                # If we have partial results, combine them
+                if "partial_results" in result and result["partial_results"]:
+                    self.logger.info(f"Using partial results from {len(result['partial_results'])} chunks")
+                    partial_texts = [r["text"] for r in result["partial_results"] if r["text"]]
+                    if partial_texts:
+                        return " ".join(partial_texts)
+
+                # If no partial results, read the file and try normal transcription
+                self.logger.info("Falling back to normal transcription")
+                with open(temp_file_path, 'rb') as f:
+                    audio_data = f.read()
+                return self._transcribe_with_gemini_internal(audio_data, language, model_name)
+
+        except Exception as e:
+            self.logger.error(f"Error in RobustChunker: {str(e)}")
+            # Fall back to normal transcription if chunking fails
+            self.logger.info("Falling back to normal transcription due to exception")
+            with open(temp_file_path, 'rb') as f:
+                audio_data = f.read()
+            return self._transcribe_with_gemini_internal(audio_data, language, model_name)
+
+        finally:
+            # Clean up the temporary file
+            try:
+                os.remove(temp_file_path)
+                self.logger.info(f"Removed temporary file: {temp_file_path}")
+            except Exception as e:
+                self.logger.warning(f"Failed to remove temporary file: {str(e)}")
+
+    def _get_file_extension(self, audio_data):
+        """
+        Get the appropriate file extension based on audio data.
+
+        Args:
+            audio_data (bytes): The audio data
+
+        Returns:
+            str: The file extension with leading dot
+        """
+        # Check for common audio format signatures
+        if audio_data.startswith(b'\x1A\x45\xDF\xA3'):
+            return ".webm"  # WebM signature
+        elif audio_data.startswith(b'ID3') or audio_data.startswith(b'\xFF\xFB'):
+            return ".mp3"   # MP3 signature
+        elif audio_data.startswith(b'RIFF'):
+            return ".wav"   # WAV signature
+        elif audio_data.startswith(b'\x00\x00\x00'):
+            return ".m4a"   # M4A/AAC signature
+        else:
+            # Default to webm if we can't detect the format
+            return ".webm"
+
     def _transcribe_with_robust_chunking(self, audio_data, language, model_name="gemini", chunk_duration_seconds=300):
         """
         Transcribe a large audio file using the robust AudioChunker.
@@ -740,9 +839,9 @@ class TranscriptionService(BaseService):
         if file_size_mb > CHUNKING_THRESHOLD_MB:
             self.logger.info(f"Large file detected ({file_size_mb:.2f} MB). Using chunked transcription.")
 
-            # For all large files, use the robust AudioChunker if FFmpeg is available
+            # For all large files, use the production-ready RobustChunker if FFmpeg is available
             if ffmpeg_available:
-                self.logger.info(f"Using robust AudioChunker for large file ({file_size_mb:.2f} MB)")
+                self.logger.info(f"Using production-ready RobustChunker for large file ({file_size_mb:.2f} MB)")
 
                 # Calculate optimal chunk duration based on file size
                 # Larger files get longer chunks to reduce the number of API calls
@@ -751,8 +850,11 @@ class TranscriptionService(BaseService):
                 else:
                     chunk_duration = 300  # 5 minutes for large files
 
-                # Use the robust AudioChunker for chunking
-                return self._transcribe_with_robust_chunking(audio_data, language, model_name, chunk_duration_seconds=chunk_duration)
+                # Configure the chunker with the appropriate duration
+                self.robust_chunker.chunk_duration = chunk_duration
+
+                # Use the production-ready RobustChunker for chunking
+                return self._transcribe_with_production_chunker(audio_data, language, model_name)
 
             # Fall back to memory-optimized chunking if FFmpeg is not available
             else:

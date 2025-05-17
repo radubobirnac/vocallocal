@@ -7,14 +7,15 @@ import multiprocessing
 # Worker settings
 # For paid tier with more resources, we can use better settings
 workers = 2  # Keep at 2 for stability
-worker_class = 'sync'  # Use sync workers for better memory management
+worker_class = 'gthread'  # Use gthread workers for concurrent processing
+threads = 4  # Use 4 threads per worker for parallel processing
 timeout = 600  # Increased timeout for processing large files (10 minutes)
+graceful_timeout = 120  # Allow 2 minutes for graceful shutdown
 keepalive = 5
 
 # Server settings
 bind = f"0.0.0.0:{os.environ.get('PORT', '5001')}"
 worker_tmp_dir = '/tmp'
-graceful_timeout = 120
 
 # Memory management
 # Restart workers after processing a certain number of requests to prevent memory leaks
@@ -23,8 +24,8 @@ max_requests_jitter = 25  # Add randomness to prevent all workers from restartin
 
 # Worker memory management
 # These settings help prevent memory issues with large files
-worker_connections = 10  # Limit concurrent connections per worker
-threads = 1  # Single-threaded workers for better memory isolation
+worker_connections = 20  # Increased for better concurrency
+# threads = 4  # Already set above
 
 # Logging
 accesslog = '-'  # Log to stdout
