@@ -2,10 +2,30 @@
 
 # Print debugging information
 echo "Starting deployment script..."
-echo "Python version:"
-python --version
-echo "Pip version:"
-pip --version
+echo "Environment: RENDER=$RENDER"
+echo "Python version: $(python --version)"
+echo "Working directory: $(pwd)"
+echo "Files in current directory: $(ls -la)"
+
+# Check if FFmpeg is installed
+echo "Checking for FFmpeg..."
+if command -v ffmpeg &> /dev/null; then
+  echo "FFmpeg is available"
+  ffmpeg -version
+else
+  echo "FFmpeg is not available. Installing..."
+  apt-get update && apt-get install -y ffmpeg
+  echo "FFmpeg installation complete:"
+  ffmpeg -version
+fi
+
+# Print memory information
+echo "Memory information:"
+free -h
+
+# Print disk space
+echo "Disk space:"
+df -h
 
 # Install Google packages directly into the site-packages directory
 echo "Installing Google packages directly..."

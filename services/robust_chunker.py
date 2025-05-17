@@ -48,6 +48,22 @@ class RobustChunker:
             retry_delay: Delay between retries in seconds (overrides RETRY_DELAY env var)
             transcription_service: Service to use for transcription
         """
+        # Debug print to see where the initialization is happening
+        print(f"Initializing RobustChunker with input_path={input_path}, output_dir={output_dir}")
+        
+        # Initialize logger first - with fallback
+        try:
+            self.logger = logging.getLogger("robust_chunker")
+        except Exception as e:
+            print(f"Failed to initialize logger: {str(e)}")
+            # Create a simple fallback logger
+            class FallbackLogger:
+                def info(self, msg): print(f"INFO: {msg}")
+                def error(self, msg): print(f"ERROR: {msg}")
+                def warning(self, msg): print(f"WARNING: {msg}")
+                def debug(self, msg): print(f"DEBUG: {msg}")
+            self.logger = FallbackLogger()
+        
         # Read from environment variables with fallbacks to provided values or defaults
         self.input_path = input_path or os.environ.get('INPUT_PATH')
         self.output_dir = output_dir or os.environ.get('OUTPUT_DIR') or tempfile.mkdtemp()
