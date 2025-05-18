@@ -6,7 +6,7 @@ import os
 import sys
 import subprocess
 import tempfile
-from flask import Flask, redirect, url_for, flash, render_template
+from flask import Flask, redirect, url_for, flash, render_template, jsonify
 from config import Config
 import jinja2
 
@@ -170,6 +170,12 @@ app.register_blueprint(interpretation.bp)
 # Register auth blueprint with a different name to avoid conflicts
 from auth import auth_bp
 app.register_blueprint(auth_bp, name='auth_blueprint')
+
+@app.route('/api/transcription_status/<job_id>', methods=['GET'])
+def transcription_status(job_id):
+    """Check the status of a background transcription job"""
+    status = transcription_service.get_job_status(job_id)
+    return jsonify(status)
 
 if __name__ == '__main__':
     import argparse

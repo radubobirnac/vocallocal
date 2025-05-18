@@ -750,44 +750,44 @@ class TranscriptionService(BaseService):
         """
         Transcribe a large audio file by splitting it into smaller chunks and combining the results.
         Memory-optimized version that processes chunks sequentially and cleans up after each chunk.
-
-        Args:
-            audio_data (bytes): The audio data to transcribe
-            language (str): The language code
-            model_name (str): The model name to use
-            chunk_size_mb (int): Size of each chunk in MB
-
-        Returns:
-            str: The combined transcribed text
         """
         file_size_mb = len(audio_data) / (1024 * 1024)
         self.logger.info(f"Using chunked transcription for large file ({file_size_mb:.2f} MB) with {chunk_size_mb}MB chunks")
 
         # Split the audio into chunks
         chunks = self._chunk_audio_file(audio_data, chunk_size_mb=chunk_size_mb)
-
+        
+        # Log chunk information
+        self.logger.info(f"Splitting file into {len(chunks)} chunks of {chunk_size_mb}MB each")
+        
         # Free up memory by clearing the original audio data
         del audio_data
-
-        if len(chunks) == 1:
-            self.logger.info("Chunking resulted in a single chunk, proceeding with normal transcription")
-            result = self._transcribe_with_gemini_internal(chunks[0], language, model_name)
-            # Free memory
-            del chunks
-            return result
-
+        
         # Transcribe each chunk with memory cleanup after each
         transcriptions = []
         total_chunks = len(chunks)
-
-        for i in range(total_chunks):
-            # Get the current chunk and immediately free memory for other chunks
-            chunk = chunks[i]
-
-            # Log progress
+        
+        for i, chunk in enumerate(chunks):
             chunk_size_mb = len(chunk) / (1024 * 1024)
             self.logger.info(f"Transcribing chunk {i+1}/{total_chunks} ({chunk_size_mb:.2f} MB)")
-
+            
+            # Add delay between chunks to prevent rate limiting and reduce memory pressure
+            if i > 0:
+                time.sleep(2)  # 2-second delay between chunks
+                
+            # Monitor memory usage
+            try:
+                import psutil
+                memory_percent = psutil.virtual_memory().percent
+                self.logger.info(f"Memory usage before chunk {i+1}: {memory_percent:.1f}%")
+                if memory_percent > 85:
+                    self.logger.warning(f"High memory usage detected: {memory_percent:.1f}%")
+                    # Force garbage collection
+                    import gc
+                    gc.collect()
+            except ImportError:
+                pass
+            
             try:
                 # Transcribe this chunk
                 chunk_transcription = self._transcribe_with_gemini_internal(chunk, language, model_name)
@@ -828,6 +828,21 @@ class TranscriptionService(BaseService):
         """
         # Calculate file size in MB
         file_size_mb = len(audio_data) / (1024 * 1024)
+        
+        # For very large files (>30MB), use background processing
+        if file_size_mb > 30:
+            self.logger.info(f"Very large file detected ({file_size_mb:.2f} MB). Using background processing.")
+            # Return a job ID and process in background
+            job_id = str(uuid.uuid4())
+            
+            # Start background processing
+            threading.Thread(
+                target=self._background_transcribe,
+                args=(job_id, audio_data, language, model_name),
+                daemon=True
+            ).start()
+            
+            return {"status": "processing", "job_id": job_id}
         
         # Lower the chunking threshold to ensure better reliability
         CHUNKING_THRESHOLD_MB = 15  # Reduced from 20MB to 15MB

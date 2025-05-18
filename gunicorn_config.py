@@ -9,7 +9,7 @@ import multiprocessing
 workers = 2  # Keep at 2 for stability
 worker_class = 'gthread'  # Use gthread workers for concurrent processing
 threads = 4  # Use 4 threads per worker for parallel processing
-timeout = 600  # Increased timeout for processing large files (10 minutes)
+timeout = 600  # Increase from default 30 seconds to 300 seconds (5 minutes)
 graceful_timeout = 120  # Allow 2 minutes for graceful shutdown
 keepalive = 5
 
