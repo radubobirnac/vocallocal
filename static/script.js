@@ -1839,9 +1839,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('language', document.getElementById('basic-language').value);
-
-        // Get selected model from global transcription model
         formData.append('model', selectedModel);
+        formData.append('speaker', 'basic');
 
         // Show status message
         showStatus('Transcribing your audio...', 'info');
@@ -1854,18 +1853,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
           sendToServerWithProgress(formData, 'basic-upload-btn')
             .then(result => {
-              // Update transcript
-              updateTranscript('basic-transcript', result.text || "No transcript received.");
-
-              // Wait a moment to ensure the transcript is visible before removing the spinner
-              setTimeout(() => {
-                // Signal completion to the progress indicator
-                if (uploadBtn && uploadBtn._progressInstance && uploadBtn._progressInstance.updateState) {
-                  uploadBtn._progressInstance.updateState('completed');
-                }
-              }, 500);
-
-              showStatus('Transcription complete!', 'success');
+              // Check if this is a background processing job
+              if (result.processing && result.job_id) {
+                // Already handled by pollTranscriptionStatus
+                showStatus('Processing large file in background...', 'info', true);
+              } else {
+                // Update transcript
+                updateTranscript('basic-transcript', result.text || "No transcript received.");
+                showStatus('Transcription complete!', 'success');
+              }
             })
             .catch(error => {
               console.error('Upload error:', error);
@@ -1939,9 +1935,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('language', document.getElementById('language-1').value);
-
-        // Get selected model from global transcription model
         formData.append('model', selectedModel);
+        formData.append('speaker', '1');
 
         // Show status message
         showStatus('Transcribing Speaker 1 audio...', 'info');
@@ -2025,9 +2020,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('language', document.getElementById('language-2').value);
-
-        // Get selected model from global transcription model
         formData.append('model', selectedModel);
+        formData.append('speaker', '2');
 
         // Show status message
         showStatus('Transcribing Speaker 2 audio...', 'info');
@@ -2077,6 +2071,101 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  // Function to poll for transcription job status
+  async function pollTranscriptionStatus(jobId, elementId) {
+    const maxAttempts = 60; // 5 minutes (5s intervals)
+    let attempts = 0;
+    
+    showStatus('Processing large file in background...', 'info', true);
+    
+    const checkStatus = async () => {
+      try {
+        const response = await fetch(`/api/transcription_status/${jobId}`);
+        const status = await response.json();
+        
+        if (status.status === 'completed') {
+          // Update transcript with the result
+          updateTranscript(elementId, status.result);
+          showStatus('Transcription complete!', 'success');
+          return true;
+        } else if (status.status === 'failed') {
+          showStatus(`Transcription failed: ${status.error}`, 'error', true);
+          return true;
+        } else if (status.status === 'processing') {
+          // Continue polling
+          showStatus(`Processing large file... ${status.progress || ''}`, 'info', true);
+          return false;
+        } else {
+          showStatus('Transcription status unknown', 'warning');
+          return true;
+        }
+      } catch (error) {
+        console.error('Error checking transcription status:', error);
+        showStatus('Error checking transcription status', 'error');
+        return true; // Stop polling on error
+      }
+    };
+    
+    // Start polling
+    const poll = async () => {
+      attempts++;
+      const done = await checkStatus();
+      
+      if (!done && attempts < maxAttempts) {
+        setTimeout(poll, 5000); // Check every 5 seconds
+      } else if (!done) {
+        showStatus('Transcription timed out. Please check back later.', 'warning', true);
+      }
+    };
+    
+    poll();
+  }
+
+  // Update the sendToServer function to handle background processing
+  async function sendToServer(formData) {
+    try {
+      const response = await fetch('/api/transcribe', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      // Check if this is a background processing job
+      if (result.status === 'processing' && result.job_id) {
+        // Determine which transcript element to update based on formData
+        let elementId = 'basic-transcript';
+        
+        // For conversation mode, check if this is speaker 1 or 2
+        if (formData.get('speaker') === '1') {
+          elementId = 'transcript-1';
+        } else if (formData.get('speaker') === '2') {
+          elementId = 'transcript-2';
+        }
+        
+        // Start polling for status
+        pollTranscriptionStatus(result.job_id, elementId);
+        
+        // Return a placeholder result
+        return {
+          text: "Processing large file in background...",
+          processing: true,
+          job_id: result.job_id
+        };
+      }
+      
+      // Regular result
+      return result;
+    } catch (error) {
+      console.error('Error sending to server:', error);
+      throw error;
+    }
+  }
 
   // About section toggle
   const aboutToggle = document.getElementById('about-toggle');
