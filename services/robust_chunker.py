@@ -69,6 +69,8 @@ class RobustChunker:
         # Register signal handlers for graceful shutdown
         signal.signal(signal.SIGTERM, self._handle_shutdown)
         signal.signal(signal.SIGINT, self._handle_shutdown)
+        self.logger = logging.getLogger("robust_chunker")
+
 
         logger.info(f"Initialized RobustChunker with: chunk_seconds={self.chunk_seconds}, "
                    f"max_retries={self.max_retries}, retry_delay={self.retry_delay}")
