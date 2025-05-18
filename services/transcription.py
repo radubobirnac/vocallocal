@@ -8,6 +8,7 @@ import tempfile
 import subprocess
 import logging
 import threading
+import uuid  # Add this import for UUID generation
 import openai
 import google.generativeai as genai
 from pathlib import Path
@@ -1442,6 +1443,96 @@ class TranscriptionService(BaseService):
                     self.logger.info(f"Removed temporary MP3 file: {mp3_file_path}")
                 except Exception as cleanup_error:
                     self.logger.warning(f"Failed to remove temporary MP3 file: {str(cleanup_error)}")
+
+    def _background_transcribe(self, job_id, audio_data, language, model_name):
+        """
+        Background processing method for large audio files.
+        This runs in a separate thread to avoid timeouts.
+        
+        Args:
+            job_id (str): Unique identifier for this transcription job
+            audio_data (bytes): The audio data to transcribe
+            language (str): The language code
+            model_name (str): The model to use
+        """
+        try:
+            self.logger.info(f"Starting background transcription job {job_id}")
+            
+            # Store job status
+            if not hasattr(self, 'job_statuses'):
+                self.job_statuses = {}
+            
+            self.job_statuses[job_id] = {
+                "status": "processing",
+                "progress": 0,
+                "result": None,
+                "error": None
+            }
+            
+            # Process with chunking
+            file_size_mb = len(audio_data) / (1024 * 1024)
+            self.logger.info(f"Background processing file of size {file_size_mb:.2f} MB")
+            
+            # Use memory-optimized chunking with smaller chunks
+            chunk_size_mb = 5
+            
+            try:
+                # Transcribe with chunking
+                result = self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=chunk_size_mb)
+                
+                # Update job status
+                self.job_statuses[job_id] = {
+                    "status": "completed",
+                    "progress": 100,
+                    "result": result,
+                    "error": None
+                }
+                
+                self.logger.info(f"Background transcription job {job_id} completed successfully")
+                
+            except Exception as e:
+                self.logger.error(f"Error in background transcription: {str(e)}")
+                
+                # Update job status
+                self.job_statuses[job_id] = {
+                    "status": "failed",
+                    "progress": 0,
+                    "result": None,
+                    "error": str(e)
+                }
+        
+        except Exception as e:
+            self.logger.error(f"Unhandled error in background transcription: {str(e)}")
+            
+            # Update job status if possible
+            if hasattr(self, 'job_statuses'):
+                self.job_statuses[job_id] = {
+                    "status": "failed",
+                    "progress": 0,
+                    "result": None,
+                    "error": str(e)
+                }
+
+    def get_job_status(self, job_id):
+        """
+        Get the status of a background transcription job.
+        
+        Args:
+            job_id (str): The job ID to check
+        
+        Returns:
+            dict: The job status information
+        """
+        if not hasattr(self, 'job_statuses'):
+            self.job_statuses = {}
+            
+        if job_id not in self.job_statuses:
+            return {
+                "status": "not_found",
+                "error": "Job ID not found"
+            }
+            
+        return self.job_statuses[job_id]
 
 # Create a singleton instance
 transcription_service = TranscriptionService()

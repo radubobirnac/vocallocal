@@ -144,3 +144,11 @@ def transcribe_audio():
             }), 500
 
     return jsonify({'error': f'Invalid file type. Allowed types: {", ".join(Config.ALLOWED_EXTENSIONS)}'}), 400
+
+@bp.route('/transcription_status/<job_id>', methods=['GET'])
+def transcription_status(job_id):
+    """Check the status of a background transcription job"""
+    from services.transcription import transcription_service
+    
+    status = transcription_service.get_job_status(job_id)
+    return jsonify(status)
