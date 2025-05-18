@@ -844,7 +844,7 @@ class TranscriptionService(BaseService):
                 self.logger.info(f"Very large file detected ({file_size_mb:.2f} MB). Using manual chunking.")
                 
                 # Use memory-optimized chunking with smaller chunks
-                chunk_size_mb = 3  # Use smaller chunks for very large files
+                chunk_size_mb = 5  # Use smaller chunks for very large files
                 
                 self.logger.info(f"Using memory-optimized chunking with {chunk_size_mb}MB chunks")
                 return self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=chunk_size_mb)

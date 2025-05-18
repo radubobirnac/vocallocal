@@ -15,6 +15,7 @@ import subprocess
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Any, Optional, Tuple, Union
+import psutil
 
 # Configure logging
 logging.basicConfig(
@@ -99,6 +100,14 @@ class RobustChunker:
             self.heartbeat_thread.join(timeout=1)
             logger.info("Stopped heartbeat thread")
 
+    def _check_memory_usage(self):
+        """Monitor memory usage during chunking process"""
+        
+        memory_percent = psutil.virtual_memory().percent
+        if memory_percent > 85:  # Warning threshold
+            self.logger.warning(f"High memory usage detected: {memory_percent}%")
+        return memory_percent
+
     def prepare_output_directory(self) -> bool:
         """
         Ensure the output directory exists.
@@ -118,6 +127,9 @@ class RobustChunker:
         """
         Chunk the audio file using FFmpeg with retries.
         """
+        # Add a flag to track if we're in a multi-chunk processing session
+        self.multi_chunk_processing = True
+        
         if not self.input_path:
             return False, [], "No input path specified"
 
@@ -193,6 +205,8 @@ class RobustChunker:
             return False, [], "No chunks were created during FFmpeg processing"
 
         logger.info(f"Created {len(chunk_files)} chunks")
+        # Set flag to False when done
+        self.multi_chunk_processing = False
         return True, chunk_files, ""
 
     def validate_chunks(self, chunk_files: List[str]) -> Tuple[bool, List[str], str]:
