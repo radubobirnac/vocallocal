@@ -64,7 +64,18 @@ def transcribe_audio():
 
                 # Use the transcription service
                 transcription = transcription_service.transcribe(audio_content, language, model)
-
+                
+                # Check if this is a background processing job
+                if isinstance(transcription, dict) and transcription.get('status') == 'processing':
+                    # Return the job ID for background processing
+                    return jsonify(transcription)
+                
+                # For regular processing, ensure consistent format
+                if isinstance(transcription, str):
+                    return jsonify({"text": transcription})
+                else:
+                    return jsonify(transcription)
+                
                 # Save transcription to Firebase if user is authenticated
                 try:
                     if current_user.is_authenticated:

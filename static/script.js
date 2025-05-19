@@ -2084,9 +2084,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const response = await fetch(`/api/transcription_status/${jobId}`);
         const status = await response.json();
         
-        if (status.status === 'completed') {
-          // Update transcript with the result
-          updateTranscript(elementId, status.result);
+        if (status.status === 'completed' && status.result) {
+          // Extract the text from the result
+          const transcriptionText = status.result.text || "Transcription completed but no text was returned.";
+          
+          // Update transcript with the text
+          const transcriptElement = document.getElementById(elementId);
+          if (transcriptElement) {
+            transcriptElement.value = transcriptionText;
+            
+            // Trigger change event for any listeners
+            const event = new Event('change');
+            transcriptElement.dispatchEvent(event);
+          }
+          
           showStatus('Transcription complete!', 'success');
           return true;
         } else if (status.status === 'failed') {
@@ -2123,9 +2134,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Update the sendToServer function to handle background processing
-  async function sendToServer(formData) {
+  async function sendToServerWithBackgroundSupport(formData, uploadButtonId, endpoint = '/api/transcribe') {
     try {
-      const response = await fetch('/api/transcribe', {
+      const response = await fetch(endpoint, {
         method: 'POST',
         body: formData
       });
@@ -2142,9 +2153,10 @@ document.addEventListener('DOMContentLoaded', () => {
         let elementId = 'basic-transcript';
         
         // For conversation mode, check if this is speaker 1 or 2
-        if (formData.get('speaker') === '1') {
+        const speaker = formData.get('speaker');
+        if (speaker === '1') {
           elementId = 'transcript-1';
-        } else if (formData.get('speaker') === '2') {
+        } else if (speaker === '2') {
           elementId = 'transcript-2';
         }
         
