@@ -2226,13 +2226,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize TTS model selector
   const ttsModelSelect = document.getElementById('tts-model-select');
   if (ttsModelSelect) {
-    // Set default to Gemini
-    ttsModelSelect.value = 'gemini';
+    // Set default to GPT-4o Mini
+    ttsModelSelect.value = 'gpt4o-mini';
 
     // Save selection to localStorage when changed
     ttsModelSelect.addEventListener('change', function() {
       localStorage.setItem('tts-model', this.value);
-      showStatus(`TTS model set to ${this.value === 'gemini' ? 'Gemini 2.0 Flash Lite' : 'OpenAI'}`, 'success');
+      showStatus(`TTS model set to ${this.value === 'gpt4o-mini' ? 'GPT-4o Mini TTS' : 'OpenAI TTS-1'}`, 'success');
     });
 
     // Load saved selection from localStorage if available
