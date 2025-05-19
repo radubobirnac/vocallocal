@@ -1474,21 +1474,12 @@ class TranscriptionService(BaseService):
                 # Transcribe with chunking
                 result = self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=chunk_size_mb)
                 
-                # Format the result to match what the frontend expects
-                # For small files, the API returns {"text": "transcription text"}
-                if isinstance(result, str):
-                    formatted_result = {"text": result}
-                elif isinstance(result, dict) and "text" in result:
-                    formatted_result = result
-                else:
-                    # Convert any other format to the expected format
-                    formatted_result = {"text": str(result)}
-                
-                # Update job status
+                # Store the result directly as text
+                # This ensures consistent format with regular transcription
                 self.job_statuses[job_id] = {
                     "status": "completed",
                     "progress": 100,
-                    "result": formatted_result,  # Use the formatted result
+                    "result": result,  # Store the text directly
                     "error": None
                 }
                 
