@@ -1,7 +1,7 @@
 """
 Main routes for VocalLocal
 """
-from flask import Blueprint, render_template, redirect, url_for, send_from_directory, current_app
+from flask import Blueprint, render_template, send_from_directory
 from flask_login import current_user, login_required
 
 # Create a blueprint for the main routes
@@ -14,8 +14,8 @@ def index():
         # User is logged in, show the main application
         return render_template('index.html')
     else:
-        # User is not logged in, redirect to login page
-        return redirect(url_for('auth.login'))
+        # User is not logged in, show the home page
+        return render_template('home.html')
 
 @bp.route('/profile')
 @login_required

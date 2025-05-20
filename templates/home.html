@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VocalLocal - Multilingual Speech-to-Text Platform</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+</head>
+<body>
+  <div class="home-container">
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+      <div class="navbar-container">
+        <!-- Logo and Brand (Left) -->
+        <div class="navbar-brand">
+          <h1 class="brand-title">
+            <span class="brand-icon"><i class="fas fa-microphone-alt"></i></span>
+            <span class="brand-name">VocalLocal</span>
+          </h1>
+        </div>
+
+        <!-- Main Navigation Links (Center) -->
+        <div class="navbar-center">
+          <div class="navbar-links">
+            <a href="#" class="nav-link active">Home</a>
+            <a href="#about" class="nav-link">About Us</a>
+          </div>
+        </div>
+
+        <!-- Auth Links and Theme Toggle (Right) -->
+        <div class="navbar-right">
+          <!-- Auth Links -->
+          <div class="auth-links">
+            <a href="{{ url_for('auth.login') }}" class="nav-link">Login</a>
+            <a href="{{ url_for('auth.register') }}" class="nav-link">Sign Up</a>
+          </div>
+
+          <!-- Theme Toggle -->
+          <div class="theme-selector">
+            <button id="theme-toggle-btn" class="button button-outline button-icon" title="Change theme">
+              <i class="fas fa-lightbulb"></i>
+            </button>
+            <div id="theme-options" class="theme-options-dropdown" style="display: none;">
+              <button class="theme-option" data-theme="light">
+                <i class="fas fa-sun"></i> Light Mode
+              </button>
+              <button class="theme-option" data-theme="dark">
+                <i class="fas fa-moon"></i> Dark Mode
+              </button>
+              <button class="theme-option" data-theme="system">
+                <i class="fas fa-circle-half-stroke"></i> System
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <h1 class="hero-title">Accurate Multilingual Speech-to-Text Transcription</h1>
+        <p class="hero-subtitle">Transform spoken language into text with precision in over 50 languages</p>
+        <div class="hero-buttons">
+          <a href="{{ url_for('auth.register') }}" class="button button-primary">Get Started</a>
+          <a href="#about" class="button button-outline">Learn More</a>
+        </div>
+      </div>
+      <div class="hero-image">
+        <img src="{{ url_for('static', filename='images/hero-illustration.svg') }}" alt="VocalLocal Illustration" onerror="this.style.display='none'">
+      </div>
+    </section>
+
+    <!-- About Us Section -->
+    <section id="about" class="about-section">
+      <div class="section-header">
+        <h2 class="section-title">About VocalLocal</h2>
+        <p class="section-subtitle">Our mission and purpose</p>
+      </div>
+      <div class="about-content">
+        <div class="about-text">
+          <p>
+            VocalLocal is a comprehensive multilingual speech-to-text platform designed to provide accurate
+            transcriptions, translations, and AI interpretations in 50+ languages. Using state-of-the-art AI models
+            from Gemini and OpenAI, it converts spoken language from audio recordings or microphone input into
+            text with exceptional accuracy.
+          </p>
+          <p>
+            Our platform is built to handle a wide range of use cases, from transcribing meetings and lectures to
+            translating conversations and creating content in multiple languages. With VocalLocal, you can break
+            down language barriers and communicate effectively across cultures.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+      <div class="section-header">
+        <h2 class="section-title">Key Features</h2>
+        <p class="section-subtitle">What makes VocalLocal special</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-language"></i>
+          </div>
+          <h3 class="feature-title">Multilingual Support</h3>
+          <p class="feature-description">
+            Transcribe and translate audio in over 50 languages with high accuracy.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-microphone"></i>
+          </div>
+          <h3 class="feature-title">Live Recording</h3>
+          <p class="feature-description">
+            Record audio directly from your microphone for instant transcription.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-file-audio"></i>
+          </div>
+          <h3 class="feature-title">File Upload</h3>
+          <p class="feature-description">
+            Upload audio files in various formats for processing.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-brain"></i>
+          </div>
+          <h3 class="feature-title">AI Interpretation</h3>
+          <p class="feature-description">
+            Get AI-powered interpretations and insights from your audio content.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Call to Action Section -->
+    <section class="cta-section">
+      <div class="cta-content">
+        <h2 class="cta-title">Ready to Get Started?</h2>
+        <p class="cta-description">
+          Join VocalLocal today and experience the power of accurate multilingual speech-to-text transcription.
+        </p>
+        <div class="cta-buttons">
+          <a href="{{ url_for('auth.register') }}" class="button button-primary">Sign Up Now</a>
+          <a href="{{ url_for('auth.login') }}" class="button button-outline">Login</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <h2 class="footer-title">VocalLocal</h2>
+          <p class="footer-tagline">Accurate Multilingual Speech-to-Text Transcription</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-links-column">
+            <h3 class="footer-links-title">Navigation</h3>
+            <a href="#" class="footer-link">Home</a>
+            <a href="#about" class="footer-link">About Us</a>
+          </div>
+          <div class="footer-links-column">
+            <h3 class="footer-links-title">Account</h3>
+            <a href="{{ url_for('auth.login') }}" class="footer-link">Login</a>
+            <a href="{{ url_for('auth.register') }}" class="footer-link">Sign Up</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="copyright">© 2025 VocalLocal. All rights reserved.</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script src="{{ url_for('static', filename='auth.js') }}"></script>
+  <script src="{{ url_for('static', filename='home.js') }}"></script>
+</body>
+</html>

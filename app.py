@@ -106,7 +106,7 @@ def handle_exception(e):
     app.logger.error(f"Unhandled exception: {str(e)}")
     import traceback
     app.logger.error(traceback.format_exc())
-    
+
     # Try to render the error template, but have a fallback if it's missing
     try:
         return render_template('error.html', error=str(e)), 500
@@ -132,8 +132,8 @@ def index():
         # User is logged in, show the main application
         return render_template('index.html')
     else:
-        # User is not logged in, redirect to login page
-        return redirect(url_for('auth.login'))
+        # User is not logged in, show the home page
+        return render_template('home.html')
 
 # Register routes for auth directly at the root level
 @app.route('/auth/google')
