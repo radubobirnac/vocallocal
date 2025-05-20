@@ -81,6 +81,201 @@
   display: flex;
   align-items: center;
   height: 100%;
+  position: relative;
+}
+
+.theme-options-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 180px;
+  background-color: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  z-index: 100;
+}
+
+.theme-options-dropdown.show {
+  display: block !important;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: hsl(var(--foreground));
+  border-radius: var(--radius);
+  transition: background-color 0.2s ease;
+}
+
+.theme-option:hover {
+  background-color: hsla(var(--muted), 0.1);
+}
+
+.theme-option.active {
+  background-color: hsla(var(--primary), 0.1);
+  color: hsl(var(--primary));
+}
+
+/* User Avatar Menu */
+.user-avatar-menu {
+  position: relative;
+  z-index: 1000 !important; /* Ensure it's above other elements */
+  cursor: pointer !important; /* Show pointer cursor to indicate it's clickable */
+  pointer-events: auto !important; /* Ensure clicks are captured */
+}
+
+.avatar-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer !important;
+  padding: 0.25rem;
+  border-radius: var(--radius);
+  transition: background-color 0.2s ease;
+  z-index: 1000 !important; /* Ensure it's above other elements */
+  pointer-events: auto !important; /* Ensure clicks are captured */
+  position: relative; /* Ensure proper stacking context */
+}
+
+.avatar-button:hover {
+  background-color: hsla(var(--muted), 0.1);
+}
+
+.avatar-circle {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.dropdown-arrow {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  transition: transform 0.2s ease;
+}
+
+.avatar-button[aria-expanded="true"] .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.user-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 200px;
+  background-color: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  z-index: 9999 !important; /* Very high z-index to ensure it's above all other elements */
+  display: none;
+  pointer-events: auto !important; /* Ensure clicks are captured */
+  opacity: 1 !important; /* Ensure it's fully visible */
+  visibility: visible !important; /* Ensure it's not hidden */
+}
+
+.user-dropdown.show {
+  display: block !important; /* Use !important to override any other display settings */
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  color: hsl(var(--foreground));
+  text-decoration: none;
+  border-radius: var(--radius);
+  transition: background-color 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: hsla(var(--muted), 0.1);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: hsl(var(--border));
+  margin: 0.5rem 0;
+}
+
+/* History Menu */
+.history-menu {
+  position: relative;
+  z-index: 1000; /* Ensure it's above other elements */
+  cursor: pointer; /* Show pointer cursor to indicate it's clickable */
+}
+
+.history-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer !important;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  color: hsl(var(--foreground));
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  z-index: 1000 !important; /* Ensure it's above other elements */
+  pointer-events: auto !important; /* Ensure clicks are captured */
+  position: relative; /* Ensure proper stacking context */
+}
+
+.history-button:hover {
+  background-color: hsla(var(--muted), 0.1);
+}
+
+.history-button[aria-expanded="true"] .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.history-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 200px;
+  background-color: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  z-index: 9999 !important; /* Very high z-index to ensure it's above all other elements */
+  display: none;
+  pointer-events: auto !important; /* Ensure clicks are captured */
+  opacity: 1 !important; /* Ensure it's fully visible */
+  visibility: visible !important; /* Ensure it's not hidden */
+}
+
+.history-dropdown.show {
+  display: block !important; /* Use !important to override any other display settings */
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
 }
 
 /* Ensure the theme toggle button is properly aligned */

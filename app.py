@@ -84,7 +84,10 @@ except ImportError as e:
     METRICS_AVAILABLE = False
 
 # Initialize Flask application
-app = Flask(__name__, static_folder='static', template_folder='templates')
+import os
+static_folder = os.path.join(os.path.dirname(__file__), 'static')
+template_folder = os.path.join(os.path.dirname(__file__), 'templates')
+app = Flask(__name__, static_folder=static_folder, template_folder=template_folder)
 app.secret_key = Config.SECRET_KEY
 
 # Configure upload settings
@@ -170,6 +173,10 @@ app.register_blueprint(interpretation.bp)
 # Register auth blueprint with a different name to avoid conflicts
 from auth import auth_bp
 app.register_blueprint(auth_bp, name='auth_blueprint')
+
+# Import the transcription service for the status endpoint
+from services.transcription import transcription_service
+from models.firebase_models import Transcription, Translation
 
 @app.route('/api/transcription_status/<job_id>', methods=['GET'])
 def transcription_status(job_id):

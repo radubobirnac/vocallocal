@@ -3,6 +3,7 @@ Main routes for VocalLocal
 """
 from flask import Blueprint, render_template, redirect, url_for, send_from_directory, current_app
 from flask_login import current_user, login_required
+from models.firebase_models import Transcription, Translation
 
 # Create a blueprint for the main routes
 bp = Blueprint('main', __name__)
@@ -21,7 +22,37 @@ def index():
 @login_required
 def profile():
     """User profile page."""
-    return render_template('profile.html', user=current_user)
+    transcriptions = {}
+    translations = {}
+
+    try:
+        # Fetch user's transcription history
+        transcriptions = Transcription.get_by_user(current_user.email, limit=20)
+    except Exception as e:
+        print(f"Error fetching transcriptions: {str(e)}")
+        # Try to fetch without ordering if index is not defined
+        try:
+            user_id = current_user.email.replace('.', ',')
+            transcriptions = Transcription.get_ref(f'transcriptions/{user_id}').get()
+        except Exception as e2:
+            print(f"Error fetching transcriptions without ordering: {str(e2)}")
+
+    try:
+        # Fetch user's translation history
+        translations = Translation.get_by_user(current_user.email, limit=20)
+    except Exception as e:
+        print(f"Error fetching translations: {str(e)}")
+        # Try to fetch without ordering if index is not defined
+        try:
+            user_id = current_user.email.replace('.', ',')
+            translations = Translation.get_ref(f'translations/{user_id}').get()
+        except Exception as e2:
+            print(f"Error fetching translations without ordering: {str(e2)}")
+
+    return render_template('profile.html',
+                          user=current_user,
+                          transcriptions=transcriptions if transcriptions else {},
+                          translations=translations if translations else {})
 
 @bp.route('/static/<path:path>')
 def serve_static(path):

@@ -45,10 +45,114 @@
         <!-- Auth Links and Theme Toggle (Right) -->
         <div class="navbar-right">
           <!-- Auth Links -->
-          <div class="auth-links">
-            <a href="{{ url_for('auth.login') }}" class="nav-link">Login</a>
-            <a href="{{ url_for('auth.register') }}" class="nav-link">Sign Up</a>
-          </div>
+          {% if current_user.is_authenticated %}
+            <div class="user-avatar-menu">
+              <button id="avatar-button" class="avatar-button" aria-expanded="false" onclick="toggleProfileDropdown(event)">
+                <div class="avatar-circle">{{ current_user.username[0]|upper }}</div>
+                <i class="fas fa-chevron-down dropdown-arrow"></i>
+              </button>
+              <div id="user-dropdown" class="user-dropdown">
+                <a href="{{ url_for('auth.profile') }}" class="dropdown-item">
+                  <i class="fas fa-user"></i> Profile
+                </a>
+                {% if current_user.is_admin %}
+                <div class="dropdown-divider"></div>
+                <a href="{{ url_for('admin_dashboard') }}" class="dropdown-item">
+                  <i class="fas fa-chart-line"></i> Admin Dashboard
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="dropdown-item">
+                  <i class="fas fa-users"></i> User Management
+                </a>
+                {% endif %}
+                <div class="dropdown-divider"></div>
+                <a href="{{ url_for('auth.logout') }}" class="dropdown-item">
+                  <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+              </div>
+            </div>
+
+            <script>
+              // Direct click handler for the profile dropdown
+              function toggleProfileDropdown(event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const avatarButton = document.getElementById('avatar-button');
+                const userDropdown = document.getElementById('user-dropdown');
+                const historyButton = document.getElementById('history-button');
+                const historyDropdown = document.getElementById('history-dropdown');
+
+                if (!avatarButton || !userDropdown) return;
+
+                const isExpanded = avatarButton.getAttribute('aria-expanded') === 'true';
+
+                // Toggle dropdown visibility
+                avatarButton.setAttribute('aria-expanded', !isExpanded);
+                userDropdown.classList.toggle('show');
+
+                // Close history dropdown if open
+                if (historyButton && historyDropdown) {
+                  historyButton.setAttribute('aria-expanded', 'false');
+                  historyDropdown.classList.remove('show');
+                }
+
+                console.log('Profile dropdown toggled via inline handler');
+              }
+            </script>
+
+            <!-- History Dropdown -->
+            <div class="history-menu">
+              <button id="history-button" class="history-button" aria-expanded="false" onclick="toggleHistoryDropdown(event)">
+                <i class="fas fa-history"></i> History
+                <i class="fas fa-chevron-down dropdown-arrow"></i>
+              </button>
+              <div id="history-dropdown" class="history-dropdown">
+                <a href="{{ url_for('main.history', type='all') }}" class="dropdown-item">
+                  <i class="fas fa-list"></i> All History
+                </a>
+                <a href="{{ url_for('main.history', type='transcription') }}" class="dropdown-item">
+                  <i class="fas fa-microphone"></i> Transcriptions
+                </a>
+                <a href="{{ url_for('main.history', type='translation') }}" class="dropdown-item">
+                  <i class="fas fa-language"></i> Translations
+                </a>
+              </div>
+            </div>
+
+            <script>
+              // Direct click handler for the history dropdown
+              function toggleHistoryDropdown(event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const historyButton = document.getElementById('history-button');
+                const historyDropdown = document.getElementById('history-dropdown');
+                const avatarButton = document.getElementById('avatar-button');
+                const userDropdown = document.getElementById('user-dropdown');
+
+                if (!historyButton || !historyDropdown) return;
+
+                const isExpanded = historyButton.getAttribute('aria-expanded') === 'true';
+
+                // Toggle dropdown visibility
+                historyButton.setAttribute('aria-expanded', !isExpanded);
+                historyDropdown.classList.toggle('show');
+
+                // Close profile dropdown if open
+                if (avatarButton && userDropdown) {
+                  avatarButton.setAttribute('aria-expanded', 'false');
+                  userDropdown.classList.remove('show');
+                }
+
+                console.log('History dropdown toggled via inline handler');
+              }
+            </script>
+          {% else %}
+            <div class="auth-links">
+              <a href="{{ url_for('auth.login') }}" class="nav-link">Login</a>
+              <a href="{{ url_for('auth.register') }}" class="nav-link">Sign Up</a>
+            </div>
+          {% endif %}
 
           <!-- Theme Toggle -->
           <div class="theme-selector">
@@ -198,6 +302,55 @@
   <!-- Scripts -->
   <script src="{{ url_for('static', filename='script.js') }}"></script>
   <script src="{{ url_for('static', filename='auth.js') }}"></script>
+  <script src="{{ url_for('static', filename='common.js') }}"></script>
   <script src="{{ url_for('static', filename='home.js') }}"></script>
+
+  <!-- Ensure dropdowns are properly initialized -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Home page loaded - initializing dropdowns');
+
+      // Force initialization of dropdowns after a short delay to ensure all scripts are loaded
+      setTimeout(function() {
+        // Initialize profile dropdown
+        if (typeof window.initializeProfileDropdown === 'function') {
+          console.log('Home page: Calling global profile dropdown initialization with delay');
+          window.initializeProfileDropdown();
+        } else {
+          console.warn('Home page: Global profile dropdown function not available after delay');
+        }
+
+        // Initialize history dropdown
+        if (typeof window.initializeHistoryDropdown === 'function') {
+          console.log('Home page: Calling global history dropdown initialization with delay');
+          window.initializeHistoryDropdown();
+        } else {
+          console.warn('Home page: Global history dropdown function not available after delay');
+        }
+
+        // Log dropdown elements to console for debugging
+        const avatarButton = document.getElementById('avatar-button');
+        const userDropdown = document.getElementById('user-dropdown');
+
+        if (avatarButton) {
+          console.log('Avatar button found after delay:', avatarButton);
+          // Ensure the button is clickable
+          avatarButton.style.pointerEvents = 'auto';
+          avatarButton.style.cursor = 'pointer';
+        } else {
+          console.warn('Avatar button not found after delay!');
+        }
+
+        if (userDropdown) {
+          console.log('User dropdown found after delay:', userDropdown);
+          // Ensure the dropdown is visible when shown
+          userDropdown.style.zIndex = '1000';
+          userDropdown.style.pointerEvents = 'auto';
+        } else {
+          console.warn('User dropdown not found after delay!');
+        }
+      }, 500); // 500ms delay to ensure all scripts are loaded
+    });
+  </script>
 </body>
 </html>

@@ -192,8 +192,19 @@ class Transcription(FirebaseModel):
     def get_by_user(user_email, limit=10):
         """Get transcriptions by user."""
         user_id = user_email.replace('.', ',')
-        transcriptions = Transcription.get_ref(f'transcriptions/{user_id}').order_by_child('timestamp').limit_to_last(limit).get()
-        return transcriptions if transcriptions else {}
+        try:
+            # Try to get with ordering by timestamp
+            transcriptions = Transcription.get_ref(f'transcriptions/{user_id}').order_by_child('timestamp').limit_to_last(limit).get()
+            return transcriptions if transcriptions else {}
+        except Exception as e:
+            print(f"Error fetching transcriptions with ordering: {str(e)}")
+            # If index is not defined, try without ordering
+            try:
+                transcriptions = Transcription.get_ref(f'transcriptions/{user_id}').get()
+                return transcriptions if transcriptions else {}
+            except Exception as e2:
+                print(f"Error fetching transcriptions without ordering: {str(e2)}")
+                return {}
 
 class Translation(FirebaseModel):
     """Translation model for Firebase."""
@@ -219,5 +230,16 @@ class Translation(FirebaseModel):
     def get_by_user(user_email, limit=10):
         """Get translations by user."""
         user_id = user_email.replace('.', ',')
-        translations = Translation.get_ref(f'translations/{user_id}').order_by_child('timestamp').limit_to_last(limit).get()
-        return translations if translations else {}
+        try:
+            # Try to get with ordering by timestamp
+            translations = Translation.get_ref(f'translations/{user_id}').order_by_child('timestamp').limit_to_last(limit).get()
+            return translations if translations else {}
+        except Exception as e:
+            print(f"Error fetching translations with ordering: {str(e)}")
+            # If index is not defined, try without ordering
+            try:
+                translations = Translation.get_ref(f'translations/{user_id}').get()
+                return translations if translations else {}
+            except Exception as e2:
+                print(f"Error fetching translations without ordering: {str(e2)}")
+                return {}
