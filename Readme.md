@@ -168,7 +168,6 @@ When using HTTPS with self-signed certificates, your browser will show a securit
 ### Admin Features
 
 - Admin panel at `/admin/users` route
-- Only accessible to users with username 'Radu' and password 'Fasteasy'
 - View and manage registered users
 
 ## Troubleshooting
