@@ -418,29 +418,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const elapsedSeconds = (now - recordingStartTime) / 1000;
     recordingDuration = elapsedSeconds;
 
-    // Update timer display
-    const timerElement = document.getElementById(elementId);
-    if (timerElement) {
-      timerElement.textContent = formatTime(elapsedSeconds);
-
-      // Show warning when approaching max duration
-      if (elapsedSeconds >= WARNING_THRESHOLD && elapsedSeconds < MAX_RECORDING_DURATION) {
-        timerElement.classList.add('warning');
-
-        // Show continue button if not already visible
-        const continueButton = document.getElementById('continue-recording');
-        if (continueButton && continueButton.style.display !== 'inline-block') {
-          continueButton.style.display = 'inline-block';
-        }
+    // Only show warning when approaching max duration
+    if (elapsedSeconds >= WARNING_THRESHOLD && elapsedSeconds < MAX_RECORDING_DURATION) {
+      // Show continue button if not already visible
+      const continueButton = document.getElementById('continue-recording');
+      if (continueButton && continueButton.style.display !== 'inline-block') {
+        continueButton.style.display = 'inline-block';
       }
+    }
 
-      // Auto-stop recording if max duration reached
-      if (elapsedSeconds >= MAX_RECORDING_DURATION) {
-        // Find the active recording button and trigger a click to stop recording
-        const activeRecordButton = document.querySelector('.record-button.recording');
-        if (activeRecordButton) {
-          activeRecordButton.click();
-        }
+    // Auto-stop recording if max duration reached
+    if (elapsedSeconds >= MAX_RECORDING_DURATION) {
+      // Find the active recording button and trigger a click to stop recording
+      const activeRecordButton = document.querySelector('.record-button.recording');
+      if (activeRecordButton) {
+        activeRecordButton.click();
       }
     }
   }
@@ -494,40 +486,27 @@ document.addEventListener('DOMContentLoaded', () => {
       if (recordingTimer) clearInterval(recordingTimer);
       recordingTimer = setInterval(() => updateRecordingTimer(), 1000);
 
-      // Create or update timer display
-      let timerElement = document.getElementById('recording-timer');
-      if (!timerElement) {
-        // Create timer element if it doesn't exist
-        timerElement = document.createElement('div');
-        timerElement.id = 'recording-timer';
-        timerElement.className = 'recording-timer';
-        timerElement.textContent = '00:00';
-
+      // Create continue button if needed
+      let continueButton = document.getElementById('continue-recording');
+      if (!continueButton) {
         // Create continue button
-        const continueButton = document.createElement('button');
+        continueButton = document.createElement('button');
         continueButton.id = 'continue-recording';
         continueButton.className = 'continue-recording-btn';
         continueButton.textContent = 'Continue Recording';
         continueButton.style.display = 'none';
         continueButton.onclick = function() {
-          // Reset the timer but keep recording
+          // Reset the recording start time to extend duration
           recordingStartTime = new Date();
-          timerElement.classList.remove('warning');
           this.style.display = 'none';
         };
 
-        // Add timer and button to the page
+        // Add button to the page
         const recordingContainer = recordButton.parentElement;
-        recordingContainer.appendChild(timerElement);
         recordingContainer.appendChild(continueButton);
       } else {
-        // Reset existing timer
-        timerElement.textContent = '00:00';
-        timerElement.classList.remove('warning');
-
         // Hide continue button
-        const continueButton = document.getElementById('continue-recording');
-        if (continueButton) continueButton.style.display = 'none';
+        continueButton.style.display = 'none';
       }
 
       // Log diagnostics
@@ -1588,22 +1567,7 @@ document.addEventListener('DOMContentLoaded', () => {
               recordingTimer = null;
             }
 
-            // Hide timer and continue button
-            const timerElement = document.getElementById('recording-timer');
-            if (timerElement) {
-              timerElement.textContent = formatTime(recordingDuration);
-              timerElement.classList.add('completed');
-
-              // Fade out timer after 3 seconds
-              setTimeout(() => {
-                timerElement.classList.add('fade-out');
-                setTimeout(() => {
-                  if (timerElement.parentNode) {
-                    timerElement.parentNode.removeChild(timerElement);
-                  }
-                }, 1000);
-              }, 3000);
-            }
+            // No timer display in main app
 
             // Hide continue button
             const continueButton = document.getElementById('continue-recording');
@@ -1784,22 +1748,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 recordingTimer = null;
               }
 
-              // Hide timer and continue button
-              const timerElement = document.getElementById('recording-timer');
-              if (timerElement) {
-                timerElement.textContent = formatTime(recordingDuration);
-                timerElement.classList.add('completed');
-
-                // Fade out timer after 3 seconds
-                setTimeout(() => {
-                  timerElement.classList.add('fade-out');
-                  setTimeout(() => {
-                    if (timerElement.parentNode) {
-                      timerElement.parentNode.removeChild(timerElement);
-                    }
-                  }, 1000);
-                }, 3000);
-              }
+              // No timer display in main app
 
               // Hide continue button
               const continueButton = document.getElementById('continue-recording');
