@@ -173,6 +173,38 @@ class Transcription(FirebaseModel):
     """Transcription model for Firebase."""
 
     @staticmethod
+    def save(user_email, text, language, model, audio_duration=None):
+        """Save a transcription."""
+        print(f"Saving transcription for user: {user_email}")
+        print(f"Text length: {len(text) if text else 0}")
+        print(f"Language: {language}")
+        print(f"Model: {model}")
+
+        transcription_data = {
+            'user_email': user_email,
+            'text': text,
+            'language': language,
+            'model': model,
+            'audio_duration': audio_duration,
+            'timestamp': datetime.now().isoformat()
+        }
+
+        # Use user email as part of the path
+        user_id = user_email.replace('.', ',')
+        print(f"Using Firebase path: transcriptions/{user_id}")
+
+        try:
+            ref = Transcription.get_ref(f'transcriptions/{user_id}')
+            result = ref.push(transcription_data)
+            print(f"Successfully saved transcription with key: {result.key if hasattr(result, 'key') else 'unknown'}")
+            return True
+        except Exception as e:
+            print(f"Error saving transcription: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return False
+
+    @staticmethod
     def get_by_user(user_email, limit=10):
         """Get transcriptions by user."""
         user_id = user_email.replace('.', ',')

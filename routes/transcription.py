@@ -132,6 +132,11 @@ def transcribe_audio():
                         if isinstance(transcription, dict) and 'text' in transcription:
                             text_to_save = transcription['text']
 
+                        print(f"Attempting to save transcription to Firebase for user {current_user.email}")
+                        print(f"Text length: {len(text_to_save) if text_to_save else 'None'}")
+                        print(f"Language: {language}")
+                        print(f"Model: {model}")
+
                         Transcription.save(
                             user_email=current_user.email,
                             text=text_to_save,
@@ -143,6 +148,8 @@ def transcribe_audio():
                 except Exception as auth_error:
                     # Just log the error but continue - don't fail the transcription if saving to Firebase fails
                     print(f"Error saving transcription to Firebase: {str(auth_error)}")
+                    import traceback
+                    traceback.print_exc()
 
                 # Remove temporary file
                 safe_remove_file(filepath)
