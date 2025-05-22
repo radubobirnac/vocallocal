@@ -757,25 +757,25 @@ class TranscriptionService(BaseService):
 
         # Split the audio into chunks
         chunks = self._chunk_audio_file(audio_data, chunk_size_mb=chunk_size_mb)
-        
+
         # Log chunk information
         self.logger.info(f"Splitting file into {len(chunks)} chunks of {chunk_size_mb}MB each")
-        
+
         # Free up memory by clearing the original audio data
         del audio_data
-        
+
         # Transcribe each chunk with memory cleanup after each
         transcriptions = []
         total_chunks = len(chunks)
-        
+
         for i, chunk in enumerate(chunks):
             chunk_size_mb = len(chunk) / (1024 * 1024)
             self.logger.info(f"Transcribing chunk {i+1}/{total_chunks} ({chunk_size_mb:.2f} MB)")
-            
+
             # Add delay between chunks to prevent rate limiting and reduce memory pressure
             if i > 0:
                 time.sleep(2)  # 2-second delay between chunks
-                
+
             # Monitor memory usage
             try:
                 import psutil
@@ -788,7 +788,7 @@ class TranscriptionService(BaseService):
                     gc.collect()
             except ImportError:
                 pass
-            
+
             try:
                 # Transcribe this chunk
                 chunk_transcription = self._transcribe_with_gemini_internal(chunk, language, model_name)
@@ -829,51 +829,70 @@ class TranscriptionService(BaseService):
         """
         # Calculate file size in MB
         file_size_mb = len(audio_data) / (1024 * 1024)
-        
-        # For very large files (>30MB), use background processing
-        if file_size_mb > 30:
-            self.logger.info(f"Very large file detected ({file_size_mb:.2f} MB). Using background processing.")
+
+        # Check if this is a WebM recording (typically from browser recording)
+        is_webm_recording = False
+        try:
+            # Check first few bytes for WebM signature
+            if audio_data[:4] == b'\x1a\x45\xdf\xa3':
+                is_webm_recording = True
+                self.logger.info("Detected WebM recording from browser")
+        except:
+            pass
+
+        # For WebM recordings from browser, use appropriate thresholds
+        # These thresholds are much higher to allow for longer recordings
+        webm_background_threshold = 5.0  # 5MB threshold for WebM recordings (about 5-7 minutes)
+
+        # For very large files or WebM recordings over threshold, use background processing
+        if file_size_mb > 30 or (is_webm_recording and file_size_mb > webm_background_threshold):
+            self.logger.info(f"Using background processing for file ({file_size_mb:.2f} MB, WebM: {is_webm_recording}).")
             # Return a job ID and process in background
             job_id = str(uuid.uuid4())
-            
+
             # Start background processing
             threading.Thread(
                 target=self._background_transcribe,
                 args=(job_id, audio_data, language, model_name),
                 daemon=True
             ).start()
-            
+
             return {"status": "processing", "job_id": job_id}
-        
-        # Lower the chunking threshold to ensure better reliability
-        CHUNKING_THRESHOLD_MB = 15  # Reduced from 20MB to 15MB
-        
+
+        # Set chunking threshold to ensure better reliability
+        CHUNKING_THRESHOLD_MB = 15  # Standard threshold for regular files
+
+        # For WebM recordings, use an appropriate chunking threshold
+        # This allows for longer recordings without memory issues
+        if is_webm_recording:
+            CHUNKING_THRESHOLD_MB = 3.0  # 3MB threshold for WebM recordings (about 3-4 minutes)
+
         # Check if FFmpeg is available for chunking
         ffmpeg_available = self._check_ffmpeg_available()
-        
+
         # For files over the threshold, use chunking to avoid memory issues
         if file_size_mb > CHUNKING_THRESHOLD_MB:
             self.logger.info(f"Large file detected ({file_size_mb:.2f} MB). Using chunked transcription.")
-            
+
             # For very large files (>25MB), split into smaller chunks before sending to API
             if file_size_mb > 25:
                 self.logger.info(f"Very large file detected ({file_size_mb:.2f} MB). Using manual chunking.")
-                
+
                 # Use memory-optimized chunking with smaller chunks
                 chunk_size_mb = 5  # Use smaller chunks for very large files
-                
+
                 self.logger.info(f"Using memory-optimized chunking with {chunk_size_mb}MB chunks")
                 return self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=chunk_size_mb)
-            
+
             # For moderately large files, try the production chunker if FFmpeg is available
             elif ffmpeg_available:
                 try:
                     self.logger.info(f"Using production-ready RobustChunker for large file ({file_size_mb:.2f} MB)")
-                    
+
                     # Pass the FFmpeg path to the chunker
                     if hasattr(self, 'ffmpeg_path'):
                         self.robust_chunker.ffmpeg_path = self.ffmpeg_path
-                    
+
                     # Use the production-ready RobustChunker for chunking
                     return self._transcribe_with_production_chunker(audio_data, language, model_name)
                 except Exception as e:
@@ -881,12 +900,12 @@ class TranscriptionService(BaseService):
                     # Fall back to memory-optimized chunking
                     self.logger.info("Falling back to memory-optimized chunking")
                     return self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=5)
-            
+
             # Fall back to memory-optimized chunking if FFmpeg is not available
             else:
                 self.logger.warning("FFmpeg not available. Using memory-optimized chunking.")
                 return self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=5)
-        
+
         # For smaller files, use the standard transcription method
         return self._transcribe_with_gemini_internal(audio_data, language, model_name)
 
@@ -997,31 +1016,31 @@ class TranscriptionService(BaseService):
                                         # Get file state
                                         file_state = file_obj.state
                                         self.logger.info(f"Checking file state: {file_state} (type: {type(file_state).__name__})")
-                                        
+
                                         # Check if file is in ACTIVE state (state 2)
                                         if file_state == 2:  # ACTIVE state
                                             self.logger.info(f"File is now ACTIVE after {attempts} attempts")
                                             break
-                                        
+
                                         # Check if we've waited too long
                                         elapsed = time.time() - wait_start_time
                                         if elapsed > max_wait_time:
                                             self.logger.warning(f"Maximum wait time ({max_wait_time}s) exceeded")
                                             break
-                                        
+
                                         # For very large files, proceed after a reasonable number of attempts
                                         if file_size_mb > 25 and attempts >= 10:
                                             self.logger.warning(f"Very large file ({file_size_mb:.2f} MB): proceeding after {attempts} attempts")
                                             break
-                                        
+
                                         # Wait before checking again
                                         self.logger.info(f"File is not yet ACTIVE (current state: {file_state}). Attempt {attempts}/{max_attempts}, waiting {wait_interval}s...")
                                         time.sleep(wait_interval)
-                                        
+
                                         # Refresh file state
                                         file_obj = genai.get_file(file_obj.name)
                                         self.logger.info(f"Updated file state: {file_obj.state} (type: {type(file_obj.state).__name__})")
-                                        
+
                                     except Exception as e:
                                         self.logger.error(f"Error checking file state: {str(e)}")
                                         break
@@ -1451,29 +1470,29 @@ class TranscriptionService(BaseService):
         """
         try:
             self.logger.info(f"Starting background transcription job {job_id}")
-            
+
             # Store job status
             if not hasattr(self, 'job_statuses'):
                 self.job_statuses = {}
-            
+
             self.job_statuses[job_id] = {
                 "status": "processing",
                 "progress": 0,
                 "result": None,
                 "error": None
             }
-            
+
             # Process with chunking
             file_size_mb = len(audio_data) / (1024 * 1024)
             self.logger.info(f"Background processing file of size {file_size_mb:.2f} MB")
-            
+
             # Use memory-optimized chunking with smaller chunks
             chunk_size_mb = 5
-            
+
             try:
                 # Transcribe with chunking
                 result = self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=chunk_size_mb)
-                
+
                 # Store the result directly as text
                 # This ensures consistent format with regular transcription
                 self.job_statuses[job_id] = {
@@ -1482,12 +1501,12 @@ class TranscriptionService(BaseService):
                     "result": result,  # Store the text directly
                     "error": None
                 }
-                
+
                 self.logger.info(f"Background transcription job {job_id} completed successfully")
-                
+
             except Exception as e:
                 self.logger.error(f"Error in background transcription: {str(e)}")
-                
+
                 # Update job status
                 self.job_statuses[job_id] = {
                     "status": "failed",
@@ -1495,10 +1514,10 @@ class TranscriptionService(BaseService):
                     "result": None,
                     "error": str(e)
                 }
-        
+
         except Exception as e:
             self.logger.error(f"Unhandled error in background transcription: {str(e)}")
-            
+
             # Update job status if possible
             if hasattr(self, 'job_statuses'):
                 self.job_statuses[job_id] = {
@@ -1511,22 +1530,22 @@ class TranscriptionService(BaseService):
     def get_job_status(self, job_id):
         """
         Get the status of a background transcription job.
-        
+
         Args:
             job_id (str): The job ID to check
-        
+
         Returns:
             dict: The job status information
         """
         if not hasattr(self, 'job_statuses'):
             self.job_statuses = {}
-            
+
         if job_id not in self.job_statuses:
             return {
                 "status": "not_found",
                 "error": "Job ID not found"
             }
-            
+
         return self.job_statuses[job_id]
 
 # Create a singleton instance

@@ -122,12 +122,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('stop-audio-btn')) {
       return;
     }
-    
+
     // Find the container where the TTS controls are
-    const controlsContainer = document.querySelector('.controls-container') || 
+    const controlsContainer = document.querySelector('.controls-container') ||
                              document.querySelector('.action-buttons') ||
                              document.querySelector('.toolbar');
-    
+
     if (controlsContainer) {
       // Create stop button
       const stopButton = document.createElement('button');
@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
       stopButton.className = 'btn btn-danger btn-sm';
       stopButton.innerHTML = '<i class="fas fa-stop"></i> Stop Audio';
       stopButton.onclick = stopAllAudio;
-      
+
       // Add to container
       controlsContainer.appendChild(stopButton);
     }
@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('DOMContentLoaded', function() {
     // Add the stop button
     addStopButton();
-    
+
     // Other initialization code...
   });
 
@@ -219,16 +219,16 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(audioBlob => {
       // Create URL for the audio blob
       const audioUrl = URL.createObjectURL(audioBlob);
-      
+
       // Create and play the audio
       const audio = new Audio(audioUrl);
-      
+
       // Store the audio element globally so we can stop it later
       currentAudio = audio;
-      
+
       // Set playback rate to 1.10 (10% faster)
       audio.playbackRate = 1.10;
-      
+
       // Play the audio
       audio.play()
         .then(() => {
@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
           console.error('Audio playback error:', error);
           fallbackSpeakText(text, langCode);
         });
-      
+
       // Clean up when done
       audio.onended = () => {
         URL.revokeObjectURL(audioUrl);
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .catch(error => {
       showStatus('Error generating speech: ' + error.message, 'danger');
       console.error('TTS error:', error);
-      
+
       // Fallback to browser's speech synthesis
       fallbackSpeakText(text, langCode);
     })
@@ -396,6 +396,55 @@ document.addEventListener('DOMContentLoaded', () => {
     return { supportedTypes, bestType };
   }
 
+  // Global variables for recording timer
+  let recordingTimer = null;
+  let recordingStartTime = null;
+  let recordingDuration = 0;
+  const MAX_RECORDING_DURATION = 5 * 60; // 5 minutes in seconds
+  const WARNING_THRESHOLD = 4.5 * 60; // 4.5 minutes in seconds
+
+  // Format seconds as MM:SS
+  function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+
+  // Update recording timer display
+  function updateRecordingTimer(elementId = 'recording-timer') {
+    if (!recordingStartTime) return;
+
+    const now = new Date();
+    const elapsedSeconds = (now - recordingStartTime) / 1000;
+    recordingDuration = elapsedSeconds;
+
+    // Update timer display
+    const timerElement = document.getElementById(elementId);
+    if (timerElement) {
+      timerElement.textContent = formatTime(elapsedSeconds);
+
+      // Show warning when approaching max duration
+      if (elapsedSeconds >= WARNING_THRESHOLD && elapsedSeconds < MAX_RECORDING_DURATION) {
+        timerElement.classList.add('warning');
+
+        // Show continue button if not already visible
+        const continueButton = document.getElementById('continue-recording');
+        if (continueButton && continueButton.style.display !== 'inline-block') {
+          continueButton.style.display = 'inline-block';
+        }
+      }
+
+      // Auto-stop recording if max duration reached
+      if (elapsedSeconds >= MAX_RECORDING_DURATION) {
+        // Find the active recording button and trigger a click to stop recording
+        const activeRecordButton = document.querySelector('.record-button.recording');
+        if (activeRecordButton) {
+          activeRecordButton.click();
+        }
+      }
+    }
+  }
+
   // Audio recording function
   async function startRecording(options = {}) {
     try {
@@ -438,6 +487,47 @@ document.addEventListener('DOMContentLoaded', () => {
       const recordButton = options.recordButton || null;
       if (recordButton) {
         recordButton.classList.add('recording');
+      }
+
+      // Start recording timer
+      recordingStartTime = new Date();
+      if (recordingTimer) clearInterval(recordingTimer);
+      recordingTimer = setInterval(() => updateRecordingTimer(), 1000);
+
+      // Create or update timer display
+      let timerElement = document.getElementById('recording-timer');
+      if (!timerElement) {
+        // Create timer element if it doesn't exist
+        timerElement = document.createElement('div');
+        timerElement.id = 'recording-timer';
+        timerElement.className = 'recording-timer';
+        timerElement.textContent = '00:00';
+
+        // Create continue button
+        const continueButton = document.createElement('button');
+        continueButton.id = 'continue-recording';
+        continueButton.className = 'continue-recording-btn';
+        continueButton.textContent = 'Continue Recording';
+        continueButton.style.display = 'none';
+        continueButton.onclick = function() {
+          // Reset the timer but keep recording
+          recordingStartTime = new Date();
+          timerElement.classList.remove('warning');
+          this.style.display = 'none';
+        };
+
+        // Add timer and button to the page
+        const recordingContainer = recordButton.parentElement;
+        recordingContainer.appendChild(timerElement);
+        recordingContainer.appendChild(continueButton);
+      } else {
+        // Reset existing timer
+        timerElement.textContent = '00:00';
+        timerElement.classList.remove('warning');
+
+        // Hide continue button
+        const continueButton = document.getElementById('continue-recording');
+        if (continueButton) continueButton.style.display = 'none';
       }
 
       // Log diagnostics
@@ -529,11 +619,27 @@ document.addEventListener('DOMContentLoaded', () => {
     return new Promise(async (resolve, reject) => {
       let attempt = 0;
 
+      // Check if this is a WebM recording from browser
+      const file = formData.get('file');
+      const isWebmRecording = file && file.type === 'audio/webm';
+
+      // For WebM recordings, we'll use a longer timeout and more retries
+      // This helps prevent timeouts with browser recordings
+      if (isWebmRecording) {
+        console.log("Detected WebM recording from browser, using extended timeout and retries");
+        maxRetries = 2; // Increase retries for WebM recordings
+      }
+
       while (attempt <= maxRetries) {
         try {
           // Create AbortController for timeout
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
+          // Use a longer timeout for WebM recordings
+          const timeoutDuration = isWebmRecording ? 120000 : 60000; // 120 seconds for WebM, 60 seconds for others
+          const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
+
+          console.log(`Sending request to ${endpoint} (attempt ${attempt + 1}/${maxRetries + 1}, timeout: ${timeoutDuration/1000}s)`);
 
           const response = await fetch(endpoint, {
             method: 'POST',
@@ -549,6 +655,29 @@ document.addEventListener('DOMContentLoaded', () => {
           }
 
           const result = await response.json();
+
+          // Check if this is a background processing job
+          if (result.status === 'processing' && result.job_id) {
+            console.log(`Server is processing the request in background (job ID: ${result.job_id})`);
+
+            // For WebM recordings, we'll automatically use the background processing handler
+            if (isWebmRecording) {
+              // Determine which transcript element to update
+              let elementId = 'basic-transcript';
+
+              // Start polling for status
+              pollTranscriptionStatus(result.job_id, elementId);
+
+              // Return a placeholder result
+              resolve({
+                text: "Processing recording in background...",
+                processing: true,
+                job_id: result.job_id
+              });
+              return;
+            }
+          }
+
           resolve(result);
           return; // Exit the retry loop on success
 
@@ -1453,6 +1582,36 @@ document.addEventListener('DOMContentLoaded', () => {
             // Stop all tracks in the stream
             recording.stream.getTracks().forEach(track => track.stop());
 
+            // Stop and clear recording timer
+            if (recordingTimer) {
+              clearInterval(recordingTimer);
+              recordingTimer = null;
+            }
+
+            // Hide timer and continue button
+            const timerElement = document.getElementById('recording-timer');
+            if (timerElement) {
+              timerElement.textContent = formatTime(recordingDuration);
+              timerElement.classList.add('completed');
+
+              // Fade out timer after 3 seconds
+              setTimeout(() => {
+                timerElement.classList.add('fade-out');
+                setTimeout(() => {
+                  if (timerElement.parentNode) {
+                    timerElement.parentNode.removeChild(timerElement);
+                  }
+                }, 1000);
+              }, 3000);
+            }
+
+            // Hide continue button
+            const continueButton = document.getElementById('continue-recording');
+            if (continueButton && continueButton.parentNode) {
+              continueButton.style.display = 'none';
+              continueButton.parentNode.removeChild(continueButton);
+            }
+
             // Prepare form data
             const formData = new FormData();
 
@@ -1618,6 +1777,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
               // Stop all tracks in the stream
               speaker.recording.stream.getTracks().forEach(track => track.stop());
+
+              // Stop and clear recording timer
+              if (recordingTimer) {
+                clearInterval(recordingTimer);
+                recordingTimer = null;
+              }
+
+              // Hide timer and continue button
+              const timerElement = document.getElementById('recording-timer');
+              if (timerElement) {
+                timerElement.textContent = formatTime(recordingDuration);
+                timerElement.classList.add('completed');
+
+                // Fade out timer after 3 seconds
+                setTimeout(() => {
+                  timerElement.classList.add('fade-out');
+                  setTimeout(() => {
+                    if (timerElement.parentNode) {
+                      timerElement.parentNode.removeChild(timerElement);
+                    }
+                  }, 1000);
+                }, 3000);
+              }
+
+              // Hide continue button
+              const continueButton = document.getElementById('continue-recording');
+              if (continueButton && continueButton.parentNode) {
+                continueButton.style.display = 'none';
+                continueButton.parentNode.removeChild(continueButton);
+              }
 
               // Get the partner's language for translation
               const partnerSpeaker = speakers.find(s => s.id === speaker.partnerId);
@@ -2076,28 +2265,28 @@ document.addEventListener('DOMContentLoaded', () => {
   async function pollTranscriptionStatus(jobId, elementId) {
     const maxAttempts = 60; // 5 minutes (5s intervals)
     let attempts = 0;
-    
+
     showStatus('Processing large file in background...', 'info', true);
-    
+
     const checkStatus = async () => {
       try {
         const response = await fetch(`/api/transcription_status/${jobId}`);
         const status = await response.json();
-        
+
         if (status.status === 'completed' && status.result) {
           // Extract the text from the result
           const transcriptionText = status.result.text || "Transcription completed but no text was returned.";
-          
+
           // Update transcript with the text
           const transcriptElement = document.getElementById(elementId);
           if (transcriptElement) {
             transcriptElement.value = transcriptionText;
-            
+
             // Trigger change event for any listeners
             const event = new Event('change');
             transcriptElement.dispatchEvent(event);
           }
-          
+
           showStatus('Transcription complete!', 'success');
           return true;
         } else if (status.status === 'failed') {
@@ -2117,19 +2306,19 @@ document.addEventListener('DOMContentLoaded', () => {
         return true; // Stop polling on error
       }
     };
-    
+
     // Start polling
     const poll = async () => {
       attempts++;
       const done = await checkStatus();
-      
+
       if (!done && attempts < maxAttempts) {
         setTimeout(poll, 5000); // Check every 5 seconds
       } else if (!done) {
         showStatus('Transcription timed out. Please check back later.', 'warning', true);
       }
     };
-    
+
     poll();
   }
 
@@ -2140,18 +2329,18 @@ document.addEventListener('DOMContentLoaded', () => {
         method: 'POST',
         body: formData
       });
-      
+
       if (!response.ok) {
         throw new Error(`Server error: ${response.status}`);
       }
-      
+
       const result = await response.json();
-      
+
       // Check if this is a background processing job
       if (result.status === 'processing' && result.job_id) {
         // Determine which transcript element to update based on formData
         let elementId = 'basic-transcript';
-        
+
         // For conversation mode, check if this is speaker 1 or 2
         const speaker = formData.get('speaker');
         if (speaker === '1') {
@@ -2159,10 +2348,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (speaker === '2') {
           elementId = 'transcript-2';
         }
-        
+
         // Start polling for status
         pollTranscriptionStatus(result.job_id, elementId);
-        
+
         // Return a placeholder result
         return {
           text: "Processing large file in background...",
@@ -2170,7 +2359,7 @@ document.addEventListener('DOMContentLoaded', () => {
           job_id: result.job_id
         };
       }
-      
+
       // Regular result
       return result;
     } catch (error) {
