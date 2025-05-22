@@ -557,13 +557,13 @@ class TTSService(BaseService):
             # For now, this is a placeholder for the actual Google TTS implementation
             # In a real implementation, we would use Google Cloud Text-to-Speech API
             self.logger.info(f"Google TTS request: language={language}, text_length={len(text)}")
-            self.logger.info("Falling back to OpenAI TTS as Google TTS is not fully implemented yet")
+            self.logger.info("Falling back to GPT-4o Mini TTS as Google TTS is not fully implemented yet")
 
             # Record metrics for the attempt
             self._record_metric("google_tts", "attempt", 1)
 
-            # Use OpenAI TTS instead
-            return self._synthesize_with_openai(text, language)
+            # Use GPT-4o Mini TTS instead (as preferred fallback)
+            return self._synthesize_with_gpt4o_mini(text, language)
 
         except Exception as e:
             # Record error metrics
