@@ -22,8 +22,18 @@ from .base_service import (
 try:
     import google.generativeai as genai
     GEMINI_AVAILABLE = True
+
+    # We'll use direct HTTP requests for TTS, so we don't need to check for SpeechConfig
+    # Just make sure the requests module is available
+    try:
+        import requests
+        import base64
+        GEMINI_TTS_AVAILABLE = True
+    except ImportError:
+        GEMINI_TTS_AVAILABLE = False
 except ImportError:
     GEMINI_AVAILABLE = False
+    GEMINI_TTS_AVAILABLE = False
 
 # Load environment variables
 load_dotenv()
@@ -59,9 +69,12 @@ class TTSService(BaseService):
             genai.configure(api_key=self.gemini_api_key)
             if "google" not in self.providers:
                 self.providers.append("google")
-            # Add Gemini 2.5 Flash Preview TTS provider
+
+            # Always add Gemini 2.5 Flash TTS to the providers list
+            # We'll use direct HTTP requests, so it's always available
             if "gemini-2.5-flash-tts" not in self.providers:
                 self.providers.append("gemini-2.5-flash-tts")
+            self.logger.info("Gemini API configured successfully. Gemini 2.5 Flash TTS is available via direct API calls.")
         elif GEMINI_AVAILABLE:
             self.logger.warning("Gemini API key not found. Google TTS will not be available.")
 
@@ -168,6 +181,7 @@ class TTSService(BaseService):
         """
         if provider == "auto":
             # Default order: gemini-2.5-flash-tts, gpt4o-mini, openai, google
+            # Gemini 2.5 Flash TTS is the preferred provider
             return [p for p in ["gemini-2.5-flash-tts", "gpt4o-mini", "openai", "google"] if p in self.providers]
         elif provider in self.providers:
             # If the requested provider is available, use it first, then try others
@@ -428,55 +442,125 @@ class TTSService(BaseService):
             with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
                 temp_file_path = temp_file.name
 
-            # Configure the Gemini 2.5 Flash TTS model
-            model = genai.GenerativeModel(
-                model_name="gemini-2.5-flash-preview-tts",
-                generation_config={
-                    "temperature": 0.2,
-                    "top_p": 0.95,
-                    "top_k": 0,
+            # Log the attempt
+            self.logger.info(f"Attempting Gemini 2.5 Flash TTS via direct API call: language={language}, text_length={len(text)}")
+
+            try:
+                # Use direct HTTP request to the Gemini API
+                import requests
+                import base64
+
+                # Add voice instructions to the prompt
+                prompt_text = f"Please speak this in a male, enthusiastic voice, slightly faster than normal: {text}"
+
+                # Gemini API endpoint for generating content
+                api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent"
+
+                # Request headers
+                headers = {
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": self.gemini_api_key
                 }
-            )
 
-            # Generate speech with Gemini 2.5 Flash TTS
-            # Add instructions for voice characteristics directly in the prompt
-            prompt = f"Please speak this in a male, enthusiastic voice, slightly faster than normal: {text}"
+                # Request payload
+                payload = {
+                    "contents": [
+                        {
+                            "parts": [
+                                {
+                                    "text": prompt_text
+                                }
+                            ]
+                        }
+                    ],
+                    "generation_config": {
+                        "temperature": 0.2,
+                        "top_p": 0.95,
+                        "top_k": 0,
+                        "response_modalities": ["AUDIO"]
+                    }
+                }
 
-            # Configure the response to be audio-only
-            generation_config = {
-                "temperature": 0.2,
-                "top_p": 0.95,
-                "top_k": 0,
-                "response_mime_type": "audio/mp3"  # Request audio-only response
-            }
+                # Make the API request
+                self.logger.info("Sending request to Gemini API...")
+                response = requests.post(api_url, headers=headers, json=payload)
 
-            response = self.with_retry(
-                lambda: model.generate_content(
-                    prompt,
-                    stream=False,
-                    generation_config=generation_config
-                ),
-                operation="gemini_2_5_flash_tts"
-            )
+                # Check if the request was successful
+                if response.status_code == 200:
+                    response_json = response.json()
 
-            # Get the audio data from the response
-            audio_data = response.audio.data
+                    # Extract the audio data from the response
+                    if "candidates" in response_json and len(response_json["candidates"]) > 0:
+                        candidate = response_json["candidates"][0]
 
-            # Save to the temporary file for debugging if needed
-            with open(temp_file_path, 'wb') as f:
-                f.write(audio_data)
+                        if "content" in candidate and "parts" in candidate["content"]:
+                            parts = candidate["content"]["parts"]
 
-            # Clean up the temporary file
-            os.remove(temp_file_path)
+                            for part in parts:
+                                if "inline_data" in part:
+                                    inline_data = part["inline_data"]
 
-            # Record metrics
-            elapsed = time.time() - start_time
-            char_count = len(text)
-            self._record_metric("gemini_2_5_flash_tts", "time", elapsed)
-            self._record_metric("gemini_2_5_flash_tts", "chars", char_count)
-            self._record_metric("gemini_2_5_flash_tts", "success", 1)
+                                    if "mime_type" in inline_data and "data" in inline_data:
+                                        mime_type = inline_data["mime_type"]
+                                        data_base64 = inline_data["data"]
 
-            return audio_data
+                                        self.logger.info(f"Found audio data with MIME type: {mime_type}")
+
+                                        # Decode the base64 data
+                                        audio_data = base64.b64decode(data_base64)
+
+                                        # Record metrics
+                                        elapsed = time.time() - start_time
+                                        char_count = len(text)
+                                        self._record_metric("gemini_2_5_flash_tts", "time", elapsed)
+                                        self._record_metric("gemini_2_5_flash_tts", "chars", char_count)
+                                        self._record_metric("gemini_2_5_flash_tts", "success", 1)
+
+                                        self.logger.info(f"Gemini 2.5 Flash TTS successful: {len(audio_data)} bytes generated")
+                                        return audio_data
+
+                # If we get here, either the request failed or we didn't find audio data
+                if response.status_code != 200:
+                    self.logger.warning(f"Gemini 2.5 Flash TTS API request failed with status code {response.status_code}")
+                    self.logger.warning(f"Response: {response.text}")
+                else:
+                    self.logger.warning("No audio data found in the Gemini 2.5 Flash TTS response")
+
+                # Fall back to GPT-4o Mini TTS
+                self.logger.info("Falling back to GPT-4o Mini TTS")
+
+                # Record metrics for the attempt and fallback
+                elapsed = time.time() - start_time
+                char_count = len(text)
+                self._record_metric("gemini_2_5_flash_tts", "attempt", 1)
+                self._record_metric("gemini_2_5_flash_tts", "fallback", 1)
+                self._record_metric("gemini_2_5_flash_tts", "time", elapsed)
+                self._record_metric("gemini_2_5_flash_tts", "chars", char_count)
+
+                # Clean up the temporary file
+                os.remove(temp_file_path)
+
+                # Use GPT-4o Mini TTS instead (as preferred fallback)
+                return self._synthesize_with_gpt4o_mini(text, language)
+
+            except Exception as inner_e:
+                # Log the specific error
+                self.logger.warning(f"Gemini 2.5 Flash TTS failed: {str(inner_e)}")
+                self.logger.info("Falling back to GPT-4o Mini TTS")
+
+                # Record metrics for the attempt and fallback
+                elapsed = time.time() - start_time
+                char_count = len(text)
+                self._record_metric("gemini_2_5_flash_tts", "attempt", 1)
+                self._record_metric("gemini_2_5_flash_tts", "fallback", 1)
+                self._record_metric("gemini_2_5_flash_tts", "time", elapsed)
+                self._record_metric("gemini_2_5_flash_tts", "chars", char_count)
+
+                # Clean up the temporary file
+                os.remove(temp_file_path)
+
+                # Use GPT-4o Mini TTS instead (as preferred fallback)
+                return self._synthesize_with_gpt4o_mini(text, language)
 
         except Exception as e:
             # Record error metrics

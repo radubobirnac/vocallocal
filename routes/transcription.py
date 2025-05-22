@@ -64,28 +64,28 @@ def transcribe_audio():
 
                 # Use the transcription service
                 transcription = transcription_service.transcribe(audio_content, language, model)
-                
+
                 # Check if this is a background processing job
                 if isinstance(transcription, dict) and transcription.get('status') == 'processing':
                     # Return the job ID for background processing
                     return jsonify(transcription)
-                
-                # For regular processing, ensure consistent format
-                if isinstance(transcription, str):
-                    return jsonify({"text": transcription})
-                else:
-                    return jsonify(transcription)
-                
+
                 # Save transcription to Firebase if user is authenticated
                 try:
                     if current_user.is_authenticated:
+                        # Extract text from transcription if it's a dict
+                        text_to_save = transcription
+                        if isinstance(transcription, dict) and 'text' in transcription:
+                            text_to_save = transcription['text']
+
                         Transcription.save(
                             user_email=current_user.email,
-                            text=transcription,
+                            text=text_to_save,
                             language=language,
                             model=model,
                             audio_duration=None  # Could estimate this
                         )
+                        print(f"Successfully saved transcription to Firebase for user {current_user.email}")
                 except Exception as auth_error:
                     # Just log the error but continue - don't fail the transcription if saving to Firebase fails
                     print(f"Error saving transcription to Firebase: {str(auth_error)}")
@@ -93,13 +93,11 @@ def transcribe_audio():
                 # Remove temporary file
                 safe_remove_file(filepath)
 
-                # Return results
-                return jsonify({
-                    'text': transcription,
-                    'language': language,
-                    'model': model,
-                    'success': True
-                })
+                # For regular processing, ensure consistent format and return
+                if isinstance(transcription, str):
+                    return jsonify({"text": transcription})
+                else:
+                    return jsonify(transcription)
         except Exception as e:
             # Clean up on error
             if os.path.exists(filepath):
@@ -160,11 +158,38 @@ def transcribe_audio():
 def transcription_status(job_id):
     """Check the status of a background transcription job"""
     from services.transcription import transcription_service
-    
+
     # Get the job status
     status = transcription_service.get_job_status(job_id)
-    
+
     # Log the status for debugging
     current_app.logger.info(f"Job status for {job_id}: {status}")
-    
+
+    # If the job is completed and the user is authenticated, save to Firebase
+    if status.get('status') == 'completed' and current_user.is_authenticated:
+        try:
+            # Extract result from status
+            result = status.get('result')
+            if result:
+                # Get text from result
+                text_to_save = result
+                if isinstance(result, dict) and 'text' in result:
+                    text_to_save = result['text']
+
+                # Get language and model from request parameters if available
+                language = request.args.get('language', 'en')
+                model = request.args.get('model', 'gemini-2.0-flash-lite')
+
+                # Save to Firebase
+                Transcription.save(
+                    user_email=current_user.email,
+                    text=text_to_save,
+                    language=language,
+                    model=model,
+                    audio_duration=None
+                )
+                current_app.logger.info(f"Saved background transcription to Firebase for user {current_user.email}")
+        except Exception as e:
+            current_app.logger.error(f"Error saving background transcription to Firebase: {str(e)}")
+
     return jsonify(status)

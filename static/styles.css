@@ -328,6 +328,55 @@ p {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* Recording timer styles */
+.recording-timer {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-top: 1rem;
+  color: hsl(var(--foreground));
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.recording-timer.warning {
+  color: hsl(var(--destructive));
+  animation: blink 1s infinite;
+}
+
+.recording-timer.completed {
+  color: hsl(var(--primary));
+}
+
+.recording-timer.fade-out {
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* Continue recording button */
+.continue-recording-btn {
+  display: none;
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.continue-recording-btn:hover {
+  filter: brightness(0.9);
+}
+
 .header-record-button {
   width: 36px;
   height: 36px;
