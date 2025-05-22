@@ -108,31 +108,59 @@ def history():
     transcriptions = {}
     translations = {}
 
+    print(f"Loading history page for user: {current_user.email}, type: {history_type}")
+
     try:
         # Fetch user's transcription history if needed
         if history_type in ['all', 'transcription']:
+            print(f"Attempting to fetch transcriptions for user: {current_user.email}")
             transcriptions = Transcription.get_by_user(current_user.email, limit=50)
+            print(f"Fetched transcriptions: {len(transcriptions) if transcriptions else 0} items")
+
+            # Debug: Print the first transcription if available
+            if transcriptions and len(transcriptions) > 0:
+                first_key = list(transcriptions.keys())[0]
+                print(f"First transcription: {transcriptions[first_key]}")
+            else:
+                print("No transcriptions found")
+
+                # Check if the user's transcription path exists
+                user_id = current_user.email.replace('.', ',')
+                path_exists = Transcription.get_ref(f'transcriptions/{user_id}').get() is not None
+                print(f"Transcription path exists: {path_exists}")
     except Exception as e:
         print(f"Error fetching transcriptions: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
         # Try to fetch without ordering if index is not defined
         try:
             user_id = current_user.email.replace('.', ',')
             transcriptions = Transcription.get_ref(f'transcriptions/{user_id}').get()
+            print(f"Fetched transcriptions without ordering: {len(transcriptions) if transcriptions else 0} items")
         except Exception as e2:
             print(f"Error fetching transcriptions without ordering: {str(e2)}")
+            traceback.print_exc()
 
     try:
         # Fetch user's translation history if needed
         if history_type in ['all', 'translation']:
+            print(f"Attempting to fetch translations for user: {current_user.email}")
             translations = Translation.get_by_user(current_user.email, limit=50)
+            print(f"Fetched translations: {len(translations) if translations else 0} items")
     except Exception as e:
         print(f"Error fetching translations: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
         # Try to fetch without ordering if index is not defined
         try:
             user_id = current_user.email.replace('.', ',')
             translations = Translation.get_ref(f'translations/{user_id}').get()
+            print(f"Fetched translations without ordering: {len(translations) if translations else 0} items")
         except Exception as e2:
             print(f"Error fetching translations without ordering: {str(e2)}")
+            traceback.print_exc()
 
     return render_template('history.html',
                           history_type=history_type,
