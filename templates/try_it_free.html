@@ -175,21 +175,9 @@
             <div class="record-button-container">
               <button id="record-button" class="record-button">
                 <i class="fas fa-microphone"></i>
-
-                <span>Start Recording</span>
-
+                <span>Record</span>
               </button>
               <div id="recording-timer" class="recording-timer">00:00</div>
-            </div>
-
-            <div class="upload-container">
-
-              <label for="audio-upload" class="upload-label">
-                <i class="fas fa-upload"></i>
-                <span>Upload Audio</span>
-
-              </label>
-              <input type="file" id="audio-upload" class="audio-upload" accept="audio/*">
             </div>
           </div>
 
@@ -203,10 +191,18 @@
           <div class="transcription-result">
             <div class="result-header">
               <h4>Transcription Result</h4>
-              <button id="copy-button" class="copy-button" disabled>
-                <i class="fas fa-copy"></i>
-                <span>Copy</span>
-              </button>
+              <div class="result-actions">
+                <div class="upload-container">
+                  <label for="audio-upload" class="upload-label">
+                    <i class="fas fa-paperclip"></i>
+                  </label>
+                  <input type="file" id="audio-upload" class="audio-upload" accept="audio/*">
+                </div>
+                <button id="copy-button" class="copy-button" disabled>
+                  <i class="fas fa-copy"></i>
+                  <span>Copy</span>
+                </button>
+              </div>
             </div>
             <div id="transcription-text" class="transcription-text" contenteditable="true" spellcheck="true">
               <p class="placeholder-text">Your transcription will appear here...</p>
@@ -249,21 +245,9 @@
               <div class="record-button-container">
                 <button id="record-button-1" class="record-button">
                   <i class="fas fa-microphone"></i>
-
-                  <span>Start Recording</span>
-
+                  <span>Record</span>
                 </button>
                 <div id="recording-timer-1" class="recording-timer">00:00</div>
-              </div>
-
-              <div class="upload-container">
-
-                <label for="audio-upload-1" class="upload-label">
-                  <i class="fas fa-upload"></i>
-                  <span>Upload Audio</span>
-
-                </label>
-                <input type="file" id="audio-upload-1" class="audio-upload" accept="audio/*">
               </div>
             </div>
 
@@ -271,9 +255,17 @@
             <div class="transcription-result">
               <div class="result-header">
                 <h4>Transcription</h4>
-                <button id="copy-button-1" class="copy-button" disabled>
-                  <i class="fas fa-copy"></i>
-                </button>
+                <div class="result-actions">
+                  <div class="upload-container">
+                    <label for="audio-upload-1" class="upload-label">
+                      <i class="fas fa-paperclip"></i>
+                    </label>
+                    <input type="file" id="audio-upload-1" class="audio-upload" accept="audio/*">
+                  </div>
+                  <button id="copy-button-1" class="copy-button" disabled>
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </div>
               </div>
               <div id="transcription-text-1" class="transcription-text" contenteditable="true" spellcheck="true">
                 <p class="placeholder-text">Speaker 1 transcription will appear here...</p>
@@ -334,21 +326,9 @@
               <div class="record-button-container">
                 <button id="record-button-2" class="record-button">
                   <i class="fas fa-microphone"></i>
-
-                  <span>Start Recording</span>
-
+                  <span>Record</span>
                 </button>
                 <div id="recording-timer-2" class="recording-timer">00:00</div>
-              </div>
-
-              <div class="upload-container">
-
-                <label for="audio-upload-2" class="upload-label">
-                  <i class="fas fa-upload"></i>
-                  <span>Upload Audio</span>
-
-                </label>
-                <input type="file" id="audio-upload-2" class="audio-upload" accept="audio/*">
               </div>
             </div>
 
@@ -356,9 +336,17 @@
             <div class="transcription-result">
               <div class="result-header">
                 <h4>Transcription</h4>
-                <button id="copy-button-2" class="copy-button" disabled>
-                  <i class="fas fa-copy"></i>
-                </button>
+                <div class="result-actions">
+                  <div class="upload-container">
+                    <label for="audio-upload-2" class="upload-label">
+                      <i class="fas fa-paperclip"></i>
+                    </label>
+                    <input type="file" id="audio-upload-2" class="audio-upload" accept="audio/*">
+                  </div>
+                  <button id="copy-button-2" class="copy-button" disabled>
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </div>
               </div>
               <div id="transcription-text-2" class="transcription-text" contenteditable="true" spellcheck="true">
                 <p class="placeholder-text">Speaker 2 transcription will appear here...</p>
