@@ -400,8 +400,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let recordingTimer = null;
   let recordingStartTime = null;
   let recordingDuration = 0;
-  const MAX_RECORDING_DURATION = 5 * 60; // 5 minutes in seconds
-  const WARNING_THRESHOLD = 4.5 * 60; // 4.5 minutes in seconds
+  const MAX_RECORDING_DURATION = 20 * 60; // 20 minutes in seconds
+  const WARNING_THRESHOLD = 19 * 60; // 19 minutes in seconds
 
   // Format seconds as MM:SS
   function formatTime(seconds) {
@@ -498,6 +498,9 @@ document.addEventListener('DOMContentLoaded', () => {
         continueButton.onclick = function() {
           // Reset the recording start time to extend duration
           recordingStartTime = new Date();
+          // Add 10 more minutes to the max duration
+          MAX_RECORDING_DURATION += 10 * 60; // Add 10 more minutes
+          WARNING_THRESHOLD = MAX_RECORDING_DURATION - 60; // 1 minute before the new limit
           this.style.display = 'none';
         };
 
