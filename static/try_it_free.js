@@ -173,7 +173,9 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         // Basic mode
         recordButton.classList.add('recording');
-        recordButton.innerHTML = '<i class="fas fa-stop"></i><span>Stop</span>';
+
+        recordButton.innerHTML = '<i class="fas fa-stop"></i><span>Stop Recording</span>';
+
         recordingTimer.style.display = 'inline-block';
       }
 
@@ -200,7 +202,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (speakerNum === 1) {
         // Speaker 1
         recordButton1.classList.remove('recording');
-        recordButton1.innerHTML = '<i class="fas fa-microphone"></i><span>Record</span>';
+
+        recordButton1.innerHTML = '<i class="fas fa-microphone"></i><span>Start Recording</span>';
+
 
         // Re-enable Speaker 2 recording
         if (recordButton2) {
@@ -209,7 +213,9 @@ document.addEventListener('DOMContentLoaded', function() {
       } else if (speakerNum === 2) {
         // Speaker 2
         recordButton2.classList.remove('recording');
-        recordButton2.innerHTML = '<i class="fas fa-microphone"></i><span>Record</span>';
+
+        recordButton2.innerHTML = '<i class="fas fa-microphone"></i><span>Start Recording</span>';
+
 
         // Re-enable Speaker 1 recording
         if (recordButton1) {
@@ -218,7 +224,8 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         // Basic mode
         recordButton.classList.remove('recording');
-        recordButton.innerHTML = '<i class="fas fa-microphone"></i><span>Record</span>';
+        recordButton.innerHTML = '<i class="fas fa-microphone"></i><span>Start Recording</span>';
+
       }
 
       // Stop timer
