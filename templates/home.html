@@ -39,6 +39,7 @@
           <div class="navbar-links">
             <a href="#" class="nav-link active">Home</a>
             <a href="#about" class="nav-link">About Us</a>
+            <a href="{{ url_for('main.try_it_free') }}" class="nav-link">Try It Free</a>
           </div>
         </div>
 
@@ -182,6 +183,7 @@
         <p class="hero-subtitle">Transform spoken language into text with precision in over 50 languages</p>
         <div class="hero-buttons">
           <a href="{{ url_for('auth.register') }}" class="button button-primary">Get Started</a>
+          <a href="{{ url_for('main.try_it_free') }}" class="button button-secondary">Try It Free</a>
           <a href="#about" class="button button-outline">Learn More</a>
         </div>
       </div>
@@ -268,6 +270,7 @@
         </p>
         <div class="cta-buttons">
           <a href="{{ url_for('auth.register') }}" class="button button-primary">Sign Up Now</a>
+          <a href="{{ url_for('main.try_it_free') }}" class="button button-secondary">Try It Free</a>
           <a href="{{ url_for('auth.login') }}" class="button button-outline">Login</a>
         </div>
       </div>
@@ -285,6 +288,7 @@
             <h3 class="footer-links-title">Navigation</h3>
             <a href="#" class="footer-link">Home</a>
             <a href="#about" class="footer-link">About Us</a>
+            <a href="{{ url_for('main.try_it_free') }}" class="footer-link">Try It Free</a>
           </div>
           <div class="footer-links-column">
             <h3 class="footer-links-title">Account</h3>

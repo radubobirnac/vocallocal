@@ -62,6 +62,60 @@ def transcribe_audio():
                 # Read the file content
                 audio_content = audio_file.read()
 
+                # Check if this is a free trial request (non-authenticated user)
+                if not current_user.is_authenticated:
+                    # Check file size for free trial (max 25MB)
+                    file_size_mb = len(audio_content) / (1024 * 1024)
+                    if file_size_mb > 25:
+                        return jsonify({
+                            'error': 'File size exceeds the free trial limit of 25MB.',
+                            'errorType': 'FreeTrial_FileSizeLimitExceeded',
+                            'details': 'Please sign up for a full account to process larger files.'
+                        }), 413
+
+                    # Check audio duration for free trial (estimate based on file size)
+                    # Rough estimate: ~1MB per minute for compressed audio
+                    estimated_duration_minutes = file_size_mb
+                    if estimated_duration_minutes > 3:
+                        return jsonify({
+                            'error': 'Audio duration exceeds the free trial limit of 3 minutes.',
+                            'errorType': 'FreeTrial_DurationLimitExceeded',
+                            'details': 'Please sign up for a full account to process longer recordings.'
+                        }), 413
+
+                    # Track free trial usage with session
+                    from flask import session
+                    import time
+
+                    # Initialize session tracking if not exists
+                    if 'free_trial_usage' not in session:
+                        session['free_trial_usage'] = {
+                            'total_duration': 0,
+                            'last_reset': time.time(),
+                            'requests': 0
+                        }
+
+                    # Reset usage if it's been more than 24 hours since last reset
+                    if time.time() - session['free_trial_usage']['last_reset'] > 86400:  # 24 hours in seconds
+                        session['free_trial_usage'] = {
+                            'total_duration': 0,
+                            'last_reset': time.time(),
+                            'requests': 0
+                        }
+
+                    # Add current estimated duration to total
+                    session['free_trial_usage']['total_duration'] += estimated_duration_minutes
+                    session['free_trial_usage']['requests'] += 1
+
+                    # Check if total duration exceeds limit (3 minutes)
+                    if session['free_trial_usage']['total_duration'] > 3:
+                        return jsonify({
+                            'error': 'You have exceeded the free trial limit of 3 minutes per day.',
+                            'errorType': 'FreeTrial_DailyLimitExceeded',
+                            'details': 'Please sign up for a full account to continue using VocalLocal.',
+                            'usage': session['free_trial_usage']
+                        }), 429  # 429 Too Many Requests
+
                 # Use the transcription service
                 transcription = transcription_service.transcribe(audio_content, language, model)
 

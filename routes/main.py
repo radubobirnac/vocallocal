@@ -139,6 +139,11 @@ def history():
                           transcriptions=transcriptions if transcriptions else {},
                           translations=translations if translations else {})
 
+@bp.route('/try-it-free')
+def try_it_free():
+    """Try It Free page - allows users to test transcription without signing up."""
+    return render_template('try_it_free.html')
+
 @bp.route('/static/<path:path>')
 def serve_static(path):
     """Serve static files."""
