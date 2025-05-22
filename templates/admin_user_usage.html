@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VocalLocal - User Usage Statistics</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .metrics-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+        .metrics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .metrics-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background-color: #f5f5f5;
+            font-weight: 600;
+            color: #333;
+        }
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        .search-input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 300px;
+            font-size: 14px;
+        }
+        .sort-select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .admin-nav {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .admin-nav a {
+            margin-right: 20px;
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .admin-nav a:hover {
+            color: #6200ea;
+        }
+        .admin-nav a.active {
+            color: #6200ea;
+            border-bottom: 2px solid #6200ea;
+        }
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <div class="logo">
+                <a href="{{ url_for('main.index') }}">
+                    <span class="logo-text">VocalLocal</span>
+                </a>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="{{ url_for('main.index') }}">Home</a></li>
+                    <li><a href="{{ url_for('admin.dashboard') }}">Admin Dashboard</a></li>
+                    <li><a href="{{ url_for('admin.logout') }}">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="admin-container">
+        <h1>User Usage Statistics</h1>
+        
+        <div class="admin-nav">
+            <a href="{{ url_for('admin.dashboard') }}">Metrics Dashboard</a>
+            <a href="{{ url_for('admin.users') }}">User Management</a>
+            <a href="{{ url_for('admin.user_usage') }}" class="active">User Usage</a>
+        </div>
+        
+        <div class="metrics-card">
+            <div class="metrics-header">
+                <div class="metrics-title">User Usage Statistics</div>
+                <div class="search-container">
+                    <input type="text" id="user-search" class="search-input" placeholder="Search users...">
+                    <select id="sort-select" class="sort-select">
+                        <option value="total_operations">Sort by Total Operations</option>
+                        <option value="total_chars">Sort by Total Characters</option>
+                        <option value="transcription_count">Sort by Transcriptions</option>
+                        <option value="translation_count">Sort by Translations</option>
+                        <option value="username">Sort by Username</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="user-usage-chart"></canvas>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Transcriptions</th>
+                        <th>Translations</th>
+                        <th>Transcription Chars</th>
+                        <th>Translation Chars</th>
+                        <th>Total Operations</th>
+                        <th>Total Characters</th>
+                    </tr>
+                </thead>
+                <tbody id="user-table-body">
+                    {% for email, data in user_data.items() %}
+                    <tr>
+                        <td>{{ data.username }}</td>
+                        <td>{{ email }}</td>
+                        <td>{{ data.transcription_count }}</td>
+                        <td>{{ data.translation_count }}</td>
+                        <td>{{ data.transcription_chars }}</td>
+                        <td>{{ data.translation_chars }}</td>
+                        <td>{{ data.total_operations }}</td>
+                        <td>{{ data.total_chars }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get user data from the template
+            const userData = {
+                {% for email, data in user_data.items() %}
+                "{{ email }}": {
+                    username: "{{ data.username }}",
+                    transcription_count: {{ data.transcription_count }},
+                    translation_count: {{ data.translation_count }},
+                    transcription_chars: {{ data.transcription_chars }},
+                    translation_chars: {{ data.translation_chars }},
+                    total_operations: {{ data.total_operations }},
+                    total_chars: {{ data.total_chars }}
+                },
+                {% endfor %}
+            };
+
+            // Create chart
+            createUserUsageChart(userData);
+
+            // Handle search and sorting
+            const userSearch = document.getElementById('user-search');
+            const sortSelect = document.getElementById('sort-select');
+            
+            userSearch.addEventListener('input', function() {
+                filterAndSortUsers();
+            });
+            
+            sortSelect.addEventListener('change', function() {
+                filterAndSortUsers();
+            });
+            
+            function filterAndSortUsers() {
+                const searchTerm = userSearch.value.toLowerCase();
+                const sortBy = sortSelect.value;
+                
+                // Filter and sort users
+                let filteredUsers = Object.entries(userData).filter(([email, data]) => {
+                    return email.toLowerCase().includes(searchTerm) || 
+                           data.username.toLowerCase().includes(searchTerm);
+                });
+                
+                // Sort users
+                filteredUsers.sort((a, b) => {
+                    if (sortBy === 'username') {
+                        return a[1].username.localeCompare(b[1].username);
+                    } else {
+                        return b[1][sortBy] - a[1][sortBy];
+                    }
+                });
+                
+                // Update table
+                const tableBody = document.getElementById('user-table-body');
+                tableBody.innerHTML = '';
+                
+                filteredUsers.forEach(([email, data]) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${data.username}</td>
+                        <td>${email}</td>
+                        <td>${data.transcription_count}</td>
+                        <td>${data.translation_count}</td>
+                        <td>${data.transcription_chars}</td>
+                        <td>${data.translation_chars}</td>
+                        <td>${data.total_operations}</td>
+                        <td>${data.total_chars}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                
+                // Update chart
+                createUserUsageChart(Object.fromEntries(filteredUsers));
+            }
+            
+            function createUserUsageChart(userData) {
+                const ctx = document.getElementById('user-usage-chart').getContext('2d');
+                
+                // Prepare data for chart
+                const labels = Object.values(userData).map(data => data.username);
+                const transcriptionData = Object.values(userData).map(data => data.transcription_count);
+                const translationData = Object.values(userData).map(data => data.translation_count);
+                
+                // Destroy existing chart if it exists
+                if (window.userChart) {
+                    window.userChart.destroy();
+                }
+                
+                // Create new chart
+                window.userChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Transcriptions',
+                                data: transcriptionData,
+                                backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Translations',
+                                data: translationData,
+                                backgroundColor: 'rgba(153, 102, 255, 0.7)',
+                                borderColor: 'rgba(153, 102, 255, 1)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Operations'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Users'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

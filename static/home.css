@@ -1,0 +1,761 @@
+/* Home page specific styles */
+
+/* Container */
+.home-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* Navbar */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: hsl(var(--background));
+  border-bottom: 1px solid hsl(var(--border));
+  padding: 1rem 0;
+  transition: all 0.3s ease;
+}
+
+.navbar-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Left section - Brand */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+}
+
+.brand-title {
+  display: flex;
+  align-items: center;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: hsl(var(--primary));
+  margin: 0;
+}
+
+.brand-icon {
+  margin-right: 0.5rem;
+  font-size: 1.25rem;
+}
+
+/* Center section - Main navigation */
+.navbar-center {
+  display: flex;
+  justify-content: center;
+  flex: 1;
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Right section - Auth links and theme toggle */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  height: 100%;
+}
+
+.auth-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  height: 100%;
+}
+
+.theme-selector {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  position: relative;
+}
+
+.theme-options-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 180px;
+  background-color: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  z-index: 100;
+}
+
+.theme-options-dropdown.show {
+  display: block !important;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: hsl(var(--foreground));
+  border-radius: var(--radius);
+  transition: background-color 0.2s ease;
+}
+
+.theme-option:hover {
+  background-color: hsla(var(--muted), 0.1);
+}
+
+.theme-option.active {
+  background-color: hsla(var(--primary), 0.1);
+  color: hsl(var(--primary));
+}
+
+/* User Avatar Menu */
+.user-avatar-menu {
+  position: relative;
+  z-index: 1000 !important; /* Ensure it's above other elements */
+  cursor: pointer !important; /* Show pointer cursor to indicate it's clickable */
+  pointer-events: auto !important; /* Ensure clicks are captured */
+}
+
+.avatar-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer !important;
+  padding: 0.25rem;
+  border-radius: var(--radius);
+  transition: background-color 0.2s ease;
+  z-index: 1000 !important; /* Ensure it's above other elements */
+  pointer-events: auto !important; /* Ensure clicks are captured */
+  position: relative; /* Ensure proper stacking context */
+}
+
+.avatar-button:hover {
+  background-color: hsla(var(--muted), 0.1);
+}
+
+.avatar-circle {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.dropdown-arrow {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  transition: transform 0.2s ease;
+}
+
+.avatar-button[aria-expanded="true"] .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.user-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 200px;
+  background-color: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  z-index: 9999 !important; /* Very high z-index to ensure it's above all other elements */
+  display: none;
+  pointer-events: auto !important; /* Ensure clicks are captured */
+  opacity: 1 !important; /* Ensure it's fully visible */
+  visibility: visible !important; /* Ensure it's not hidden */
+}
+
+.user-dropdown.show {
+  display: block !important; /* Use !important to override any other display settings */
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  color: hsl(var(--foreground));
+  text-decoration: none;
+  border-radius: var(--radius);
+  transition: background-color 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: hsla(var(--muted), 0.1);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: hsl(var(--border));
+  margin: 0.5rem 0;
+}
+
+/* History Menu */
+.history-menu {
+  position: relative;
+  z-index: 1000; /* Ensure it's above other elements */
+  cursor: pointer; /* Show pointer cursor to indicate it's clickable */
+}
+
+.history-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer !important;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  color: hsl(var(--foreground));
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  z-index: 1000 !important; /* Ensure it's above other elements */
+  pointer-events: auto !important; /* Ensure clicks are captured */
+  position: relative; /* Ensure proper stacking context */
+}
+
+.history-button:hover {
+  background-color: hsla(var(--muted), 0.1);
+}
+
+.history-button[aria-expanded="true"] .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.history-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 200px;
+  background-color: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  z-index: 9999 !important; /* Very high z-index to ensure it's above all other elements */
+  display: none;
+  pointer-events: auto !important; /* Ensure clicks are captured */
+  opacity: 1 !important; /* Ensure it's fully visible */
+  visibility: visible !important; /* Ensure it's not hidden */
+}
+
+.history-dropdown.show {
+  display: block !important; /* Use !important to override any other display settings */
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure the theme toggle button is properly aligned */
+#theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2rem;
+  width: 2rem;
+  padding: 0;
+  margin: 0;
+}
+
+/* Remove auth-button styles since we're not using them anymore */
+
+.nav-link {
+  font-weight: 500;
+  color: hsl(var(--foreground));
+  text-decoration: none;
+  transition: color 0.2s ease;
+  position: relative;
+}
+
+.nav-link:hover {
+  color: hsl(var(--primary));
+}
+
+.nav-link.active {
+  color: hsl(var(--primary));
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -0.5rem;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: hsl(var(--primary));
+  border-radius: 1px;
+}
+
+/* Hero Section */
+.hero-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 2rem auto 4rem;
+  padding: 2rem 1.5rem;
+  gap: 2rem;
+}
+
+.hero-content {
+  flex: 1;
+  max-width: 600px;
+}
+
+.hero-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.hero-subtitle {
+  font-size: 1.25rem;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.hero-image {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hero-image img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Section Styles */
+.section-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.section-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  margin-bottom: 0.5rem;
+}
+
+.section-subtitle {
+  font-size: 1.1rem;
+  color: hsl(var(--muted-foreground));
+}
+
+/* About Section */
+.about-section {
+  background-color: hsl(var(--secondary));
+  padding: 5rem 1.5rem;
+}
+
+.about-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.about-text p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: hsl(var(--foreground));
+  margin-bottom: 1.5rem;
+}
+
+/* Features Section */
+.features-section {
+  padding: 5rem 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+.feature-card {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: 2rem;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.feature-icon {
+  font-size: 2.5rem;
+  color: hsl(var(--primary));
+  margin-bottom: 1.5rem;
+}
+
+.feature-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: hsl(var(--foreground));
+}
+
+.feature-description {
+  color: hsl(var(--muted-foreground));
+  line-height: 1.5;
+}
+
+/* CTA Section */
+.cta-section {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 5rem 1.5rem;
+  text-align: center;
+}
+
+.cta-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.cta-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.cta-description {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+.cta-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.cta-section .button-outline {
+  border-color: hsl(var(--primary-foreground));
+  color: hsl(var(--primary-foreground));
+}
+
+.cta-section .button-outline:hover {
+  background-color: hsla(var(--primary-foreground), 0.1);
+}
+
+/* Pricing Section */
+.pricing-section {
+  padding: 5rem 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.pricing-card {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: 2rem;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.pricing-card-highlighted {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.pricing-card-highlighted::before {
+  content: 'Most Popular';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 0.25rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.pricing-header {
+  margin-bottom: 1.5rem;
+}
+
+.pricing-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.pricing-price {
+  font-size: 2rem;
+  font-weight: 700;
+  color: hsl(var(--primary));
+}
+
+.pricing-price span {
+  font-size: 1rem;
+  font-weight: 400;
+  color: hsl(var(--muted-foreground));
+}
+
+.pricing-features {
+  margin-bottom: 2rem;
+}
+
+.pricing-features ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pricing-features li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.pricing-features li:last-child {
+  border-bottom: none;
+}
+
+.feature-disabled {
+  color: hsl(var(--muted-foreground));
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.pricing-button {
+  width: 100%;
+}
+
+.pay-as-you-go {
+  background-color: hsl(var(--secondary));
+  border-radius: var(--radius);
+  padding: 2rem;
+  text-align: center;
+}
+
+.pay-as-you-go-content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.pay-as-you-go-content p {
+  margin-bottom: 1.5rem;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Responsive adjustments for pricing section */
+@media (max-width: 768px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .pricing-card-highlighted {
+    order: -1;
+  }
+}
+
+/* Footer */
+.footer {
+  background-color: hsl(var(--secondary));
+  padding: 4rem 1.5rem 2rem;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.footer-brand {
+  max-width: 300px;
+}
+
+.footer-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  margin-bottom: 0.5rem;
+}
+
+.footer-tagline {
+  color: hsl(var(--muted-foreground));
+  line-height: 1.5;
+}
+
+.footer-links {
+  display: flex;
+  gap: 4rem;
+}
+
+.footer-links-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin-bottom: 1rem;
+}
+
+.footer-links-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.footer-link {
+  color: hsl(var(--muted-foreground));
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+  color: hsl(var(--primary));
+}
+
+.footer-bottom {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-top: 2rem;
+  text-align: center;
+}
+
+.copyright {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  /* Navigation responsive styles */
+  .navbar-container {
+    flex-wrap: wrap;
+  }
+
+  .navbar-brand {
+    flex: 1;
+  }
+
+  .navbar-center {
+    order: 3;
+    width: 100%;
+    margin-top: 1rem;
+    justify-content: flex-start;
+  }
+
+  .navbar-right {
+    justify-content: flex-end;
+    align-items: center;
+    height: auto;
+  }
+
+  .auth-links {
+    gap: 1rem;
+    height: auto;
+  }
+
+  .theme-selector {
+    height: auto;
+  }
+
+  /* Other responsive styles */
+  .hero-section {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-buttons {
+    justify-content: center;
+  }
+
+  .footer-content {
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .footer-links {
+    flex-direction: column;
+    gap: 2rem;
+  }
+}
+
+/* Small screens */
+@media (max-width: 480px) {
+  .navbar-right {
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+
+  .auth-links {
+    gap: 0.75rem;
+  }
+
+  .nav-link {
+    font-size: 0.9rem;
+  }
+}

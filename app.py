@@ -6,8 +6,9 @@ import os
 import sys
 import subprocess
 import tempfile
-from flask import Flask, redirect, url_for, flash, render_template
+from flask import Flask, redirect, url_for, flash, render_template, jsonify
 from config import Config
+import jinja2
 
 # Try to import Google Generative AI, install if missing
 try:
@@ -83,7 +84,10 @@ except ImportError as e:
     METRICS_AVAILABLE = False
 
 # Initialize Flask application
-app = Flask(__name__, static_folder='static', template_folder='templates')
+import os
+static_folder = os.path.join(os.path.dirname(__file__), 'static')
+template_folder = os.path.join(os.path.dirname(__file__), 'templates')
+app = Flask(__name__, static_folder=static_folder, template_folder=template_folder)
 app.secret_key = Config.SECRET_KEY
 
 # Configure upload settings
@@ -105,7 +109,22 @@ def handle_exception(e):
     app.logger.error(f"Unhandled exception: {str(e)}")
     import traceback
     app.logger.error(traceback.format_exc())
-    return render_template('error.html', error=str(e)), 500
+
+    # Try to render the error template, but have a fallback if it's missing
+    try:
+        return render_template('error.html', error=str(e)), 500
+    except jinja2.exceptions.TemplateNotFound:
+        # Fallback for missing template
+        return f"""
+        <html>
+            <head><title>Error</title></head>
+            <body>
+                <h1>An error occurred</h1>
+                <p>{str(e)}</p>
+                <p><a href="/">Return to home</a></p>
+            </body>
+        </html>
+        """, 500
 
 # Define a simple index route at the root level
 @app.route('/')
@@ -116,8 +135,8 @@ def index():
         # User is logged in, show the main application
         return render_template('index.html')
     else:
-        # User is not logged in, redirect to login page
-        return redirect(url_for('auth.login'))
+        # User is not logged in, show the home page
+        return render_template('home.html')
 
 # Register routes for auth directly at the root level
 @app.route('/auth/google')
@@ -142,17 +161,28 @@ def root_auth_callback():
         return redirect(url_for('auth.login'))
 
 # Register blueprints
-from routes import main, transcription, translation, tts, admin
+from routes import main, transcription, translation, tts, admin, interpretation
 
 app.register_blueprint(main.bp)
 app.register_blueprint(transcription.bp)
 app.register_blueprint(translation.bp)
 app.register_blueprint(tts.bp)
 app.register_blueprint(admin.bp)
+app.register_blueprint(interpretation.bp)
 
 # Register auth blueprint with a different name to avoid conflicts
 from auth import auth_bp
 app.register_blueprint(auth_bp, name='auth_blueprint')
+
+# Import the transcription service for the status endpoint
+from services.transcription import transcription_service
+from models.firebase_models import Transcription, Translation
+
+@app.route('/api/transcription_status/<job_id>', methods=['GET'])
+def transcription_status(job_id):
+    """Check the status of a background transcription job"""
+    status = transcription_service.get_job_status(job_id)
+    return jsonify(status)
 
 if __name__ == '__main__':
     import argparse

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>History - Vocal Local</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='history.css') }}">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-1 mb-2 mt-1">
+      <div class="header-title-container">
+        <h1 class="text-2xl font-bold" style="color: hsl(var(--primary)); font-family: 'Poppins', sans-serif;">Vocal Local</h1>
+        <p id="app-subtitle" class="text-sm text-muted">Accurate Multilingual Speech-to-Text Transcription</p>
+      </div>
+
+      <div class="flex items-center gap-2 mt-0">
+        <!-- User Avatar Menu -->
+        {% if current_user.is_authenticated %}
+        <div class="user-avatar-menu">
+          <button id="avatar-button" class="avatar-button" aria-expanded="false">
+            <div class="avatar-circle">{{ current_user.username[0]|upper }}</div>
+            <i class="fas fa-chevron-down dropdown-arrow"></i>
+          </button>
+          <div id="user-dropdown" class="user-dropdown">
+            <a href="{{ url_for('auth.profile') }}" class="dropdown-item">
+              <i class="fas fa-user"></i> Profile
+            </a>
+            {% if current_user.is_admin %}
+            <div class="dropdown-divider"></div>
+            <a href="{{ url_for('admin_dashboard') }}" class="dropdown-item">
+              <i class="fas fa-chart-line"></i> Admin Dashboard
+            </a>
+            <a href="{{ url_for('admin_users') }}" class="dropdown-item">
+              <i class="fas fa-users"></i> User Management
+            </a>
+            {% endif %}
+            <div class="dropdown-divider"></div>
+            <a href="{{ url_for('auth.logout') }}" class="dropdown-item">
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- History Dropdown -->
+        <div class="history-menu">
+          <button id="history-button" class="history-button" aria-expanded="false">
+            <i class="fas fa-history"></i> History
+            <i class="fas fa-chevron-down dropdown-arrow"></i>
+          </button>
+          <div id="history-dropdown" class="history-dropdown">
+            <a href="{{ url_for('main.history', type='all') }}" class="dropdown-item">
+              <i class="fas fa-list"></i> All History
+            </a>
+            <a href="{{ url_for('main.history', type='transcription') }}" class="dropdown-item">
+              <i class="fas fa-microphone"></i> Transcriptions
+            </a>
+            <a href="{{ url_for('main.history', type='translation') }}" class="dropdown-item">
+              <i class="fas fa-language"></i> Translations
+            </a>
+          </div>
+        </div>
+
+        <!-- Theme Selector -->
+        <div class="theme-selector">
+          <button id="theme-toggle-btn" class="button button-outline button-icon" title="Change theme">
+            <i class="fas fa-lightbulb"></i>
+          </button>
+          <div id="theme-options" class="theme-options-dropdown" style="display: none;">
+            <button class="theme-option" data-theme="light">
+              <i class="fas fa-sun"></i> Light Mode
+            </button>
+            <button class="theme-option" data-theme="dark">
+              <i class="fas fa-moon"></i> Dark Mode
+            </button>
+            <button class="theme-option" data-theme="system">
+              <i class="fas fa-circle-half-stroke"></i> System
+            </button>
+          </div>
+        </div>
+        <!-- End Theme Selector -->
+
+        <!-- Navigation Links -->
+        <a href="{{ url_for('index') }}" class="button button-outline">Home</a>
+      </div>
+    </header>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- History Content -->
+    <div class="history-page-content">
+      <div class="history-header">
+        <h1 class="history-title">
+          {% if history_type == 'transcription' %}
+            <i class="fas fa-microphone"></i> Transcription History
+          {% elif history_type == 'translation' %}
+            <i class="fas fa-language"></i> Translation History
+          {% else %}
+            <i class="fas fa-history"></i> Activity History
+          {% endif %}
+        </h1>
+
+        <div class="history-filters">
+          <div class="search-container">
+            <input type="text" id="history-search" class="search-input" placeholder="Search history...">
+            <button id="search-btn" class="search-button">
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+
+          <select id="sort-select" class="sort-select">
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- History Items -->
+      <div class="history-container">
+        <div class="history-pagination">
+          <button id="prev-page" class="button button-small" disabled>Previous</button>
+          <span id="page-info">Page 1</span>
+          <button id="next-page" class="button button-small" {% if (transcriptions|length + translations|length) <= 10 %}disabled{% endif %}>Next</button>
+        </div>
+
+        <div class="history-list" id="history-list">
+          {% if history_type in ['all', 'transcription'] and transcriptions %}
+            {% for id, item in transcriptions.items() %}
+              <div class="history-item transcription-item" data-timestamp="{{ item.timestamp }}" data-type="transcription">
+                <div class="history-item-header">
+                  <div class="history-item-type">
+                    <i class="fas fa-microphone"></i> Transcription
+                  </div>
+                  <div class="history-item-meta">
+                    <span class="history-item-date">{{ item.timestamp.split('T')[0] }}</span>
+                    <span class="history-item-time">{{ item.timestamp.split('T')[1].split('.')[0] }}</span>
+                    <span class="history-item-lang">{{ item.language }}</span>
+                    <span class="history-item-model">{{ item.model }}</span>
+                  </div>
+                </div>
+                <div class="history-item-content">
+                  <p>{% if 'text' in item and item.text %}{{ item.text[0:150] if item.text|length > 150 else item.text }}{% if item.text|length > 150 %}...{% endif %}{% else %}No text available{% endif %}</p>
+                </div>
+                <div class="history-item-actions">
+                  <button class="button button-small view-full-text" data-text="{{ item.text or '' }}">View Full</button>
+                  <button class="button button-small copy-text" data-text="{{ item.text or '' }}">Copy</button>
+                </div>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          {% if history_type in ['all', 'translation'] and translations %}
+            {% for id, item in translations.items() %}
+              <div class="history-item translation-item" data-timestamp="{{ item.timestamp }}" data-type="translation">
+                <div class="history-item-header">
+                  <div class="history-item-type">
+                    <i class="fas fa-language"></i> Translation
+                  </div>
+                  <div class="history-item-meta">
+                    <span class="history-item-date">{{ item.timestamp.split('T')[0] }}</span>
+                    <span class="history-item-time">{{ item.timestamp.split('T')[1].split('.')[0] }}</span>
+                    <span class="history-item-lang">{{ item.source_language }} → {{ item.target_language }}</span>
+                    <span class="history-item-model">{{ item.model }}</span>
+                  </div>
+                </div>
+                <div class="history-item-content">
+                  <div class="translation-content">
+                    <p class="original-text">{% if 'original_text' in item and item.original_text %}{{ item.original_text[0:100] if item.original_text|length > 100 else item.original_text }}{% if item.original_text|length > 100 %}...{% endif %}{% else %}No original text{% endif %}</p>
+                    <p class="translated-text">{% if 'translated_text' in item and item.translated_text %}{{ item.translated_text[0:100] if item.translated_text|length > 100 else item.translated_text }}{% if item.translated_text|length > 100 %}...{% endif %}{% else %}No translation{% endif %}</p>
+                  </div>
+                </div>
+                <div class="history-item-actions">
+                  <button class="button button-small view-full-text" data-original="{{ item.original_text or '' }}" data-translated="{{ item.translated_text or '' }}">View Full</button>
+                  <button class="button button-small copy-text" data-text="{{ item.translated_text or '' }}">Copy</button>
+                </div>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          {% if (history_type == 'transcription' and not transcriptions) or
+                (history_type == 'translation' and not translations) or
+                (history_type == 'all' and not transcriptions and not translations) %}
+            <p class="empty-history">No history available.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script src="{{ url_for('static', filename='common.js') }}"></script>
+  <script src="{{ url_for('static', filename='auth.js') }}"></script>
+  <script src="{{ url_for('static', filename='history.js') }}"></script>
+</body>
+</html>

@@ -121,6 +121,12 @@
     <div class="dashboard-container">
         <h1>VocalLocal Admin Dashboard</h1>
 
+        <div class="admin-nav" style="display: flex; margin-bottom: 20px;">
+            <a href="{{ url_for('admin.dashboard') }}" style="margin-right: 20px; color: #6200ea; text-decoration: none; font-weight: 500; border-bottom: 2px solid #6200ea;">Metrics Dashboard</a>
+            <a href="{{ url_for('admin.users') }}" style="margin-right: 20px; color: #333; text-decoration: none; font-weight: 500;">User Management</a>
+            <a href="{{ url_for('admin.user_usage') }}" style="margin-right: 20px; color: #333; text-decoration: none; font-weight: 500;">User Usage</a>
+        </div>
+
         <div class="tab-container">
             <div class="tab-buttons">
                 <button class="tab-button active" data-tab="overview">Overview</button>

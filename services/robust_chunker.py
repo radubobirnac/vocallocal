@@ -15,6 +15,7 @@ import subprocess
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Any, Optional, Tuple, Union
+import psutil
 
 # Configure logging
 logging.basicConfig(
@@ -69,6 +70,8 @@ class RobustChunker:
         # Register signal handlers for graceful shutdown
         signal.signal(signal.SIGTERM, self._handle_shutdown)
         signal.signal(signal.SIGINT, self._handle_shutdown)
+        self.logger = logging.getLogger("robust_chunker")
+
 
         logger.info(f"Initialized RobustChunker with: chunk_seconds={self.chunk_seconds}, "
                    f"max_retries={self.max_retries}, retry_delay={self.retry_delay}")
@@ -97,6 +100,14 @@ class RobustChunker:
             self.heartbeat_thread.join(timeout=1)
             logger.info("Stopped heartbeat thread")
 
+    def _check_memory_usage(self):
+        """Monitor memory usage during chunking process"""
+        
+        memory_percent = psutil.virtual_memory().percent
+        if memory_percent > 85:  # Warning threshold
+            self.logger.warning(f"High memory usage detected: {memory_percent}%")
+        return memory_percent
+
     def prepare_output_directory(self) -> bool:
         """
         Ensure the output directory exists.
@@ -115,10 +126,10 @@ class RobustChunker:
     def chunk_audio(self) -> Tuple[bool, List[str], str]:
         """
         Chunk the audio file using FFmpeg with retries.
-
-        Returns:
-            Tuple[bool, List[str], str]: (success, chunk_files, error_message)
         """
+        # Add a flag to track if we're in a multi-chunk processing session
+        self.multi_chunk_processing = True
+        
         if not self.input_path:
             return False, [], "No input path specified"
 
@@ -131,14 +142,23 @@ class RobustChunker:
 
         # Build FFmpeg command
         output_pattern = os.path.join(self.output_dir, f"chunk_%03d.{self.input_ext}")
+        
+        # Get FFmpeg path from transcription service if available
+        ffmpeg_cmd = "ffmpeg"
+        if hasattr(self, 'transcription_service') and self.transcription_service and hasattr(self.transcription_service, 'ffmpeg_path'):
+            ffmpeg_cmd = self.transcription_service.ffmpeg_path
+        
         cmd = [
-            "ffmpeg", "-y",
+            ffmpeg_cmd, "-y",
             "-i", self.input_path,
             "-f", "segment",
             "-segment_time", str(self.chunk_seconds),
             "-c", "copy",
             output_pattern
         ]
+        
+        # Log the full command for debugging
+        self.logger.info(f"FFmpeg command: {' '.join(cmd)}")
 
         # Try to run FFmpeg with retries
         success = False
@@ -185,6 +205,8 @@ class RobustChunker:
             return False, [], "No chunks were created during FFmpeg processing"
 
         logger.info(f"Created {len(chunk_files)} chunks")
+        # Set flag to False when done
+        self.multi_chunk_processing = False
         return True, chunk_files, ""
 
     def validate_chunks(self, chunk_files: List[str]) -> Tuple[bool, List[str], str]:

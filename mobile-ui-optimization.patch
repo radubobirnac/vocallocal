@@ -1,0 +1,431 @@
+From: AI Assistant <ai@example.com>
+Date: Wed, 21 May 2025 22:30:00 +0000
+Subject: [PATCH] Optimize Try It Free page for mobile
+
+This patch optimizes the Try It Free page for mobile devices by:
+1. Reducing button sizes and spacing
+2. Increasing transcription display area
+3. Replacing upload buttons with paperclip icons
+4. Optimizing layout for bilingual mode
+5. Reducing spacing around time limit notice
+
+diff --git a/static/try_it_free.css b/static/try_it_free.css
+index 1234567..abcdef0 100644
+--- a/static/try_it_free.css
++++ b/static/try_it_free.css
+@@ -268,27 +268,22 @@
+ /* Time Limit Notice */
+ .time-limit-notice {
+   display: flex;
+   align-items: center;
+-  gap: 0.75rem;
++  gap: 0.5rem;
+   background-color: hsla(var(--primary), 0.1);
+   border-radius: var(--radius);
+-  padding: 0.75rem;
+-  margin: 0 auto 0.5rem;
++  padding: 0.35rem;
++  margin: 0 auto;
+   max-width: 800px;
+   text-align: center;
+ }
+ 
+ .time-limit-notice i {
+   color: hsl(var(--primary));
+-  font-size: 1.25rem;
++  font-size: 1rem;
+ }
+ 
+ .time-limit-notice p {
+   margin: 0;
+   color: hsl(var(--foreground));
++  font-size: 0.875rem;
+ }
+ 
+ .time-limit-notice .highlight {
+@@ -300,20 +295,19 @@
+   background-color: hsl(var(--card));
+   border: 1px solid hsl(var(--border));
+   border-radius: var(--radius);
+-  padding: 2rem;
++  padding: 1rem;
+   max-width: 800px;
+   margin: 0 auto;
+   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+ }
+ 
+ .card-header {
+-  margin-bottom: 1.5rem;
++  margin-bottom: 0.5rem;
+   text-align: center;
++  padding: 0.35rem 0;
+ }
+ 
+ .card-header h3 {
+   font-family: 'Poppins', sans-serif;
+-  font-size: 1.5rem;
++  font-size: 1.1rem;
+   margin: 0;
+   color: hsl(var(--foreground));
+ }
+@@ -321,27 +315,27 @@
+ /* Language Selection */
+ .language-selection {
+   display: flex;
+   align-items: center;
+-  gap: 1rem;
+-  margin-bottom: 1.5rem;
++  gap: 0.5rem;
++  margin-bottom: 0.5rem;
+ }
+ 
+ .language-selection label {
+   font-weight: 500;
+   color: hsl(var(--foreground));
++  font-size: 0.8rem;
+ }
+ 
+ .language-select {
+   flex: 1;
+-  padding: 0.5rem;
++  padding: 0.25rem 0.4rem;
+   border-radius: var(--radius);
+   border: 1px solid hsl(var(--border));
+   background-color: hsl(var(--background));
+   color: hsl(var(--foreground));
+-  font-size: 0.875rem;
++  font-size: 0.8rem;
+ }
+ 
+ /* Recording Controls */
+ .recording-controls {
+   display: flex;
+-  gap: 1rem;
+-  margin-bottom: 1.5rem;
++  gap: 0.25rem;
++  margin-bottom: 0.5rem;
++  align-items: center;
+ }
+ 
+ .record-button-container {
+   position: relative;
+-  flex: 1;
++  flex: 0.85;
+ }
+ 
+ .record-button {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+-  gap: 0.5rem;
++  gap: 0.25rem;
+   width: 100%;
+-  padding: 0.75rem 1rem;
++  padding: 0.4rem 0.5rem;
+   background-color: hsl(var(--primary));
+   color: hsl(var(--primary-foreground));
+   border: none;
+   border-radius: var(--radius);
+   font-weight: 500;
++  font-size: 0.75rem;
+   cursor: pointer;
+   transition: all 0.2s ease;
+ }
+@@ -384,13 +378,13 @@
+ .recording-timer {
+   position: absolute;
+   top: 50%;
+-  right: 10px;
++  right: 8px;
+   transform: translateY(-50%);
+-  font-size: 0.875rem;
++  font-size: 0.75rem;
+   font-weight: 600;
+   color: hsl(var(--primary-foreground));
+   display: none;
+   background-color: rgba(0, 0, 0, 0.2);
+-  padding: 0.25rem 0.5rem;
++  padding: 0.15rem 0.35rem;
+   border-radius: var(--radius);
+ }
+ 
+ .upload-container {
+   position: relative;
+-  flex: 1;
++  flex: 0.15;
+ }
+ 
+ .upload-label {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+-  gap: 0.5rem;
++  gap: 0.25rem;
+   width: 100%;
+-  padding: 0.75rem 1rem;
++  padding: 0.4rem 0.5rem;
+   background-color: hsl(var(--secondary));
+   color: hsl(var(--secondary-foreground));
+   border: none;
+   border-radius: var(--radius);
+   font-weight: 500;
++  font-size: 0.75rem;
+   cursor: pointer;
+   transition: all 0.2s ease;
+ }
+ 
++.upload-label.upload-icon-only {
++  width: auto;
++  padding: 0.4rem;
++  border-radius: 50%;
++  aspect-ratio: 1/1;
++  margin-left: 0.25rem;
++}
++
++.upload-label.upload-icon-only i {
++  font-size: 0.85rem;
++}
++
+ .upload-label:hover {
+   filter: brightness(0.95);
+ }
+@@ -456,13 +450,13 @@
+ .result-header {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+-  margin-bottom: 0.75rem;
++  margin-bottom: 0.5rem;
+ }
+ 
+ .result-header h4 {
+   margin: 0;
+-  font-size: 1rem;
++  font-size: 0.9rem;
+   color: hsl(var(--foreground));
+ }
+ 
+@@ -490,9 +484,9 @@
+ }
+ 
+ .transcription-text {
+-  min-height: 200px;
+-  max-height: 300px;
++  min-height: 250px;
++  max-height: 350px;
+   overflow-y: auto;
+-  padding: 1rem;
++  padding: 0.75rem;
+   border: 1px solid hsl(var(--border));
+   border-radius: var(--radius);
+@@ -532,16 +526,16 @@
+ /* Bilingual Mode Styles */
+ .bilingual-mode-container {
+   display: grid;
+   grid-template-columns: 1fr;
+-  gap: 1.5rem;
+-  max-width: 800px;
++  gap: 1rem;
++  max-width: 900px;
+   margin: 0 auto;
+ }
+ 
+ @media (min-width: 768px) {
+   .bilingual-mode-container {
+     grid-template-columns: 1fr 1fr;
++    gap: 0.75rem;
+   }
+ }
+ 
+@@ -588,9 +582,9 @@
+ }
+ 
+ .translation-text {
+-  min-height: 150px;
+-  max-height: 250px;
++  min-height: 200px;
++  max-height: 300px;
+   overflow-y: auto;
+-  padding: 1rem;
++  padding: 0.75rem;
+   border: 1px solid hsl(var(--border));
+   border-radius: var(--radius);
+@@ -598,7 +592,7 @@
+   color: hsl(var(--foreground));
+   font-size: 0.875rem;
+   line-height: 1.5;
+-  margin-top: 0.75rem;
++  margin-top: 0.5rem;
+ }
+ 
+ /* Call to Action */
+@@ -729,7 +723,40 @@
+ /* Responsive Styles */
+ @media (max-width: 768px) {
+   .recording-controls {
+-    flex-direction: column;
++    flex-direction: row; /* Keep buttons side by side on mobile */
+   }
+ 
+   .comparison-header,
+@@ -737,4 +764,31 @@
+     grid-template-columns: 1.5fr 1fr 1fr;
+   }
++  
++  /* Optimize for mobile view */
++  .transcription-card {
++    padding: 0.75rem;
++  }
++  
++  .card-header {
++    margin-bottom: 0.5rem;
++  }
++  
++  .card-header h3 {
++    font-size: 1.1rem;
++  }
++  
++  /* Ensure transcription area is prominent */
++  .transcription-text {
++    min-height: 200px;
++  }
++  
++  .translation-text {
++    min-height: 180px;
++  }
++}
++
++/* Small mobile devices */
++@media (max-width: 480px) {
++  .recording-controls {
++    flex-direction: column;
++    gap: 0.35rem;
++  }
++  
++  .record-button, .upload-label {
++    padding: 0.4rem 0.5rem;
++  }
+ }
+
+diff --git a/templates/try_it_free.html b/templates/try_it_free.html
+index 1234567..abcdef0 100644
+--- a/templates/try_it_free.html
++++ b/templates/try_it_free.html
+@@ -175,15 +175,14 @@
+             <div class="record-button-container">
+               <button id="record-button" class="record-button">
+                 <i class="fas fa-microphone"></i>
+-                <span>Start Recording</span>
++                <span>Record</span>
+               </button>
+               <div id="recording-timer" class="recording-timer">00:00</div>
+             </div>
+ 
+             <div class="upload-container">
+-              <label for="audio-upload" class="upload-label">
+-                <i class="fas fa-upload"></i>
+-                <span>Upload Audio</span>
++              <label for="audio-upload" class="upload-label upload-icon-only">
++                <i class="fas fa-paperclip"></i>
+               </label>
+               <input type="file" id="audio-upload" class="audio-upload" accept="audio/*">
+             </div>
+@@ -245,15 +244,14 @@
+               <div class="record-button-container">
+                 <button id="record-button-1" class="record-button">
+                   <i class="fas fa-microphone"></i>
+-                  <span>Start Recording</span>
++                  <span>Record</span>
+                 </button>
+                 <div id="recording-timer-1" class="recording-timer">00:00</div>
+               </div>
+ 
+               <div class="upload-container">
+-                <label for="audio-upload-1" class="upload-label">
+-                  <i class="fas fa-upload"></i>
+-                  <span>Upload Audio</span>
++                <label for="audio-upload-1" class="upload-label upload-icon-only">
++                  <i class="fas fa-paperclip"></i>
+                 </label>
+                 <input type="file" id="audio-upload-1" class="audio-upload" accept="audio/*">
+               </div>
+@@ -282,8 +280,7 @@
+                 <div class="translation-actions">
+                   <button id="translate-button-1" class="translate-button" disabled>
+                     <i class="fas fa-language"></i>
+-                    <span>Translate</span>
+-                  </button>
++                  </button>
+                   <button id="copy-translation-1" class="copy-button" disabled>
+                     <i class="fas fa-copy"></i>
+                   </button>
+@@ -325,15 +322,14 @@
+               <div class="record-button-container">
+                 <button id="record-button-2" class="record-button">
+                   <i class="fas fa-microphone"></i>
+-                  <span>Start Recording</span>
++                  <span>Record</span>
+                 </button>
+                 <div id="recording-timer-2" class="recording-timer">00:00</div>
+               </div>
+ 
+               <div class="upload-container">
+-                <label for="audio-upload-2" class="upload-label">
+-                  <i class="fas fa-upload"></i>
+-                  <span>Upload Audio</span>
++                <label for="audio-upload-2" class="upload-label upload-icon-only">
++                  <i class="fas fa-paperclip"></i>
+                 </label>
+                 <input type="file" id="audio-upload-2" class="audio-upload" accept="audio/*">
+               </div>
+@@ -362,8 +358,7 @@
+                 <div class="translation-actions">
+                   <button id="translate-button-2" class="translate-button" disabled>
+                     <i class="fas fa-language"></i>
+-                    <span>Translate</span>
+-                  </button>
++                  </button>
+                   <button id="copy-translation-2" class="copy-button" disabled>
+                     <i class="fas fa-copy"></i>
+                   </button>
+
+diff --git a/static/try_it_free.js b/static/try_it_free.js
+index 1234567..abcdef0 100644
+--- a/static/try_it_free.js
++++ b/static/try_it_free.js
+@@ -173,7 +173,7 @@
+       } else {
+         // Basic mode
+         recordButton.classList.add('recording');
+-        recordButton.innerHTML = '<i class="fas fa-stop"></i><span>Stop Recording</span>';
++        recordButton.innerHTML = '<i class="fas fa-stop"></i><span>Stop</span>';
+         recordingTimer.style.display = 'inline-block';
+       }
+ 
+@@ -200,7 +200,7 @@
+       if (speakerNum === 1) {
+         // Speaker 1
+         recordButton1.classList.remove('recording');
+-        recordButton1.innerHTML = '<i class="fas fa-microphone"></i><span>Start Recording</span>';
++        recordButton1.innerHTML = '<i class="fas fa-microphone"></i><span>Record</span>';
+ 
+         // Re-enable Speaker 2 recording
+         if (recordButton2) {
+@@ -209,7 +209,7 @@
+       } else if (speakerNum === 2) {
+         // Speaker 2
+         recordButton2.classList.remove('recording');
+-        recordButton2.innerHTML = '<i class="fas fa-microphone"></i><span>Start Recording</span>';
++        recordButton2.innerHTML = '<i class="fas fa-microphone"></i><span>Record</span>';
+ 
+         // Re-enable Speaker 1 recording
+         if (recordButton1) {
+@@ -218,7 +218,7 @@
+       } else {
+         // Basic mode
+         recordButton.classList.remove('recording');
+-        recordButton.innerHTML = '<i class="fas fa-microphone"></i><span>Start Recording</span>';
++        recordButton.innerHTML = '<i class="fas fa-microphone"></i><span>Record</span>';
+       }
+ 
+       // Stop timer

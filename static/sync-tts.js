@@ -197,7 +197,7 @@ function playText(elementId) {
 
   // Get the TTS model
   const ttsModelSelect = document.getElementById('tts-model-select');
-  const ttsModel = ttsModelSelect ? ttsModelSelect.value : 'gpt4o-mini';
+  const ttsModel = ttsModelSelect ? ttsModelSelect.value : 'gemini-2.5-flash-tts';
 
   // Make the API request
   fetch('/api/tts', {

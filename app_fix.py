@@ -115,8 +115,8 @@ def index():
         # User is logged in, show the main application
         return render_template('index.html')
     else:
-        # User is not logged in, redirect to login page
-        return redirect(url_for('auth.login'))
+        # User is not logged in, show the home page
+        return render_template('home.html')
 
 # Register routes for auth directly at the root level
 @app.route('/auth/google')
