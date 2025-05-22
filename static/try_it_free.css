@@ -272,8 +272,8 @@ option.premium-disabled {
   gap: 0.5rem;
   background-color: hsla(var(--primary), 0.1);
   border-radius: var(--radius);
-  padding: 0.5rem;
-  margin: 0 auto 0.25rem;
+  padding: 0.35rem;
+  margin: 0 auto;
   max-width: 800px;
   text-align: center;
 }
@@ -306,14 +306,14 @@ option.premium-disabled {
 }
 
 .card-header {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   text-align: center;
-  padding: 0.5rem 0;
+  padding: 0.35rem 0;
 }
 
 .card-header h3 {
   font-family: 'Poppins', sans-serif;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   margin: 0;
   color: hsl(var(--foreground));
 }
@@ -323,35 +323,36 @@ option.premium-disabled {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .language-selection label {
   font-weight: 500;
   color: hsl(var(--foreground));
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 .language-select {
   flex: 1;
-  padding: 0.35rem 0.5rem;
+  padding: 0.25rem 0.4rem;
   border-radius: var(--radius);
   border: 1px solid hsl(var(--border));
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 /* Recording Controls */
 .recording-controls {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+  align-items: center;
 }
 
 .record-button-container {
   position: relative;
-  flex: 1;
+  flex: 0.85;
 }
 
 .record-button {
@@ -360,13 +361,13 @@ option.premium-disabled {
   justify-content: center;
   gap: 0.25rem;
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: 0.4rem 0.5rem;
   background-color: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
   border: none;
   border-radius: var(--radius);
   font-weight: 500;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -400,7 +401,7 @@ option.premium-disabled {
 
 .upload-container {
   position: relative;
-  flex: 1;
+  flex: 0.15;
 }
 
 .upload-label {
@@ -409,15 +410,27 @@ option.premium-disabled {
   justify-content: center;
   gap: 0.25rem;
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: 0.4rem 0.5rem;
   background-color: hsl(var(--secondary));
   color: hsl(var(--secondary-foreground));
   border: none;
   border-radius: var(--radius);
   font-weight: 500;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.upload-label.upload-icon-only {
+  width: auto;
+  padding: 0.4rem;
+  border-radius: 50%;
+  aspect-ratio: 1/1;
+  margin-left: 0.25rem;
+}
+
+.upload-label.upload-icon-only i {
+  font-size: 0.85rem;
 }
 
 .upload-label:hover {
