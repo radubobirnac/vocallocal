@@ -30,30 +30,111 @@ function togglePasswordVisibility(button) {
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Auth.js loaded - DOM Content Loaded');
 
-  // Avatar dropdown toggle
-  const avatarButton = document.getElementById('avatar-button');
-  const userDropdown = document.getElementById('user-dropdown');
+  // Use global functions to initialize dropdowns if they exist
+  if (typeof window.initializeProfileDropdown === 'function') {
+    console.log('Auth.js: Calling global profile dropdown initialization');
+    window.initializeProfileDropdown();
+  } else {
+    console.log('Auth.js: Global profile dropdown function not found, defining locally');
 
-  if (avatarButton && userDropdown) {
-    avatarButton.addEventListener('click', (event) => {
-      event.stopPropagation();
-      const isExpanded = avatarButton.getAttribute('aria-expanded') === 'true';
+    // Define the global profile dropdown initialization function
+    window.initializeProfileDropdown = function() {
+      const avatarButton = document.getElementById('avatar-button');
+      const userDropdown = document.getElementById('user-dropdown');
+      const historyButton = document.getElementById('history-button');
+      const historyDropdown = document.getElementById('history-dropdown');
 
-      avatarButton.setAttribute('aria-expanded', !isExpanded);
-      userDropdown.classList.toggle('show');
-    });
+      if (avatarButton && userDropdown && !avatarButton._initialized) {
+        console.log('Initializing profile dropdown from auth.js');
 
-    // Close dropdown when clicking outside
-    document.addEventListener('click', () => {
-      avatarButton.setAttribute('aria-expanded', 'false');
-      userDropdown.classList.remove('show');
-    });
+        // Mark as initialized to prevent duplicate event listeners
+        avatarButton._initialized = true;
 
-    // Prevent dropdown from closing when clicking inside it
-    userDropdown.addEventListener('click', (event) => {
-      event.stopPropagation();
-    });
+        // Remove any existing event listeners by cloning and replacing the button
+        const newAvatarButton = avatarButton.cloneNode(true);
+        avatarButton.parentNode.replaceChild(newAvatarButton, avatarButton);
+
+        // Add click event listener
+        newAvatarButton.addEventListener('click', function(event) {
+          console.log('Avatar button clicked from auth.js');
+          event.preventDefault();
+          event.stopPropagation();
+
+          const isExpanded = newAvatarButton.getAttribute('aria-expanded') === 'true';
+
+          // Toggle dropdown visibility
+          newAvatarButton.setAttribute('aria-expanded', !isExpanded);
+          userDropdown.classList.toggle('show');
+
+          // Close history dropdown if open
+          if (historyButton && historyDropdown) {
+            historyButton.setAttribute('aria-expanded', 'false');
+            historyDropdown.classList.remove('show');
+          }
+        });
+
+        // Ensure dropdown is visible when shown
+        userDropdown.style.zIndex = '1000';
+
+        // Prevent dropdown from closing when clicking inside it
+        userDropdown.addEventListener('click', function(event) {
+          event.stopPropagation();
+        });
+      }
+    };
+
+    // Call the newly defined function
+    window.initializeProfileDropdown();
   }
+
+  // Define the global history dropdown initialization function if it doesn't exist yet
+  if (typeof window.initializeHistoryDropdown !== 'function') {
+    console.log('Auth.js: Defining global history dropdown initialization function');
+    window.initializeHistoryDropdown = function() {
+      const historyButton = document.getElementById('history-button');
+      const historyDropdown = document.getElementById('history-dropdown');
+      const avatarButton = document.getElementById('avatar-button');
+      const userDropdown = document.getElementById('user-dropdown');
+
+      if (historyButton && historyDropdown && !historyButton._initialized) {
+        console.log('Initializing history dropdown from auth.js');
+        // Mark as initialized to prevent duplicate event listeners
+        historyButton._initialized = true;
+
+        // Remove any existing event listeners by cloning and replacing the button
+        const newHistoryButton = historyButton.cloneNode(true);
+        historyButton.parentNode.replaceChild(newHistoryButton, historyButton);
+
+        newHistoryButton.addEventListener('click', (event) => {
+          console.log('History button clicked from auth.js');
+          event.preventDefault();
+          event.stopPropagation();
+
+          const isExpanded = newHistoryButton.getAttribute('aria-expanded') === 'true';
+
+          newHistoryButton.setAttribute('aria-expanded', !isExpanded);
+          historyDropdown.classList.toggle('show');
+
+          // Close user dropdown if open
+          if (avatarButton && userDropdown) {
+            avatarButton.setAttribute('aria-expanded', 'false');
+            userDropdown.classList.remove('show');
+          }
+        });
+
+        // Ensure dropdown is visible when shown
+        historyDropdown.style.zIndex = '1000';
+
+        // Prevent dropdown from closing when clicking inside it
+        historyDropdown.addEventListener('click', (event) => {
+          event.stopPropagation();
+        });
+      }
+    };
+  }
+
+  // Call the global function to initialize the history dropdown
+  window.initializeHistoryDropdown();
 
   // Password visibility toggle - add event listeners
   const passwordToggleBtns = document.querySelectorAll('.password-toggle-btn');

@@ -2,14 +2,25 @@
 
 This guide provides step-by-step instructions for setting up the VocalLocal project on your local machine.
 
+## Latest Updates (20/05/2023)
+
+- Implemented Google OAuth authentication for user login
+- Added manual username/password authentication with secure practices
+- Created a new home page as landing page for non-authenticated users
+- Added About Us section with project information
+- Implemented Transcript History feature under History dropdown
+- Unified transcription and translation history with search and filtering capabilities
+- Improved navigation with dedicated History dropdown menu
+- Enhanced UI with consistent styling across pages
+
 ## Prerequisites
 
 - Python 3.8 or higher
 - Git
 - OpenAI API key
 - Google Gemini API key (optional)
-- Firebase project (optional, for user authentication and data storage)
-- Google OAuth credentials (optional, for Google Sign-In)
+- Firebase project (required for user authentication and data storage)
+- Google OAuth credentials (required for Google Sign-In)
 
 ## Installation Steps
 
@@ -51,14 +62,16 @@ Edit the `.env` file and add your API keys and configuration:
 ```
 # Required
 OPENAI_API_KEY=your_openai_api_key_here
-
-# Optional
-GEMINI_API_KEY=your_gemini_api_key_here
 SECRET_KEY=your_secret_key_here
 FIREBASE_DATABASE_URL=https://your-project-id.firebaseio.com
+
+# Required for Google OAuth
 GOOGLE_CLIENT_ID=your_google_client_id_here
 GOOGLE_CLIENT_SECRET=your_google_client_secret_here
 GOOGLE_REDIRECT_URI=https://localhost:5001/auth/callback
+
+# Optional
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 ### 5. Set Up SSL Certificates (for HTTPS)
@@ -71,21 +84,26 @@ python generate_dev_certs.py
 
 This will create SSL certificates in the `ssl` directory.
 
-### 6. Configure Firebase (Optional)
+### 6. Configure Firebase (Required)
 
-If you want to use Firebase for authentication and data storage:
+Firebase is required for user authentication, transcript history, and data storage:
 
 1. Create a Firebase project at [firebase.google.com](https://firebase.google.com)
 2. Generate a service account key from Project Settings > Service Accounts
 3. Save the JSON file as `firebase-credentials.json` in the project root
+4. Set up the following in your Firebase database:
+   - Create a collection for `users` to store user information
+   - Create a collection for `transcripts` to store transcription and translation history
+   - Add an index on the `timestamp` field for the `transcripts` collection with the rule `.indexOn`: `timestamp` to enable sorting and querying
 
-### 7. Configure Google OAuth (Optional)
+### 7. Configure Google OAuth (Required for OAuth Login)
 
-If you want to enable Google Sign-In:
+To enable Google Sign-In (recommended authentication method):
 
 1. Create OAuth credentials in the [Google Cloud Console](https://console.cloud.google.com)
 2. Set the authorized redirect URI to `https://localhost:5001/auth/callback`
 3. Save the client ID and secret in your `.env` file
+4. Alternatively, save your OAuth credentials in an `OAuth.json` file in the project root
 
 ## Running the Application
 
@@ -116,6 +134,42 @@ start_server.bat
 
 When using HTTPS with self-signed certificates, your browser will show a security warning. Click "Advanced" and then "Proceed" to continue.
 
+## Application Features
+
+### Authentication
+
+- **Google OAuth Login**: Sign in with your Google account
+- **Username/Password Authentication**: Register and login with username and password
+- **Secure Authentication**: Password hashing and secure session management
+
+### Home Page
+
+- Landing page for non-authenticated users
+- Information about the application
+- Navigation to login/register
+
+### About Us
+
+- Information about the VocalLocal project
+- Project goals and features
+
+### Transcription and Translation
+
+- Record audio for transcription
+- Translate transcribed text to multiple languages
+- Save transcriptions and translations to your account
+
+### History
+
+- View your transcript history
+- Search and filter through past transcriptions and translations
+- Unified view of all your content
+
+### Admin Features
+
+- Admin panel at `/admin/users` route
+- View and manage registered users
+
 ## Troubleshooting
 
 ### SSL Certificate Issues
@@ -130,6 +184,20 @@ If you encounter SSL certificate issues:
 If transcription or translation fails:
 - Verify your OpenAI API key is correct and has sufficient credits
 - Check the console logs for specific error messages
+
+### Authentication Issues
+
+If Google OAuth login fails:
+- Verify your Google OAuth credentials are correct
+- Check that the redirect URI matches exactly what's configured in Google Cloud Console
+- Ensure your Firebase project is properly configured for authentication
+
+### Firebase Issues
+
+If transcript history or user authentication isn't working:
+- Verify your Firebase credentials are correct
+- Check that the Firebase database rules include the index on the `timestamp` field
+- Ensure the Firebase collections are properly set up
 
 ### Port Already in Use
 

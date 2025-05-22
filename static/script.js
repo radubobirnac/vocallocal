@@ -103,6 +103,59 @@ document.addEventListener('DOMContentLoaded', () => {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   }
 
+  // Global variable to track the current audio element
+  let currentAudio = null;
+
+  // Function to stop all audio playback
+  function stopAllAudio() {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      currentAudio = null;
+      showStatus('Audio playback stopped', 'info');
+    }
+  }
+
+  // Add a function to create a stop button
+  function addStopButton() {
+    // Check if stop button already exists
+    if (document.getElementById('stop-audio-btn')) {
+      return;
+    }
+
+    // Find the container where the TTS controls are
+    const controlsContainer = document.querySelector('.controls-container') ||
+                             document.querySelector('.action-buttons') ||
+                             document.querySelector('.toolbar');
+
+    if (controlsContainer) {
+      // Create stop button
+      const stopButton = document.createElement('button');
+      stopButton.id = 'stop-audio-btn';
+      stopButton.className = 'btn btn-danger btn-sm';
+      stopButton.innerHTML = '<i class="fas fa-stop"></i> Stop Audio';
+      stopButton.onclick = stopAllAudio;
+
+      // Add to container
+      controlsContainer.appendChild(stopButton);
+    }
+  }
+
+  // Add keyboard shortcut for stopping audio
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      stopAllAudio();
+    }
+  });
+
+  // Initialize when the document is ready
+  document.addEventListener('DOMContentLoaded', function() {
+    // Add the stop button
+    addStopButton();
+
+    // Other initialization code...
+  });
+
   // Speak text using TTS with play/pause/resume
   function speakText(sourceId, text, langCode) {
     // For mobile devices or when sourceId refers to a DOM element, always get the latest text
@@ -136,119 +189,18 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Initialize player state if it doesn't exist
-    if (!ttsPlayers[sourceId]) {
-      ttsPlayers[sourceId] = {
-        audio: null,
-        paused: false,
-        blobUrl: null,
-        lang: null,
-        text: null,
-        error: false
-      };
-    }
-
-    const player = ttsPlayers[sourceId];
-
-    // --- Resume Logic ---
-    if (player.audio && player.paused && player.text === text && player.lang === langCode) {
-      player.audio.play()
-        .then(() => {
-          player.paused = false;
-          setTTSButtonState(sourceId, 'playing');
-          showStatus('Resuming audio...', 'info');
-        })
-        .catch(error => {
-          showStatus('Error resuming audio: ' + error.message, 'error');
-          console.error('Audio resume error:', error);
-          setTTSButtonState(sourceId, 'error');
-          player.error = true;
-        });
-      return; // Don't fetch new audio if resuming
-    }
-
-    // --- Stop any currently playing audio for this source ---
-    if (player.audio && !player.audio.paused) {
-      player.audio.pause();
-      player.audio.currentTime = 0; // Reset playback position
-      if (player.blobUrl) {
-        URL.revokeObjectURL(player.blobUrl); // Clean up old blob URL
-        player.blobUrl = null;
-      }
-    }
-    // Also stop any other playing audio to prevent overlap
-    Object.keys(ttsPlayers).forEach(id => {
-        if (id !== sourceId && ttsPlayers[id].audio && !ttsPlayers[id].audio.paused) {
-            ttsPlayers[id].audio.pause();
-            ttsPlayers[id].paused = true; // Mark as paused
-            setTTSButtonState(id, 'paused');
-        }
-    });
-
-
-    player.text = text;
-    player.lang = langCode;
-    player.paused = false;
-    player.error = false;
-
-    // --- Play from existing blob if available ---
-    if (player.blobUrl) {
-      try {
-        player.audio = new Audio(player.blobUrl);
-        player.audio.playbackRate = 1.10;
-
-        player.audio.onplay = () => {
-          setTTSButtonState(sourceId, 'playing');
-          showStatus('Playing audio...', 'info');
-        };
-        player.audio.onpause = () => {
-          // Only set to paused if not at the end
-          if (!player.audio.ended) {
-            player.paused = true;
-            setTTSButtonState(sourceId, 'paused');
-          }
-        };
-        player.audio.onended = () => {
-          player.paused = false;
-          setTTSButtonState(sourceId, 'ended');
-          // Don't revoke URL here, allow replaying
-        };
-        player.audio.onerror = (e) => {
-          showStatus('Error playing audio', 'error');
-          console.error('Audio playback error:', e);
-          setTTSButtonState(sourceId, 'error');
-          player.error = true;
-          if (player.blobUrl) URL.revokeObjectURL(player.blobUrl); // Clean up on error
-          player.blobUrl = null;
-        };
-
-        player.audio.play().catch(error => {
-          showStatus('Error playing audio: ' + error.message, 'error');
-          console.error('Audio playback error:', error);
-          setTTSButtonState(sourceId, 'error');
-          player.error = true;
-          if (player.blobUrl) URL.revokeObjectURL(player.blobUrl);
-          player.blobUrl = null;
-        });
-      } catch (e) {
-          showStatus('Error creating audio player', 'error');
-          console.error('Audio element creation error:', e);
-          setTTSButtonState(sourceId, 'error');
-          player.error = true;
-          if (player.blobUrl) URL.revokeObjectURL(player.blobUrl);
-          player.blobUrl = null;
-      }
-      return;
-    }
+    // Stop any currently playing audio
+    stopAllAudio();
 
     // Get the selected TTS model
     const ttsModelSelect = document.getElementById('tts-model-select');
-    const ttsModel = ttsModelSelect ? ttsModelSelect.value : 'gemini'; // Default to Gemini if not found
+    const ttsModel = ttsModelSelect ? ttsModelSelect.value : 'auto'; // Default to auto if not found
 
-    // --- Fetch new audio blob ---
-    showStatus(`Generating audio using ${ttsModel === 'gemini' ? 'Gemini' : 'OpenAI'} TTS...`, 'info');
-    setTTSButtonState(sourceId, 'loading'); // Indicate loading state visually if needed
+    // Show loading status
+    showStatus(`Generating audio using ${ttsModel} TTS...`, 'info');
+    setTTSButtonState(sourceId, 'loading');
 
+    // Make API request
     fetch('/api/tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -259,54 +211,50 @@ document.addEventListener('DOMContentLoaded', () => {
       })
     })
     .then(response => {
-      if (!response.ok) throw new Error(`TTS service error (${response.status})`);
+      if (!response.ok) {
+        throw new Error(`TTS service error (${response.status})`);
+      }
       return response.blob();
     })
     .then(audioBlob => {
-      player.blobUrl = URL.createObjectURL(audioBlob);
-      player.audio = new Audio(player.blobUrl);
-      player.audio.playbackRate = 1.10;
+      // Create URL for the audio blob
+      const audioUrl = URL.createObjectURL(audioBlob);
 
-      player.audio.onplay = () => {
-        setTTSButtonState(sourceId, 'playing');
-        showStatus('Playing audio...', 'info');
-      };
-      player.audio.onpause = () => {
-        if (!player.audio.ended) {
-          player.paused = true;
-          setTTSButtonState(sourceId, 'paused');
-        }
-      };
-      player.audio.onended = () => {
-        player.paused = false;
-        setTTSButtonState(sourceId, 'ended');
-        // Don't revoke URL here, allow replaying
-      };
-      player.audio.onerror = (e) => {
-        showStatus('Error playing generated audio', 'error');
-        console.error('Audio playback error:', e);
-        setTTSButtonState(sourceId, 'error');
-        player.error = true;
-        if (player.blobUrl) URL.revokeObjectURL(player.blobUrl);
-        player.blobUrl = null;
-      };
+      // Create and play the audio
+      const audio = new Audio(audioUrl);
 
-      player.audio.play().catch(error => {
-        showStatus('Error playing audio: ' + error.message, 'error');
-        console.error('Audio playback error:', error);
-        setTTSButtonState(sourceId, 'error');
-        player.error = true;
-        if (player.blobUrl) URL.revokeObjectURL(player.blobUrl);
-        player.blobUrl = null;
-      });
+      // Store the audio element globally so we can stop it later
+      currentAudio = audio;
+
+      // Set playback rate to 1.10 (10% faster)
+      audio.playbackRate = 1.10;
+
+      // Play the audio
+      audio.play()
+        .then(() => {
+          showStatus('Playing audio...', 'info');
+        })
+        .catch(error => {
+          showStatus('Error playing audio: ' + error.message, 'danger');
+          console.error('Audio playback error:', error);
+          fallbackSpeakText(text, langCode);
+        });
+
+      // Clean up when done
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        currentAudio = null;
+      };
     })
     .catch(error => {
-      showStatus('Error generating speech: ' + error.message, 'error');
+      showStatus('Error generating speech: ' + error.message, 'danger');
       console.error('TTS error:', error);
-      setTTSButtonState(sourceId, 'error');
-      player.error = true;
-      // Consider fallbackSpeakText here if desired, but it won't have pause/resume
-      // fallbackSpeakText(sourceId, text, langCode);
+
+      // Fallback to browser's speech synthesis
+      fallbackSpeakText(text, langCode);
+    })
+    .finally(() => {
+      setTTSButtonState(sourceId, 'ready');
     });
   }
 
@@ -448,6 +396,55 @@ document.addEventListener('DOMContentLoaded', () => {
     return { supportedTypes, bestType };
   }
 
+  // Global variables for recording timer
+  let recordingTimer = null;
+  let recordingStartTime = null;
+  let recordingDuration = 0;
+  const MAX_RECORDING_DURATION = 5 * 60; // 5 minutes in seconds
+  const WARNING_THRESHOLD = 4.5 * 60; // 4.5 minutes in seconds
+
+  // Format seconds as MM:SS
+  function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+
+  // Update recording timer display
+  function updateRecordingTimer(elementId = 'recording-timer') {
+    if (!recordingStartTime) return;
+
+    const now = new Date();
+    const elapsedSeconds = (now - recordingStartTime) / 1000;
+    recordingDuration = elapsedSeconds;
+
+    // Update timer display
+    const timerElement = document.getElementById(elementId);
+    if (timerElement) {
+      timerElement.textContent = formatTime(elapsedSeconds);
+
+      // Show warning when approaching max duration
+      if (elapsedSeconds >= WARNING_THRESHOLD && elapsedSeconds < MAX_RECORDING_DURATION) {
+        timerElement.classList.add('warning');
+
+        // Show continue button if not already visible
+        const continueButton = document.getElementById('continue-recording');
+        if (continueButton && continueButton.style.display !== 'inline-block') {
+          continueButton.style.display = 'inline-block';
+        }
+      }
+
+      // Auto-stop recording if max duration reached
+      if (elapsedSeconds >= MAX_RECORDING_DURATION) {
+        // Find the active recording button and trigger a click to stop recording
+        const activeRecordButton = document.querySelector('.record-button.recording');
+        if (activeRecordButton) {
+          activeRecordButton.click();
+        }
+      }
+    }
+  }
+
   // Audio recording function
   async function startRecording(options = {}) {
     try {
@@ -490,6 +487,47 @@ document.addEventListener('DOMContentLoaded', () => {
       const recordButton = options.recordButton || null;
       if (recordButton) {
         recordButton.classList.add('recording');
+      }
+
+      // Start recording timer
+      recordingStartTime = new Date();
+      if (recordingTimer) clearInterval(recordingTimer);
+      recordingTimer = setInterval(() => updateRecordingTimer(), 1000);
+
+      // Create or update timer display
+      let timerElement = document.getElementById('recording-timer');
+      if (!timerElement) {
+        // Create timer element if it doesn't exist
+        timerElement = document.createElement('div');
+        timerElement.id = 'recording-timer';
+        timerElement.className = 'recording-timer';
+        timerElement.textContent = '00:00';
+
+        // Create continue button
+        const continueButton = document.createElement('button');
+        continueButton.id = 'continue-recording';
+        continueButton.className = 'continue-recording-btn';
+        continueButton.textContent = 'Continue Recording';
+        continueButton.style.display = 'none';
+        continueButton.onclick = function() {
+          // Reset the timer but keep recording
+          recordingStartTime = new Date();
+          timerElement.classList.remove('warning');
+          this.style.display = 'none';
+        };
+
+        // Add timer and button to the page
+        const recordingContainer = recordButton.parentElement;
+        recordingContainer.appendChild(timerElement);
+        recordingContainer.appendChild(continueButton);
+      } else {
+        // Reset existing timer
+        timerElement.textContent = '00:00';
+        timerElement.classList.remove('warning');
+
+        // Hide continue button
+        const continueButton = document.getElementById('continue-recording');
+        if (continueButton) continueButton.style.display = 'none';
       }
 
       // Log diagnostics
@@ -581,11 +619,27 @@ document.addEventListener('DOMContentLoaded', () => {
     return new Promise(async (resolve, reject) => {
       let attempt = 0;
 
+      // Check if this is a WebM recording from browser
+      const file = formData.get('file');
+      const isWebmRecording = file && file.type === 'audio/webm';
+
+      // For WebM recordings, we'll use a longer timeout and more retries
+      // This helps prevent timeouts with browser recordings
+      if (isWebmRecording) {
+        console.log("Detected WebM recording from browser, using extended timeout and retries");
+        maxRetries = 2; // Increase retries for WebM recordings
+      }
+
       while (attempt <= maxRetries) {
         try {
           // Create AbortController for timeout
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
+          // Use a longer timeout for WebM recordings
+          const timeoutDuration = isWebmRecording ? 120000 : 60000; // 120 seconds for WebM, 60 seconds for others
+          const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
+
+          console.log(`Sending request to ${endpoint} (attempt ${attempt + 1}/${maxRetries + 1}, timeout: ${timeoutDuration/1000}s)`);
 
           const response = await fetch(endpoint, {
             method: 'POST',
@@ -601,6 +655,29 @@ document.addEventListener('DOMContentLoaded', () => {
           }
 
           const result = await response.json();
+
+          // Check if this is a background processing job
+          if (result.status === 'processing' && result.job_id) {
+            console.log(`Server is processing the request in background (job ID: ${result.job_id})`);
+
+            // For WebM recordings, we'll automatically use the background processing handler
+            if (isWebmRecording) {
+              // Determine which transcript element to update
+              let elementId = 'basic-transcript';
+
+              // Start polling for status
+              pollTranscriptionStatus(result.job_id, elementId);
+
+              // Return a placeholder result
+              resolve({
+                text: "Processing recording in background...",
+                processing: true,
+                job_id: result.job_id
+              });
+              return;
+            }
+          }
+
           resolve(result);
           return; // Exit the retry loop on success
 
@@ -1505,6 +1582,36 @@ document.addEventListener('DOMContentLoaded', () => {
             // Stop all tracks in the stream
             recording.stream.getTracks().forEach(track => track.stop());
 
+            // Stop and clear recording timer
+            if (recordingTimer) {
+              clearInterval(recordingTimer);
+              recordingTimer = null;
+            }
+
+            // Hide timer and continue button
+            const timerElement = document.getElementById('recording-timer');
+            if (timerElement) {
+              timerElement.textContent = formatTime(recordingDuration);
+              timerElement.classList.add('completed');
+
+              // Fade out timer after 3 seconds
+              setTimeout(() => {
+                timerElement.classList.add('fade-out');
+                setTimeout(() => {
+                  if (timerElement.parentNode) {
+                    timerElement.parentNode.removeChild(timerElement);
+                  }
+                }, 1000);
+              }, 3000);
+            }
+
+            // Hide continue button
+            const continueButton = document.getElementById('continue-recording');
+            if (continueButton && continueButton.parentNode) {
+              continueButton.style.display = 'none';
+              continueButton.parentNode.removeChild(continueButton);
+            }
+
             // Prepare form data
             const formData = new FormData();
 
@@ -1670,6 +1777,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
               // Stop all tracks in the stream
               speaker.recording.stream.getTracks().forEach(track => track.stop());
+
+              // Stop and clear recording timer
+              if (recordingTimer) {
+                clearInterval(recordingTimer);
+                recordingTimer = null;
+              }
+
+              // Hide timer and continue button
+              const timerElement = document.getElementById('recording-timer');
+              if (timerElement) {
+                timerElement.textContent = formatTime(recordingDuration);
+                timerElement.classList.add('completed');
+
+                // Fade out timer after 3 seconds
+                setTimeout(() => {
+                  timerElement.classList.add('fade-out');
+                  setTimeout(() => {
+                    if (timerElement.parentNode) {
+                      timerElement.parentNode.removeChild(timerElement);
+                    }
+                  }, 1000);
+                }, 3000);
+              }
+
+              // Hide continue button
+              const continueButton = document.getElementById('continue-recording');
+              if (continueButton && continueButton.parentNode) {
+                continueButton.style.display = 'none';
+                continueButton.parentNode.removeChild(continueButton);
+              }
 
               // Get the partner's language for translation
               const partnerSpeaker = speakers.find(s => s.id === speaker.partnerId);
@@ -1891,9 +2028,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('language', document.getElementById('basic-language').value);
-
-        // Get selected model from global transcription model
         formData.append('model', selectedModel);
+        formData.append('speaker', 'basic');
 
         // Show status message
         showStatus('Transcribing your audio...', 'info');
@@ -1906,18 +2042,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
           sendToServerWithProgress(formData, 'basic-upload-btn')
             .then(result => {
-              // Update transcript
-              updateTranscript('basic-transcript', result.text || "No transcript received.");
-
-              // Wait a moment to ensure the transcript is visible before removing the spinner
-              setTimeout(() => {
-                // Signal completion to the progress indicator
-                if (uploadBtn && uploadBtn._progressInstance && uploadBtn._progressInstance.updateState) {
-                  uploadBtn._progressInstance.updateState('completed');
-                }
-              }, 500);
-
-              showStatus('Transcription complete!', 'success');
+              // Check if this is a background processing job
+              if (result.processing && result.job_id) {
+                // Already handled by pollTranscriptionStatus
+                showStatus('Processing large file in background...', 'info', true);
+              } else {
+                // Update transcript
+                updateTranscript('basic-transcript', result.text || "No transcript received.");
+                showStatus('Transcription complete!', 'success');
+              }
             })
             .catch(error => {
               console.error('Upload error:', error);
@@ -1991,9 +2124,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('language', document.getElementById('language-1').value);
-
-        // Get selected model from global transcription model
         formData.append('model', selectedModel);
+        formData.append('speaker', '1');
 
         // Show status message
         showStatus('Transcribing Speaker 1 audio...', 'info');
@@ -2077,9 +2209,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('language', document.getElementById('language-2').value);
-
-        // Get selected model from global transcription model
         formData.append('model', selectedModel);
+        formData.append('speaker', '2');
 
         // Show status message
         showStatus('Transcribing Speaker 2 audio...', 'info');
@@ -2130,6 +2261,113 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Function to poll for transcription job status
+  async function pollTranscriptionStatus(jobId, elementId) {
+    const maxAttempts = 60; // 5 minutes (5s intervals)
+    let attempts = 0;
+
+    showStatus('Processing large file in background...', 'info', true);
+
+    const checkStatus = async () => {
+      try {
+        const response = await fetch(`/api/transcription_status/${jobId}`);
+        const status = await response.json();
+
+        if (status.status === 'completed' && status.result) {
+          // Extract the text from the result
+          const transcriptionText = status.result.text || "Transcription completed but no text was returned.";
+
+          // Update transcript with the text
+          const transcriptElement = document.getElementById(elementId);
+          if (transcriptElement) {
+            transcriptElement.value = transcriptionText;
+
+            // Trigger change event for any listeners
+            const event = new Event('change');
+            transcriptElement.dispatchEvent(event);
+          }
+
+          showStatus('Transcription complete!', 'success');
+          return true;
+        } else if (status.status === 'failed') {
+          showStatus(`Transcription failed: ${status.error}`, 'error', true);
+          return true;
+        } else if (status.status === 'processing') {
+          // Continue polling
+          showStatus(`Processing large file... ${status.progress || ''}`, 'info', true);
+          return false;
+        } else {
+          showStatus('Transcription status unknown', 'warning');
+          return true;
+        }
+      } catch (error) {
+        console.error('Error checking transcription status:', error);
+        showStatus('Error checking transcription status', 'error');
+        return true; // Stop polling on error
+      }
+    };
+
+    // Start polling
+    const poll = async () => {
+      attempts++;
+      const done = await checkStatus();
+
+      if (!done && attempts < maxAttempts) {
+        setTimeout(poll, 5000); // Check every 5 seconds
+      } else if (!done) {
+        showStatus('Transcription timed out. Please check back later.', 'warning', true);
+      }
+    };
+
+    poll();
+  }
+
+  // Update the sendToServer function to handle background processing
+  async function sendToServerWithBackgroundSupport(formData, uploadButtonId, endpoint = '/api/transcribe') {
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      // Check if this is a background processing job
+      if (result.status === 'processing' && result.job_id) {
+        // Determine which transcript element to update based on formData
+        let elementId = 'basic-transcript';
+
+        // For conversation mode, check if this is speaker 1 or 2
+        const speaker = formData.get('speaker');
+        if (speaker === '1') {
+          elementId = 'transcript-1';
+        } else if (speaker === '2') {
+          elementId = 'transcript-2';
+        }
+
+        // Start polling for status
+        pollTranscriptionStatus(result.job_id, elementId);
+
+        // Return a placeholder result
+        return {
+          text: "Processing large file in background...",
+          processing: true,
+          job_id: result.job_id
+        };
+      }
+
+      // Regular result
+      return result;
+    } catch (error) {
+      console.error('Error sending to server:', error);
+      throw error;
+    }
+  }
+
   // About section toggle
   const aboutToggle = document.getElementById('about-toggle');
   const aboutContent = document.getElementById('about-content');
@@ -2177,13 +2415,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize TTS model selector
   const ttsModelSelect = document.getElementById('tts-model-select');
   if (ttsModelSelect) {
-    // Set default to Gemini
-    ttsModelSelect.value = 'gemini';
+    // Set default to GPT-4o Mini
+    ttsModelSelect.value = 'gpt4o-mini';
 
     // Save selection to localStorage when changed
     ttsModelSelect.addEventListener('change', function() {
       localStorage.setItem('tts-model', this.value);
-      showStatus(`TTS model set to ${this.value === 'gemini' ? 'Gemini 2.0 Flash Lite' : 'OpenAI'}`, 'success');
+      showStatus(`TTS model set to ${this.value === 'gpt4o-mini' ? 'GPT-4o Mini TTS' : 'OpenAI TTS-1'}`, 'success');
     });
 
     // Load saved selection from localStorage if available

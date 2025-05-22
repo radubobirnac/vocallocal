@@ -29,8 +29,11 @@ def git_push(commit_message=None, target_branch="main"):
     print(f"Target branch for push: {target_branch}")
     print(f"Pushing changes to GitHub with message: '{commit_message}'")
 
+<<<<<<< HEAD
 <<<<<<< Updated upstream
 =======
+=======
+>>>>>>> 3db6fab76297798926b4100d7af875efe3d6caba
     # Check if we're in detached HEAD state
     head_check = subprocess.run(["git", "symbolic-ref", "-q", "HEAD"],
                                capture_output=True, text=True)
@@ -47,6 +50,7 @@ def git_push(commit_message=None, target_branch="main"):
             return False
 
         print(f"Created new branch: {branch_name}")
+<<<<<<< HEAD
         current_branch = branch_name
 
     # If we're not on the target branch, switch to it
@@ -100,15 +104,22 @@ def git_push(commit_message=None, target_branch="main"):
                 print("You may need to manually resolve conflicts.")
 
 >>>>>>> Stashed changes
+=======
+
+>>>>>>> 3db6fab76297798926b4100d7af875efe3d6caba
     # Commands to execute
     commands = [
         ["git", "add", "."],
         ["git", "commit", "-m", commit_message],
+<<<<<<< HEAD
 <<<<<<< Updated upstream
         ["git", "push"]
 =======
         ["git", "push", "--set-upstream", "origin", target_branch]
 >>>>>>> Stashed changes
+=======
+        ["git", "push", "--set-upstream", "origin", subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).decode().strip()]
+>>>>>>> 3db6fab76297798926b4100d7af875efe3d6caba
     ]
 
     # Execute each command
@@ -129,11 +140,15 @@ def git_push(commit_message=None, target_branch="main"):
                 print("No changes to commit. Continuing...")
             elif "rejected" in result.stderr:
                 print("Push rejected. Trying to pull changes first...")
-                pull_result = subprocess.run(["git", "pull", "--rebase"],
+
+                # Get current branch name
+                current_branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).decode().strip()
+
+                pull_result = subprocess.run(["git", "pull", "--rebase", "origin", current_branch],
                                            capture_output=True, text=True)
                 if pull_result.returncode == 0:
-                    print("Push successful, trying to push again...")
-                    push_again = subprocess.run(["git", "push"],
+                    print("Pull successful, trying to push again...")
+                    push_again = subprocess.run(["git", "push", "--set-upstream", "origin", current_branch],
                                               capture_output=True, text=True)
                     if push_again.returncode == 0:
                         print("Successfully pushed to GitHub after pulling!")

@@ -56,6 +56,25 @@
               </a>
             </div>
           </div>
+
+          <!-- History Dropdown -->
+          <div class="history-menu">
+            <button id="history-button" class="history-button" aria-expanded="false">
+              <i class="fas fa-history"></i> History
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </button>
+            <div id="history-dropdown" class="history-dropdown">
+              <a href="{{ url_for('main.history', type='all') }}" class="dropdown-item">
+                <i class="fas fa-list"></i> All History
+              </a>
+              <a href="{{ url_for('main.history', type='transcription') }}" class="dropdown-item">
+                <i class="fas fa-microphone"></i> Transcriptions
+              </a>
+              <a href="{{ url_for('main.history', type='translation') }}" class="dropdown-item">
+                <i class="fas fa-language"></i> Translations
+              </a>
+            </div>
+          </div>
         {% else %}
           <a href="{{ url_for('auth.login') }}" class="button button-outline">Login</a>
           <a href="{{ url_for('auth.register') }}" class="button button-primary">Register</a>
@@ -136,7 +155,8 @@
           <div class="form-group">
             <label for="tts-model-select" class="form-label">Text-to-Speech Model:</label>
             <select id="tts-model-select" class="form-select mt-2">
-              <option value="gpt4o-mini" selected>GPT-4o Mini TTS</option>
+              <option value="gemini-2.5-flash-tts" selected>Gemini 2.5 Flash TTS</option>
+              <option value="gpt4o-mini">GPT-4o Mini TTS</option>
               <option value="openai">OpenAI TTS-1</option>
             </select>
           </div>
@@ -484,7 +504,7 @@
               </li>
               <li class="flex items-start gap-2">
                 <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                <span>Model selection - Choose from Gemini 2.0 Flash Lite, Gemini 2.5 Flash, GPT-4o Mini, and more</span>
+                <span>Model selection - Choose from Gemini 2.0 Flash Lite, Gemini 2.5 Flash, Gemini 2.5 Flash TTS, GPT-4o Mini, and more</span>
               </li>
               <li class="flex items-start gap-2">
                 <i class="fas fa-check-circle text-green-600 mt-1"></i>
@@ -594,5 +614,8 @@
       </script>
     {% endif %}
   {% endwith %}
+  <script src="{{ url_for('static', filename='background-processing.js') }}"></script>
+  <script src="{{ url_for('static', filename='common.js') }}"></script>
+  <script src="{{ url_for('static', filename='auth.js') }}"></script>
 </body>
 </html>

@@ -547,7 +547,37 @@ def _handle_google_callback():
 @login_required
 def profile():
     """User profile route."""
-    return render_template('profile.html', user=current_user)
+    transcriptions = {}
+    translations = {}
+
+    try:
+        # Try with normal email
+        transcriptions = Transcription.get_by_user(current_user.email, limit=20)
+    except Exception as e:
+        print(f"Error fetching with normal email: {str(e)}")
+        try:
+            # Try with comma-formatted email
+            email_with_comma = current_user.email.replace('.', ',')
+            transcriptions = Transcription.get_by_user(email_with_comma, limit=20)
+        except Exception as e2:
+            print(f"Error fetching with comma email: {str(e2)}")
+            transcriptions = {}
+
+    try:
+        # Fetch user's translation history
+        translations = User.get_ref(f'translations/{current_user.email.replace(".", ",")}').order_by_child('timestamp').limit_to_last(20).get()
+    except Exception as e:
+        print(f"Error fetching translations: {str(e)}")
+        # Try to fetch without ordering if index is not defined
+        try:
+            translations = User.get_ref(f'translations/{current_user.email.replace(".", ",")}').get()
+        except Exception as e2:
+            print(f"Error fetching translations without ordering: {str(e2)}")
+
+    return render_template('profile.html',
+                          user=current_user,
+                          transcriptions=transcriptions if transcriptions else {},
+                          translations=translations if translations else {})
 
 @auth_bp.route('/change-password', methods=['POST'])
 @login_required

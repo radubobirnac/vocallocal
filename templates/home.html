@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VocalLocal - Multilingual Speech-to-Text Platform</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+</head>
+<body>
+  <div class="home-container">
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+      <div class="navbar-container">
+        <!-- Logo and Brand (Left) -->
+        <div class="navbar-brand">
+          <h1 class="brand-title">
+            <span class="brand-icon"><i class="fas fa-microphone-alt"></i></span>
+            <span class="brand-name">VocalLocal</span>
+          </h1>
+        </div>
+
+        <!-- Main Navigation Links (Center) -->
+        <div class="navbar-center">
+          <div class="navbar-links">
+            <a href="#" class="nav-link active">Home</a>
+            <a href="#about" class="nav-link">About Us</a>
+            <a href="#pricing" class="nav-link">Pricing Plans</a>
+            <a href="{{ url_for('main.try_it_free') }}" class="nav-link">Try It Free</a>
+          </div>
+        </div>
+
+        <!-- Auth Links and Theme Toggle (Right) -->
+        <div class="navbar-right">
+          <!-- Auth Links -->
+          {% if current_user.is_authenticated %}
+            <div class="user-avatar-menu">
+              <button id="avatar-button" class="avatar-button" aria-expanded="false" onclick="toggleProfileDropdown(event)">
+                <div class="avatar-circle">{{ current_user.username[0]|upper }}</div>
+                <i class="fas fa-chevron-down dropdown-arrow"></i>
+              </button>
+              <div id="user-dropdown" class="user-dropdown">
+                <a href="{{ url_for('auth.profile') }}" class="dropdown-item">
+                  <i class="fas fa-user"></i> Profile
+                </a>
+                {% if current_user.is_admin %}
+                <div class="dropdown-divider"></div>
+                <a href="{{ url_for('admin_dashboard') }}" class="dropdown-item">
+                  <i class="fas fa-chart-line"></i> Admin Dashboard
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="dropdown-item">
+                  <i class="fas fa-users"></i> User Management
+                </a>
+                {% endif %}
+                <div class="dropdown-divider"></div>
+                <a href="{{ url_for('auth.logout') }}" class="dropdown-item">
+                  <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+              </div>
+            </div>
+
+            <script>
+              // Direct click handler for the profile dropdown
+              function toggleProfileDropdown(event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const avatarButton = document.getElementById('avatar-button');
+                const userDropdown = document.getElementById('user-dropdown');
+                const historyButton = document.getElementById('history-button');
+                const historyDropdown = document.getElementById('history-dropdown');
+
+                if (!avatarButton || !userDropdown) return;
+
+                const isExpanded = avatarButton.getAttribute('aria-expanded') === 'true';
+
+                // Toggle dropdown visibility
+                avatarButton.setAttribute('aria-expanded', !isExpanded);
+                userDropdown.classList.toggle('show');
+
+                // Close history dropdown if open
+                if (historyButton && historyDropdown) {
+                  historyButton.setAttribute('aria-expanded', 'false');
+                  historyDropdown.classList.remove('show');
+                }
+
+                console.log('Profile dropdown toggled via inline handler');
+              }
+            </script>
+
+            <!-- History Dropdown -->
+            <div class="history-menu">
+              <button id="history-button" class="history-button" aria-expanded="false" onclick="toggleHistoryDropdown(event)">
+                <i class="fas fa-history"></i> History
+                <i class="fas fa-chevron-down dropdown-arrow"></i>
+              </button>
+              <div id="history-dropdown" class="history-dropdown">
+                <a href="{{ url_for('main.history', type='all') }}" class="dropdown-item">
+                  <i class="fas fa-list"></i> All History
+                </a>
+                <a href="{{ url_for('main.history', type='transcription') }}" class="dropdown-item">
+                  <i class="fas fa-microphone"></i> Transcriptions
+                </a>
+                <a href="{{ url_for('main.history', type='translation') }}" class="dropdown-item">
+                  <i class="fas fa-language"></i> Translations
+                </a>
+              </div>
+            </div>
+
+            <script>
+              // Direct click handler for the history dropdown
+              function toggleHistoryDropdown(event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const historyButton = document.getElementById('history-button');
+                const historyDropdown = document.getElementById('history-dropdown');
+                const avatarButton = document.getElementById('avatar-button');
+                const userDropdown = document.getElementById('user-dropdown');
+
+                if (!historyButton || !historyDropdown) return;
+
+                const isExpanded = historyButton.getAttribute('aria-expanded') === 'true';
+
+                // Toggle dropdown visibility
+                historyButton.setAttribute('aria-expanded', !isExpanded);
+                historyDropdown.classList.toggle('show');
+
+                // Close profile dropdown if open
+                if (avatarButton && userDropdown) {
+                  avatarButton.setAttribute('aria-expanded', 'false');
+                  userDropdown.classList.remove('show');
+                }
+
+                console.log('History dropdown toggled via inline handler');
+              }
+            </script>
+          {% else %}
+            <div class="auth-links">
+              <a href="{{ url_for('auth.login') }}" class="nav-link">Login</a>
+              <a href="{{ url_for('auth.register') }}" class="nav-link">Sign Up</a>
+            </div>
+          {% endif %}
+
+          <!-- Theme Toggle -->
+          <div class="theme-selector">
+            <button id="theme-toggle-btn" class="button button-outline button-icon" title="Change theme">
+              <i class="fas fa-lightbulb"></i>
+            </button>
+            <div id="theme-options" class="theme-options-dropdown" style="display: none;">
+              <button class="theme-option" data-theme="light">
+                <i class="fas fa-sun"></i> Light Mode
+              </button>
+              <button class="theme-option" data-theme="dark">
+                <i class="fas fa-moon"></i> Dark Mode
+              </button>
+              <button class="theme-option" data-theme="system">
+                <i class="fas fa-circle-half-stroke"></i> System
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <h1 class="hero-title">Accurate Multilingual Speech-to-Text Transcription</h1>
+        <p class="hero-subtitle">Transform spoken language into text with precision in over 50 languages</p>
+        <div class="hero-buttons">
+          <a href="{{ url_for('auth.register') }}" class="button button-primary">Get Started</a>
+          <a href="{{ url_for('main.try_it_free') }}" class="button button-secondary">Try It Free</a>
+          <a href="#about" class="button button-outline">Learn More</a>
+        </div>
+      </div>
+      <div class="hero-image">
+        <img src="{{ url_for('static', filename='images/hero-illustration.svg') }}" alt="VocalLocal Illustration" onerror="this.style.display='none'">
+      </div>
+    </section>
+
+    <!-- About Us Section -->
+    <section id="about" class="about-section">
+      <div class="section-header">
+        <h2 class="section-title">About VocalLocal</h2>
+        <p class="section-subtitle">Our mission and purpose</p>
+      </div>
+      <div class="about-content">
+        <div class="about-text">
+          <p>
+            VocalLocal is a comprehensive multilingual speech-to-text platform designed to provide accurate
+            transcriptions, translations, and AI interpretations in 50+ languages. Using state-of-the-art AI models
+            from Gemini and OpenAI, it converts spoken language from audio recordings or microphone input into
+            text with exceptional accuracy.
+          </p>
+          <p>
+            Our platform is built to handle a wide range of use cases, from transcribing meetings and lectures to
+            translating conversations and creating content in multiple languages. With VocalLocal, you can break
+            down language barriers and communicate effectively across cultures.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+      <div class="section-header">
+        <h2 class="section-title">Key Features</h2>
+        <p class="section-subtitle">What makes VocalLocal special</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-language"></i>
+          </div>
+          <h3 class="feature-title">Multilingual Support</h3>
+          <p class="feature-description">
+            Transcribe and translate audio in over 50 languages with high accuracy.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-microphone"></i>
+          </div>
+          <h3 class="feature-title">Live Recording</h3>
+          <p class="feature-description">
+            Record audio directly from your microphone for instant transcription.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-file-audio"></i>
+          </div>
+          <h3 class="feature-title">File Upload</h3>
+          <p class="feature-description">
+            Upload audio files in various formats for processing.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-brain"></i>
+          </div>
+          <h3 class="feature-title">AI Interpretation</h3>
+          <p class="feature-description">
+            Get AI-powered interpretations and insights from your audio content.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Call to Action Section -->
+    <section class="cta-section">
+      <div class="cta-content">
+        <h2 class="cta-title">Ready to Get Started?</h2>
+        <p class="cta-description">
+          Join VocalLocal today and experience the power of accurate multilingual speech-to-text transcription.
+        </p>
+        <div class="cta-buttons">
+          <a href="{{ url_for('auth.register') }}" class="button button-primary">Sign Up Now</a>
+          <a href="{{ url_for('main.try_it_free') }}" class="button button-secondary">Try It Free</a>
+          <a href="{{ url_for('auth.login') }}" class="button button-outline">Login</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="pricing-section">
+      <div class="section-header">
+        <h2 class="section-title">Pricing Plans</h2>
+        <p class="section-subtitle">Choose the plan that fits your needs</p>
+      </div>
+      <div class="pricing-grid">
+        <!-- Free Plan -->
+        <div class="pricing-card">
+          <div class="pricing-header">
+            <h3 class="pricing-title">Free</h3>
+            <p class="pricing-price">$0<span>/month</span></p>
+          </div>
+          <div class="pricing-features">
+            <ul>
+              <li>60 mins AI transcription (basic model)</li>
+              <li>Translation included (shared with transcription)</li>
+              <li>Uses Gemini 2.0 flash lite</li>
+              <li class="feature-disabled">No text-to-speech</li>
+              <li class="feature-disabled">No AI credits</li>
+            </ul>
+          </div>
+          <a href="{{ url_for('auth.register') }}" class="button button-outline pricing-button">Get Started</a>
+        </div>
+        
+        <!-- Basic Plan -->
+        <div class="pricing-card pricing-card-highlighted">
+          <div class="pricing-header">
+            <h3 class="pricing-title">Basic</h3>
+            <p class="pricing-price">$4.99<span>/month</span></p>
+          </div>
+          <div class="pricing-features">
+            <ul>
+              <li>280 mins AI transcription (premium model)</li>
+              <li>50k words translation (premium model)</li>
+              <li>60 mins text-to-speech</li>
+              <li>50 AI credits</li>
+            </ul>
+          </div>
+          <a href="{{ url_for('auth.register') }}?plan=basic" class="button button-primary pricing-button">Subscribe</a>
+        </div>
+        
+        <!-- Professional Plan -->
+        <div class="pricing-card">
+          <div class="pricing-header">
+            <h3 class="pricing-title">Professional</h3>
+            <p class="pricing-price">$12.99<span>/month</span></p>
+          </div>
+          <div class="pricing-features">
+            <ul>
+              <li>800 mins AI transcription (premium model)</li>
+              <li>160k words translation</li>
+              <li>200 mins text-to-speech</li>
+              <li>150 AI credits</li>
+            </ul>
+          </div>
+          <a href="{{ url_for('auth.register') }}?plan=professional" class="button button-outline pricing-button">Subscribe</a>
+        </div>
+      </div>
+      
+      <!-- Pay-As-You-Go -->
+      <div class="pay-as-you-go">
+        <div class="pay-as-you-go-content">
+          <h3>Need more? Try Pay-As-You-Go</h3>
+          <p>$3.99 per unit • 300 AI credits • Requires Basic or Professional Plan</p>
+          <a href="{{ url_for('auth.register') }}?plan=payg" class="button button-secondary">Learn More</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <h2 class="footer-title">VocalLocal</h2>
+          <p class="footer-tagline">Accurate Multilingual Speech-to-Text Transcription</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-links-column">
+            <h3 class="footer-links-title">Navigation</h3>
+            <a href="#" class="footer-link">Home</a>
+            <a href="#about" class="footer-link">About Us</a>
+            <a href="{{ url_for('main.try_it_free') }}" class="footer-link">Try It Free</a>
+          </div>
+          <div class="footer-links-column">
+            <h3 class="footer-links-title">Account</h3>
+            <a href="{{ url_for('auth.login') }}" class="footer-link">Login</a>
+            <a href="{{ url_for('auth.register') }}" class="footer-link">Sign Up</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="copyright">© 2025 VocalLocal. All rights reserved.</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script src="{{ url_for('static', filename='auth.js') }}"></script>
+  <script src="{{ url_for('static', filename='common.js') }}"></script>
+  <script src="{{ url_for('static', filename='home.js') }}"></script>
+
+  <!-- Ensure dropdowns are properly initialized -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Home page loaded - initializing dropdowns');
+
+      // Force initialization of dropdowns after a short delay to ensure all scripts are loaded
+      setTimeout(function() {
+        // Initialize profile dropdown
+        if (typeof window.initializeProfileDropdown === 'function') {
+          console.log('Home page: Calling global profile dropdown initialization with delay');
+          window.initializeProfileDropdown();
+        } else {
+          console.warn('Home page: Global profile dropdown function not available after delay');
+        }
+
+        // Initialize history dropdown
+        if (typeof window.initializeHistoryDropdown === 'function') {
+          console.log('Home page: Calling global history dropdown initialization with delay');
+          window.initializeHistoryDropdown();
+        } else {
+          console.warn('Home page: Global history dropdown function not available after delay');
+        }
+
+        // Log dropdown elements to console for debugging
+        const avatarButton = document.getElementById('avatar-button');
+        const userDropdown = document.getElementById('user-dropdown');
+
+        if (avatarButton) {
+          console.log('Avatar button found after delay:', avatarButton);
+          // Ensure the button is clickable
+          avatarButton.style.pointerEvents = 'auto';
+          avatarButton.style.cursor = 'pointer';
+        } else {
+          console.warn('Avatar button not found after delay!');
+        }
+
+        if (userDropdown) {
+          console.log('User dropdown found after delay:', userDropdown);
+          // Ensure the dropdown is visible when shown
+          userDropdown.style.zIndex = '1000';
+          userDropdown.style.pointerEvents = 'auto';
+        } else {
+          console.warn('User dropdown not found after delay!');
+        }
+      }, 500); // 500ms delay to ensure all scripts are loaded
+    });
+  </script>
+</body>
+</html>
