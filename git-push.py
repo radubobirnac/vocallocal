@@ -29,11 +29,6 @@ def git_push(commit_message=None, target_branch="main"):
     print(f"Target branch for push: {target_branch}")
     print(f"Pushing changes to GitHub with message: '{commit_message}'")
 
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> 3db6fab76297798926b4100d7af875efe3d6caba
     # Check if we're in detached HEAD state
     head_check = subprocess.run(["git", "symbolic-ref", "-q", "HEAD"],
                                capture_output=True, text=True)
@@ -50,7 +45,6 @@ def git_push(commit_message=None, target_branch="main"):
             return False
 
         print(f"Created new branch: {branch_name}")
-<<<<<<< HEAD
         current_branch = branch_name
 
     # If we're not on the target branch, switch to it
@@ -102,24 +96,11 @@ def git_push(commit_message=None, target_branch="main"):
             if apply_result.returncode != 0:
                 print(f"Warning: Could not apply stashed changes: {apply_result.stderr}")
                 print("You may need to manually resolve conflicts.")
-
->>>>>>> Stashed changes
-=======
-
->>>>>>> 3db6fab76297798926b4100d7af875efe3d6caba
     # Commands to execute
     commands = [
         ["git", "add", "."],
         ["git", "commit", "-m", commit_message],
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-        ["git", "push"]
-=======
         ["git", "push", "--set-upstream", "origin", target_branch]
->>>>>>> Stashed changes
-=======
-        ["git", "push", "--set-upstream", "origin", subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).decode().strip()]
->>>>>>> 3db6fab76297798926b4100d7af875efe3d6caba
     ]
 
     # Execute each command
