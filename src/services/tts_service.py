@@ -59,6 +59,9 @@ class TTSService(BaseService):
             genai.configure(api_key=self.gemini_api_key)
             if "google" not in self.providers:
                 self.providers.append("google")
+            # Add Gemini 2.5 Flash Preview TTS provider
+            if "gemini-2.5-flash-tts" not in self.providers:
+                self.providers.append("gemini-2.5-flash-tts")
         elif GEMINI_AVAILABLE:
             self.logger.warning("Gemini API key not found. Google TTS will not be available.")
 
@@ -113,6 +116,8 @@ class TTSService(BaseService):
                     return self._synthesize_with_openai(text, language, voice, model)
                 elif current_provider == "gpt4o-mini":
                     return self._synthesize_with_gpt4o_mini(text, language)
+                elif current_provider == "gemini-2.5-flash-tts":
+                    return self._synthesize_with_gemini_2_5_flash_tts(text, language)
                 elif current_provider == "google":
                     return self._synthesize_with_google(text, language)
                 else:
@@ -162,8 +167,8 @@ class TTSService(BaseService):
             List of providers to try in order
         """
         if provider == "auto":
-            # Default order: gpt4o-mini, openai, google
-            return [p for p in ["gpt4o-mini", "openai", "google"] if p in self.providers]
+            # Default order: gemini-2.5-flash-tts, gpt4o-mini, openai, google
+            return [p for p in ["gemini-2.5-flash-tts", "gpt4o-mini", "openai", "google"] if p in self.providers]
         elif provider in self.providers:
             # If the requested provider is available, use it first, then try others
             others = [p for p in self.providers if p != provider]
@@ -171,7 +176,7 @@ class TTSService(BaseService):
         else:
             # If the requested provider is not available, use the default order
             self.logger.warning(f"Requested provider {provider} is not available. Using default order.")
-            return [p for p in ["gpt4o-mini", "openai", "google"] if p in self.providers]
+            return [p for p in ["gemini-2.5-flash-tts", "gpt4o-mini", "openai", "google"] if p in self.providers]
 
     def _synthesize_with_openai(self, text: str, language: str, voice: Optional[str] = None, model: Optional[str] = None) -> bytes:
         """
@@ -384,6 +389,139 @@ class TTSService(BaseService):
                     "error_type": type(e).__name__
                 })
 
+    def _synthesize_with_gemini_2_5_flash_tts(self, text: str, language: str) -> bytes:
+        """
+        Convert text to speech using Gemini 2.5 Flash Preview TTS.
+
+        Args:
+            text: Text to convert to speech
+            language: Language code (e.g., "en", "es", "fr")
+
+        Returns:
+            Audio data as bytes
+
+        Raises:
+            ConfigurationError: If Google Generative AI module is not available
+            AuthenticationError: If API key is invalid
+            ProviderError: If other Gemini TTS errors occur
+        """
+        # Check if Gemini is available
+        if not GEMINI_AVAILABLE:
+            raise ConfigurationError(
+                "Google Generative AI module is not available. Please install it with 'pip install google-generativeai'.",
+                {"provider": "gemini-2.5-flash-tts", "language": language}
+            )
+
+        # Check if API key is configured
+        if not self.gemini_api_key:
+            raise AuthenticationError(
+                "gemini-2.5-flash-tts",
+                "Gemini API key is not configured. Please add your Gemini API key to the .env file.",
+                {"language": language, "help_url": "https://ai.google.dev/tutorials/setup"}
+            )
+
+        try:
+            # Track timing
+            start_time = time.time()
+
+            # Create a temporary file to store the audio
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
+                temp_file_path = temp_file.name
+
+            # Configure the Gemini 2.5 Flash TTS model
+            model = genai.GenerativeModel(
+                model_name="gemini-2.5-flash-preview-tts",
+                generation_config={
+                    "temperature": 0.2,
+                    "top_p": 0.95,
+                    "top_k": 0,
+                }
+            )
+
+            # Generate speech with Gemini 2.5 Flash TTS
+            # Add instructions for voice characteristics directly in the prompt
+            prompt = f"Please speak this in a male, enthusiastic voice, slightly faster than normal: {text}"
+
+            # Configure the response to be audio-only
+            generation_config = {
+                "temperature": 0.2,
+                "top_p": 0.95,
+                "top_k": 0,
+                "response_mime_type": "audio/mp3"  # Request audio-only response
+            }
+
+            response = self.with_retry(
+                lambda: model.generate_content(
+                    prompt,
+                    stream=False,
+                    generation_config=generation_config
+                ),
+                operation="gemini_2_5_flash_tts"
+            )
+
+            # Get the audio data from the response
+            audio_data = response.audio.data
+
+            # Save to the temporary file for debugging if needed
+            with open(temp_file_path, 'wb') as f:
+                f.write(audio_data)
+
+            # Clean up the temporary file
+            os.remove(temp_file_path)
+
+            # Record metrics
+            elapsed = time.time() - start_time
+            char_count = len(text)
+            self._record_metric("gemini_2_5_flash_tts", "time", elapsed)
+            self._record_metric("gemini_2_5_flash_tts", "chars", char_count)
+            self._record_metric("gemini_2_5_flash_tts", "success", 1)
+
+            return audio_data
+
+        except Exception as e:
+            # Record error metrics
+            self._record_metric("gemini_2_5_flash_tts", "error", 1)
+
+            # Get the error message
+            error_msg = str(e).lower()
+
+            # Check for specific error types
+            if "authentication" in error_msg or "api key" in error_msg or "invalid api key" in error_msg:
+                raise AuthenticationError(
+                    "gemini-2.5-flash-tts",
+                    "Invalid API key. Please check your Gemini API key in settings.",
+                    {"language": language, "help_url": "https://ai.google.dev/tutorials/setup"}
+                )
+            elif "rate limit" in error_msg or "quota" in error_msg or "exceeded your current quota" in error_msg:
+                raise RateLimitError(
+                    "gemini-2.5-flash-tts",
+                    "Rate limit or quota exceeded. Please try again later.",
+                    {"language": language}
+                )
+            elif "model" in error_msg and "not found" in error_msg:
+                raise ProviderError(
+                    "gemini-2.5-flash-tts",
+                    "The Gemini 2.5 Flash TTS model is not available. This may be a temporary issue.",
+                    {"language": language}
+                )
+            elif "not supported" in error_msg or "unsupported" in error_msg or "response modalities" in error_msg:
+                # This could be a model limitation or API version issue
+                raise ProviderError(
+                    "gemini-2.5-flash-tts",
+                    f"The Gemini 2.5 Flash TTS model may not support the requested operation. This could be due to API limitations or language support issues.",
+                    {"language": language}
+                )
+            else:
+                # Generic provider error for other cases
+                raise ProviderError(
+                    "gemini-2.5-flash-tts",
+                    str(e),
+                    {
+                        "language": language,
+                        "error_type": type(e).__name__
+                    }
+                )
+
     def _synthesize_with_google(self, text: str, language: str) -> bytes:
         """
         Convert text to speech using Google.
@@ -419,13 +557,13 @@ class TTSService(BaseService):
             # For now, this is a placeholder for the actual Google TTS implementation
             # In a real implementation, we would use Google Cloud Text-to-Speech API
             self.logger.info(f"Google TTS request: language={language}, text_length={len(text)}")
-            self.logger.info("Falling back to OpenAI TTS as Google TTS is not fully implemented yet")
+            self.logger.info("Falling back to GPT-4o Mini TTS as Google TTS is not fully implemented yet")
 
             # Record metrics for the attempt
             self._record_metric("google_tts", "attempt", 1)
 
-            # Use OpenAI TTS instead
-            return self._synthesize_with_openai(text, language)
+            # Use GPT-4o Mini TTS instead (as preferred fallback)
+            return self._synthesize_with_gpt4o_mini(text, language)
 
         except Exception as e:
             # Record error metrics
