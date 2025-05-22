@@ -39,6 +39,7 @@
           <div class="navbar-links">
             <a href="#" class="nav-link active">Home</a>
             <a href="#about" class="nav-link">About Us</a>
+            <a href="#pricing" class="nav-link">Pricing Plans</a>
             <a href="{{ url_for('main.try_it_free') }}" class="nav-link">Try It Free</a>
           </div>
         </div>
@@ -272,6 +273,76 @@
           <a href="{{ url_for('auth.register') }}" class="button button-primary">Sign Up Now</a>
           <a href="{{ url_for('main.try_it_free') }}" class="button button-secondary">Try It Free</a>
           <a href="{{ url_for('auth.login') }}" class="button button-outline">Login</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="pricing-section">
+      <div class="section-header">
+        <h2 class="section-title">Pricing Plans</h2>
+        <p class="section-subtitle">Choose the plan that fits your needs</p>
+      </div>
+      <div class="pricing-grid">
+        <!-- Free Plan -->
+        <div class="pricing-card">
+          <div class="pricing-header">
+            <h3 class="pricing-title">Free</h3>
+            <p class="pricing-price">$0<span>/month</span></p>
+          </div>
+          <div class="pricing-features">
+            <ul>
+              <li>60 mins AI transcription (basic model)</li>
+              <li>Translation included (shared with transcription)</li>
+              <li>Uses Gemini 2.0 flash lite</li>
+              <li class="feature-disabled">No text-to-speech</li>
+              <li class="feature-disabled">No AI credits</li>
+            </ul>
+          </div>
+          <a href="{{ url_for('auth.register') }}" class="button button-outline pricing-button">Get Started</a>
+        </div>
+        
+        <!-- Basic Plan -->
+        <div class="pricing-card pricing-card-highlighted">
+          <div class="pricing-header">
+            <h3 class="pricing-title">Basic</h3>
+            <p class="pricing-price">$4.99<span>/month</span></p>
+          </div>
+          <div class="pricing-features">
+            <ul>
+              <li>280 mins AI transcription (premium model)</li>
+              <li>50k words translation (premium model)</li>
+              <li>60 mins text-to-speech</li>
+              <li>50 AI credits</li>
+            </ul>
+          </div>
+          <a href="{{ url_for('auth.register') }}?plan=basic" class="button button-primary pricing-button">Subscribe</a>
+        </div>
+        
+        <!-- Professional Plan -->
+        <div class="pricing-card">
+          <div class="pricing-header">
+            <h3 class="pricing-title">Professional</h3>
+            <p class="pricing-price">$12.99<span>/month</span></p>
+          </div>
+          <div class="pricing-features">
+            <ul>
+              <li>800 mins AI transcription (premium model)</li>
+              <li>160k words translation</li>
+              <li>200 mins text-to-speech</li>
+              <li>150 AI credits</li>
+            </ul>
+          </div>
+          <a href="{{ url_for('auth.register') }}?plan=professional" class="button button-outline pricing-button">Subscribe</a>
+        </div>
+      </div>
+      
+      <!-- Pay-As-You-Go -->
+      <div class="pay-as-you-go">
+        <div class="pay-as-you-go-content">
+          <h3>Need more? Try Pay-As-You-Go</h3>
+          <p>$3.99 per unit • 300 AI credits • Requires Basic or Professional Plan</p>
+          <a href="{{ url_for('auth.register') }}?plan=payg" class="button button-secondary">Learn More</a>
         </div>
       </div>
     </section>

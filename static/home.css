@@ -490,6 +490,129 @@
   background-color: hsla(var(--primary-foreground), 0.1);
 }
 
+/* Pricing Section */
+.pricing-section {
+  padding: 5rem 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.pricing-card {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: 2rem;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.pricing-card-highlighted {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.pricing-card-highlighted::before {
+  content: 'Most Popular';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 0.25rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.pricing-header {
+  margin-bottom: 1.5rem;
+}
+
+.pricing-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.pricing-price {
+  font-size: 2rem;
+  font-weight: 700;
+  color: hsl(var(--primary));
+}
+
+.pricing-price span {
+  font-size: 1rem;
+  font-weight: 400;
+  color: hsl(var(--muted-foreground));
+}
+
+.pricing-features {
+  margin-bottom: 2rem;
+}
+
+.pricing-features ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pricing-features li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.pricing-features li:last-child {
+  border-bottom: none;
+}
+
+.feature-disabled {
+  color: hsl(var(--muted-foreground));
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.pricing-button {
+  width: 100%;
+}
+
+.pay-as-you-go {
+  background-color: hsl(var(--secondary));
+  border-radius: var(--radius);
+  padding: 2rem;
+  text-align: center;
+}
+
+.pay-as-you-go-content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.pay-as-you-go-content p {
+  margin-bottom: 1.5rem;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Responsive adjustments for pricing section */
+@media (max-width: 768px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .pricing-card-highlighted {
+    order: -1;
+  }
+}
+
 /* Footer */
 .footer {
   background-color: hsl(var(--secondary));
