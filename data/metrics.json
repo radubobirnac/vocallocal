@@ -66,10 +66,10 @@
       "failures": 0
     },
     "unknown": {
-      "calls": 78,
-      "tokens": 84320,
-      "chars": 72933,
-      "time": 660.9597294330597,
+      "calls": 79,
+      "tokens": 84464,
+      "chars": 73366,
+      "time": 664.0833642482758,
       "failures": 0
     },
     "gemini-2.0-flash-lite": {
@@ -151,7 +151,7 @@
     },
     "2025-05-22": {
       "transcription": {
-        "unknown": 1580
+        "unknown": 1724
       }
     }
   },
@@ -303,7 +303,7 @@
     },
     "2025-05-22-17": {
       "transcription": {
-        "unknown": 87
+        "unknown": 231
       }
     }
   },
