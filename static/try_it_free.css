@@ -296,6 +296,61 @@ option.premium-disabled {
   font-weight: 600;
 }
 
+.time-limit-notice .free-tier-info {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  margin-left: 0.25rem;
+}
+
+/* Header Controls */
+.header-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+/* Timer Display */
+.timer-display {
+  display: inline-block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: hsl(var(--primary));
+  background-color: hsla(var(--primary), 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius);
+  vertical-align: middle;
+  width: 3.5rem; /* Fixed width to prevent button movement */
+  text-align: center;
+}
+
+/* Inline Record Button */
+.record-button-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 500;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.35rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.record-button-inline:hover {
+  filter: brightness(0.9);
+}
+
+.record-button-inline.recording {
+  background-color: hsl(var(--destructive));
+  animation: pulse 1.5s infinite;
+}
+
 /* Transcription Card */
 .transcription-card {
   background-color: hsl(var(--card));
@@ -353,8 +408,9 @@ option.premium-disabled {
 .recording-controls {
   display: flex;
   align-items: center;
-  gap: 0.5rem; /* Reduced gap */
-  margin-bottom: 0.75rem; /* Reduced margin */
+  justify-content: center; /* Center the button */
+  gap: 0.25rem; /* Further reduced gap */
+  margin-bottom: 0.5rem; /* Further reduced margin */
 }
 
 .record-button-container {
@@ -366,16 +422,16 @@ option.premium-disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem; /* Reduced gap */
-  width: auto; /* Changed from 100% to auto */
-  min-width: 120px; /* Set minimum width */
-  padding: 0.4rem 0.75rem; /* Reduced padding */
+  gap: 0.1rem; /* Minimal gap */
+  width: auto;
+  min-width: 70px; /* Further reduced minimum width */
+  padding: 0.2rem 0.35rem; /* Minimal padding */
   background-color: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
   border: none;
   border-radius: var(--radius);
   font-weight: 500;
-  font-size: 0.8rem; /* Reduced font size */
+  font-size: 0.7rem; /* Smallest reasonable font size */
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -660,7 +716,7 @@ option.premium-disabled {
 
 .comparison-header {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
   background-color: hsl(var(--secondary));
   font-weight: 600;
 }
@@ -673,7 +729,7 @@ option.premium-disabled {
 
 .comparison-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
   border-bottom: 1px solid hsl(var(--border));
 }
 
@@ -691,13 +747,22 @@ option.premium-disabled {
   font-weight: 500;
 }
 
+.try-it-free {
+  color: hsl(var(--secondary-foreground));
+}
+
 .free-trial {
   color: hsl(var(--muted-foreground));
 }
 
-.full-version {
+.basic-pack {
   color: hsl(var(--primary));
   font-weight: 500;
+}
+
+.pro-pack {
+  color: hsl(var(--primary));
+  font-weight: 600;
 }
 
 .fa-check {
@@ -757,9 +822,17 @@ option.premium-disabled {
 
   }
 
+  .features-comparison {
+    overflow-x: auto;
+  }
+
+  .comparison-table {
+    min-width: 650px;
+  }
+
   .comparison-header,
   .comparison-row {
-    grid-template-columns: 1.5fr 1fr 1fr;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr;
   }
 
 }
