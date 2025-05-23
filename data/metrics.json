@@ -36,10 +36,10 @@
       "failures": 0
     },
     "gemini-2.0-flash-lite": {
-      "calls": 4,
+      "calls": 8,
       "tokens": 0,
-      "chars": 390,
-      "time": 1.795781135559082,
+      "chars": 1000,
+      "time": 3.8945956230163574,
       "failures": 0
     }
   },
@@ -66,10 +66,10 @@
       "failures": 0
     },
     "unknown": {
-      "calls": 65,
-      "tokens": 82740,
-      "chars": 68179,
-      "time": 639.3544492721558,
+      "calls": 78,
+      "tokens": 84320,
+      "chars": 72933,
+      "time": 660.9597294330597,
       "failures": 0
     },
     "gemini-2.0-flash-lite": {
@@ -147,6 +147,11 @@
     "2025-05-21": {
       "transcription": {
         "unknown": 1471
+      }
+    },
+    "2025-05-22": {
+      "transcription": {
+        "unknown": 1580
       }
     }
   },
@@ -279,6 +284,26 @@
     "2025-05-21-21": {
       "transcription": {
         "unknown": 735
+      }
+    },
+    "2025-05-22-14": {
+      "transcription": {
+        "unknown": 63
+      }
+    },
+    "2025-05-22-15": {
+      "transcription": {
+        "unknown": 1287
+      }
+    },
+    "2025-05-22-16": {
+      "transcription": {
+        "unknown": 143
+      }
+    },
+    "2025-05-22-17": {
+      "transcription": {
+        "unknown": 87
       }
     }
   },

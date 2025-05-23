@@ -142,13 +142,21 @@
         <!-- Time Limit Notice -->
         <div class="time-limit-notice">
           <i class="fas fa-clock"></i>
-          <p>Free trial limited to <span class="highlight">3 minutes</span> of recording time</p>
+          <p>Try it free limited to <span class="highlight">3 minutes</span> of recording time <span class="free-tier-info">(Full free tier includes 60 mins AI transcription per month)</span></p>
         </div>
 
         <!-- Basic Mode (Single Speaker) -->
         <div id="basic-mode" class="transcription-card">
           <div class="card-header">
-            <h3>Speech-to-Text Transcription</h3>
+            <h3>Speech-to-Text Transcription
+              <span class="header-controls">
+                <span id="basic-recording-timer" class="timer-display">00:00</span>
+                <button id="record-button" class="record-button-inline">
+                  <i class="fas fa-microphone"></i>
+                  <span>Rec</span>
+                </button>
+              </span>
+            </h3>
           </div>
 
           <!-- Language Selection -->
@@ -170,16 +178,7 @@
             </select>
           </div>
 
-          <!-- Recording Controls -->
-          <div class="recording-controls">
-            <div class="record-button-container">
-              <button id="record-button" class="record-button">
-                <i class="fas fa-microphone"></i>
-                <span>Record</span>
-              </button>
-              <div id="recording-timer" class="recording-timer">00:00</div>
-            </div>
-          </div>
+
 
           <!-- Progress Bar -->
           <div id="progress-container" class="progress-container" style="display: none;">
@@ -218,7 +217,15 @@
           <!-- Speaker 1 Card -->
           <div class="transcription-card speaker-card-1">
             <div class="card-header">
-              <h3>Speaker 1</h3>
+              <h3>Speaker 1
+                <span class="header-controls">
+                  <span id="global-recording-timer" class="timer-display">00:00</span>
+                  <button id="record-button-1" class="record-button-inline">
+                    <i class="fas fa-microphone"></i>
+                    <span>Rec</span>
+                  </button>
+                </span>
+              </h3>
             </div>
 
             <!-- Language Selection -->
@@ -240,16 +247,7 @@
               </select>
             </div>
 
-            <!-- Recording Controls -->
-            <div class="recording-controls">
-              <div class="record-button-container">
-                <button id="record-button-1" class="record-button">
-                  <i class="fas fa-microphone"></i>
-                  <span>Record</span>
-                </button>
-                <div id="recording-timer-1" class="recording-timer">00:00</div>
-              </div>
-            </div>
+
 
             <!-- Transcription Result -->
             <div class="transcription-result">
@@ -299,7 +297,15 @@
           <!-- Speaker 2 Card -->
           <div class="transcription-card speaker-card-2">
             <div class="card-header">
-              <h3>Speaker 2</h3>
+              <h3>Speaker 2
+                <span class="header-controls">
+                  <span id="speaker2-timer" class="timer-display">00:00</span>
+                  <button id="record-button-2" class="record-button-inline">
+                    <i class="fas fa-microphone"></i>
+                    <span>Rec</span>
+                  </button>
+                </span>
+              </h3>
             </div>
 
             <!-- Language Selection -->
@@ -321,16 +327,7 @@
               </select>
             </div>
 
-            <!-- Recording Controls -->
-            <div class="recording-controls">
-              <div class="record-button-container">
-                <button id="record-button-2" class="record-button">
-                  <i class="fas fa-microphone"></i>
-                  <span>Record</span>
-                </button>
-                <div id="recording-timer-2" class="recording-timer">00:00</div>
-              </div>
-            </div>
+
 
             <!-- Transcription Result -->
             <div class="transcription-result">
@@ -394,42 +391,84 @@
 
         <!-- Features Comparison -->
         <div class="features-comparison">
-          <h3>Free Trial vs. Full Version</h3>
+          <h3>Plan Comparison</h3>
           <div class="comparison-table">
             <div class="comparison-header">
               <div class="feature-name">Feature</div>
+              <div class="try-it-free">Try It Free</div>
               <div class="free-trial">Free Trial</div>
-              <div class="full-version">Full Version</div>
+              <div class="basic-pack">Basic Pack</div>
+              <div class="pro-pack">Professional Pack</div>
             </div>
             <div class="comparison-row">
-              <div class="feature-name">Recording Time</div>
-              <div class="free-trial">3 minutes</div>
-              <div class="full-version">Unlimited</div>
+              <div class="feature-name">Session Limit</div>
+              <div class="try-it-free">3 minutes</div>
+              <div class="free-trial">Unlimited</div>
+              <div class="basic-pack">Unlimited</div>
+              <div class="pro-pack">Unlimited</div>
+            </div>
+            <div class="comparison-row">
+              <div class="feature-name">Monthly Quota</div>
+              <div class="try-it-free">N/A</div>
+              <div class="free-trial">60 minutes</div>
+              <div class="basic-pack">280 minutes</div>
+              <div class="pro-pack">800 minutes</div>
             </div>
             <div class="comparison-row">
               <div class="feature-name">Languages</div>
-              <div class="free-trial">12 languages</div>
-              <div class="full-version">50+ languages</div>
+              <div class="try-it-free">50+ languages</div>
+              <div class="free-trial">50+ languages</div>
+              <div class="basic-pack">50+ languages</div>
+              <div class="pro-pack">50+ languages</div>
             </div>
             <div class="comparison-row">
               <div class="feature-name">Translation</div>
-              <div class="free-trial"><i class="fas fa-times"></i></div>
-              <div class="full-version"><i class="fas fa-check"></i></div>
+              <div class="try-it-free"><i class="fas fa-check"></i></div>
+              <div class="free-trial"><i class="fas fa-check"></i></div>
+              <div class="basic-pack">50k words</div>
+              <div class="pro-pack">160k words</div>
             </div>
             <div class="comparison-row">
               <div class="feature-name">History</div>
+              <div class="try-it-free"><i class="fas fa-times"></i></div>
               <div class="free-trial"><i class="fas fa-times"></i></div>
-              <div class="full-version"><i class="fas fa-check"></i></div>
+              <div class="basic-pack"><i class="fas fa-check"></i></div>
+              <div class="pro-pack"><i class="fas fa-check"></i></div>
             </div>
             <div class="comparison-row">
               <div class="feature-name">AI Interpretation</div>
+              <div class="try-it-free"><i class="fas fa-times"></i></div>
               <div class="free-trial"><i class="fas fa-times"></i></div>
-              <div class="full-version"><i class="fas fa-check"></i></div>
+              <div class="basic-pack"><i class="fas fa-check"></i></div>
+              <div class="pro-pack"><i class="fas fa-check"></i></div>
             </div>
             <div class="comparison-row">
               <div class="feature-name">Text-to-Speech</div>
+              <div class="try-it-free"><i class="fas fa-times"></i></div>
               <div class="free-trial"><i class="fas fa-times"></i></div>
-              <div class="full-version"><i class="fas fa-check"></i></div>
+              <div class="basic-pack">60 minutes</div>
+              <div class="pro-pack">200 minutes</div>
+            </div>
+            <div class="comparison-row">
+              <div class="feature-name">AI Credits</div>
+              <div class="try-it-free"><i class="fas fa-times"></i></div>
+              <div class="free-trial"><i class="fas fa-times"></i></div>
+              <div class="basic-pack">50 credits</div>
+              <div class="pro-pack">150 credits</div>
+            </div>
+            <div class="comparison-row">
+              <div class="feature-name">AI Model</div>
+              <div class="try-it-free">Basic</div>
+              <div class="free-trial">Basic</div>
+              <div class="basic-pack">Premium</div>
+              <div class="pro-pack">Premium</div>
+            </div>
+            <div class="comparison-row">
+              <div class="feature-name">Price</div>
+              <div class="try-it-free">Free</div>
+              <div class="free-trial">Free</div>
+              <div class="basic-pack">$4.99/month</div>
+              <div class="pro-pack">$12.99/month</div>
             </div>
           </div>
         </div>

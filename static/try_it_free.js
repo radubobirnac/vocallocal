@@ -3,7 +3,9 @@
 document.addEventListener('DOMContentLoaded', function() {
   // DOM Elements
   const recordButton = document.getElementById('record-button');
-  const recordingTimer = document.getElementById('recording-timer');
+  const basicRecordingTimer = document.getElementById('basic-recording-timer');
+  const globalRecordingTimer = document.getElementById('global-recording-timer');
+  const speaker2Timer = document.getElementById('speaker2-timer');
   const audioUpload = document.getElementById('audio-upload');
   const progressContainer = document.getElementById('progress-container');
   const progressBar = document.getElementById('progress-bar');
@@ -27,7 +29,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Speaker 1 Elements
   const recordButton1 = document.getElementById('record-button-1');
-  const recordingTimer1 = document.getElementById('recording-timer-1');
   const audioUpload1 = document.getElementById('audio-upload-1');
   const transcriptionText1 = document.getElementById('transcription-text-1');
   const copyButton1 = document.getElementById('copy-button-1');
@@ -38,7 +39,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Speaker 2 Elements
   const recordButton2 = document.getElementById('record-button-2');
-  const recordingTimer2 = document.getElementById('recording-timer-2');
   const audioUpload2 = document.getElementById('audio-upload-2');
   const transcriptionText2 = document.getElementById('transcription-text-2');
   const copyButton2 = document.getElementById('copy-button-2');
@@ -92,13 +92,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const elapsedTime = (Date.now() - recordingStartTime) / 1000;
     const formattedTime = formatTime(elapsedTime);
 
-    // Update timer display based on mode
-    if (speakerNum === 1 && recordingTimer1) {
-      recordingTimer1.textContent = formattedTime;
-    } else if (speakerNum === 2 && recordingTimer2) {
-      recordingTimer2.textContent = formattedTime;
-    } else if (recordingTimer) {
-      recordingTimer.textContent = formattedTime;
+    // Update timers based on mode
+    if (bilingualModeToggle && bilingualModeToggle.checked) {
+      // Bilingual mode - update the appropriate timer
+      if (speakerNum === 1 && globalRecordingTimer) {
+        globalRecordingTimer.textContent = formattedTime;
+      } else if (speakerNum === 2 && speaker2Timer) {
+        speaker2Timer.textContent = formattedTime;
+      }
+    } else {
+      // Basic mode - update the basic timer
+      if (basicRecordingTimer) {
+        basicRecordingTimer.textContent = formattedTime;
+      }
     }
 
     // Update progress if circular progress is available
@@ -153,8 +159,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (speakerNum === 1) {
         // Speaker 1
         recordButton1.classList.add('recording');
-        recordButton1.innerHTML = '<i class="fas fa-stop"></i><span>Stop Recording</span>';
-        recordingTimer1.style.display = 'inline-block';
+        recordButton1.innerHTML = '<i class="fas fa-stop"></i><span>Stop</span>';
+
 
         // Disable Speaker 2 recording
         if (recordButton2) {
@@ -163,8 +169,8 @@ document.addEventListener('DOMContentLoaded', function() {
       } else if (speakerNum === 2) {
         // Speaker 2
         recordButton2.classList.add('recording');
-        recordButton2.innerHTML = '<i class="fas fa-stop"></i><span>Stop Recording</span>';
-        recordingTimer2.style.display = 'inline-block';
+        recordButton2.innerHTML = '<i class="fas fa-stop"></i><span>Stop</span>';
+
 
         // Disable Speaker 1 recording
         if (recordButton1) {
@@ -174,9 +180,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Basic mode
         recordButton.classList.add('recording');
 
-        recordButton.innerHTML = '<i class="fas fa-stop"></i><span>Stop Recording</span>';
+        recordButton.innerHTML = '<i class="fas fa-stop"></i><span>Stop</span>';
 
-        recordingTimer.style.display = 'inline-block';
+
       }
 
       // Start timer
@@ -203,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Speaker 1
         recordButton1.classList.remove('recording');
 
-        recordButton1.innerHTML = '<i class="fas fa-microphone"></i><span>Start Recording</span>';
+        recordButton1.innerHTML = '<i class="fas fa-microphone"></i><span>Rec</span>';
 
 
         // Re-enable Speaker 2 recording
@@ -214,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Speaker 2
         recordButton2.classList.remove('recording');
 
-        recordButton2.innerHTML = '<i class="fas fa-microphone"></i><span>Start Recording</span>';
+        recordButton2.innerHTML = '<i class="fas fa-microphone"></i><span>Rec</span>';
 
 
         // Re-enable Speaker 1 recording
@@ -224,12 +230,28 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         // Basic mode
         recordButton.classList.remove('recording');
-        recordButton.innerHTML = '<i class="fas fa-microphone"></i><span>Start Recording</span>';
+        recordButton.innerHTML = '<i class="fas fa-microphone"></i><span>Rec</span>';
 
       }
 
       // Stop timer
       clearInterval(recordingInterval);
+
+      // Reset all timers to 00:00 when not recording
+      if (bilingualModeToggle && bilingualModeToggle.checked) {
+        // Reset bilingual mode timers
+        if (globalRecordingTimer) {
+          globalRecordingTimer.textContent = "00:00";
+        }
+        if (speaker2Timer) {
+          speaker2Timer.textContent = "00:00";
+        }
+      } else {
+        // Reset basic mode timer
+        if (basicRecordingTimer) {
+          basicRecordingTimer.textContent = "00:00";
+        }
+      }
     }
   }
 
