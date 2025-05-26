@@ -44,10 +44,10 @@
             </a>
             {% if current_user.is_admin %}
             <div class="dropdown-divider"></div>
-            <a href="{{ url_for('admin_dashboard') }}" class="dropdown-item">
+            <a href="{{ url_for('admin.dashboard') }}" class="dropdown-item">
               <i class="fas fa-chart-line"></i> Admin Dashboard
             </a>
-            <a href="{{ url_for('admin_users') }}" class="dropdown-item">
+            <a href="{{ url_for('admin.users') }}" class="dropdown-item">
               <i class="fas fa-users"></i> User Management
             </a>
             {% endif %}
@@ -123,6 +123,35 @@
             <i class="fas fa-history"></i> Activity History
           {% endif %}
         </h1>
+
+        <!-- Status and metadata display -->
+        {% if history_metadata %}
+        <div class="history-status" style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 14px;">
+          <div class="status-info">
+            <span class="status-count" style="font-weight: bold; color: #495057;">
+              {% if history_type == 'all' %}
+                {{ history_metadata.total_items }} total items
+                ({{ history_metadata.transcriptions_count }} transcriptions, {{ history_metadata.translations_count }} translations)
+              {% elif history_type == 'transcription' %}
+                {{ history_metadata.transcriptions_count }} transcriptions found
+              {% elif history_type == 'translation' %}
+                {{ history_metadata.translations_count }} translations found
+              {% endif %}
+            </span>
+            {% if history_metadata.total_available and history_metadata.total_available > history_metadata.total_items %}
+            <br><span class="status-note" style="color: #6c757d; font-size: 12px;">Showing {{ history_metadata.total_items }} of {{ history_metadata.total_available }} available</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Indexing warning -->
+        {% if indexing_warning %}
+        <div class="alert alert-info" style="margin: 10px 0; padding: 10px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 5px; color: #0c5460;">
+          <i class="fas fa-info-circle"></i>
+          {{ indexing_warning }}
+        </div>
+        {% endif %}
 
         <div class="history-filters">
           <div class="search-container">
@@ -212,6 +241,14 @@
   </div>
 
   <!-- Scripts -->
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+  <!-- Usage Validation -->
+  <script src="{{ url_for('static', filename='js/usage-validation.js') }}"></script>
+
   <script src="{{ url_for('static', filename='script.js') }}"></script>
   <script src="{{ url_for('static', filename='common.js') }}"></script>
   <script src="{{ url_for('static', filename='auth.js') }}"></script>

@@ -85,16 +85,16 @@ class TTSService(BaseService):
             # OpenAI's limit is around 4096 characters
             if len(text) > 4000:
                 self.logger.info(f"Text is too long ({len(text)} chars). Splitting into chunks.")
-                
+
                 # Split text into chunks
                 text_chunks = self._chunk_text(text)
                 self.logger.info(f"Split text into {len(text_chunks)} chunks")
-                
+
                 # Process only the first chunk for now (simpler solution)
                 # This avoids the need for audio concatenation which requires pydub
                 chunk = text_chunks[0]
                 self.logger.info(f"Processing first chunk of {len(chunk)} chars")
-                
+
                 # Create a temporary file to store the audio
                 with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
                     temp_file_path = temp_file.name
@@ -123,6 +123,13 @@ class TTSService(BaseService):
                     # Google mode: use only Google
                     if self.gemini_available:
                         provider_order.append("google")
+                elif model == "gemini-2.5-flash-tts":
+                    # Gemini 2.5 Flash TTS mode: use GPT-4o Mini as fallback since Gemini TTS is not fully implemented
+                    self.logger.info("Gemini 2.5 Flash TTS requested, using GPT-4o Mini as fallback")
+                    if self.gpt4o_mini_available:
+                        provider_order.append("gpt4o-mini")
+                    if self.openai_available:
+                        provider_order.append("openai")
                 else:
                     # Unknown model: use auto mode
                     self.logger.warning(f"Unknown model: {model}. Using auto mode.")
@@ -132,63 +139,63 @@ class TTSService(BaseService):
                         provider_order.append("openai")
                     if self.gemini_available:
                         provider_order.append("google")
-                
+
                 # If no providers are available, raise an error
                 if not provider_order:
                     raise RuntimeError("No TTS providers are available. Please check your API keys.")
-                
+
                 # Try each provider in order
                 success = False
                 model_used = None
                 last_error = None
-                
+
                 for provider in provider_order:
                     try:
                         self.logger.info(f"Attempting TTS with {provider}")
-                        
+
                         if provider == "gpt4o-mini":
                             self.tts_with_gpt4o_mini(chunk, language, temp_file_path)
                         elif provider == "openai":
                             self.tts_with_openai(chunk, language, temp_file_path)
                         elif provider == "google":
                             self.tts_with_google(chunk, language, temp_file_path)
-                        
+
                         # If we get here, the TTS was successful
                         success = True
                         model_used = provider
                         break
-                    
+
                     except Exception as e:
                         # Log the error
                         self.logger.error(f"{provider} TTS error: {str(e)}")
                         last_error = e
-                        
+
                         # Continue to the next provider
                         continue
-                
+
                 # If all providers failed, raise the last error
                 if not success:
                     if last_error:
                         raise last_error
                     else:
                         raise RuntimeError("All TTS providers failed")
-                
+
                 # Calculate performance metrics
                 end_time = time.time()
                 tts_time = end_time - start_time
                 char_count = len(chunk)
-                
+
                 # Track metrics
                 self.track_metrics("tts", model_used, char_count // 4, char_count, tts_time, True)
-                
+
                 self.logger.info(f"TTS successful for first chunk. Output saved to {temp_file_path}")
-                
+
                 # Add a warning message if there were more chunks that weren't processed
                 if len(text_chunks) > 1:
                     self.logger.warning(f"Only processed the first chunk of text. {len(text_chunks)-1} chunks were skipped.")
-                
+
                 return temp_file_path
-            
+
             # For shorter text, use the original implementation
             # Create a temporary file to store the audio
             with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
@@ -221,6 +228,13 @@ class TTSService(BaseService):
                 # Google mode: use only Google
                 if self.gemini_available:
                     provider_order.append("google")
+            elif model == "gemini-2.5-flash-tts":
+                # Gemini 2.5 Flash TTS mode: use GPT-4o Mini as fallback since Gemini TTS is not fully implemented
+                self.logger.info("Gemini 2.5 Flash TTS requested, using GPT-4o Mini as fallback")
+                if self.gpt4o_mini_available:
+                    provider_order.append("gpt4o-mini")
+                if self.openai_available:
+                    provider_order.append("openai")
             else:
                 # Unknown model: use auto mode
                 self.logger.warning(f"Unknown model: {model}. Using auto mode.")
@@ -444,23 +458,23 @@ class TTSService(BaseService):
         """
         Split text into chunks that don't exceed max_length characters.
         Tries to split at sentence boundaries when possible.
-        
+
         Args:
             text: Text to split
             max_length: Maximum length of each chunk
-        
+
         Returns:
             List of text chunks
         """
         # If text is already short enough, return it as is
         if len(text) <= max_length:
             return [text]
-        
+
         # Split text into sentences
         sentences = re.split(r'(?<=[.!?])\s+', text)
         chunks = []
         current_chunk = ""
-        
+
         for sentence in sentences:
             # If a single sentence is too long, split it further
             if len(sentence) > max_length:
@@ -468,11 +482,11 @@ class TTSService(BaseService):
                 if current_chunk:
                     chunks.append(current_chunk)
                     current_chunk = ""
-                
+
                 # Split long sentence by commas, then by spaces if needed
                 comma_parts = sentence.split(', ')
                 sub_chunk = ""
-                
+
                 for part in comma_parts:
                     if len(sub_chunk) + len(part) + 2 <= max_length:
                         if sub_chunk:
@@ -482,7 +496,7 @@ class TTSService(BaseService):
                     else:
                         if sub_chunk:
                             chunks.append(sub_chunk)
-                        
+
                         # If part is still too long, split by spaces
                         if len(part) > max_length:
                             words = part.split()
@@ -501,58 +515,58 @@ class TTSService(BaseService):
                             sub_chunk = ""
                         else:
                             sub_chunk = part
-            
+
             # If adding this sentence would make the chunk too long, start a new chunk
             elif len(current_chunk) + len(sentence) + 1 > max_length:
                 chunks.append(current_chunk)
                 current_chunk = sentence
-            
+
             # Otherwise, add the sentence to the current chunk
             else:
                 if current_chunk:
                     current_chunk += " " + sentence
                 else:
                     current_chunk = sentence
-        
+
         # Add the last chunk if it's not empty
         if current_chunk:
             chunks.append(current_chunk)
-        
+
         return chunks
 
     def _combine_audio_files(self, audio_file_paths):
         """
         Combine multiple audio files into a single audio file using FFmpeg.
-        
+
         Args:
             audio_file_paths: List of paths to audio files
-        
+
         Returns:
             Path to the combined audio file
         """
         if not audio_file_paths:
             return None
-        
+
         if len(audio_file_paths) == 1:
             return audio_file_paths[0]
-        
+
         # Create a temporary file for the file list
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as file_list:
             file_list_path = file_list.name
             # Write each file path to the list file
             for file_path in audio_file_paths:
                 file_list.write(f"file '{file_path}'\n")
-        
+
         # Create a temporary file for the output
         with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as output_file:
             output_path = output_file.name
-        
+
         try:
             # Get FFmpeg path
             ffmpeg_path = "ffmpeg"
             if hasattr(self, 'ffmpeg_path') and self.ffmpeg_path:
                 ffmpeg_path = self.ffmpeg_path
-            
+
             # Use FFmpeg to concatenate the files
             cmd = [
                 ffmpeg_path, "-y",
@@ -562,14 +576,14 @@ class TTSService(BaseService):
                 "-c", "copy",
                 output_path
             ]
-            
+
             # Run the command
             self.logger.info(f"Running FFmpeg command: {' '.join(cmd)}")
             subprocess.run(cmd, check=True, capture_output=True)
-            
+
             # Return the path to the combined file
             return output_path
-        
+
         except subprocess.CalledProcessError as e:
             self.logger.error(f"FFmpeg error: {e.stderr.decode() if e.stderr else str(e)}")
             # If FFmpeg fails, return the first file as a fallback

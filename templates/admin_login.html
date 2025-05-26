@@ -136,7 +136,7 @@
             {% endif %}
           {% endwith %}
 
-          <form method="POST" action="{{ url_for('admin_users') }}">
+          <form method="POST" action="{{ url_for('admin.users') }}">
             <div class="form-group">
               <label for="username" class="form-label">Username</label>
               <input type="text" id="username" name="username" class="form-input" required autofocus>
@@ -155,7 +155,7 @@
             <button type="submit" class="button button-primary">Access Admin Area</button>
           </form>
 
-          <a href="{{ url_for('index') }}" class="back-link">
+          <a href="{{ url_for('main.index') }}" class="back-link">
             <i class="fas fa-arrow-left"></i> Back to Main Application
           </a>
         </div>

@@ -2,7 +2,19 @@
 
 This guide provides step-by-step instructions for setting up the VocalLocal project on your local machine.
 
-## Latest Updates (20/05/2023)
+## Latest Updates
+
+### Bug Fixes and Stability Improvements (25/05/2025)
+
+- 🔧 **Fixed Firebase Storage Bucket Error**: Resolved "Storage bucket name not specified" error by adding proper storage bucket configuration
+- 🔧 **Improved Import System**: Implemented robust import system with comprehensive fallback mechanisms for Transcription/Translation models
+- 🔧 **Enhanced Error Handling**: Added comprehensive error handling throughout the application with graceful degradation
+- 🔧 **Fixed Navigation Issues**: Resolved broken functionality when navigating between different dropdowns and sections
+- 🔧 **Added Fallback Services**: Application now continues to work even when Firebase services are partially unavailable
+- 🔧 **Improved Dashboard Stability**: Dashboard now handles Firebase initialization errors gracefully
+- 🔧 **Better Environment Configuration**: Added FIREBASE_STORAGE_BUCKET to environment configuration
+
+### Previous Updates (20/05/2023)
 
 - Implemented Google OAuth authentication for user login
 - Added manual username/password authentication with secure practices
@@ -12,6 +24,10 @@ This guide provides step-by-step instructions for setting up the VocalLocal proj
 - Unified transcription and translation history with search and filtering capabilities
 - Improved navigation with dedicated History dropdown menu
 - Enhanced UI with consistent styling across pages
+- **NEW**: Implemented Monthly Usage Reset System compatible with Firebase free plan
+- **NEW**: Added admin interface for usage monitoring and manual reset triggers
+- **NEW**: Automatic client-side usage reset with data archiving
+- **NEW**: External cron service support for automated monthly resets
 
 ## Prerequisites
 
@@ -64,6 +80,7 @@ Edit the `.env` file and add your API keys and configuration:
 OPENAI_API_KEY=your_openai_api_key_here
 SECRET_KEY=your_secret_key_here
 FIREBASE_DATABASE_URL=https://your-project-id.firebaseio.com
+FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
 
 # Required for Google OAuth
 GOOGLE_CLIENT_ID=your_google_client_id_here
@@ -86,15 +103,44 @@ This will create SSL certificates in the `ssl` directory.
 
 ### 6. Configure Firebase (Required)
 
-Firebase is required for user authentication, transcript history, and data storage:
+Firebase is required for user authentication, transcript history, data storage, and usage tracking:
 
 1. Create a Firebase project at [firebase.google.com](https://firebase.google.com)
 2. Generate a service account key from Project Settings > Service Accounts
 3. Save the JSON file as `firebase-credentials.json` in the project root
 4. Set up the following in your Firebase database:
    - Create a collection for `users` to store user information
-   - Create a collection for `transcripts` to store transcription and translation history
-   - Add an index on the `timestamp` field for the `transcripts` collection with the rule `.indexOn`: `timestamp` to enable sorting and querying
+   - Create collections for `transcripts`, `transcriptions`, and `translations` to store user data
+   - Add indexes on the `timestamp` field for these collections with the following rules:
+     ```json
+     "transcripts": {
+       ".indexOn": ["timestamp", "user_email"]
+     },
+     "transcriptions": {
+       ".indexOn": ["timestamp", "user_email"],
+       "$userId": {
+         ".indexOn": "timestamp"
+       }
+     },
+     "translations": {
+       ".indexOn": ["timestamp", "user_email"],
+       "$userId": {
+         ".indexOn": "timestamp"
+       }
+     }
+     ```
+   - These indexes are required for sorting and querying data by timestamp
+
+5. **Usage Tracking Setup** (Firebase Free Plan Compatible):
+
+   VocalLocal includes comprehensive usage tracking that works with Firebase's free plan:
+
+   - ✅ **No Cloud Functions Required** - Uses Python services and direct database operations
+   - ✅ **Atomic Transactions** - Ensures data consistency
+   - ✅ **Real-time Updates** - Updates both currentPeriod and totalUsage counters
+   - ✅ **Free Plan Compatible** - Uses only Realtime Database features
+
+   The usage tracking is automatically available once Firebase is configured. See `USAGE_TRACKING_FREE_PLAN.md` for detailed usage instructions.
 
 ### 7. Configure Google OAuth (Required for OAuth Login)
 
@@ -169,6 +215,24 @@ When using HTTPS with self-signed certificates, your browser will show a securit
 
 - Admin panel at `/admin/users` route
 - View and manage registered users
+- **Monthly Usage Reset Management** at `/admin/usage-reset` route
+  - Real-time usage statistics across all users
+  - Manual monthly usage reset with force option
+  - Usage history archiving and monitoring
+  - Compatible with Firebase free plan (no paid features required)
+
+### Monthly Usage Reset System
+
+VocalLocal includes a comprehensive monthly usage reset system designed to work within Firebase's free plan limitations:
+
+- **Automatic Reset**: Users' monthly usage counters reset automatically when their reset date is reached
+- **Data Archiving**: Previous month's usage data is archived to `usage/history/{YYYY-MM}/` before reset
+- **Admin Control**: Manual reset triggers available through admin interface
+- **External Scheduling**: HTTP trigger support for external free cron services
+- **Client-Side Fallback**: Automatic reset checking during user operations
+- **Free Plan Compatible**: No Firebase paid features required (no Cloud Scheduler/Tasks)
+
+For detailed setup and usage instructions, see `MONTHLY_USAGE_RESET_GUIDE.md`.
 
 ## Troubleshooting
 
@@ -196,7 +260,9 @@ If Google OAuth login fails:
 
 If transcript history or user authentication isn't working:
 - Verify your Firebase credentials are correct
-- Check that the Firebase database rules include the index on the `timestamp` field
+- Check that the Firebase database rules include the indexes on the `timestamp` field for all collections
+- If you see errors like `Index not defined, add ".indexOn": "timestamp", for path "/transcriptions/user@example,com"`, you need to update your Firebase security rules with the proper indexes
+- Follow the detailed instructions in the `firebase-functions/SETUP-GUIDE.md` file for setting up Firebase security rules
 - Ensure the Firebase collections are properly set up
 
 ### Port Already in Use

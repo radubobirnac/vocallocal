@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Error - VocalLocal</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div class="container">
@@ -14,7 +14,7 @@
                 <p>{{ error }}</p>
             </div>
             <div class="actions">
-                <a href="{{ url_for('index') }}" class="btn">Return to Home</a>
+                <a href="{{ url_for('main.index') }}" class="btn">Return to Home</a>
             </div>
         </div>
     </div>

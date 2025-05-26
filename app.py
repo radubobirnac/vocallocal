@@ -95,13 +95,30 @@ app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
 # No MAX_CONTENT_LENGTH set to allow larger files
 # API-specific limits are handled in the service layer
 
-# Initialize Firebase
-from firebase_config import initialize_firebase
-initialize_firebase()
+# Set up comprehensive error handling
+try:
+    from utils.error_handler import register_error_handlers
+    register_error_handlers(app)
+    print("Error handlers registered successfully")
+except ImportError as e:
+    print(f"Warning: Could not import error handlers: {e}")
+
+# Initialize Firebase with error handling
+try:
+    from firebase_config import initialize_firebase
+    initialize_firebase()
+    print("Firebase initialized successfully")
+except Exception as e:
+    print(f"Warning: Firebase initialization failed: {e}")
+    print("Application will continue with limited functionality")
 
 # Initialize authentication
-import auth
-auth.init_app(app)
+try:
+    import auth
+    auth.init_app(app)
+    print("Authentication initialized successfully")
+except Exception as e:
+    print(f"Warning: Authentication initialization failed: {e}")
 
 # Add a global error handler
 @app.errorhandler(Exception)
@@ -161,7 +178,7 @@ def root_auth_callback():
         return redirect(url_for('auth.login'))
 
 # Register blueprints
-from routes import main, transcription, translation, tts, admin, interpretation
+from routes import main, transcription, translation, tts, admin, interpretation, usage_tracking
 
 app.register_blueprint(main.bp)
 app.register_blueprint(transcription.bp)
@@ -169,6 +186,7 @@ app.register_blueprint(translation.bp)
 app.register_blueprint(tts.bp)
 app.register_blueprint(admin.bp)
 app.register_blueprint(interpretation.bp)
+app.register_blueprint(usage_tracking.bp)
 
 # Register auth blueprint with a different name to avoid conflicts
 from auth import auth_bp
@@ -183,6 +201,89 @@ def transcription_status(job_id):
     """Check the status of a background transcription job"""
     status = transcription_service.get_job_status(job_id)
     return jsonify(status)
+
+# Add API route for user available models
+@app.route('/api/user/available-models', methods=['GET'])
+def get_user_available_models():
+    """API endpoint to get available models for the current user"""
+    try:
+        from services.model_access_service import ModelAccessService
+        from flask_login import current_user
+
+        if not current_user.is_authenticated:
+            # Return free models for non-authenticated users
+            return jsonify({
+                'transcription_models': [
+                    {'value': 'gemini-2.0-flash-lite', 'label': 'Gemini 2.0 Flash Lite', 'free': True}
+                ],
+                'translation_models': [
+                    {'value': 'gemini-2.0-flash-lite', 'label': 'Gemini 2.0 Flash Lite', 'free': True}
+                ],
+                'user_role': None,
+                'has_premium_access': False
+            })
+
+        # Get user's available models
+        available_models = ModelAccessService.get_available_models(current_user.email)
+        user_role = getattr(current_user, 'role', 'normal_user')
+
+        # Define authorized models by category
+        authorized_models = {
+            'transcription': [
+                {'value': 'gemini-2.0-flash-lite', 'label': 'Gemini 2.0 Flash Lite', 'free': True},
+                {'value': 'gpt-4o-mini-transcribe', 'label': 'OpenAI GPT-4o Mini', 'free': False},
+                {'value': 'gpt-4o-transcribe', 'label': 'OpenAI GPT-4o', 'free': False},
+                {'value': 'gemini-2.5-flash-preview-04-17', 'label': 'Gemini 2.5 Flash Preview', 'free': False}
+            ],
+            'translation': [
+                {'value': 'gemini-2.0-flash-lite', 'label': 'Gemini 2.0 Flash Lite', 'free': True},
+                {'value': 'gemini-2.5-flash', 'label': 'Gemini 2.5 Flash Preview', 'free': False},
+                {'value': 'gpt-4.1-mini', 'label': 'GPT-4.1 Mini', 'free': False}
+            ]
+        }
+
+        # Build response with authorized models only
+        transcription_models = []
+        translation_models = []
+
+        # Add transcription models based on user access
+        for model in authorized_models['transcription']:
+            if model['free'] or user_role in ['admin', 'super_user']:
+                transcription_models.append(model)
+            elif user_role == 'normal_user':
+                # Add locked premium models for normal users
+                locked_model = model.copy()
+                locked_model['label'] += ' 🔒'
+                locked_model['locked'] = True
+                transcription_models.append(locked_model)
+
+        # Add translation models based on user access
+        for model in authorized_models['translation']:
+            if model['free'] or user_role in ['admin', 'super_user']:
+                translation_models.append(model)
+            elif user_role == 'normal_user':
+                # Add locked premium models for normal users
+                locked_model = model.copy()
+                locked_model['label'] += ' 🔒'
+                locked_model['locked'] = True
+                translation_models.append(locked_model)
+
+        return jsonify({
+            'transcription_models': transcription_models,
+            'translation_models': translation_models,
+            'user_role': user_role,
+            'has_premium_access': user_role in ['admin', 'super_user'],
+            'restrictions': available_models.get('restrictions', {})
+        })
+
+    except Exception as e:
+        print(f"Error getting available models: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'error': 'Failed to get available models',
+            'details': str(e)
+        }), 500
 
 if __name__ == '__main__':
     import argparse

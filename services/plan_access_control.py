@@ -1,0 +1,256 @@
+"""
+Plan-based access control service for VocalLocal application.
+Manages model access restrictions based on user subscription plans.
+"""
+import logging
+from typing import Dict, List, Optional, Tuple
+from flask_login import current_user
+
+logger = logging.getLogger(__name__)
+
+class PlanAccessControl:
+    """Service for managing plan-based access control."""
+
+    # Model access matrix by plan type
+    PLAN_MODEL_ACCESS = {
+        'free': {
+            'transcription': ['gemini-2.0-flash-lite'],
+            'translation': ['gemini-2.0-flash-lite'],
+            'tts': ['gemini-2.5-flash-tts'],
+            'interpretation': ['gemini-2.0-flash-lite']
+        },
+        'basic': {
+            'transcription': [
+                'gemini-2.0-flash-lite',
+                'gpt-4o-mini-transcribe',
+                'gemini-2.5-flash-preview-04-17'
+            ],
+            'translation': [
+                'gemini-2.0-flash-lite',
+                'gemini-2.5-flash',
+                'gpt-4.1-mini'
+            ],
+            'tts': [
+                'gemini-2.5-flash-tts',
+                'gpt4o-mini'
+            ],
+            'interpretation': [
+                'gemini-2.0-flash-lite',
+                'gemini-2.5-flash'
+            ]
+        },
+        'professional': {
+            'transcription': [
+                'gemini-2.0-flash-lite',
+                'gpt-4o-mini-transcribe',
+                'gpt-4o-transcribe',
+                'gemini-2.5-flash-preview-04-17'
+            ],
+            'translation': [
+                'gemini-2.0-flash-lite',
+                'gemini-2.5-flash',
+                'gpt-4.1-mini'
+            ],
+            'tts': [
+                'gemini-2.5-flash-tts',
+                'gpt4o-mini',
+                'openai'
+            ],
+            'interpretation': [
+                'gemini-2.0-flash-lite',
+                'gemini-2.5-flash'
+            ]
+        }
+    }
+
+    # Model display names and descriptions
+    MODEL_INFO = {
+        'gemini-2.0-flash-lite': {
+            'name': 'Gemini 2.0 Flash Lite',
+            'description': 'Fast and efficient model for basic tasks',
+            'tier': 'free'
+        },
+        'gpt-4o-mini-transcribe': {
+            'name': 'OpenAI GPT-4o Mini',
+            'description': 'High-quality transcription with OpenAI',
+            'tier': 'basic'
+        },
+        'gpt-4o-transcribe': {
+            'name': 'OpenAI GPT-4o',
+            'description': 'Premium transcription with latest OpenAI model',
+            'tier': 'professional'
+        },
+        'gemini-2.5-flash-preview-04-17': {
+            'name': 'Gemini 2.5 Flash Preview',
+            'description': 'Latest Gemini model with enhanced capabilities',
+            'tier': 'basic'
+        },
+        'gemini-2.5-flash': {
+            'name': 'Gemini 2.5 Flash Preview',
+            'description': 'Advanced AI interpretation with Gemini 2.5',
+            'tier': 'basic'
+        },
+        'gpt-4.1-mini': {
+            'name': 'GPT-4.1 Mini',
+            'description': 'OpenAI translation model with enhanced capabilities',
+            'tier': 'basic'
+        },
+        'gemini-2.5-flash-tts': {
+            'name': 'Gemini 2.5 Flash TTS',
+            'description': 'High-quality text-to-speech',
+            'tier': 'free'
+        },
+        'gpt4o-mini': {
+            'name': 'GPT-4o Mini TTS',
+            'description': 'Premium TTS with OpenAI',
+            'tier': 'basic'
+        },
+        'openai': {
+            'name': 'OpenAI TTS-1',
+            'description': 'Professional-grade TTS',
+            'tier': 'professional'
+        }
+    }
+
+    @classmethod
+    def get_user_plan(cls) -> str:
+        """Get the current user's plan type."""
+        if not current_user.is_authenticated:
+            return 'free'
+
+        try:
+            # Get user plan from Firebase or session
+            # This should be implemented based on your user model
+            user_plan = getattr(current_user, 'plan_type', 'free')
+            return user_plan if user_plan in cls.PLAN_MODEL_ACCESS else 'free'
+        except Exception as e:
+            logger.error(f"Error getting user plan: {e}")
+            return 'free'
+
+    @classmethod
+    def get_accessible_models(cls, service_type: str, user_plan: str = None) -> List[str]:
+        """Get list of models accessible to user for a specific service."""
+        if user_plan is None:
+            user_plan = cls.get_user_plan()
+
+        return cls.PLAN_MODEL_ACCESS.get(user_plan, {}).get(service_type, [])
+
+    @classmethod
+    def is_model_accessible(cls, model: str, service_type: str, user_plan: str = None) -> bool:
+        """Check if a model is accessible to the user."""
+        if user_plan is None:
+            user_plan = cls.get_user_plan()
+
+        accessible_models = cls.get_accessible_models(service_type, user_plan)
+        return model in accessible_models
+
+    @classmethod
+    def get_model_restriction_info(cls, model: str, service_type: str, user_plan: str = None) -> Dict:
+        """Get restriction information for a model."""
+        if user_plan is None:
+            user_plan = cls.get_user_plan()
+
+        is_accessible = cls.is_model_accessible(model, service_type, user_plan)
+        model_info = cls.MODEL_INFO.get(model, {})
+
+        if is_accessible:
+            return {
+                'accessible': True,
+                'restriction_reason': None,
+                'required_plan': None,
+                'upgrade_message': None
+            }
+
+        # Determine required plan
+        required_plan = None
+        for plan, services in cls.PLAN_MODEL_ACCESS.items():
+            if model in services.get(service_type, []):
+                required_plan = plan
+                break
+
+        plan_names = {
+            'basic': 'Basic Plan ($4.99/month)',
+            'professional': 'Professional Plan ($12.99/month)'
+        }
+
+        return {
+            'accessible': False,
+            'restriction_reason': f'Model requires {plan_names.get(required_plan, "higher plan")}',
+            'required_plan': required_plan,
+            'upgrade_message': f'Upgrade to {plan_names.get(required_plan, "a higher plan")} to access {model_info.get("name", model)}'
+        }
+
+    @classmethod
+    def validate_model_access(cls, model: str, service_type: str, user_plan: str = None) -> Tuple[bool, Dict]:
+        """Validate model access and return detailed response."""
+        if user_plan is None:
+            user_plan = cls.get_user_plan()
+
+        restriction_info = cls.get_model_restriction_info(model, service_type, user_plan)
+
+        if restriction_info['accessible']:
+            return True, {
+                'allowed': True,
+                'model': model,
+                'plan': user_plan
+            }
+
+        return False, {
+            'allowed': False,
+            'model': model,
+            'plan': user_plan,
+            'error': {
+                'code': 'model_access_denied',
+                'message': restriction_info['restriction_reason'],
+                'required_plan': restriction_info['required_plan'],
+                'upgrade_message': restriction_info['upgrade_message']
+            }
+        }
+
+    @classmethod
+    def get_plan_upgrade_suggestions(cls, current_plan: str) -> List[Dict]:
+        """Get upgrade suggestions for the current plan."""
+        suggestions = []
+
+        if current_plan == 'free':
+            suggestions.extend([
+                {
+                    'plan': 'basic',
+                    'name': 'Basic Plan',
+                    'price': 4.99,
+                    'benefits': [
+                        'Access to premium transcription models',
+                        '280 transcription minutes/month',
+                        '50k translation words/month',
+                        '60 TTS minutes/month',
+                        '50 AI credits/month'
+                    ]
+                },
+                {
+                    'plan': 'professional',
+                    'name': 'Professional Plan',
+                    'price': 12.99,
+                    'benefits': [
+                        'Access to all premium models',
+                        '800 transcription minutes/month',
+                        '160k translation words/month',
+                        '200 TTS minutes/month',
+                        '150 AI credits/month'
+                    ]
+                }
+            ])
+        elif current_plan == 'basic':
+            suggestions.append({
+                'plan': 'professional',
+                'name': 'Professional Plan',
+                'price': 12.99,
+                'benefits': [
+                    'Access to latest OpenAI models',
+                    '800 transcription minutes/month',
+                    '160k translation words/month',
+                    '200 TTS minutes/month',
+                    '150 AI credits/month'
+                ]
+            })
+
+        return suggestions

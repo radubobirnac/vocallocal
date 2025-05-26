@@ -11,6 +11,16 @@ from services.transcription import TranscriptionService
 from config import Config
 from models.firebase_models import Transcription
 
+# Import RBAC and model access services
+try:
+    from services.model_access_service import ModelAccessService
+except ImportError:
+    # Fallback if service not available
+    class ModelAccessService:
+        @staticmethod
+        def validate_model_request(model_name, user_email=None):
+            return {'valid': True, 'message': 'Model access granted', 'suggested_model': model_name}
+
 # Create a blueprint for the transcription routes
 bp = Blueprint('transcription', __name__, url_prefix='/api')
 
@@ -51,7 +61,47 @@ def transcribe_audio():
         language = request.form.get('language', 'en')
 
         # Get model from form or use default
-        model = request.form.get('model', 'gemini-2.0-flash-lite')
+        requested_model = request.form.get('model', 'gemini-2.0-flash-lite')
+
+        # Validate model access for authenticated users
+        if current_user.is_authenticated:
+            try:
+                validation_result = ModelAccessService.validate_model_request(requested_model, current_user.email)
+
+                if not validation_result['valid']:
+                    # If model access is denied, check if we have a suggested model
+                    if validation_result.get('suggested_model'):
+                        model = validation_result['suggested_model']
+                        print(f"Model access denied for {requested_model}. Using suggested model: {model}")
+
+                        # Return informative response about model change
+                        # For now, we'll continue with the suggested model
+                        # In the future, you might want to return a warning to the user
+                    else:
+                        # Clean up uploaded file
+                        try:
+                            os.remove(filepath)
+                        except:
+                            pass
+
+                        return jsonify({
+                            'error': 'Model access denied',
+                            'errorType': 'ModelAccessDenied',
+                            'details': validation_result['message'],
+                            'status': 'access_denied'
+                        }), 403
+                else:
+                    model = requested_model
+
+                print(f"Model access validated: {model} for transcription (user: {current_user.email})")
+            except Exception as validation_error:
+                print(f"Model validation error: {str(validation_error)}")
+                # Continue with default free model if validation fails
+                model = 'gemini-2.0-flash-lite'
+                print(f"Validation failed, using fallback model: {model}")
+        else:
+            # Non-authenticated users get free model only
+            model = 'gemini-2.0-flash-lite'
 
         # Process with the transcription service
         try:
@@ -61,6 +111,48 @@ def transcribe_audio():
 
                 # Read the file content
                 audio_content = audio_file.read()
+
+                # Estimate audio duration for usage validation (if authenticated)
+                estimated_minutes = 0
+                if current_user.is_authenticated:
+                    try:
+                        # Rough estimation: 1MB ≈ 1 minute of audio (varies by quality)
+                        file_size_mb = len(audio_content) / (1024 * 1024)
+                        estimated_minutes = max(0.1, file_size_mb * 0.8)  # Conservative estimate
+
+                        # Validate usage before processing
+                        from services.usage_validation_service import UsageValidationService
+                        validation = UsageValidationService.validate_transcription_usage(
+                            current_user.email,
+                            estimated_minutes
+                        )
+
+                        if not validation['allowed']:
+                            # Clean up uploaded file
+                            try:
+                                os.remove(filepath)
+                            except:
+                                pass
+
+                            return jsonify({
+                                'error': validation['message'],
+                                'errorType': 'UsageLimitExceeded',
+                                'details': {
+                                    'service': 'transcription',
+                                    'requested': estimated_minutes,
+                                    'limit': validation.get('limit', 0),
+                                    'used': validation.get('used', 0),
+                                    'remaining': validation.get('remaining', 0),
+                                    'plan_type': validation.get('plan_type', 'free'),
+                                    'upgrade_required': validation.get('upgrade_required', False)
+                                }
+                            }), 429  # 429 Too Many Requests
+
+                        print(f"Usage validation passed: {validation['message']}")
+
+                    except Exception as validation_error:
+                        print(f"Usage validation error: {str(validation_error)}")
+                        # Continue with transcription if validation fails (graceful degradation)
 
                 # Check if this is a free trial request (non-authenticated user)
                 if not current_user.is_authenticated:
@@ -145,6 +237,21 @@ def transcribe_audio():
                             audio_duration=None  # Could estimate this
                         )
                         print(f"Successfully saved transcription to Firebase for user {current_user.email}")
+
+                        # Track usage after successful transcription
+                        try:
+                            # Use estimated minutes for usage tracking
+                            from services.user_account_service import UserAccountService
+                            UserAccountService.track_usage(
+                                user_id=current_user.email.replace('.', ','),
+                                service_type='transcriptionMinutes',
+                                amount=estimated_minutes
+                            )
+                            print(f"Usage tracked: {estimated_minutes} transcription minutes for {current_user.email}")
+
+                        except Exception as usage_error:
+                            print(f"Error tracking usage: {str(usage_error)}")
+                            # Don't fail the request if usage tracking fails
                 except Exception as auth_error:
                     # Just log the error but continue - don't fail the transcription if saving to Firebase fails
                     print(f"Error saving transcription to Firebase: {str(auth_error)}")

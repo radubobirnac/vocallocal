@@ -59,10 +59,10 @@
                 </a>
                 {% if current_user.is_admin %}
                 <div class="dropdown-divider"></div>
-                <a href="{{ url_for('admin_dashboard') }}" class="dropdown-item">
+                <a href="{{ url_for('admin.dashboard') }}" class="dropdown-item">
                   <i class="fas fa-chart-line"></i> Admin Dashboard
                 </a>
-                <a href="{{ url_for('admin_users') }}" class="dropdown-item">
+                <a href="{{ url_for('admin.users') }}" class="dropdown-item">
                   <i class="fas fa-users"></i> User Management
                 </a>
                 {% endif %}
@@ -301,7 +301,7 @@
           </div>
           <a href="{{ url_for('auth.register') }}" class="button button-outline pricing-button">Get Started</a>
         </div>
-        
+
         <!-- Basic Plan -->
         <div class="pricing-card pricing-card-highlighted">
           <div class="pricing-header">
@@ -318,7 +318,7 @@
           </div>
           <a href="{{ url_for('auth.register') }}?plan=basic" class="button button-primary pricing-button">Subscribe</a>
         </div>
-        
+
         <!-- Professional Plan -->
         <div class="pricing-card">
           <div class="pricing-header">
@@ -336,7 +336,7 @@
           <a href="{{ url_for('auth.register') }}?plan=professional" class="button button-outline pricing-button">Subscribe</a>
         </div>
       </div>
-      
+
       <!-- Pay-As-You-Go -->
       <div class="pay-as-you-go">
         <div class="pay-as-you-go-content">

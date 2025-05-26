@@ -3,6 +3,121 @@ document.addEventListener('DOMContentLoaded', () => {
   // Utility Functions
   // ========================
 
+// Function to load user-specific available models
+async function loadUserAvailableModels() {
+  try {
+    const response = await fetch('/api/user/available-models');
+    if (!response.ok) {
+      console.warn('Failed to load user available models, using defaults');
+      return;
+    }
+
+    const data = await response.json();
+    console.log('User available models:', data);
+
+    // Update transcription model dropdown
+    const transcriptionModelSelect = document.getElementById('global-transcription-model');
+    if (transcriptionModelSelect && data.transcription_models) {
+      updateModelDropdown(transcriptionModelSelect, data.transcription_models, 'transcription');
+    }
+
+    // Update translation model dropdown
+    const translationModelSelect = document.getElementById('translation-model-select');
+    if (translationModelSelect && data.translation_models) {
+      updateModelDropdown(translationModelSelect, data.translation_models, 'translation');
+    }
+
+    // Store user role info for later use
+    window.userRoleInfo = {
+      role: data.user_role,
+      hasPremiumAccess: data.has_premium_access,
+      restrictions: data.restrictions
+    };
+
+    // Show role-based status message
+    if (data.user_role === 'super_user') {
+      showStatus('Super User access: All models available', 'success');
+    } else if (data.user_role === 'admin') {
+      showStatus('Admin access: Full system access', 'success');
+    } else if (data.user_role === 'normal_user') {
+      showStatus('Free models available. Upgrade for premium models.', 'info');
+    }
+
+  } catch (error) {
+    console.error('Error loading user available models:', error);
+  }
+}
+
+// Function to update model dropdown with available models
+function updateModelDropdown(selectElement, models, modelType) {
+  if (!selectElement || !models) return;
+
+  // Define authorized models for validation
+  const authorizedModels = {
+    'transcription': ['gemini-2.0-flash-lite', 'gpt-4o-mini-transcribe', 'gpt-4o-transcribe', 'gemini-2.5-flash-preview-04-17'],
+    'translation': ['gemini-2.0-flash-lite', 'gemini-2.5-flash', 'gpt-4.1-mini']
+  };
+
+  // Store current selection
+  const currentValue = selectElement.value;
+
+  // Clear existing options
+  selectElement.innerHTML = '';
+
+  // Filter models to only include authorized ones
+  const filteredModels = models.filter(model => {
+    if (modelType === 'transcription') {
+      return authorizedModels.transcription.includes(model.value);
+    } else if (modelType === 'translation') {
+      return authorizedModels.translation.includes(model.value);
+    }
+    return true; // Allow other model types (TTS, interpretation) to pass through
+  });
+
+  // Add authorized models only
+  filteredModels.forEach(model => {
+    const option = document.createElement('option');
+    option.value = model.value;
+    option.textContent = model.label;
+
+    // Disable locked models
+    if (model.locked) {
+      option.disabled = true;
+      option.style.color = '#999';
+    }
+
+    selectElement.appendChild(option);
+  });
+
+  // Try to restore previous selection, or use first available model
+  if (selectElement.querySelector(`option[value="${currentValue}"]`) &&
+      !selectElement.querySelector(`option[value="${currentValue}"]`).disabled) {
+    selectElement.value = currentValue;
+  } else {
+    // Select first non-disabled option
+    const firstAvailable = selectElement.querySelector('option:not([disabled])');
+    if (firstAvailable) {
+      selectElement.value = firstAvailable.value;
+    }
+  }
+
+  // Add event listener for locked model selection
+  selectElement.addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    if (selectedOption && selectedOption.disabled) {
+      // Prevent selection of locked models
+      showStatus('This model requires a premium subscription or role upgrade', 'warning');
+      // Revert to first available option
+      const firstAvailable = this.querySelector('option:not([disabled])');
+      if (firstAvailable) {
+        this.value = firstAvailable.value;
+      }
+    }
+  });
+
+  console.log(`Updated ${modelType} model dropdown with ${filteredModels.length} authorized models (filtered from ${models.length} total)`);
+}
+
   // Show status message
   function showStatus(message, type = 'info', persistent = false) {
     const statusEl = document.getElementById('status');
@@ -195,6 +310,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Get the selected TTS model
     const ttsModelSelect = document.getElementById('tts-model-select');
     const ttsModel = ttsModelSelect ? ttsModelSelect.value : 'auto'; // Default to auto if not found
+
+    // Validate model access if model access control is available
+    if (window.modelAccessControl && window.modelAccessControl.hasLoadedUserRole) {
+      if (!window.modelAccessControl.canAccessModel(ttsModel)) {
+        window.modelAccessControl.showUpgradePrompt(ttsModel);
+        setTTSButtonState(sourceId, 'error');
+        return;
+      }
+    }
 
     // Show loading status
     showStatus(`Generating audio using ${ttsModel} TTS...`, 'info');
@@ -601,6 +725,16 @@ document.addEventListener('DOMContentLoaded', () => {
     return new Promise(async (resolve, reject) => {
       let attempt = 0;
 
+      // Check model access permissions before making API call
+      if (window.modelAccessControl && window.modelAccessControl.hasLoadedUserRole) {
+        const model = formData.get('model');
+        if (model && !window.modelAccessControl.canAccessModel(model)) {
+          window.modelAccessControl.showUpgradePrompt(model);
+          reject(new Error(`Access denied: ${model} requires premium access`));
+          return;
+        }
+      }
+
       // Check if this is a WebM recording from browser
       const file = formData.get('file');
       const isWebmRecording = file && file.type === 'audio/webm';
@@ -741,6 +875,14 @@ document.addEventListener('DOMContentLoaded', () => {
       // Get the current interpretation model
       const interpretationModel = getInterpretationModel();
 
+      // Validate model access if model access control is available
+      if (window.modelAccessControl && window.modelAccessControl.hasLoadedUserRole) {
+        if (!window.modelAccessControl.canAccessModel(interpretationModel)) {
+          window.modelAccessControl.showUpgradePrompt(interpretationModel);
+          return null;
+        }
+      }
+
       // Log which model is being used
       console.log(`Interpreting with ${interpretationModel} model`);
 
@@ -802,7 +944,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (savedModel === 'gemini') {
         return 'gemini-2.0-flash-lite';
       } else if (savedModel === 'openai') {
-        return 'gpt-4.1-mini';
+        return 'gemini-2.5-flash';
       }
 
       return savedModel || 'gemini-2.0-flash-lite'; // Default to Gemini 2.0 Flash Lite
@@ -817,6 +959,14 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       // Get the current translation model
       const translationModel = getTranslationModel();
+
+      // Validate model access if model access control is available
+      if (window.modelAccessControl && window.modelAccessControl.hasLoadedUserRole) {
+        if (!window.modelAccessControl.canAccessModel(translationModel)) {
+          window.modelAccessControl.showUpgradePrompt(translationModel);
+          return null;
+        }
+      }
 
       // Log which model is being used
       console.log(`Translating with ${translationModel} model`);
@@ -1225,7 +1375,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (transcriptionModelSelect) {
       return transcriptionModelSelect.value;
     } else {
-      return 'gemini'; // Default to Gemini if dropdown not found
+      return 'gemini-2.0-flash-lite'; // Default to Gemini 2.0 Flash Lite if dropdown not found
     }
   }
 
@@ -1241,10 +1391,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load transcription model preference
   function loadTranscriptionModelPreference() {
     try {
-      return localStorage.getItem('vocal-local-transcription-model') || 'gemini'; // Default to Gemini
+      return localStorage.getItem('vocal-local-transcription-model') || 'gemini-2.0-flash-lite'; // Default to Gemini 2.0 Flash Lite
     } catch (e) {
-      console.warn('LocalStorage is not available. Defaulting to Gemini.');
-      return 'gemini';
+      console.warn('LocalStorage is not available. Defaulting to Gemini 2.0 Flash Lite.');
+      return 'gemini-2.0-flash-lite';
     }
   }
 
@@ -1435,6 +1585,9 @@ document.addEventListener('DOMContentLoaded', () => {
       dropdown.appendChild(option);
     });
   }
+
+  // Load user-specific available models
+  loadUserAvailableModels();
 
   // Initialize language dropdowns
   loadLanguages().then(languages => {
@@ -1951,6 +2104,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Check file size and show appropriate warnings based on selected model
         const selectedModel = getTranscriptionModel();
+
+        // Validate model access if plan access control is available
+        if (window.planAccessControl) {
+          const validation = window.planAccessControl.validateModelAccess(selectedModel, 'transcription');
+          if (!validation.allowed) {
+            showStatus(validation.error.message, 'error');
+            input.value = ''; // Clear the file input
+            return;
+          }
+        }
+
         const isOpenAIModel = selectedModel.startsWith('gpt-') || selectedModel.startsWith('whisper-');
 
         // Show file info
@@ -2048,6 +2212,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Check file size and show appropriate warnings based on selected model
         const selectedModel = getTranscriptionModel();
+
+        // Validate model access if plan access control is available
+        if (window.planAccessControl) {
+          const validation = window.planAccessControl.validateModelAccess(selectedModel, 'transcription');
+          if (!validation.allowed) {
+            showStatus(validation.error.message, 'error');
+            input.value = ''; // Clear the file input
+            return;
+          }
+        }
+
         const isOpenAIModel = selectedModel.startsWith('gpt-') || selectedModel.startsWith('whisper-');
 
         // Show file info
@@ -2133,6 +2308,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Check file size and show appropriate warnings based on selected model
         const selectedModel = getTranscriptionModel();
+
+        // Validate model access if plan access control is available
+        if (window.planAccessControl) {
+          const validation = window.planAccessControl.validateModelAccess(selectedModel, 'transcription');
+          if (!validation.allowed) {
+            showStatus(validation.error.message, 'error');
+            input.value = ''; // Clear the file input
+            return;
+          }
+        }
+
         const isOpenAIModel = selectedModel.startsWith('gpt-') || selectedModel.startsWith('whisper-');
 
         // Show file info
@@ -2367,13 +2553,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize TTS model selector
   const ttsModelSelect = document.getElementById('tts-model-select');
   if (ttsModelSelect) {
-    // Set default to GPT-4o Mini
-    ttsModelSelect.value = 'gpt4o-mini';
+    // Set default to free model
+    ttsModelSelect.value = 'gemini-2.5-flash-tts';
 
     // Save selection to localStorage when changed
     ttsModelSelect.addEventListener('change', function() {
       localStorage.setItem('tts-model', this.value);
-      showStatus(`TTS model set to ${this.value === 'gpt4o-mini' ? 'GPT-4o Mini TTS' : 'OpenAI TTS-1'}`, 'success');
+
+      // Get the display name from the selected option
+      const selectedOption = this.options[this.selectedIndex];
+      const displayName = selectedOption ? selectedOption.textContent : this.value;
+      showStatus(`TTS model set to ${displayName}`, 'success');
     });
 
     // Load saved selection from localStorage if available

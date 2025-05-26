@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - VocalLocal</title>
+
+    <!-- Favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+
+    <style>
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .dashboard-header h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 2.5rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .plan-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        .stat-card h3 {
+            margin: 0 0 1rem 0;
+            color: #4a5568;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .usage-bar {
+            background: #f7fafc;
+            border-radius: 10px;
+            height: 20px;
+            margin: 1rem 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .usage-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .usage-fill.low { background: linear-gradient(90deg, #48bb78, #38a169); }
+        .usage-fill.medium { background: linear-gradient(90deg, #ed8936, #dd6b20); }
+        .usage-fill.high { background: linear-gradient(90deg, #f56565, #e53e3e); }
+        .usage-fill.zero { background: #e2e8f0; }
+
+        .usage-text {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        .usage-numbers {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .upgrade-section {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .upgrade-section h2 {
+            margin: 0 0 1rem 0;
+            font-size: 1.8rem;
+        }
+
+        .upgrade-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+        }
+
+        .upgrade-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .upgrade-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .reset-info {
+            background: #ebf8ff;
+            border: 1px solid #90cdf4;
+            color: #2c5282;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .limit-reached {
+            background: #fed7d7;
+            border: 1px solid #feb2b2;
+            color: #c53030;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .plan-comparison {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .plan-comparison h3 {
+            margin: 0 0 1.5rem 0;
+            color: #4a5568;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .plan-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .plan-card.current {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+
+        .plan-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .plan-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .plan-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 1.5rem 0;
+        }
+
+        .plan-features li {
+            padding: 0.25rem 0;
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .upgrade-buttons, .navigation-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .plans-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-1 mb-2 mt-1">
+            <div class="header-title-container">
+                <h1 class="text-2xl font-bold" style="color: hsl(var(--primary)); font-family: 'Poppins', sans-serif;">Vocal Local</h1>
+                <p id="app-subtitle" class="text-sm text-muted">Accurate Multilingual Speech-to-Text Transcription</p>
+            </div>
+
+            <div class="flex items-center gap-2 mt-0">
+                <!-- Authentication Links -->
+                {% if current_user.is_authenticated %}
+                    <div class="user-avatar-menu">
+                        <button id="avatar-button" class="avatar-button" aria-expanded="false">
+                            <div class="avatar-circle">{{ current_user.username[0]|upper }}</div>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </button>
+                        <div id="user-dropdown" class="user-dropdown">
+                            <a href="{{ url_for('main.dashboard') }}" class="dropdown-item">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                            <a href="{{ url_for('auth.profile') }}" class="dropdown-item">
+                                <i class="fas fa-user"></i> Profile
+                            </a>
+                            {% if current_user.is_admin %}
+                            <div class="dropdown-divider"></div>
+                            <a href="{{ url_for('admin.dashboard') }}" class="dropdown-item">
+                                <i class="fas fa-chart-line"></i> Admin Dashboard
+                            </a>
+                            <a href="{{ url_for('admin.users') }}" class="dropdown-item">
+                                <i class="fas fa-users"></i> User Management
+                            </a>
+                            {% endif %}
+                            <div class="dropdown-divider"></div>
+                            <a href="{{ url_for('auth.logout') }}" class="dropdown-item">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- History Dropdown -->
+                    <div class="history-menu">
+                        <button id="history-button" class="history-button" aria-expanded="false">
+                            <i class="fas fa-history"></i> History
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </button>
+                        <div id="history-dropdown" class="history-dropdown">
+                            <a href="{{ url_for('main.history', type='all') }}" class="dropdown-item">
+                                <i class="fas fa-list"></i> All History
+                            </a>
+                            <a href="{{ url_for('main.history', type='transcription') }}" class="dropdown-item">
+                                <i class="fas fa-microphone"></i> Transcriptions
+                            </a>
+                            <a href="{{ url_for('main.history', type='translation') }}" class="dropdown-item">
+                                <i class="fas fa-language"></i> Translations
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="button button-outline">Login</a>
+                    <a href="{{ url_for('auth.register') }}" class="button button-primary">Register</a>
+                {% endif %}
+
+                <!-- Theme Selector -->
+                <div class="theme-selector">
+                    <button id="theme-toggle-btn" class="button button-outline button-icon" title="Change theme">
+                        <i class="fas fa-lightbulb"></i>
+                    </button>
+                    <div id="theme-options" class="theme-options-dropdown" style="display: none;">
+                        <button class="theme-option" data-theme="light">
+                            <i class="fas fa-sun"></i> Light Mode
+                        </button>
+                        <button class="theme-option" data-theme="dark">
+                            <i class="fas fa-moon"></i> Dark Mode
+                        </button>
+                        <button class="theme-option" data-theme="system">
+                            <i class="fas fa-circle-half-stroke"></i> System
+                        </button>
+                    </div>
+                </div>
+                <!-- End Theme Selector -->
+
+                <!-- Navigation Links -->
+                <a href="{{ url_for('main.index') }}" class="button button-outline">Home</a>
+            </div>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-container">
+            <!-- Dashboard Header -->
+            <div class="dashboard-header">
+                <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+                <p>Welcome back, {{ dashboard.user.username }}!</p>
+                <div class="plan-badge">
+                    {{ dashboard.user.plan_name }}
+                    {% if dashboard.user.plan_price > 0 %}
+                        - ${{ "%.2f"|format(dashboard.user.plan_price) }}/month
+                    {% endif %}
+                </div>
+            </div>
+
+        <!-- Reset Information -->
+        {% if dashboard.reset_date %}
+        <div class="reset-info">
+            <i class="fas fa-calendar-alt"></i>
+            Your usage will reset on {{ moment(dashboard.reset_date).format('MMMM Do, YYYY') }}
+            ({{ moment(dashboard.reset_date).fromNow() }})
+        </div>
+        {% endif %}
+
+        <!-- Usage Statistics -->
+        <div class="stats-grid">
+            <!-- Transcription Usage -->
+            <div class="stat-card">
+                <h3><i class="fas fa-microphone"></i> Transcription Minutes</h3>
+                <div class="usage-text">
+                    <span class="usage-numbers">{{ "%.1f"|format(dashboard.usage.transcription.used) }} / {{ dashboard.usage.transcription.limit }} minutes</span>
+                    <span>{{ "%.1f"|format(dashboard.usage.transcription.remaining) }} remaining</span>
+                </div>
+                <div class="usage-bar">
+                    {% set transcription_percent = (dashboard.usage.transcription.used / dashboard.usage.transcription.limit * 100) if dashboard.usage.transcription.limit > 0 else 0 %}
+                    <div class="usage-fill {% if transcription_percent >= 90 %}high{% elif transcription_percent >= 70 %}medium{% elif transcription_percent > 0 %}low{% else %}zero{% endif %}"
+                         style="width: {{ transcription_percent }}%"></div>
+                </div>
+                {% if dashboard.usage.transcription.remaining <= 0 and dashboard.usage.transcription.limit > 0 %}
+                <div class="limit-reached">
+                    <i class="fas fa-exclamation-triangle"></i> Transcription limit reached!
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Translation Usage -->
+            <div class="stat-card">
+                <h3><i class="fas fa-language"></i> Translation Words</h3>
+                <div class="usage-text">
+                    <span class="usage-numbers">{{ "{:,}".format(dashboard.usage.translation.used|int) }} / {{ "{:,}".format(dashboard.usage.translation.limit) }} words</span>
+                    <span>{{ "{:,}".format(dashboard.usage.translation.remaining|int) }} remaining</span>
+                </div>
+                <div class="usage-bar">
+                    {% set translation_percent = (dashboard.usage.translation.used / dashboard.usage.translation.limit * 100) if dashboard.usage.translation.limit > 0 else 0 %}
+                    <div class="usage-fill {% if translation_percent >= 90 %}high{% elif translation_percent >= 70 %}medium{% elif translation_percent > 0 %}low{% else %}zero{% endif %}"
+                         style="width: {{ translation_percent }}%"></div>
+                </div>
+                {% if dashboard.usage.translation.remaining <= 0 and dashboard.usage.translation.limit > 0 %}
+                <div class="limit-reached">
+                    <i class="fas fa-exclamation-triangle"></i> Translation limit reached!
+                </div>
+                {% elif dashboard.usage.translation.limit == 0 %}
+                <div class="limit-reached">
+                    <i class="fas fa-lock"></i> Translation not available on {{ dashboard.user.plan_name }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- TTS Usage -->
+            <div class="stat-card">
+                <h3><i class="fas fa-volume-up"></i> Text-to-Speech Minutes</h3>
+                <div class="usage-text">
+                    <span class="usage-numbers">{{ "%.1f"|format(dashboard.usage.tts.used) }} / {{ dashboard.usage.tts.limit }} minutes</span>
+                    <span>{{ "%.1f"|format(dashboard.usage.tts.remaining) }} remaining</span>
+                </div>
+                <div class="usage-bar">
+                    {% set tts_percent = (dashboard.usage.tts.used / dashboard.usage.tts.limit * 100) if dashboard.usage.tts.limit > 0 else 0 %}
+                    <div class="usage-fill {% if tts_percent >= 90 %}high{% elif tts_percent >= 70 %}medium{% elif tts_percent > 0 %}low{% else %}zero{% endif %}"
+                         style="width: {{ tts_percent }}%"></div>
+                </div>
+                {% if dashboard.usage.tts.remaining <= 0 and dashboard.usage.tts.limit > 0 %}
+                <div class="limit-reached">
+                    <i class="fas fa-exclamation-triangle"></i> TTS limit reached!
+                </div>
+                {% elif dashboard.usage.tts.limit == 0 %}
+                <div class="limit-reached">
+                    <i class="fas fa-lock"></i> TTS not available on {{ dashboard.user.plan_name }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- AI Credits Usage -->
+            <div class="stat-card">
+                <h3><i class="fas fa-brain"></i> AI Credits</h3>
+                <div class="usage-text">
+                    <span class="usage-numbers">{{ dashboard.usage.ai.used }} / {{ dashboard.usage.ai.limit }} credits</span>
+                    <span>{{ dashboard.usage.ai.remaining }} remaining</span>
+                </div>
+                <div class="usage-bar">
+                    {% set ai_percent = (dashboard.usage.ai.used / dashboard.usage.ai.limit * 100) if dashboard.usage.ai.limit > 0 else 0 %}
+                    <div class="usage-fill {% if ai_percent >= 90 %}high{% elif ai_percent >= 70 %}medium{% elif ai_percent > 0 %}low{% else %}zero{% endif %}"
+                         style="width: {{ ai_percent }}%"></div>
+                </div>
+                {% if dashboard.usage.ai.remaining <= 0 and dashboard.usage.ai.limit > 0 %}
+                <div class="limit-reached">
+                    <i class="fas fa-exclamation-triangle"></i> AI credits limit reached!
+                </div>
+                {% elif dashboard.usage.ai.limit == 0 %}
+                <div class="limit-reached">
+                    <i class="fas fa-lock"></i> AI credits not available on {{ dashboard.user.plan_name }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Upgrade Section (show for normal users who can benefit from upgrading, but NOT for admin/super users) -->
+        {% if dashboard.user.role == 'normal_user' and dashboard.user.plan_type != 'professional' %}
+        <div class="upgrade-section">
+            <h2><i class="fas fa-rocket"></i> Upgrade Your Plan</h2>
+            {% if dashboard.user.plan_type == 'free' %}
+            <p>Unlock premium AI models and get higher usage limits with our subscription plans!</p>
+            {% else %}
+            <p>Get even more features and higher usage limits with our premium plans!</p>
+            {% endif %}
+            <div class="upgrade-buttons">
+                {% if dashboard.user.plan_type != 'basic' %}
+                <a href="#" class="upgrade-btn" onclick="showUpgradeModal('basic')">
+                    <i class="fas fa-arrow-up"></i> Upgrade to Basic Plan - $4.99/month
+                </a>
+                {% endif %}
+                {% if dashboard.user.plan_type != 'professional' %}
+                <a href="#" class="upgrade-btn" onclick="showUpgradeModal('professional')">
+                    <i class="fas fa-crown"></i> Upgrade to Professional Plan - $12.99/month
+                </a>
+                {% endif %}
+            </div>
+            {% if dashboard.user.plan_type == 'free' %}
+            <div style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.9;">
+                <p><i class="fas fa-star"></i> Access premium AI models like GPT-4o, Claude, and Gemini</p>
+                <p><i class="fas fa-clock"></i> Higher usage limits for transcription, translation, and TTS</p>
+                <p><i class="fas fa-brain"></i> Advanced AI features and priority support</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Navigation Buttons -->
+        <div class="navigation-buttons">
+            <a href="{{ url_for('main.index') }}" class="nav-btn">
+                <i class="fas fa-microphone"></i> Start Transcribing
+            </a>
+            <a href="{{ url_for('main.history') }}" class="nav-btn">
+                <i class="fas fa-history"></i> View History
+            </a>
+            <a href="{{ url_for('auth.profile') }}" class="nav-btn">
+                <i class="fas fa-user"></i> Profile Settings
+            </a>
+        </div>
+        </div>
+    </div>
+
+    <!-- Upgrade Modal (placeholder for future payment integration) -->
+    <div id="upgrade-modal" style="display: none;">
+        <!-- Modal content will be added when payment system is implemented -->
+    </div>
+
+    <script>
+        // Add moment.js for date formatting
+        function formatDate(timestamp) {
+            if (!timestamp) return 'Not set';
+            const date = new Date(timestamp);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function showUpgradeModal(planType) {
+            // Check if user is admin or super user - they shouldn't see upgrade prompts
+            {% if dashboard.user.role == 'admin' or dashboard.user.role == 'super_user' %}
+                console.log('Upgrade modal bypassed for {{ dashboard.user.role }} role');
+                return;
+            {% endif %}
+
+            // Plan details for better user experience
+            const planDetails = {
+                'basic': {
+                    name: 'Basic Plan',
+                    price: '$4.99/month',
+                    features: [
+                        '280 transcription minutes per month',
+                        '50,000 translation words per month',
+                        '60 TTS minutes per month',
+                        '50 AI credits per month',
+                        'Access to premium AI models (GPT-4o, Claude, Gemini)',
+                        'Email support'
+                    ]
+                },
+                'professional': {
+                    name: 'Professional Plan',
+                    price: '$12.99/month',
+                    features: [
+                        '800 transcription minutes per month',
+                        '160,000 translation words per month',
+                        '200 TTS minutes per month',
+                        '150 AI credits per month',
+                        'Access to all premium AI models',
+                        'Priority support',
+                        'Advanced features'
+                    ]
+                }
+            };
+
+            const plan = planDetails[planType];
+            const featuresList = plan.features.map(feature => `• ${feature}`).join('\\n');
+
+            alert(`${plan.name} (${plan.price})\\n\\nFeatures included:\\n${featuresList}\\n\\nUpgrade functionality will be available when payment processing is implemented.`);
+        }
+
+        // Auto-refresh dashboard every 30 seconds to show real-time usage
+        setInterval(function() {
+            // Only refresh if user is still on the page
+            if (document.visibilityState === 'visible') {
+                location.reload();
+            }
+        }, 30000);
+    </script>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='common.js') }}"></script>
+    <script src="{{ url_for('static', filename='auth.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/usage-validation.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/usage-enforcement.js') }}"></script>
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usage Reset Management - VocalLocal Admin</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .admin-header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .admin-header h1 {
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+            font-size: 2.5rem;
+        }
+
+        .admin-header p {
+            color: #718096;
+            font-size: 1.1rem;
+        }
+
+        .admin-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .stats-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-card h3 {
+            color: #4a5568;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            color: #2d3748;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .reset-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .reset-section h3 {
+            color: #4a5568;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .reset-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+        }
+
+        .loading i {
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: none;
+        }
+
+        .alert-success {
+            background-color: #f0fff4;
+            border: 1px solid #9ae6b4;
+            color: #276749;
+        }
+
+        .alert-danger {
+            background-color: #fed7d7;
+            border: 1px solid #feb2b2;
+            color: #c53030;
+        }
+
+        .alert-info {
+            background-color: #ebf8ff;
+            border: 1px solid #90cdf4;
+            color: #2c5282;
+        }
+
+        .usage-history {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .usage-history h3 {
+            color: #4a5568;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .history-item {
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .history-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .history-date {
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+        }
+
+        .history-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        @media (max-width: 768px) {
+            .admin-container {
+                padding: 1rem;
+            }
+
+            .admin-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .reset-controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <h1><i class="fas fa-sync-alt"></i> Usage Reset Management</h1>
+            <p>Monitor and manage monthly usage reset for all VocalLocal users</p>
+            
+            <div class="admin-actions">
+                <a href="{{ url_for('admin.users') }}" class="btn btn-primary">
+                    <i class="fas fa-users"></i> User Management
+                </a>
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </a>
+                <a href="{{ url_for('admin.subscription_plans') }}" class="btn btn-primary">
+                    <i class="fas fa-credit-card"></i> Subscription Plans
+                </a>
+                <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+                    <i class="fas fa-home"></i> Main App
+                </a>
+                <a href="{{ url_for('admin.logout') }}" class="btn btn-danger">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </header>
+
+        <div class="alert alert-success" id="successAlert"></div>
+        <div class="alert alert-danger" id="errorAlert"></div>
+        <div class="alert alert-info" id="infoAlert"></div>
+
+        <div class="loading" id="loadingIndicator">
+            <i class="fas fa-spinner"></i>
+            <p>Loading usage statistics...</p>
+        </div>
+
+        <div class="stats-grid" id="statsGrid" style="display: none;">
+            <div class="stats-card">
+                <h3><i class="fas fa-users"></i> User Statistics</h3>
+                <div class="stat-item">
+                    <span class="stat-label">Total Users</span>
+                    <span class="stat-value" id="totalUsers">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Users Needing Reset</span>
+                    <span class="stat-value" id="usersNeedingReset">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Next Reset Date</span>
+                    <span class="stat-value" id="nextResetDate">-</span>
+                </div>
+            </div>
+
+            <div class="stats-card">
+                <h3><i class="fas fa-chart-bar"></i> Current Period Usage</h3>
+                <div class="stat-item">
+                    <span class="stat-label">Transcription Minutes</span>
+                    <span class="stat-value" id="transcriptionMinutes">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Translation Words</span>
+                    <span class="stat-value" id="translationWords">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">TTS Minutes</span>
+                    <span class="stat-value" id="ttsMinutes">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">AI Credits</span>
+                    <span class="stat-value" id="aiCredits">-</span>
+                </div>
+            </div>
+
+            <div class="stats-card">
+                <h3><i class="fas fa-pie-chart"></i> Plan Distribution</h3>
+                <div class="stat-item">
+                    <span class="stat-label">Free Plan</span>
+                    <span class="stat-value" id="freePlan">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Basic Plan</span>
+                    <span class="stat-value" id="basicPlan">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Professional Plan</span>
+                    <span class="stat-value" id="professionalPlan">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="reset-section" id="resetSection" style="display: none;">
+            <h3><i class="fas fa-sync-alt"></i> Monthly Usage Reset</h3>
+            <p>Reset all users' monthly usage counters and archive current usage data.</p>
+            
+            <div class="reset-controls">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="forceReset">
+                    <label for="forceReset">Force reset (ignore reset dates)</label>
+                </div>
+                <button class="btn btn-warning" onclick="checkResetStatus()">
+                    <i class="fas fa-search"></i> Check Reset Status
+                </button>
+                <button class="btn btn-success" onclick="triggerReset()">
+                    <i class="fas fa-sync-alt"></i> Trigger Reset
+                </button>
+                <button class="btn btn-primary" onclick="refreshStats()">
+                    <i class="fas fa-refresh"></i> Refresh Stats
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load usage statistics on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUsageStatistics();
+        });
+
+        function showAlert(type, message) {
+            const alertElement = document.getElementById(type + 'Alert');
+            alertElement.textContent = message;
+            alertElement.style.display = 'block';
+            
+            // Hide other alerts
+            ['success', 'danger', 'info'].forEach(alertType => {
+                if (alertType !== type) {
+                    document.getElementById(alertType + 'Alert').style.display = 'none';
+                }
+            });
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                alertElement.style.display = 'none';
+            }, 5000);
+        }
+
+        function showLoading(show) {
+            document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+            document.getElementById('statsGrid').style.display = show ? 'none' : 'grid';
+            document.getElementById('resetSection').style.display = show ? 'none' : 'block';
+        }
+
+        async function loadUsageStatistics() {
+            showLoading(true);
+            
+            try {
+                const response = await fetch('/admin/api/usage-statistics');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateStatistics(data);
+                    showLoading(false);
+                } else {
+                    throw new Error(data.error || 'Failed to load statistics');
+                }
+            } catch (error) {
+                showLoading(false);
+                showAlert('danger', 'Error loading statistics: ' + error.message);
+            }
+        }
+
+        function updateStatistics(stats) {
+            // User statistics
+            document.getElementById('totalUsers').textContent = stats.totalUsers || 0;
+            document.getElementById('usersNeedingReset').textContent = stats.usersNeedingReset || 0;
+            
+            // Format next reset date
+            if (stats.nextResetDate) {
+                const date = new Date(stats.nextResetDate);
+                document.getElementById('nextResetDate').textContent = date.toLocaleDateString();
+            } else {
+                document.getElementById('nextResetDate').textContent = 'N/A';
+            }
+            
+            // Current period usage
+            const usage = stats.currentPeriodUsage || {};
+            document.getElementById('transcriptionMinutes').textContent = Math.round(usage.transcriptionMinutes || 0);
+            document.getElementById('translationWords').textContent = (usage.translationWords || 0).toLocaleString();
+            document.getElementById('ttsMinutes').textContent = Math.round(usage.ttsMinutes || 0);
+            document.getElementById('aiCredits').textContent = usage.aiCredits || 0;
+            
+            // Plan distribution
+            const plans = stats.planDistribution || {};
+            document.getElementById('freePlan').textContent = plans.free || 0;
+            document.getElementById('basicPlan').textContent = plans.basic || 0;
+            document.getElementById('professionalPlan').textContent = plans.professional || 0;
+        }
+
+        async function checkResetStatus() {
+            try {
+                showAlert('info', 'Checking reset status...');
+                
+                const response = await fetch('/admin/api/check-reset-status');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.usersNeedingReset > 0) {
+                        showAlert('info', `${data.usersNeedingReset} users need usage reset.`);
+                    } else {
+                        showAlert('success', 'No users currently need usage reset.');
+                    }
+                } else {
+                    throw new Error(data.error || 'Failed to check reset status');
+                }
+            } catch (error) {
+                showAlert('danger', 'Error checking reset status: ' + error.message);
+            }
+        }
+
+        async function triggerReset() {
+            const forceReset = document.getElementById('forceReset').checked;
+            
+            if (!confirm(`Are you sure you want to trigger monthly usage reset?${forceReset ? ' (Force reset enabled)' : ''}`)) {
+                return;
+            }
+            
+            try {
+                showAlert('info', 'Triggering monthly usage reset...');
+                
+                const response = await fetch('/admin/api/reset-monthly-usage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        forceReset: forceReset
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showAlert('success', `Reset completed successfully! Processed ${data.usersProcessed} users, skipped ${data.usersSkipped} users.`);
+                    // Refresh statistics after reset
+                    setTimeout(() => {
+                        loadUsageStatistics();
+                    }, 2000);
+                } else {
+                    throw new Error(data.message || data.error || 'Reset failed');
+                }
+            } catch (error) {
+                showAlert('danger', 'Error triggering reset: ' + error.message);
+            }
+        }
+
+        function refreshStats() {
+            loadUsageStatistics();
+        }
+    </script>
+</body>
+</html>

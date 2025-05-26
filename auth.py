@@ -34,6 +34,7 @@ def load_user(user_id):
             self.email = email
             self.username = data.get('username')
             self.is_admin = data.get('is_admin', False)
+            self.role = data.get('role', 'normal_user')  # Add role support
             self.password_hash = data.get('password_hash')
 
         def is_authenticated(self):
@@ -52,6 +53,18 @@ def load_user(user_id):
             if not self.password_hash:
                 return False
             return check_password_hash(self.password_hash, password)
+
+        def has_role(self, role):
+            """Check if user has a specific role."""
+            return self.role == role
+
+        def has_admin_privileges(self):
+            """Check if user has admin privileges."""
+            return self.role == 'admin'
+
+        def has_premium_access(self):
+            """Check if user has premium access (admin or super user)."""
+            return self.role in ['admin', 'super_user']
 
     return UserObject(user_id, user_data)
 
@@ -232,6 +245,16 @@ def login():
                     self.email = email
                     self.username = data.get('username')
                     self.is_admin = data.get('is_admin', False)
+
+                    # Determine role - check role field first, then fallback to is_admin
+                    role = data.get('role')
+                    if role and role in ['admin', 'super_user', 'normal_user']:
+                        self.role = role
+                    elif data.get('is_admin', False):
+                        self.role = 'admin'
+                    else:
+                        self.role = 'normal_user'
+
                     self._data = data  # Store the full user data
 
                 def is_authenticated(self):
@@ -250,6 +273,26 @@ def login():
                     """Check if the provided password matches the stored hash."""
                     password_hash = self._data.get('password_hash', '')
                     return check_password_hash(password_hash, password)
+
+                def has_role(self, role):
+                    """Check if user has a specific role."""
+                    return self.role == role
+
+                def has_admin_privileges(self):
+                    """Check if user has admin privileges."""
+                    return self.role == 'admin'
+
+                def has_premium_access(self):
+                    """Check if user has premium access (admin or super user)."""
+                    return self.role in ['admin', 'super_user']
+
+                def is_super_user(self):
+                    """Check if user is a super user."""
+                    return self.role == 'super_user'
+
+                def is_normal_user(self):
+                    """Check if user is a normal user."""
+                    return self.role == 'normal_user'
 
             user = UserObject(email, user_data)
             login_user(user, remember=remember)

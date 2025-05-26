@@ -8,308 +8,752 @@
   <!-- Favicon -->
   <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-
   <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-  <!-- DataTables CSS -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
 
   <!-- Styles -->
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
 
   <style>
+    /* Admin page styling */
+    .admin-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
     .admin-header {
       background-color: hsl(var(--primary));
       color: white;
-      padding: 1rem;
+      padding: 1.5rem;
       margin-bottom: 2rem;
-      border-radius: var(--radius);
+      border-radius: 8px;
     }
 
     .admin-actions {
       display: flex;
       gap: 0.5rem;
+      flex-wrap: wrap;
     }
 
-    .badge {
-      padding: 0.5em 0.75em;
-      border-radius: 0.25rem;
-    }
-
-    .bg-info {
-      background-color: #0dcaf0;
-    }
-
-    .bg-success {
-      background-color: #198754;
-    }
-
-    .bg-secondary {
-      background-color: #6c757d;
-    }
-
+    /* Button styling */
     .btn {
       display: inline-block;
-      font-weight: 400;
-      text-align: center;
-      white-space: nowrap;
-      vertical-align: middle;
-      user-select: none;
-      border: 1px solid transparent;
-      padding: 0.375rem 0.75rem;
-      font-size: 1rem;
-      line-height: 1.5;
-      border-radius: 0.25rem;
-      transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+      padding: 8px 16px;
+      margin: 4px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f8f9fa;
+      color: #333;
+      text-decoration: none;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
     }
 
-    .btn-outline-primary {
-      color: hsl(var(--primary));
-      border-color: hsl(var(--primary));
+    .btn:hover {
+      background-color: #e9ecef;
+      text-decoration: none;
     }
 
-    .btn-outline-primary:hover {
-      color: #fff;
+    .btn-primary {
       background-color: hsl(var(--primary));
+      color: white;
       border-color: hsl(var(--primary));
     }
 
-    .btn-outline-secondary {
-      color: #6c757d;
-      border-color: #6c757d;
-    }
-
-    .btn-outline-secondary:hover {
-      color: #fff;
-      background-color: #6c757d;
-      border-color: #6c757d;
+    .btn-primary:hover {
+      background-color: hsl(var(--primary));
+      opacity: 0.9;
     }
 
     .btn-danger {
-      color: #fff;
       background-color: #dc3545;
+      color: white;
       border-color: #dc3545;
     }
 
     .btn-danger:hover {
-      color: #fff;
-      background-color: #bb2d3b;
-      border-color: #b02a37;
+      background-color: #c82333;
+    }
+
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    /* Table styling */
+    .table-container {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+
+    .table-header {
+      background-color: hsl(var(--primary));
+      color: white;
+      padding: 1rem;
+      font-weight: 600;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0;
+    }
+
+    .table th,
+    .table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .table th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+
+    .table tr:hover {
+      background-color: #f5f5f5;
+    }
+
+    /* Badge styling */
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      color: white;
+    }
+
+    .badge-info { background-color: #17a2b8; }
+    .badge-success { background-color: #28a745; }
+    .badge-secondary { background-color: #6c757d; }
+
+    /* Modal styling */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
+
+    .modal.show {
+      display: block;
+    }
+
+    .modal-dialog {
+      position: relative;
+      width: 90%;
+      max-width: 600px;
+      margin: 50px auto;
+    }
+
+    .modal-content {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .modal-header {
+      padding: 1rem;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-body {
+      padding: 1rem;
+    }
+
+    .modal-footer {
+      padding: 1rem;
+      border-top: 1px solid #ddd;
+      text-align: right;
+    }
+
+    .close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    /* Search and pagination */
+    .table-controls {
+      padding: 1rem;
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .search-box {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 300px;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 1rem;
+    }
+
+    .pagination button {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      background: white;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .pagination button:hover {
+      background-color: #f8f9fa;
+    }
+
+    .pagination button.active {
+      background-color: hsl(var(--primary));
+      color: white;
+      border-color: hsl(var(--primary));
+    }
+
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Alert styling */
+    .alert {
+      padding: 12px;
+      margin-bottom: 1rem;
+      border-radius: 4px;
+      border: 1px solid transparent;
+    }
+
+    .alert-info {
+      background-color: #d1ecf1;
+      border-color: #bee5eb;
+      color: #0c5460;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .admin-actions {
+        flex-direction: column;
+      }
+
+      .table-container {
+        overflow-x: auto;
+      }
+
+      .search-box {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="admin-container">
     <!-- Header -->
-    <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-1 mb-2 mt-1">
-      <div class="header-title-container">
-        <h1 class="text-2xl font-bold" style="color: hsl(var(--primary)); font-family: 'Poppins', sans-serif;">Vocal Local</h1>
-        <p id="app-subtitle" class="text-sm text-muted">Admin User Management</p>
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+      <div>
+        <h1 style="color: hsl(var(--primary)); margin: 0; font-size: 2rem;">VocalLocal Admin</h1>
+        <p style="margin: 0; color: #666;">User Management</p>
       </div>
 
       <div class="admin-actions">
-        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-primary">
-          <i class="fas fa-chart-line"></i> Metrics Dashboard
+        <a href="{{ url_for('admin.dashboard') }}" class="btn">
+          <i class="fas fa-chart-line"></i> Dashboard
         </a>
-        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+        <a href="{{ url_for('admin.user_usage') }}" class="btn">
+          <i class="fas fa-chart-bar"></i> Usage Stats
+        </a>
+        <a href="{{ url_for('admin.usage_reset') }}" class="btn">
+          <i class="fas fa-sync-alt"></i> Usage Reset
+        </a>
+        <a href="{{ url_for('main.index') }}" class="btn">
           <i class="fas fa-home"></i> Main App
         </a>
-        <a href="{{ url_for('admin_logout') }}" class="btn btn-danger">
-          <i class="fas fa-sign-out-alt"></i> Admin Logout
+        <a href="{{ url_for('admin.logout') }}" class="btn btn-danger">
+          <i class="fas fa-sign-out-alt"></i> Logout
         </a>
       </div>
     </header>
 
     <div class="admin-header">
-      <h2>User Management</h2>
-      <p>View and manage all registered users in the VocalLocal application</p>
+      <h2 style="margin: 0 0 0.5rem 0;">User Management</h2>
+      <p style="margin: 0;">View and manage all registered users in the VocalLocal application</p>
     </div>
 
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Users Table -->
+    <div class="table-container">
+      <div class="table-header">
+        Registered Users ({{ users|length if users else 0 }})
+      </div>
+
+      {% if users %}
+        <div class="table-controls">
+          <input type="text" id="userSearch" class="search-box" placeholder="Search users..." onkeyup="searchUsers()">
+        </div>
+
+        <table class="table" id="usersTable">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Registration Date</th>
+              <th>Auth Method</th>
+              <th>Role</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            {% for user in users %}
+            <tr>
+              <td>{{ user.username }}</td>
+              <td>{{ user.email }}</td>
+              <td>{{ user.created_at|default('N/A') }}</td>
+              <td>
+                {% if user.oauth_provider %}
+                  <span class="badge badge-info">{{ user.oauth_provider }}</span>
+                {% else %}
+                  <span class="badge badge-secondary">Password</span>
                 {% endif %}
-            {% endwith %}
+              </td>
+              <td>
+                {% set user_role = user.role|default('normal_user') %}
+                {% if user_role == 'admin' %}
+                  <span class="badge badge-success">Admin</span>
+                {% elif user_role == 'super_user' %}
+                  <span class="badge badge-info">Super User</span>
+                {% else %}
+                  <span class="badge badge-secondary">Normal User</span>
+                {% endif %}
+              </td>
+              <td>
+                <button type="button" class="btn btn-sm btn-primary" onclick="showUserDetails('{{ user.username }}', '{{ user.email }}', '{{ user.created_at|default('N/A') }}', '{{ user.oauth_provider|default('Password') }}', '{{ user_role }}', '{{ 'Yes' if user.is_admin else 'No' }}')">
+                  View
+                </button>
+                <button type="button" class="btn btn-sm" onclick="showRoleModal('{{ user.email }}', '{{ user_role }}')">
+                  Change Role
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
 
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Registered Users ({{ users|length }})</h5>
-                </div>
-                <div class="card-body">
-                    {% if users %}
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover" id="usersTable">
-                                <thead>
-                                    <tr>
-                                        <th>Username</th>
-                                        <th>Email</th>
-                                        <th>Registration Date</th>
-                                        <th>Last Login</th>
-                                        <th>Auth Method</th>
-                                        <th>Admin</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for user in users %}
-                                    <tr>
-                                        <td>{{ user.username }}</td>
-                                        <td>{{ user.email }}</td>
-                                        <td>{{ user.created_at|default('N/A') }}</td>
-                                        <td>{{ user.last_login|default('Never') }}</td>
-                                        <td>
-                                            {% if user.oauth_provider %}
-                                                <span class="badge bg-info">{{ user.oauth_provider }}</span>
-                                            {% else %}
-                                                <span class="badge bg-secondary">Password</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if user.is_admin %}
-                                                <span class="badge bg-success">Yes</span>
-                                            {% else %}
-                                                <span class="badge bg-secondary">No</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-sm btn-outline-primary"
-                                                    data-bs-toggle="modal" data-bs-target="#userDetailsModal{{ loop.index }}">
-                                                View
-                                            </button>
-                                        </td>
-                                    </tr>
+        <div class="pagination" id="usersPagination">
+          <!-- Pagination will be generated by JavaScript -->
+        </div>
+      {% else %}
+        <div style="padding: 2rem; text-align: center;">
+          <div class="alert alert-info">No users found.</div>
+        </div>
+      {% endif %}
+    </div>
 
-                                    <!-- User Details Modal -->
-                                    <div class="modal fade" id="userDetailsModal{{ loop.index }}" tabindex="-1" aria-labelledby="userDetailsModalLabel{{ loop.index }}" aria-hidden="true">
-                                        <div class="modal-dialog modal-lg">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title" id="userDetailsModalLabel{{ loop.index }}">User Details: {{ user.username }}</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <div class="row">
-                                                        <div class="col-md-6">
-                                                            <h6>Basic Information</h6>
-                                                            <ul class="list-group mb-3">
-                                                                <li class="list-group-item"><strong>Username:</strong> {{ user.username }}</li>
-                                                                <li class="list-group-item"><strong>Email:</strong> {{ user.email }}</li>
-                                                                <li class="list-group-item"><strong>Created:</strong> {{ user.created_at|default('N/A') }}</li>
-                                                                <li class="list-group-item"><strong>Last Login:</strong> {{ user.last_login|default('Never') }}</li>
-                                                                <li class="list-group-item"><strong>Admin:</strong> {{ 'Yes' if user.is_admin else 'No' }}</li>
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <h6>Authentication</h6>
-                                                            <ul class="list-group">
-                                                                <li class="list-group-item"><strong>Auth Method:</strong>
-                                                                    {% if user.oauth_provider %}
-                                                                        {{ user.oauth_provider }} OAuth
-                                                                    {% else %}
-                                                                        Password
-                                                                    {% endif %}
-                                                                </li>
-                                                                {% if user.oauth_provider %}
-                                                                <li class="list-group-item"><strong>OAuth ID:</strong> {{ user.oauth_id }}</li>
-                                                                {% endif %}
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="alert alert-info">No users found.</div>
-                    {% endif %}
+    <!-- Activities Table -->
+    <div class="table-container">
+      <div class="table-header">
+        Recent User Activities ({{ activities|length if activities else 0 }})
+      </div>
+
+      {% if activities %}
+        <table class="table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Activity</th>
+              <th>Details</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for activity in activities %}
+            <tr>
+              <td>{{ activity.user_email }}</td>
+              <td>{{ activity.activity_type }}</td>
+              <td>{{ activity.details|default('N/A') }}</td>
+              <td>{{ activity.timestamp }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div style="padding: 2rem; text-align: center;">
+          <div class="alert alert-info">No activities found.</div>
+        </div>
+      {% endif %}
+    </div>
+  </div> <!-- End admin-container -->
+
+  <!-- User Details Modal -->
+  <div id="userModal" class="modal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 id="modalTitle">User Details</h5>
+          <button type="button" class="close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="modalContent">
+            <!-- Content will be populated by JavaScript -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Role Management Modal -->
+  <div id="roleModal" class="modal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 id="roleModalTitle">Change User Role</h5>
+          <button type="button" class="close" onclick="closeRoleModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="roleModalContent">
+            <div style="margin-bottom: 1rem;">
+              <label for="userRoleSelect" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Select Role:</label>
+              <select id="userRoleSelect" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="normal_user">Normal User</option>
+                <option value="super_user">Super User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+              <h6 style="margin: 0 0 0.5rem 0;">Role Descriptions:</h6>
+              <ul style="margin: 0; padding-left: 1.5rem;">
+                <li><strong>Normal User:</strong> Standard access with subscription-based limits</li>
+                <li><strong>Super User:</strong> Full access to all models and features (no admin panel)</li>
+                <li><strong>Admin:</strong> Full system access including admin panel and user management</li>
+              </ul>
+            </div>
+            <div id="roleChangeStatus" style="display: none;"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeRoleModal()">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="updateUserRole()">Update Role</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Simple, reliable JavaScript for admin users page
+console.log('Admin Users page loading...');
+
+// Global variables
+let currentPage = 1;
+const itemsPerPage = 10;
+let allUsers = [];
+
+// Initialize page when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing page...');
+
+    // Get all users from the table
+    const tableRows = document.querySelectorAll('#usersTableBody tr');
+    allUsers = Array.from(tableRows);
+
+    // Initialize pagination
+    initializePagination();
+
+    // Test button clicks
+    testButtonClicks();
+
+    console.log('Page initialized successfully');
+    console.log('Found', allUsers.length, 'users');
+});
+
+// Search functionality
+function searchUsers() {
+    const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+    const tableBody = document.getElementById('usersTableBody');
+    const rows = tableBody.getElementsByTagName('tr');
+
+    console.log('Searching for:', searchTerm);
+
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const text = row.textContent.toLowerCase();
+
+        if (text.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    }
+}
+
+// Show user details modal
+function showUserDetails(username, email, created, authMethod, role, isAdmin) {
+    console.log('Showing user details for:', username);
+
+    const modal = document.getElementById('userModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalContent = document.getElementById('modalContent');
+
+    modalTitle.textContent = 'User Details: ' + username;
+
+    modalContent.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+                <h6 style="margin-bottom: 1rem; color: #333;">Basic Information</h6>
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px;">
+                    <p><strong>Username:</strong> ${username}</p>
+                    <p><strong>Email:</strong> ${email}</p>
+                    <p><strong>Created:</strong> ${created}</p>
+                    <p><strong>Role:</strong> ${role}</p>
+                    <p><strong>Admin:</strong> ${isAdmin}</p>
                 </div>
             </div>
-
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Recent User Activities</h5>
-                </div>
-                <div class="card-body">
-                    {% if activities %}
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover" id="activitiesTable">
-                                <thead>
-                                    <tr>
-                                        <th>User</th>
-                                        <th>Activity</th>
-                                        <th>Details</th>
-                                        <th>Timestamp</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for activity in activities %}
-                                    <tr>
-                                        <td>{{ activity.user_email }}</td>
-                                        <td>{{ activity.activity_type }}</td>
-                                        <td>{{ activity.details|default('N/A') }}</td>
-                                        <td>{{ activity.timestamp }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="alert alert-info">No activities found.</div>
-                    {% endif %}
+            <div>
+                <h6 style="margin-bottom: 1rem; color: #333;">Authentication</h6>
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px;">
+                    <p><strong>Auth Method:</strong> ${authMethod}</p>
                 </div>
             </div>
         </div>
-    </div>
-</div>
+    `;
 
-<script>
-    // Initialize DataTables for better table functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        // Check if DataTables is available
-        if (typeof $.fn.DataTable !== 'undefined') {
-            $('#usersTable').DataTable({
-                order: [[2, 'desc']], // Sort by registration date by default
-                pageLength: 10,
-                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]]
-            });
+    modal.classList.add('show');
+}
 
-            $('#activitiesTable').DataTable({
-                order: [[3, 'desc']], // Sort by timestamp by default
-                pageLength: 10,
-                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]]
-            });
+// Close modal
+function closeModal() {
+    console.log('Closing modal');
+    const modal = document.getElementById('userModal');
+    modal.classList.remove('show');
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('userModal');
+    if (event.target === modal) {
+        closeModal();
+    }
+}
+
+// Initialize pagination
+function initializePagination() {
+    const totalUsers = allUsers.length;
+    const totalPages = Math.ceil(totalUsers / itemsPerPage);
+
+    if (totalPages <= 1) {
+        return; // No pagination needed
+    }
+
+    const paginationContainer = document.getElementById('usersPagination');
+    let paginationHTML = '';
+
+    // Previous button
+    paginationHTML += `<button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>`;
+
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        paginationHTML += `<button onclick="changePage(${i})" ${i === currentPage ? 'class="active"' : ''}>${i}</button>`;
+    }
+
+    // Next button
+    paginationHTML += `<button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>`;
+
+    paginationContainer.innerHTML = paginationHTML;
+}
+
+// Change page
+function changePage(page) {
+    const totalPages = Math.ceil(allUsers.length / itemsPerPage);
+
+    if (page < 1 || page > totalPages) {
+        return;
+    }
+
+    currentPage = page;
+
+    // Hide all rows
+    allUsers.forEach(row => row.style.display = 'none');
+
+    // Show rows for current page
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+
+    for (let i = startIndex; i < endIndex && i < allUsers.length; i++) {
+        allUsers[i].style.display = '';
+    }
+
+    // Update pagination
+    initializePagination();
+}
+
+// Test button clicks
+function testButtonClicks() {
+    const buttons = document.querySelectorAll('.btn');
+    console.log('Found', buttons.length, 'buttons');
+
+    buttons.forEach((button, index) => {
+        button.addEventListener('click', function(e) {
+            console.log('Button clicked:', this.textContent.trim());
+        });
+    });
+}
+
+// Escape key to close modal
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeModal();
+        closeRoleModal();
+    }
+});
+
+// Role management variables
+let currentUserEmail = '';
+let currentUserRole = '';
+
+// Show role management modal
+function showRoleModal(userEmail, currentRole) {
+    console.log('Showing role modal for:', userEmail, 'current role:', currentRole);
+
+    currentUserEmail = userEmail;
+    currentUserRole = currentRole;
+
+    const modal = document.getElementById('roleModal');
+    const modalTitle = document.getElementById('roleModalTitle');
+    const roleSelect = document.getElementById('userRoleSelect');
+    const statusDiv = document.getElementById('roleChangeStatus');
+
+    modalTitle.textContent = 'Change Role for: ' + userEmail;
+    roleSelect.value = currentRole;
+    statusDiv.style.display = 'none';
+    statusDiv.innerHTML = '';
+
+    modal.classList.add('show');
+}
+
+// Close role modal
+function closeRoleModal() {
+    console.log('Closing role modal');
+    const modal = document.getElementById('roleModal');
+    modal.classList.remove('show');
+    currentUserEmail = '';
+    currentUserRole = '';
+}
+
+// Update user role
+function updateUserRole() {
+    const newRole = document.getElementById('userRoleSelect').value;
+    const statusDiv = document.getElementById('roleChangeStatus');
+
+    if (!currentUserEmail || !newRole) {
+        console.error('Missing user email or role');
+        return;
+    }
+
+    if (newRole === currentUserRole) {
+        statusDiv.innerHTML = '<div class="alert alert-info">No changes made - role is already ' + newRole + '</div>';
+        statusDiv.style.display = 'block';
+        return;
+    }
+
+    console.log('Updating role for', currentUserEmail, 'to', newRole);
+
+    // Show loading state
+    statusDiv.innerHTML = '<div class="alert alert-info">Updating role...</div>';
+    statusDiv.style.display = 'block';
+
+    // Make API call to update role
+    fetch(`/admin/api/users/${encodeURIComponent(currentUserEmail)}/role`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            role: newRole
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Role update response:', data);
+
+        if (data.success) {
+            statusDiv.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+
+            // Update the table row
+            updateTableRow(currentUserEmail, newRole);
+
+            // Close modal after a delay
+            setTimeout(() => {
+                closeRoleModal();
+                // Optionally reload the page to reflect changes
+                window.location.reload();
+            }, 2000);
+        } else {
+            statusDiv.innerHTML = '<div class="alert alert-danger">Error: ' + (data.error || 'Unknown error') + '</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error updating role:', error);
+        statusDiv.innerHTML = '<div class="alert alert-danger">Error: Failed to update role</div>';
+    });
+}
+
+// Update table row with new role
+function updateTableRow(userEmail, newRole) {
+    const tableRows = document.querySelectorAll('#usersTableBody tr');
+
+    tableRows.forEach(row => {
+        const emailCell = row.cells[1]; // Email is in the second column
+        if (emailCell && emailCell.textContent === userEmail) {
+            const roleCell = row.cells[4]; // Role is in the fifth column
+            if (roleCell) {
+                let badgeClass = 'badge-secondary';
+                let roleText = 'Normal User';
+
+                if (newRole === 'admin') {
+                    badgeClass = 'badge-success';
+                    roleText = 'Admin';
+                } else if (newRole === 'super_user') {
+                    badgeClass = 'badge-info';
+                    roleText = 'Super User';
+                }
+
+                roleCell.innerHTML = `<span class="badge ${badgeClass}">${roleText}</span>`;
+            }
         }
     });
-</script>
+}
 
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<!-- Bootstrap JS Bundle with Popper -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!-- DataTables JS -->
-<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+console.log('JavaScript loaded successfully');
+</script>
 
 </body>
 </html>

@@ -19,17 +19,17 @@ def initialize_firebase():
             if not db_url:
                 db_url = "https://vocal-local-e1e70-default-rtdb.firebaseio.com"
                 print(f"Warning: Using default Firebase URL: {db_url}")
-            
+
             cred = None
             auth_methods_tried = []
-            
+
             # Try multiple possible paths for the secret file
             possible_paths = [
                 "/etc/secrets/firebase-credentials.json",
                 "/etc/secrets/firebase-credentials",
                 "/etc/secrets/firebase-credentials.json.txt"
             ]
-            
+
             for path in possible_paths:
                 if os.path.exists(path):
                     auth_methods_tried.append(f"Secret file: {path}")
@@ -80,10 +80,18 @@ def initialize_firebase():
             elif cred is None:
                 raise ValueError(f"Could not initialize Firebase. Tried: {', '.join(auth_methods_tried)}")
 
-            # Initialize app with database URL
-            firebase_admin.initialize_app(cred, {
-                'databaseURL': db_url
-            })
+            # Initialize app with database URL and storage bucket
+            config = {'databaseURL': db_url}
+
+            # Add storage bucket if available
+            storage_bucket = os.getenv('FIREBASE_STORAGE_BUCKET')
+            if not storage_bucket:
+                storage_bucket = "vocal-local-e1e70.appspot.com"
+                print(f"Warning: Using default storage bucket: {storage_bucket}")
+
+            config['storageBucket'] = storage_bucket
+
+            firebase_admin.initialize_app(cred, config)
             print("Firebase initialized successfully")
 
         except Exception as e:

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan Access Control Test - VocalLocal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .model-selector {
+            margin: 10px 0;
+        }
+        .model-selector label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .model-selector select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .plan-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Plan Access Control Test</h1>
+        <p>This page tests the plan-based model access restrictions.</p>
+
+        <div id="plan-info" class="plan-info">
+            <h3>Current Plan Information</h3>
+            <div id="plan-details">Loading...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>Transcription Model Test</h3>
+            <div class="model-selector">
+                <label for="transcription-model">Select Transcription Model:</label>
+                <select id="transcription-model">
+                    <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite (Free)</option>
+                    <option value="gpt-4o-mini-transcribe">OpenAI GPT-4o Mini (Basic+)</option>
+                    <option value="gpt-4o-transcribe">OpenAI GPT-4o (Professional)</option>
+                    <option value="gemini-2.5-flash-preview-04-17">Gemini 2.5 Flash Preview (Basic+)</option>
+                </select>
+            </div>
+            <button class="test-button" onclick="testModelAccess('transcription')">Test Access</button>
+            <div id="transcription-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Translation Model Test</h3>
+            <div class="model-selector">
+                <label for="translation-model">Select Translation Model:</label>
+                <select id="translation-model">
+                    <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite (Free)</option>
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash Preview (Basic+)</option>
+                </select>
+            </div>
+            <button class="test-button" onclick="testModelAccess('translation')">Test Access</button>
+            <div id="translation-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>TTS Model Test</h3>
+            <div class="model-selector">
+                <label for="tts-model">Select TTS Model:</label>
+                <select id="tts-model">
+                    <option value="gemini-2.5-flash-tts">Gemini 2.5 Flash TTS (Free)</option>
+                    <option value="gpt4o-mini">GPT-4o Mini TTS (Basic+)</option>
+                    <option value="openai">OpenAI TTS-1 (Professional)</option>
+                </select>
+            </div>
+            <button class="test-button" onclick="testModelAccess('tts')">Test Access</button>
+            <div id="tts-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Interpretation Model Test</h3>
+            <div class="model-selector">
+                <label for="interpretation-model">Select Interpretation Model:</label>
+                <select id="interpretation-model">
+                    <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite (Free)</option>
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash Preview (Basic+)</option>
+                </select>
+            </div>
+            <button class="test-button" onclick="testModelAccess('interpretation')">Test Access</button>
+            <div id="interpretation-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Plan Access Control Script -->
+    <script src="{{ url_for('static', filename='js/plan-access-control.js') }}"></script>
+
+    <script>
+        // Test functions
+        async function loadPlanInfo() {
+            try {
+                const response = await fetch('/admin/api/user/plan');
+                const planInfo = await response.json();
+
+                const planDetails = document.getElementById('plan-details');
+                planDetails.innerHTML = `
+                    <strong>Plan Type:</strong> ${planInfo.plan_type}<br>
+                    <strong>Accessible Models:</strong><br>
+                    • Transcription: ${planInfo.accessible_models.transcription.join(', ')}<br>
+                    • Translation: ${planInfo.accessible_models.translation.join(', ')}<br>
+                    • TTS: ${planInfo.accessible_models.tts.join(', ')}<br>
+                    • Interpretation: ${planInfo.accessible_models.interpretation.join(', ')}
+                `;
+            } catch (error) {
+                document.getElementById('plan-details').innerHTML = `Error loading plan info: ${error.message}`;
+            }
+        }
+
+        function testModelAccess(serviceType) {
+            const modelSelect = document.getElementById(`${serviceType}-model`);
+            const resultDiv = document.getElementById(`${serviceType}-result`);
+            const selectedModel = modelSelect.value;
+
+            if (!window.planAccessControl) {
+                resultDiv.className = 'result error';
+                resultDiv.style.display = 'block';
+                resultDiv.textContent = 'Plan Access Control not loaded';
+                return;
+            }
+
+            const validation = window.planAccessControl.validateModelAccess(selectedModel, serviceType);
+
+            resultDiv.style.display = 'block';
+
+            if (validation.allowed) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✓ Access ALLOWED for ${selectedModel}`;
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `✗ Access DENIED for ${selectedModel}\n\nError: ${validation.error.message}\nRequired Plan: ${validation.error.required_plan}\nUpgrade Message: ${validation.error.upgrade_message}`;
+            }
+        }
+
+        // Load plan info when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPlanInfo();
+        });
+    </script>
+</body>
+</html>

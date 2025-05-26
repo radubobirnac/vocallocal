@@ -66,10 +66,10 @@
       "failures": 0
     },
     "unknown": {
-      "calls": 79,
-      "tokens": 84464,
-      "chars": 73366,
-      "time": 664.0833642482758,
+      "calls": 87,
+      "tokens": 85617,
+      "chars": 76837,
+      "time": 687.6415407657623,
       "failures": 0
     },
     "gemini-2.0-flash-lite": {
@@ -152,6 +152,11 @@
     "2025-05-22": {
       "transcription": {
         "unknown": 1724
+      }
+    },
+    "2025-05-26": {
+      "transcription": {
+        "unknown": 1153
       }
     }
   },
@@ -304,6 +309,11 @@
     "2025-05-22-17": {
       "transcription": {
         "unknown": 231
+      }
+    },
+    "2025-05-26-10": {
+      "transcription": {
+        "unknown": 1153
       }
     }
   },

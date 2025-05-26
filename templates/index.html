@@ -38,15 +38,18 @@
               <i class="fas fa-chevron-down dropdown-arrow"></i>
             </button>
             <div id="user-dropdown" class="user-dropdown">
+              <a href="{{ url_for('main.dashboard') }}" class="dropdown-item">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+              </a>
               <a href="{{ url_for('auth.profile') }}" class="dropdown-item">
                 <i class="fas fa-user"></i> Profile
               </a>
               {% if current_user.is_admin %}
               <div class="dropdown-divider"></div>
-              <a href="{{ url_for('admin_dashboard') }}" class="dropdown-item">
+              <a href="{{ url_for('admin.dashboard') }}" class="dropdown-item">
                 <i class="fas fa-chart-line"></i> Admin Dashboard
               </a>
-              <a href="{{ url_for('admin_users') }}" class="dropdown-item">
+              <a href="{{ url_for('admin.users') }}" class="dropdown-item">
                 <i class="fas fa-users"></i> User Management
               </a>
               {% endif %}
@@ -133,10 +136,10 @@
           <div class="form-group">
             <label for="global-transcription-model" class="form-label">Transcription Model:</label>
             <select id="global-transcription-model" class="form-select mt-2">
+              <option value="gemini-2.0-flash-lite" selected>Gemini 2.0 Flash Lite</option>
               <option value="gpt-4o-mini-transcribe">OpenAI GPT-4o Mini</option>
               <option value="gpt-4o-transcribe">OpenAI GPT-4o</option>
               <option value="gemini-2.5-flash-preview-04-17">Gemini 2.5 Flash Preview</option>
-              <option value="gemini" selected>Gemini 2.0 Flash Lite</option>
             </select>
           </div>
 
@@ -145,8 +148,7 @@
             <label for="translation-model-select" class="form-label">Translation Model:</label>
             <select id="translation-model-select" class="form-select mt-2">
               <option value="gemini-2.0-flash-lite" selected>Gemini 2.0 Flash Lite</option>
-              <option value="gemini-2.5-flash">Gemini 2.5 Flash Preview 04-17</option>
-              <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash Preview</option>
             </select>
           </div>
           <!-- End Translation Model Selector -->
@@ -167,7 +169,7 @@
             <label for="interpretation-model-select" class="form-label">AI Interpretation Model:</label>
             <select id="interpretation-model-select" class="form-select mt-2">
               <option value="gemini-2.0-flash-lite" selected>Gemini 2.0 Flash Lite</option>
-              <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash Preview</option>
             </select>
           </div>
           <!-- End Interpretation Model Selector -->
@@ -504,7 +506,7 @@
               </li>
               <li class="flex items-start gap-2">
                 <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                <span>Model selection - Choose from Gemini 2.0 Flash Lite, Gemini 2.5 Flash, Gemini 2.5 Flash TTS, GPT-4o Mini, and more</span>
+                <span>Model selection - Choose from Gemini 2.0 Flash Lite, Gemini 2.5 Flash Preview, Gemini 2.5 Flash TTS, OpenAI GPT-4o Mini, OpenAI GPT-4o, and OpenAI TTS-1</span>
               </li>
               <li class="flex items-start gap-2">
                 <i class="fas fa-check-circle text-green-600 mt-1"></i>
@@ -574,6 +576,17 @@
   <!-- ProgressBar.js for circular progress indicator -->
   <script src="https://cdn.jsdelivr.net/npm/progressbar.js@1.1.0/dist/progressbar.min.js"></script>
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+  <!-- Usage Validation -->
+  <script src="{{ url_for('static', filename='js/usage-validation.js') }}"></script>
+
+  <!-- Plan Access Control -->
+  <script src="{{ url_for('static', filename='js/plan-access-control.js') }}"></script>
+
   <script src="{{ url_for('static', filename='script.js') }}"></script>
   <script src="{{ url_for('static', filename='auth.js') }}"></script>
   <script src="{{ url_for('static', filename='upload-progress.js') }}"></script>
@@ -614,8 +627,34 @@
       </script>
     {% endif %}
   {% endwith %}
+  <!-- Set user role for model access control -->
+  {% if current_user.is_authenticated %}
+  <script>
+    // Set current user information for model access control
+    window.currentUser = {
+      email: '{{ current_user.email }}',
+      username: '{{ current_user.username }}',
+      role: '{{ current_user.role|default("normal_user") }}',
+      is_admin: {{ 'true' if current_user.is_admin else 'false' }}
+    };
+    window.currentUserRole = '{{ current_user.role|default("normal_user") }}';
+  </script>
+  {% else %}
+  <script>
+    // Set default for non-authenticated users
+    window.currentUser = null;
+    window.currentUserRole = 'normal_user';
+  </script>
+  {% endif %}
+
+  <!-- RBAC Model Access Control -->
+  <script src="{{ url_for('static', filename='js/rbac-access-control.js') }}"></script>
+
   <script src="{{ url_for('static', filename='background-processing.js') }}"></script>
   <script src="{{ url_for('static', filename='common.js') }}"></script>
   <script src="{{ url_for('static', filename='auth.js') }}"></script>
+  {% if current_user.is_authenticated %}
+  <script src="{{ url_for('static', filename='js/usage-enforcement.js') }}"></script>
+  {% endif %}
 </body>
 </html>

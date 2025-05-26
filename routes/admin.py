@@ -6,6 +6,29 @@ from datetime import datetime
 from flask import Blueprint, render_template, request, jsonify, session, flash, redirect, url_for
 from flask_login import current_user
 from models.firebase_models import User, UserActivity, Transcription, Translation
+from services.admin_subscription_service import AdminSubscriptionService
+# Import RBAC decorators (will be used as we update routes)
+try:
+    from rbac import require_admin_or_special_auth, require_admin, api_require_admin, check_permission
+except ImportError:
+    # Fallback if RBAC module is not available
+    def require_admin_or_special_auth():
+        def decorator(f):
+            return f
+        return decorator
+
+    def require_admin():
+        def decorator(f):
+            return f
+        return decorator
+
+    def api_require_admin():
+        def decorator(f):
+            return f
+        return decorator
+
+    def check_permission(permission):
+        return False
 
 # Create a blueprint for the admin routes
 bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -67,6 +90,167 @@ def logout():
         session.pop('special_admin_auth')
         flash("You have been logged out from the admin area.", "info")
     return redirect(url_for('main.index'))
+
+@bp.route('/api/users/<user_email>/role', methods=['PUT'])
+def update_user_role(user_email):
+    """API endpoint to update a user's role (admin only)"""
+    # Check if already authenticated with special admin credentials OR has admin role
+    if not (session.get('special_admin_auth') == True or
+            (current_user.is_authenticated and getattr(current_user, 'role', 'normal_user') == 'admin')):
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        data = request.get_json()
+        new_role = data.get('role')
+
+        if not new_role or new_role not in User.VALID_ROLES:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid role. Must be one of: {", ".join(User.VALID_ROLES)}'
+            }), 400
+
+        # Prevent demoting the current admin user if they're using role-based auth
+        if (current_user.is_authenticated and
+            current_user.email == user_email and
+            getattr(current_user, 'role', 'normal_user') == 'admin' and
+            new_role != 'admin'):
+            return jsonify({
+                'success': False,
+                'error': 'Cannot demote yourself from admin role'
+            }), 400
+
+        # Update the user's role
+        success = User.update_user_role(user_email, new_role)
+
+        if success:
+            # Log the role change
+            admin_email = current_user.email if current_user.is_authenticated else 'special_admin@vocallocal.com'
+            UserActivity.log(
+                user_email=admin_email,
+                activity_type='role_change',
+                details=f'Changed role of {user_email} to {new_role}'
+            )
+
+            return jsonify({
+                'success': True,
+                'message': f'User role updated to {new_role}',
+                'new_role': new_role
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to update user role'
+            }), 500
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@bp.route('/api/users/<user_email>/role', methods=['GET'])
+def get_user_role(user_email):
+    """API endpoint to get a user's role (admin only)"""
+    # Check if already authenticated with special admin credentials OR has admin role
+    if not (session.get('special_admin_auth') == True or
+            (current_user.is_authenticated and getattr(current_user, 'role', 'normal_user') == 'admin')):
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        role = User.get_user_role(user_email)
+        if role is None:
+            return jsonify({'error': 'User not found'}), 404
+
+        return jsonify({
+            'email': user_email,
+            'role': role,
+            'valid_roles': User.VALID_ROLES
+        })
+
+    except Exception as e:
+        return jsonify({
+            'error': str(e)
+        }), 500
+
+@bp.route('/api/user/available-models', methods=['GET'])
+def get_user_available_models():
+    """API endpoint to get available models for the current user"""
+    try:
+        from services.model_access_service import ModelAccessService
+        from flask_login import current_user
+
+        if not current_user.is_authenticated:
+            # Return free models for non-authenticated users
+            return jsonify({
+                'transcription_models': [
+                    {'value': 'gemini-2.0-flash-lite', 'label': 'Gemini 2.0 Flash Lite', 'free': True}
+                ],
+                'translation_models': [
+                    {'value': 'gemini-2.0-flash-lite', 'label': 'Gemini 2.0 Flash Lite', 'free': True}
+                ],
+                'user_role': None,
+                'has_premium_access': False
+            })
+
+        # Get user's available models
+        available_models = ModelAccessService.get_available_models(current_user.email)
+        user_role = getattr(current_user, 'role', 'normal_user')
+
+        # Define authorized models by category
+        authorized_models = {
+            'transcription': [
+                {'value': 'gemini-2.0-flash-lite', 'label': 'Gemini 2.0 Flash Lite', 'free': True},
+                {'value': 'gpt-4o-mini-transcribe', 'label': 'OpenAI GPT-4o Mini', 'free': False},
+                {'value': 'gpt-4o-transcribe', 'label': 'OpenAI GPT-4o', 'free': False},
+                {'value': 'gemini-2.5-flash-preview-04-17', 'label': 'Gemini 2.5 Flash Preview', 'free': False}
+            ],
+            'translation': [
+                {'value': 'gemini-2.0-flash-lite', 'label': 'Gemini 2.0 Flash Lite', 'free': True},
+                {'value': 'gemini-2.5-flash', 'label': 'Gemini 2.5 Flash Preview', 'free': False},
+                {'value': 'gpt-4.1-mini', 'label': 'GPT-4.1 Mini', 'free': False}
+            ]
+        }
+
+        # Build response with authorized models only
+        transcription_models = []
+        translation_models = []
+
+        # Add transcription models based on user access
+        for model in authorized_models['transcription']:
+            if model['free'] or user_role in ['admin', 'super_user']:
+                transcription_models.append(model)
+            elif user_role == 'normal_user':
+                # Add locked premium models for normal users
+                locked_model = model.copy()
+                locked_model['label'] += ' 🔒'
+                locked_model['locked'] = True
+                transcription_models.append(locked_model)
+
+        # Add translation models based on user access
+        for model in authorized_models['translation']:
+            if model['free'] or user_role in ['admin', 'super_user']:
+                translation_models.append(model)
+            elif user_role == 'normal_user':
+                # Add locked premium models for normal users
+                locked_model = model.copy()
+                locked_model['label'] += ' 🔒'
+                locked_model['locked'] = True
+                translation_models.append(locked_model)
+
+        return jsonify({
+            'transcription_models': transcription_models,
+            'translation_models': translation_models,
+            'user_role': user_role,
+            'has_premium_access': user_role in ['admin', 'super_user'],
+            'restrictions': available_models.get('restrictions', {})
+        })
+
+    except Exception as e:
+        print(f"Error getting available models: {str(e)}")
+        return jsonify({
+            'error': 'Failed to get available models',
+            'details': str(e)
+        }), 500
 
 @bp.route('/users', methods=['GET', 'POST'])
 def users():
@@ -224,3 +408,213 @@ def test_translations():
         'source_text': sample_text,
         'results': results
     })
+
+@bp.route('/subscription-plans', methods=['GET'])
+def subscription_plans():
+    """Admin page for managing subscription plans"""
+    # Check if already authenticated with special admin credentials
+    if session.get('special_admin_auth') != True:
+        return redirect(url_for('admin.users'))
+
+    try:
+        # Get all subscription plans
+        plans = AdminSubscriptionService.get_all_subscription_plans(include_inactive=True)
+
+        return render_template('admin_subscription_plans.html', plans=plans)
+    except Exception as e:
+        flash(f"Error loading subscription plans: {str(e)}", "danger")
+        return redirect(url_for('admin.users'))
+
+@bp.route('/api/subscription-plans/initialize', methods=['POST'])
+def initialize_subscription_plans():
+    """API endpoint to initialize subscription plans"""
+    # Check if already authenticated with special admin credentials
+    if session.get('special_admin_auth') != True:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        result = AdminSubscriptionService.initialize_subscription_plans()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@bp.route('/api/subscription-plans/force-update', methods=['POST'])
+def force_update_subscription_plans():
+    """API endpoint to force update all subscription plans"""
+    # Check if already authenticated with special admin credentials
+    if session.get('special_admin_auth') != True:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        result = AdminSubscriptionService.force_update_all_plans()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@bp.route('/api/subscription-plans/<plan_id>', methods=['PUT'])
+def update_subscription_plan(plan_id):
+    """API endpoint to update a specific subscription plan"""
+    # Check if already authenticated with special admin credentials
+    if session.get('special_admin_auth') != True:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        updated_data = request.get_json()
+        result = AdminSubscriptionService.update_subscription_plan(plan_id, updated_data)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@bp.route('/api/subscription-plans', methods=['GET'])
+def get_subscription_plans():
+    """API endpoint to get all subscription plans"""
+    # Check if already authenticated with special admin credentials
+    if session.get('special_admin_auth') != True:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        include_inactive = request.args.get('include_inactive', 'false').lower() == 'true'
+        plans = AdminSubscriptionService.get_all_subscription_plans(include_inactive=include_inactive)
+        return jsonify(plans)
+    except Exception as e:
+        return jsonify({
+            'error': str(e)
+        }), 500
+
+
+
+@bp.route('/usage-reset', methods=['GET'])
+def usage_reset():
+    """Admin page for managing monthly usage reset"""
+    # Check if already authenticated with special admin credentials
+    if session.get('special_admin_auth') != True:
+        return redirect(url_for('admin.users'))
+
+    return render_template('admin_usage_reset.html')
+
+@bp.route('/api/usage-statistics', methods=['GET'])
+def get_usage_statistics():
+    """API endpoint to get usage statistics"""
+    # Check if already authenticated with special admin credentials
+    if session.get('special_admin_auth') != True:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        # Import Firebase service
+        from services.firebase_service import FirebaseService
+
+        # Get usage statistics from Firebase function
+        firebase_service = FirebaseService()
+        result = firebase_service.call_function('getUsageStatistics', {})
+
+        if result.get('success'):
+            return jsonify(result['statistics'])
+        else:
+            return jsonify({
+                'error': result.get('message', 'Failed to get usage statistics')
+            }), 500
+
+    except Exception as e:
+        return jsonify({
+            'error': str(e)
+        }), 500
+
+@bp.route('/api/reset-monthly-usage', methods=['POST'])
+def reset_monthly_usage():
+    """API endpoint to trigger monthly usage reset"""
+    # Check if already authenticated with special admin credentials
+    if session.get('special_admin_auth') != True:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        # Get force reset parameter
+        force_reset = request.json.get('forceReset', False) if request.is_json else False
+
+        # Import Firebase service
+        from services.firebase_service import FirebaseService
+
+        # Call the reset function
+        firebase_service = FirebaseService()
+        result = firebase_service.call_function('resetMonthlyUsage', {
+            'forceReset': force_reset
+        })
+
+        if result.get('success'):
+            # Log this admin action
+            if current_user.is_authenticated:
+                user_email = current_user.email
+            else:
+                user_email = 'special_admin@vocallocal.com'
+
+            UserActivity.log(
+                user_email=user_email,
+                activity_type='admin_usage_reset',
+                details=f'Monthly usage reset triggered. Users processed: {result.get("usersProcessed", 0)}'
+            )
+
+            return jsonify(result)
+        else:
+            return jsonify(result), 500
+
+    except Exception as e:
+        error_details = traceback.format_exc()
+        print(f"Usage reset error: {str(e)}\n{error_details}")
+
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@bp.route('/api/check-reset-status', methods=['GET'])
+def check_reset_status():
+    """API endpoint to check if users need usage reset"""
+    # Check if already authenticated with special admin credentials
+    if session.get('special_admin_auth') != True:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        # Import Firebase service
+        from services.firebase_service import FirebaseService
+
+        # Check reset status
+        firebase_service = FirebaseService()
+        result = firebase_service.call_function('checkAndResetUsage', {})
+
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({
+            'error': str(e)
+        }), 500
+
+@bp.route('/api/user/plan', methods=['GET'])
+def get_user_plan():
+    """API endpoint to get current user's plan information"""
+    try:
+        plan_info = get_user_plan_info()
+        return jsonify(plan_info)
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'plan_type': 'free',
+            'accessible_models': {
+                'transcription': ['gemini-2.0-flash-lite'],
+                'translation': ['gemini-2.0-flash-lite'],
+                'tts': ['gemini-2.5-flash-tts'],
+                'interpretation': ['gemini-2.0-flash-lite']
+            }
+        }), 500
+
+@bp.route('/test-plan-access', methods=['GET'])
+def test_plan_access():
+    """Test page for plan access control"""
+    return render_template('test_plan_access.html')
