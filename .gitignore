@@ -1,4 +1,4 @@
-# Security files
+# Security files - API Keys and Credentials
 .env
 .env.*
 !.env.example
@@ -21,6 +21,14 @@ google_api_key.json
 google-api-key.json
 openai_api_key.txt
 openai-api-key.txt
+config.json
+credentials.json
+secrets.json
+api_keys.json
+*.key
+*.crt
+*.p12
+*.pfx
 
 # Python
 __pycache__/
