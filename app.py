@@ -90,6 +90,10 @@ template_folder = os.path.join(os.path.dirname(__file__), 'templates')
 app = Flask(__name__, static_folder=static_folder, template_folder=template_folder)
 app.secret_key = Config.SECRET_KEY
 
+# Initialize cache busting system
+from utils.cache_busting import cache_buster
+cache_buster.init_app(app)
+
 # Configure upload settings
 app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
 # No MAX_CONTENT_LENGTH set to allow larger files

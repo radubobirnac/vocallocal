@@ -6,7 +6,12 @@
   <title>Vocal Local - Speech to Text</title>
 
   <!-- Favicon -->
-  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+  <link rel="icon" href="{{ versioned_url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+
+  <!-- Cache Control Meta Tags -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,8 +22,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='auth.css') }}">
 </head>
 <body>
   <div class="container">
@@ -576,26 +581,29 @@
   <!-- ProgressBar.js for circular progress indicator -->
   <script src="https://cdn.jsdelivr.net/npm/progressbar.js@1.1.0/dist/progressbar.min.js"></script>
 
+  <!-- Cache Manager -->
+  <script src="{{ versioned_url_for('static', filename='cache-manager.js') }}"></script>
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
   <!-- Usage Validation -->
-  <script src="{{ url_for('static', filename='js/usage-validation.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='js/usage-validation.js') }}"></script>
 
   <!-- Plan Access Control -->
-  <script src="{{ url_for('static', filename='js/plan-access-control.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='js/plan-access-control.js') }}"></script>
 
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
-  <script src="{{ url_for('static', filename='auth.js') }}"></script>
-  <script src="{{ url_for('static', filename='upload-progress.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='script.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='auth.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='upload-progress.js') }}"></script>
 
   <!-- Enhanced file size warnings -->
-  <script src="{{ url_for('static', filename='file-size-warning.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='file-size-warning.js') }}"></script>
 
   <!-- Synchronized TTS System -->
-  <script src="{{ url_for('static', filename='sync-tts.js') }}" defer></script>
+  <script src="{{ versioned_url_for('static', filename='sync-tts.js') }}" defer></script>
 
   <!-- TTS Fix Notification -->
   <script>
@@ -648,13 +656,13 @@
   {% endif %}
 
   <!-- RBAC Model Access Control -->
-  <script src="{{ url_for('static', filename='js/rbac-access-control.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='js/rbac-access-control.js') }}"></script>
 
-  <script src="{{ url_for('static', filename='background-processing.js') }}"></script>
-  <script src="{{ url_for('static', filename='common.js') }}"></script>
-  <script src="{{ url_for('static', filename='auth.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='background-processing.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='common.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='auth.js') }}"></script>
   {% if current_user.is_authenticated %}
-  <script src="{{ url_for('static', filename='js/usage-enforcement.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='js/usage-enforcement.js') }}"></script>
   {% endif %}
 </body>
 </html>

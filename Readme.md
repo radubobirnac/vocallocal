@@ -14,6 +14,17 @@ This guide provides step-by-step instructions for setting up the VocalLocal proj
 - 🔧 **Improved Dashboard Stability**: Dashboard now handles Firebase initialization errors gracefully
 - 🔧 **Better Environment Configuration**: Added FIREBASE_STORAGE_BUCKET to environment configuration
 
+### Cache Busting Implementation (26/05/2025)
+
+- 🚀 **Comprehensive Cache Busting System**: Implemented automatic cache-busting for all static assets (CSS, JavaScript files)
+- 🚀 **Version-Based URLs**: Static files now include version parameters based on file modification time
+- 🚀 **Service Worker Integration**: Added service worker for intelligent caching strategies and update notifications
+- 🚀 **HTTP Cache Headers**: Proper cache control headers for different file types and scenarios
+- 🚀 **Browser Compatibility**: Meta tags and headers to prevent cache-related functionality issues
+- 🚀 **Automatic Updates**: Users receive notifications when new versions are available
+- 🚀 **Security Headers**: Added comprehensive security headers for better protection
+- 🚀 **Debug Tools**: Built-in cache management tools for developers and troubleshooting
+
 ### Previous Updates (20/05/2023)
 
 - Implemented Google OAuth authentication for user login
@@ -270,6 +281,18 @@ If transcript history or user authentication isn't working:
 If the port is already in use:
 - Change the port number in the command: `python app.py --port 5002`
 - Or kill the process using the port and try again
+
+### Cache Issues
+
+If users are experiencing functionality problems due to cached files:
+- The cache busting system should automatically handle this
+- Users can manually clear cache using browser settings
+- For debugging, use browser console commands:
+  - `cacheControls.checkCacheStatus()` - View cache contents
+  - `cacheControls.clearCache()` - Clear all caches
+  - `cacheControls.forceUpdate()` - Force service worker update
+- Check if service worker is registered: `navigator.serviceWorker.getRegistrations()`
+- For detailed troubleshooting, see `CACHE_BUSTING_GUIDE.md`
 
 ## Deployment
 

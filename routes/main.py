@@ -605,20 +605,44 @@ def dashboard():
 
 @bp.route('/static/<path:path>')
 def serve_static(path):
-    """Serve static files."""
+    """Serve static files with proper cache headers."""
+    from flask import request, make_response
+    import time
+
     try:
         # First try to serve from the static directory
-        return send_from_directory('static', path)
+        response = make_response(send_from_directory('static', path))
     except Exception as e:
         # If that fails, try to serve from the vocallocal/static directory
         try:
-            return send_from_directory('vocallocal/static', path)
+            response = make_response(send_from_directory('vocallocal/static', path))
         except Exception as e2:
             # If that also fails, try with a different path
             try:
                 import os
                 static_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static')
-                return send_from_directory(static_folder, path)
+                response = make_response(send_from_directory(static_folder, path))
             except Exception as e3:
                 print(f"Error serving static file {path}: {str(e3)}")
                 return f"Static file {path} not found", 404
+
+    # Add cache control headers based on whether version parameter is present
+    if 'v' in request.args:
+        # Versioned files - cache for 1 year
+        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        response.headers['Expires'] = time.strftime(
+            '%a, %d %b %Y %H:%M:%S GMT',
+            time.gmtime(time.time() + 31536000)
+        )
+    else:
+        # Non-versioned files - cache for 1 hour
+        response.headers['Cache-Control'] = 'public, max-age=3600'
+        response.headers['Expires'] = time.strftime(
+            '%a, %d %b %Y %H:%M:%S GMT',
+            time.gmtime(time.time() + 3600)
+        )
+
+    # Add security headers
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+
+    return response
