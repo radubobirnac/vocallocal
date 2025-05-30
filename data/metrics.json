@@ -66,10 +66,10 @@
       "failures": 0
     },
     "unknown": {
-      "calls": 87,
-      "tokens": 85617,
-      "chars": 76837,
-      "time": 687.6415407657623,
+      "calls": 95,
+      "tokens": 86521,
+      "chars": 79553,
+      "time": 703.5450961589813,
       "failures": 0
     },
     "gemini-2.0-flash-lite": {
@@ -84,6 +84,13 @@
       "tokens": 0,
       "chars": 64,
       "time": 1.6433906555175781,
+      "failures": 0
+    },
+    "en": {
+      "calls": 14,
+      "tokens": 6439,
+      "chars": 19328,
+      "time": 143.22615265846252,
       "failures": 0
     }
   },
@@ -157,6 +164,12 @@
     "2025-05-26": {
       "transcription": {
         "unknown": 1153
+      }
+    },
+    "2025-05-30": {
+      "transcription": {
+        "unknown": 904,
+        "en": 6439
       }
     }
   },
@@ -315,6 +328,47 @@
       "transcription": {
         "unknown": 1153
       }
+    },
+    "2025-05-30-13": {
+      "transcription": {
+        "unknown": 494
+      }
+    },
+    "2025-05-30-14": {
+      "transcription": {
+        "unknown": 362
+      }
+    },
+    "2025-05-30-17": {
+      "transcription": {
+        "unknown": 1
+      }
+    },
+    "2025-05-30-18": {
+      "transcription": {
+        "unknown": 46
+      }
+    },
+    "2025-05-30-19": {
+      "transcription": {
+        "unknown": 1,
+        "en": 557
+      }
+    },
+    "2025-05-30-21": {
+      "transcription": {
+        "en": 2548
+      }
+    },
+    "2025-05-30-22": {
+      "transcription": {
+        "en": 3333
+      }
+    },
+    "2025-05-30-23": {
+      "transcription": {
+        "en": 1
+      }
     }
   },
   "tts": {
@@ -326,10 +380,10 @@
       "failures": 0
     },
     "gpt4o-mini": {
-      "calls": 20,
-      "tokens": 2939,
-      "chars": 11787,
-      "time": 197.08012557029724,
+      "calls": 21,
+      "tokens": 2974,
+      "chars": 11927,
+      "time": 201.0654423236847,
       "failures": 3
     }
   },

@@ -1013,19 +1013,37 @@ function updateModelDropdown(selectElement, models, modelType) {
 
   // Store original transcription when received from API
   function updateTranscript(elementId, text) {
-    const transcriptEl = document.getElementById(elementId);
-    if (!transcriptEl) return;
+    console.log(`updateTranscript called with elementId: ${elementId}, text length: ${text ? text.length : 0}`);
 
+    const transcriptEl = document.getElementById(elementId);
+    if (!transcriptEl) {
+      console.error(`❌ Element with ID '${elementId}' not found!`);
+      return;
+    }
+
+    console.log(`✅ Found element ${elementId}:`, transcriptEl);
+
+    // Update the element value
     transcriptEl.value = text;
     transcriptEl.dataset.originalText = text; // Store original for undo
 
-    console.log(`Updated transcript ${elementId} with ${text.length} characters`);
+    console.log(`✅ Updated transcript ${elementId} with ${text.length} characters`);
+    console.log(`Text preview: "${text.substring(0, 100)}${text.length > 100 ? '...' : ''}"`);
+
+    // Trigger change event for any listeners
+    const event = new Event('change');
+    transcriptEl.dispatchEvent(event);
+    console.log(`✅ Triggered change event for ${elementId}`);
 
     // If this is the basic transcript, also update the interpretation
     if (elementId === 'basic-transcript') {
+      console.log('🔄 Updating interpretation for basic transcript');
       updateInterpretation(text);
     }
   }
+
+  // Make updateTranscript globally available for other scripts
+  window.updateTranscript = updateTranscript;
 
   // Update interpretation based on transcript text
   async function updateInterpretation(text) {
@@ -2401,6 +2419,8 @@ function updateModelDropdown(selectElement, models, modelType) {
 
   // Function to poll for transcription job status
   async function pollTranscriptionStatus(jobId, elementId) {
+    console.log(`🔄 Starting polling for job ${jobId}, target element: ${elementId}`);
+
     const maxAttempts = 60; // 5 minutes (5s intervals)
     let attempts = 0;
 
@@ -2408,22 +2428,35 @@ function updateModelDropdown(selectElement, models, modelType) {
 
     const checkStatus = async () => {
       try {
+        console.log(`📡 Checking status for job ${jobId}, attempt ${attempts + 1}/${maxAttempts}`);
+
         const response = await fetch(`/api/transcription_status/${jobId}`);
         const status = await response.json();
 
+        console.log(`📋 Received status for job ${jobId}:`, status);
+
         if (status.status === 'completed' && status.result) {
-          // Extract the text from the result
-          const transcriptionText = status.result.text || "Transcription completed but no text was returned.";
+          // Extract the text from the result - handle both string and object formats
+          let transcriptionText;
 
-          // Update transcript with the text
-          const transcriptElement = document.getElementById(elementId);
-          if (transcriptElement) {
-            transcriptElement.value = transcriptionText;
-
-            // Trigger change event for any listeners
-            const event = new Event('change');
-            transcriptElement.dispatchEvent(event);
+          if (typeof status.result === 'string') {
+            // Direct string result (used by background processing)
+            transcriptionText = status.result;
+          } else if (status.result.text) {
+            // Object with text property (used by regular processing)
+            transcriptionText = status.result.text;
+          } else {
+            // Fallback for unexpected formats
+            transcriptionText = status.result.toString() || "Transcription completed but no text was returned.";
           }
+
+          console.log('Transcription result format:', typeof status.result, 'Text length:', transcriptionText.length);
+
+          // Update transcript using the proper updateTranscript function
+          // This ensures all related functionality (original text storage, interpretation updates) works correctly
+          updateTranscript(elementId, transcriptionText);
+
+          console.log(`Successfully updated transcript element ${elementId} with ${transcriptionText.length} characters`);
 
           showStatus('Transcription complete!', 'success');
           return true;

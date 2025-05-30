@@ -52,9 +52,9 @@ class RobustChunker:
         # Read from environment variables with fallbacks to provided values or defaults
         self.input_path = input_path or os.environ.get('INPUT_PATH')
         self.output_dir = output_dir or os.environ.get('OUTPUT_DIR') or tempfile.mkdtemp()
-        self.chunk_seconds = int(chunk_seconds or os.environ.get('CHUNK_SECONDS', 300))
-        self.max_retries = int(max_retries or os.environ.get('MAX_RETRIES', 2))
-        self.retry_delay = int(retry_delay or os.environ.get('RETRY_DELAY', 2))
+        self.chunk_seconds = int(chunk_seconds or os.environ.get('CHUNK_SECONDS', 180))  # Reduced to 3 minutes
+        self.max_retries = int(max_retries or os.environ.get('MAX_RETRIES', 3))  # Increased retries
+        self.retry_delay = int(retry_delay or os.environ.get('RETRY_DELAY', 3))  # Increased delay
         self.transcription_service = transcription_service
 
         # Determine input file extension
@@ -281,7 +281,8 @@ class RobustChunker:
 
     def transcribe_chunks_parallel(self, chunk_files: List[str], language: str, model: str) -> Tuple[bool, List[Tuple[str, str]], str]:
         """
-        Transcribe chunks in parallel using a thread pool.
+        Transcribe chunks sequentially with delays to avoid rate limiting.
+        Changed from parallel to sequential processing for better reliability.
 
         Args:
             chunk_files: List of chunk file paths
@@ -298,34 +299,39 @@ class RobustChunker:
             results = []
             failed_chunks = []
 
-            # Use a thread pool to process chunks in parallel
-            with ThreadPoolExecutor(max_workers=4) as executor:
-                # Submit all transcription tasks
-                future_to_chunk = {
-                    executor.submit(self.transcribe_chunk, chunk_file, language, model): chunk_file
-                    for chunk_file in chunk_files
-                }
+            # Process chunks sequentially with delays to avoid rate limiting
+            for i, chunk_file in enumerate(chunk_files):
+                try:
+                    # Add delay between chunks (except for the first one)
+                    if i > 0:
+                        delay = min(3 + i * 0.5, 10)  # Progressive delay, max 10 seconds
+                        logger.info(f"Waiting {delay} seconds before processing chunk {i+1}")
+                        time.sleep(delay)
 
-                # Process results as they complete
-                for future in as_completed(future_to_chunk):
-                    chunk_file = future_to_chunk[future]
-                    try:
-                        success, transcription, error = future.result()
-                        if success:
-                            results.append((chunk_file, transcription))
-                            logger.info(f"Successfully transcribed {os.path.basename(chunk_file)}")
-                        else:
-                            failed_chunks.append((chunk_file, error))
-                            logger.error(f"Failed to transcribe {os.path.basename(chunk_file)}: {error}")
-                    except Exception as e:
-                        failed_chunks.append((chunk_file, str(e)))
-                        logger.error(f"Exception while transcribing {os.path.basename(chunk_file)}: {str(e)}")
+                    logger.info(f"Processing chunk {i+1}/{len(chunk_files)}: {os.path.basename(chunk_file)}")
+
+                    success, transcription, error = self.transcribe_chunk(chunk_file, language, model)
+                    if success:
+                        results.append((chunk_file, transcription))
+                        logger.info(f"Successfully transcribed {os.path.basename(chunk_file)}")
+                    else:
+                        failed_chunks.append((chunk_file, error))
+                        logger.error(f"Failed to transcribe {os.path.basename(chunk_file)}: {error}")
+
+                except Exception as e:
+                    failed_chunks.append((chunk_file, str(e)))
+                    logger.error(f"Exception while transcribing {os.path.basename(chunk_file)}: {str(e)}")
 
             # Check if any chunks failed
             if failed_chunks:
                 error_message = f"Failed to transcribe {len(failed_chunks)} chunks: " + \
                                ", ".join([os.path.basename(c) for c, _ in failed_chunks])
-                return False, results, error_message
+                # Return partial results if we have some successful transcriptions
+                if results:
+                    logger.warning(f"Returning partial results: {len(results)} successful, {len(failed_chunks)} failed")
+                    return True, results, f"Partial success: {error_message}"
+                else:
+                    return False, results, error_message
 
             # Sort results by chunk file name to maintain original order
             results.sort(key=lambda x: os.path.basename(x[0]))

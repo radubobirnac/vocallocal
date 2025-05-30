@@ -119,7 +119,12 @@ class TranslationService(BaseService):
             model_name = "models/gemini-2.0-flash-lite"  # Default model
             display_model = translation_model  # For metrics tracking
             
-            if 'gemini-2.5-flash' in translation_model or translation_model == 'gemini-2.5-flash':
+            if translation_model == 'gemini-2.5-flash-preview-04-17':
+                # This is the exact model ID used in the UI for "Gemini 2.5 Flash Preview"
+                model_name = "models/gemini-2.5-flash-preview-04-17"
+                display_model = "gemini-2.5-flash-preview-04-17"
+                print(f"Using Gemini 2.5 Flash Preview model for translation")
+            elif 'gemini-2.5-flash' in translation_model or translation_model == 'gemini-2.5-flash':
                 # Use the full model name from the available models list
                 model_name = "models/gemini-2.5-flash-preview-04-17"
                 display_model = "gemini-2.5-flash"

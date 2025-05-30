@@ -56,52 +56,58 @@ def text_to_speech():
 
     # Validate usage for authenticated users (with timeout protection)
     try:
-        # Estimate TTS duration (rough estimate: 1 minute per 150 words)
-        word_count = len(text.split())
-        estimated_minutes = max(0.1, word_count / 150.0)  # Conservative estimate
+        # Ensure we have a valid user email before proceeding
+        user_email = getattr(current_user, 'email', None) if current_user and current_user.is_authenticated else None
+        if not user_email and current_user and current_user.is_authenticated:
+            print(f"Warning: Authenticated user has no email attribute for TTS usage validation.")
 
-        # Fast usage validation with cross-platform timeout protection (non-blocking)
-        import threading
-        validation = None
-        usage_error = None
+        if user_email:
+            # Estimate TTS duration (rough estimate: 1 minute per 150 words)
+            word_count = len(text.split())
+            estimated_minutes = max(0.1, word_count / 150.0)  # Conservative estimate
 
-        def validate_usage():
-            nonlocal validation, usage_error
-            try:
-                from services.usage_validation_service import UsageValidationService
-                validation = UsageValidationService.validate_tts_usage(
-                    current_user.email,
-                    estimated_minutes
-                )
-            except Exception as e:
-                usage_error = e
+            # Fast usage validation with cross-platform timeout protection (non-blocking)
+            import threading
+            validation = None
+            usage_error = None
 
-        # Start validation in a separate thread with timeout
-        usage_thread = threading.Thread(target=validate_usage)
-        usage_thread.daemon = True
-        usage_thread.start()
-        usage_thread.join(timeout=3.0)  # 3-second timeout
+            def validate_usage():
+                nonlocal validation, usage_error
+                try:
+                    from services.usage_validation_service import UsageValidationService
+                    validation = UsageValidationService.validate_tts_usage(
+                        user_email,
+                        estimated_minutes
+                    )
+                except Exception as e:
+                    usage_error = e
 
-        if usage_thread.is_alive():
-            # Usage validation timed out
-            print(f"TTS usage validation timeout for {current_user.email}. Continuing with TTS.")
-        elif usage_error:
-            # Usage validation failed with error
-            print(f"TTS usage validation error: {str(usage_error)}")
-            print("Continuing with TTS due to validation service error (graceful degradation)")
-        elif validation:
-            # Usage validation completed
-            if not validation['allowed']:
-                # For production stability, log the limit but continue with TTS
-                # This prevents blocking users due to validation service issues
-                print(f"TTS usage limit reached for {current_user.email}: {validation['message']}")
-                print(f"Continuing with TTS for service stability")
-                # Note: In a future update, you may want to enforce limits more strictly
+            # Start validation in a separate thread with timeout
+            usage_thread = threading.Thread(target=validate_usage)
+            usage_thread.daemon = True
+            usage_thread.start()
+            usage_thread.join(timeout=3.0)  # 3-second timeout
+
+            if usage_thread.is_alive():
+                # Usage validation timed out
+                print(f"TTS usage validation timeout for {user_email}. Continuing with TTS.")
+            elif usage_error:
+                # Usage validation failed with error
+                print(f"TTS usage validation error: {str(usage_error)}")
+                print("Continuing with TTS due to validation service error (graceful degradation)")
+            elif validation:
+                # Usage validation completed
+                if not validation['allowed']:
+                    # For production stability, log the limit but continue with TTS
+                    # This prevents blocking users due to validation service issues
+                    print(f"TTS usage limit reached for {user_email}: {validation['message']}")
+                    print(f"Continuing with TTS for service stability")
+                    # Note: In a future update, you may want to enforce limits more strictly
+                else:
+                    print(f"TTS usage validation passed: {validation['message']}")
             else:
-                print(f"TTS usage validation passed: {validation['message']}")
-        else:
-            # No validation result received
-            print(f"TTS usage validation incomplete for {current_user.email}. Continuing with TTS.")
+                # No validation result received
+                print(f"TTS usage validation incomplete for {user_email}. Continuing with TTS.")
 
     except Exception as validation_error:
         print(f"TTS usage validation error: {str(validation_error)}")

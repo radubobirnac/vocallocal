@@ -63,56 +63,77 @@ def transcribe_audio():
         # Get model from form or use default
         requested_model = request.form.get('model', 'gemini-2.0-flash-lite')
 
+        # Fix model routing - ensure proper mapping between frontend and backend
+        model_mapping = {
+            'gpt-4o-mini-transcribe': 'gpt-4o-mini-transcribe',
+            'gpt-4o-transcribe': 'gpt-4o-transcribe',
+            'gemini-2.5-flash-preview-04-17': 'gemini-2.5-flash-preview-04-17',
+            'gemini-2.0-flash-lite': 'gemini-2.0-flash-lite'
+        }
+
+        # Map the requested model to ensure correct routing
+        mapped_model = model_mapping.get(requested_model, 'gemini-2.0-flash-lite')
+        if mapped_model != requested_model:
+            print(f"Model mapping: {requested_model} -> {mapped_model}")
+
+        requested_model = mapped_model
+
         # Fast model validation for authenticated users (with timeout protection)
-        if current_user.is_authenticated:
+        if current_user and current_user.is_authenticated:
             try:
-                # Quick model validation with cross-platform timeout protection
-                import threading
-                import time
-
-                validation_result = None
-                validation_error = None
-
-                def validate_model():
-                    nonlocal validation_result, validation_error
-                    try:
-                        validation_result = ModelAccessService.validate_model_request(requested_model, current_user.email)
-                    except Exception as e:
-                        validation_error = e
-
-                # Start validation in a separate thread with timeout
-                validation_thread = threading.Thread(target=validate_model)
-                validation_thread.daemon = True
-                validation_thread.start()
-                validation_thread.join(timeout=2.0)  # 2-second timeout
-
-                if validation_thread.is_alive():
-                    # Validation timed out
-                    print(f"Model validation timeout. Using fallback model for {current_user.email}")
+                # Ensure we have a valid user email before proceeding
+                user_email = getattr(current_user, 'email', None)
+                if not user_email:
+                    print(f"Warning: Authenticated user has no email attribute. Using fallback model.")
                     model = 'gemini-2.0-flash-lite'
-                elif validation_error:
-                    # Validation failed with error
-                    print(f"Model validation error: {str(validation_error)}")
-                    model = 'gemini-2.0-flash-lite'
-                elif validation_result:
-                    # Validation completed successfully
-                    if not validation_result['valid']:
-                        # If model access is denied, use suggested model or fallback
-                        if validation_result.get('suggested_model'):
-                            model = validation_result['suggested_model']
-                            print(f"Model access denied for {requested_model}. Using suggested model: {model}")
-                        else:
-                            # Use fallback model instead of returning error to avoid blocking transcription
-                            model = 'gemini-2.0-flash-lite'
-                            print(f"Model access denied for {requested_model}. Using fallback model: {model}")
-                    else:
-                        model = requested_model
-
-                    print(f"Model access validated: {model} for transcription (user: {current_user.email})")
                 else:
-                    # No result received
-                    print(f"Model validation incomplete. Using fallback model for {current_user.email}")
-                    model = 'gemini-2.0-flash-lite'
+                    # Quick model validation with cross-platform timeout protection
+                    import threading
+                    import time
+
+                    validation_result = None
+                    validation_error = None
+
+                    def validate_model():
+                        nonlocal validation_result, validation_error
+                        try:
+                            validation_result = ModelAccessService.validate_model_request(requested_model, user_email)
+                        except Exception as e:
+                            validation_error = e
+
+                    # Start validation in a separate thread with timeout
+                    validation_thread = threading.Thread(target=validate_model)
+                    validation_thread.daemon = True
+                    validation_thread.start()
+                    validation_thread.join(timeout=2.0)  # 2-second timeout
+
+                    if validation_thread.is_alive():
+                        # Validation timed out
+                        print(f"Model validation timeout. Using fallback model for {user_email}")
+                        model = 'gemini-2.0-flash-lite'
+                    elif validation_error:
+                        # Validation failed with error
+                        print(f"Model validation error: {str(validation_error)}")
+                        model = 'gemini-2.0-flash-lite'
+                    elif validation_result:
+                        # Validation completed successfully
+                        if not validation_result['valid']:
+                            # If model access is denied, use suggested model or fallback
+                            if validation_result.get('suggested_model'):
+                                model = validation_result['suggested_model']
+                                print(f"Model access denied for {requested_model}. Using suggested model: {model}")
+                            else:
+                                # Use fallback model instead of returning error to avoid blocking transcription
+                                model = 'gemini-2.0-flash-lite'
+                                print(f"Model access denied for {requested_model}. Using fallback model: {model}")
+                        else:
+                            model = requested_model
+
+                        print(f"Model access validated: {model} for transcription (user: {user_email})")
+                    else:
+                        # No result received
+                        print(f"Model validation incomplete. Using fallback model for {user_email}")
+                        model = 'gemini-2.0-flash-lite'
 
             except Exception as validation_error:
                 print(f"Model validation error: {str(validation_error)}")
@@ -134,60 +155,65 @@ def transcribe_audio():
 
                 # Estimate audio duration for usage validation (if authenticated)
                 estimated_minutes = 0
-                if current_user.is_authenticated:
+                if current_user and current_user.is_authenticated:
                     try:
-                        # Rough estimation: 1MB ≈ 1 minute of audio (varies by quality)
-                        file_size_mb = len(audio_content) / (1024 * 1024)
-                        estimated_minutes = max(0.1, file_size_mb * 0.8)  # Conservative estimate
-
-                        # Fast usage validation with cross-platform timeout protection (non-blocking)
-                        validation = None
-                        usage_error = None
-
-                        def validate_usage():
-                            nonlocal validation, usage_error
-                            try:
-                                from services.usage_validation_service import UsageValidationService
-                                validation = UsageValidationService.validate_transcription_usage(
-                                    current_user.email,
-                                    estimated_minutes
-                                )
-                            except Exception as e:
-                                usage_error = e
-
-                        # Start validation in a separate thread with timeout
-                        usage_thread = threading.Thread(target=validate_usage)
-                        usage_thread.daemon = True
-                        usage_thread.start()
-                        usage_thread.join(timeout=3.0)  # 3-second timeout
-
-                        if usage_thread.is_alive():
-                            # Usage validation timed out
-                            print(f"Usage validation timeout for {current_user.email}. Continuing with transcription.")
-                        elif usage_error:
-                            # Usage validation failed with error
-                            print(f"Usage validation error: {str(usage_error)}")
-                            print("Continuing with transcription due to validation service error (graceful degradation)")
-                        elif validation:
-                            # Usage validation completed
-                            if not validation['allowed']:
-                                # For production stability, log the limit but continue with transcription
-                                # This prevents blocking users due to validation service issues
-                                print(f"Usage limit reached for {current_user.email}: {validation['message']}")
-                                print(f"Continuing with transcription for service stability")
-                                # Note: In a future update, you may want to enforce limits more strictly
-                            else:
-                                print(f"Usage validation passed: {validation['message']}")
+                        # Ensure we have a valid user email before proceeding
+                        user_email = getattr(current_user, 'email', None)
+                        if not user_email:
+                            print(f"Warning: Authenticated user has no email attribute for usage validation.")
                         else:
-                            # No validation result received
-                            print(f"Usage validation incomplete for {current_user.email}. Continuing with transcription.")
+                            # Rough estimation: 1MB ≈ 1 minute of audio (varies by quality)
+                            file_size_mb = len(audio_content) / (1024 * 1024)
+                            estimated_minutes = max(0.1, file_size_mb * 0.8)  # Conservative estimate
+
+                            # Fast usage validation with cross-platform timeout protection (non-blocking)
+                            validation = None
+                            usage_error = None
+
+                            def validate_usage():
+                                nonlocal validation, usage_error
+                                try:
+                                    from services.usage_validation_service import UsageValidationService
+                                    validation = UsageValidationService.validate_transcription_usage(
+                                        user_email,
+                                        estimated_minutes
+                                    )
+                                except Exception as e:
+                                    usage_error = e
+
+                            # Start validation in a separate thread with timeout
+                            usage_thread = threading.Thread(target=validate_usage)
+                            usage_thread.daemon = True
+                            usage_thread.start()
+                            usage_thread.join(timeout=3.0)  # 3-second timeout
+
+                            if usage_thread.is_alive():
+                                # Usage validation timed out
+                                print(f"Usage validation timeout for {user_email}. Continuing with transcription.")
+                            elif usage_error:
+                                # Usage validation failed with error
+                                print(f"Usage validation error: {str(usage_error)}")
+                                print("Continuing with transcription due to validation service error (graceful degradation)")
+                            elif validation:
+                                # Usage validation completed
+                                if not validation['allowed']:
+                                    # For production stability, log the limit but continue with transcription
+                                    # This prevents blocking users due to validation service issues
+                                    print(f"Usage limit reached for {user_email}: {validation['message']}")
+                                    print(f"Continuing with transcription for service stability")
+                                    # Note: In a future update, you may want to enforce limits more strictly
+                                else:
+                                    print(f"Usage validation passed: {validation['message']}")
+                            else:
+                                # No validation result received
+                                print(f"Usage validation incomplete for {user_email}. Continuing with transcription.")
 
                     except Exception as validation_error:
                         print(f"Usage validation error: {str(validation_error)}")
                         print("Continuing with transcription due to validation service error (graceful degradation)")
 
                 # Check if this is a free trial request (non-authenticated user)
-                if not current_user.is_authenticated:
+                if not current_user or not current_user.is_authenticated:
                     # Check file size for free trial (max 25MB)
                     file_size_mb = len(audio_content) / (1024 * 1024)
                     if file_size_mb > 25:
@@ -250,50 +276,55 @@ def transcribe_audio():
 
                 # Save transcription to Firebase if user is authenticated
                 try:
-                    if current_user.is_authenticated:
-                        # Extract text from transcription if it's a dict
-                        text_to_save = transcription
-                        if isinstance(transcription, dict) and 'text' in transcription:
-                            text_to_save = transcription['text']
+                    if current_user and current_user.is_authenticated:
+                        # Ensure we have a valid user email before proceeding
+                        user_email = getattr(current_user, 'email', None)
+                        if not user_email:
+                            print(f"Warning: Authenticated user has no email attribute for Firebase saving.")
+                        else:
+                            # Extract text from transcription if it's a dict
+                            text_to_save = transcription
+                            if isinstance(transcription, dict) and 'text' in transcription:
+                                text_to_save = transcription['text']
 
-                        print(f"Attempting to save transcription to Firebase for user {current_user.email}")
-                        print(f"Text length: {len(text_to_save) if text_to_save else 'None'}")
-                        print(f"Language: {language}")
-                        print(f"Model: {model}")
+                            print(f"Attempting to save transcription to Firebase for user {user_email}")
+                            print(f"Text length: {len(text_to_save) if text_to_save else 'None'}")
+                            print(f"Language: {language}")
+                            print(f"Model: {model}")
 
-                        Transcription.save(
-                            user_email=current_user.email,
-                            text=text_to_save,
-                            language=language,
-                            model=model,
-                            audio_duration=None  # Could estimate this
-                        )
-                        print(f"Successfully saved transcription to Firebase for user {current_user.email}")
+                            Transcription.save(
+                                user_email=user_email,
+                                text=text_to_save,
+                                language=language,
+                                model=model,
+                                audio_duration=None  # Could estimate this
+                            )
+                            print(f"Successfully saved transcription to Firebase for user {user_email}")
 
-                        # Track usage after successful transcription (asynchronous, non-blocking)
-                        try:
-                            # Use estimated minutes for usage tracking
-                            import threading
+                            # Track usage after successful transcription (asynchronous, non-blocking)
+                            try:
+                                # Use estimated minutes for usage tracking
+                                import threading
 
-                            def track_usage_async():
-                                try:
-                                    from services.user_account_service import UserAccountService
-                                    UserAccountService.track_usage(
-                                        user_id=current_user.email.replace('.', ','),
-                                        service_type='transcriptionMinutes',
-                                        amount=estimated_minutes
-                                    )
-                                    print(f"Usage tracked: {estimated_minutes} transcription minutes for {current_user.email}")
-                                except Exception as async_usage_error:
-                                    print(f"Async usage tracking error: {str(async_usage_error)}")
+                                def track_usage_async():
+                                    try:
+                                        from services.user_account_service import UserAccountService
+                                        UserAccountService.track_usage(
+                                            user_id=user_email.replace('.', ','),
+                                            service_type='transcriptionMinutes',
+                                            amount=estimated_minutes
+                                        )
+                                        print(f"Usage tracked: {estimated_minutes} transcription minutes for {user_email}")
+                                    except Exception as async_usage_error:
+                                        print(f"Async usage tracking error: {str(async_usage_error)}")
 
-                            # Start usage tracking in background thread to avoid blocking response
-                            threading.Thread(target=track_usage_async, daemon=True).start()
-                            print(f"Started async usage tracking for {current_user.email}")
+                                # Start usage tracking in background thread to avoid blocking response
+                                threading.Thread(target=track_usage_async, daemon=True).start()
+                                print(f"Started async usage tracking for {user_email}")
 
-                        except Exception as usage_error:
-                            print(f"Error starting usage tracking: {str(usage_error)}")
-                            # Don't fail the request if usage tracking fails
+                            except Exception as usage_error:
+                                print(f"Error starting usage tracking: {str(usage_error)}")
+                                # Don't fail the request if usage tracking fails
                 except Exception as auth_error:
                     # Just log the error but continue - don't fail the transcription if saving to Firebase fails
                     print(f"Error saving transcription to Firebase: {str(auth_error)}")
@@ -375,30 +406,46 @@ def transcription_status(job_id):
     # Log the status for debugging
     current_app.logger.info(f"Job status for {job_id}: {status}")
 
+    # Additional logging for result format debugging
+    if status.get('status') == 'completed' and status.get('result'):
+        result = status.get('result')
+        result_type = type(result).__name__
+        if isinstance(result, str):
+            current_app.logger.info(f"Job {job_id} result is string with length: {len(result)}")
+        elif isinstance(result, dict):
+            current_app.logger.info(f"Job {job_id} result is dict with keys: {list(result.keys())}")
+        else:
+            current_app.logger.info(f"Job {job_id} result is {result_type}: {result}")
+
     # If the job is completed and the user is authenticated, save to Firebase
-    if status.get('status') == 'completed' and current_user.is_authenticated:
+    if status.get('status') == 'completed' and current_user and current_user.is_authenticated:
         try:
-            # Extract result from status
-            result = status.get('result')
-            if result:
-                # Get text from result
-                text_to_save = result
-                if isinstance(result, dict) and 'text' in result:
-                    text_to_save = result['text']
+            # Ensure we have a valid user email before proceeding
+            user_email = getattr(current_user, 'email', None)
+            if not user_email:
+                current_app.logger.warning("Authenticated user has no email attribute for background transcription saving.")
+            else:
+                # Extract result from status
+                result = status.get('result')
+                if result:
+                    # Get text from result
+                    text_to_save = result
+                    if isinstance(result, dict) and 'text' in result:
+                        text_to_save = result['text']
 
-                # Get language and model from request parameters if available
-                language = request.args.get('language', 'en')
-                model = request.args.get('model', 'gemini-2.0-flash-lite')
+                    # Get language and model from request parameters if available
+                    language = request.args.get('language', 'en')
+                    model = request.args.get('model', 'gemini-2.0-flash-lite')
 
-                # Save to Firebase
-                Transcription.save(
-                    user_email=current_user.email,
-                    text=text_to_save,
-                    language=language,
-                    model=model,
-                    audio_duration=None
-                )
-                current_app.logger.info(f"Saved background transcription to Firebase for user {current_user.email}")
+                    # Save to Firebase
+                    Transcription.save(
+                        user_email=user_email,
+                        text=text_to_save,
+                        language=language,
+                        model=model,
+                        audio_duration=None
+                    )
+                    current_app.logger.info(f"Saved background transcription to Firebase for user {user_email}")
         except Exception as e:
             current_app.logger.error(f"Error saving background transcription to Firebase: {str(e)}")
 

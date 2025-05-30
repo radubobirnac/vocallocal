@@ -259,7 +259,10 @@ class TranslationService(BaseService):
             model_name = self.default_gemini_model
             
         # Handle model name formatting
-        if 'gemini-2.5-flash' in model_name or model_name == 'gemini-2.5-flash':
+        if model_name == 'gemini-2.5-flash-preview-04-17':
+            # This is the exact model ID used in the UI for "Gemini 2.5 Flash Preview"
+            model_name = "models/gemini-2.5-flash-preview-04-17"
+        elif 'gemini-2.5-flash' in model_name or model_name == 'gemini-2.5-flash':
             model_name = "models/gemini-2.5-flash-preview-04-17"
         elif 'gemini-2.5-pro' in model_name:
             model_name = "models/gemini-2.5-pro-preview-03-25"

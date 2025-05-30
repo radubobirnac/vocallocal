@@ -68,6 +68,9 @@ class InterpretationService:
             model_id = model_name
             if model_name == "gemini-2.0-flash-lite":
                 model_id = "gemini-2.0-flash-lite"
+            elif model_name == "gemini-2.5-flash-preview-04-17":
+                # This is the exact model ID used in the UI for "Gemini 2.5 Flash Preview"
+                model_id = "gemini-2.5-flash-preview-04-17"
             elif model_name == "gemini-2.5-flash":
                 # Map to the correct Gemini 2.5 Flash Preview model
                 model_id = "gemini-2.5-flash-preview-04-17"

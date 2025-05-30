@@ -117,7 +117,16 @@ class TranscriptionService(BaseService):
         """
         self.logger.info(f"Chunking audio file of size {len(audio_bytes)/(1024*1024):.2f} MB into {chunk_size_mb}MB chunks")
 
-        # Check if pydub is available
+        # Check if FFmpeg is available for proper audio chunking
+        if self._check_ffmpeg_available():
+            self.logger.info("Using FFmpeg for proper audio chunking")
+            try:
+                return self._chunk_audio_with_ffmpeg_segment(audio_bytes, chunk_duration_seconds=300, format=format)
+            except Exception as e:
+                self.logger.warning(f"FFmpeg chunking failed: {str(e)}. Falling back to simple chunking.")
+                return self._simple_chunk_audio_file(audio_bytes, chunk_size_mb)
+
+        # Check if pydub is available (but it likely won't work in Python 3.13+)
         if not PYDUB_AVAILABLE:
             self.logger.warning("Audio chunking requires pydub, which is not available. Using simple byte-based chunking.")
             return self._simple_chunk_audio_file(audio_bytes, chunk_size_mb)
@@ -181,8 +190,9 @@ class TranscriptionService(BaseService):
                         duration = self._ms_to_ffmpeg_time(end_ms - start_ms)
 
                         # Use ffmpeg to extract the chunk
+                        ffmpeg_executable = getattr(self, 'ffmpeg_path', 'ffmpeg')
                         cmd = [
-                            'ffmpeg',
+                            ffmpeg_executable,
                             '-i', temp_file_path,
                             '-ss', start_time,
                             '-t', duration,
@@ -345,8 +355,9 @@ class TranscriptionService(BaseService):
             self.logger.info(f"Splitting audio into {chunk_duration_seconds}-second chunks using FFmpeg")
 
             # Command to split audio into equal-duration chunks without re-encoding
+            ffmpeg_executable = getattr(self, 'ffmpeg_path', 'ffmpeg')
             cmd = [
-                'ffmpeg',
+                ffmpeg_executable,
                 '-i', input_file_path,
                 '-f', 'segment',
                 '-segment_time', str(chunk_duration_seconds),
@@ -531,6 +542,7 @@ class TranscriptionService(BaseService):
             # Try to run FFmpeg version command
             subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
             self.logger.info("FFmpeg is available")
+            self.ffmpeg_path = 'ffmpeg'  # Use system PATH
             return True
         except (subprocess.SubprocessError, FileNotFoundError):
             # Try with custom path if defined in environment
@@ -541,6 +553,7 @@ class TranscriptionService(BaseService):
                 self.ffmpeg_path = ffmpeg_path
                 return True
             self.logger.warning("FFmpeg is not available")
+            self.ffmpeg_path = None
             return False
 
     def _transcribe_with_production_chunker(self, audio_data, language, model_name="gemini"):
@@ -755,72 +768,347 @@ class TranscriptionService(BaseService):
         file_size_mb = len(audio_data) / (1024 * 1024)
         self.logger.info(f"Using chunked transcription for large file ({file_size_mb:.2f} MB) with {chunk_size_mb}MB chunks")
 
-        # Split the audio into chunks
-        chunks = self._chunk_audio_file(audio_data, chunk_size_mb=chunk_size_mb)
-
-        # Log chunk information
-        self.logger.info(f"Splitting file into {len(chunks)} chunks of {chunk_size_mb}MB each")
-
-        # Free up memory by clearing the original audio data
-        del audio_data
-
-        # Transcribe each chunk with memory cleanup after each
-        transcriptions = []
-        total_chunks = len(chunks)
-
-        for i, chunk in enumerate(chunks):
-            chunk_size_mb = len(chunk) / (1024 * 1024)
-            self.logger.info(f"Transcribing chunk {i+1}/{total_chunks} ({chunk_size_mb:.2f} MB)")
-
-            # Add delay between chunks to prevent rate limiting and reduce memory pressure
-            if i > 0:
-                time.sleep(2)  # 2-second delay between chunks
-
-            # Monitor memory usage
+        # CRITICAL FIX: Use FFmpeg-based chunking to avoid corrupted audio chunks
+        if self._check_ffmpeg_available():
+            self.logger.info("Using FFmpeg-based duration chunking to avoid audio corruption")
             try:
-                import psutil
-                memory_percent = psutil.virtual_memory().percent
-                self.logger.info(f"Memory usage before chunk {i+1}: {memory_percent:.1f}%")
-                if memory_percent > 85:
-                    self.logger.warning(f"High memory usage detected: {memory_percent:.1f}%")
-                    # Force garbage collection
-                    import gc
-                    gc.collect()
-            except ImportError:
-                pass
-
-            try:
-                # Transcribe this chunk
-                chunk_transcription = self._transcribe_with_gemini_internal(chunk, language, model_name)
-                transcriptions.append(chunk_transcription)
-                self.logger.info(f"Successfully transcribed chunk {i+1}: {len(chunk_transcription)} characters")
-
-                # Free memory
-                del chunk_transcription
+                return self._chunk_with_ffmpeg_duration(audio_data, language, model_name, chunk_duration_minutes=3)
             except Exception as e:
-                self.logger.error(f"Error transcribing chunk {i+1}: {str(e)}")
-                # Continue with other chunks even if one fails
-                transcriptions.append(f"[Error transcribing part {i+1}]")
-            finally:
-                # Free memory for this chunk
-                del chunk
+                self.logger.error(f"FFmpeg chunking failed: {str(e)}")
+                # If FFmpeg fails, try to process the whole file instead of corrupting it
+                self.logger.info("FFmpeg failed, attempting to process whole file instead of byte-chunking")
+                return self._transcribe_with_gemini_internal(audio_data, language, model_name)
 
-                # Force garbage collection to free memory
+        # If no FFmpeg, try to process the whole file rather than corrupt it with byte-chunking
+        self.logger.warning("FFmpeg not available. Processing whole file to avoid audio corruption.")
+        return self._transcribe_with_gemini_internal(audio_data, language, model_name)
+
+    def _transcribe_chunked_audio_improved(self, audio_data, language, model_name="gemini"):
+        """
+        Improved chunking method that uses duration-based chunking with better error handling.
+        This method addresses the issues with byte-based chunking by using proper audio segmentation.
+        """
+        file_size_mb = len(audio_data) / (1024 * 1024)
+        self.logger.info(f"Using improved duration-based chunking for file ({file_size_mb:.2f} MB)")
+
+        # Try to use FFmpeg for proper audio chunking first
+        if self._check_ffmpeg_available():
+            try:
+                return self._chunk_with_ffmpeg_duration(audio_data, language, model_name)
+            except Exception as e:
+                self.logger.warning(f"FFmpeg duration-based chunking failed: {str(e)}. Falling back to sequential processing.")
+
+        # If FFmpeg is not available, try sequential processing with smaller segments
+        return self._transcribe_sequentially(audio_data, language, model_name)
+
+    def _chunk_with_ffmpeg_duration(self, audio_data, language, model_name, chunk_duration_minutes=3):
+        """
+        Use FFmpeg to chunk audio by duration (not size) for more reliable processing.
+        """
+        self.logger.info(f"Chunking audio by duration: {chunk_duration_minutes} minutes per chunk")
+
+        # Create temporary input file
+        temp_input_path = None
+        temp_dir = None
+
+        try:
+            # Create temporary directory for chunks
+            temp_dir = tempfile.mkdtemp()
+
+            # Save audio data to temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as temp_file:
+                temp_file.write(audio_data)
+                temp_input_path = temp_file.name
+
+            # Free memory
+            del audio_data
+
+            # Use FFmpeg to split by duration
+            chunk_duration_seconds = chunk_duration_minutes * 60
+            output_pattern = os.path.join(temp_dir, "chunk_%03d.webm")
+
+            # Use the stored FFmpeg path
+            ffmpeg_executable = getattr(self, 'ffmpeg_path', 'ffmpeg')
+            cmd = [
+                ffmpeg_executable, '-y',
+                '-i', temp_input_path,
+                '-f', 'segment',
+                '-segment_time', str(chunk_duration_seconds),
+                '-c', 'copy',  # Copy without re-encoding to preserve quality
+                '-reset_timestamps', '1',
+                output_pattern
+            ]
+
+            self.logger.info(f"Running FFmpeg command: {' '.join(cmd)}")
+
+            # Run FFmpeg with timeout
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=300,  # 5 minute timeout
+                check=True
+            )
+
+            # Get created chunk files
+            chunk_files = sorted([
+                os.path.join(temp_dir, f)
+                for f in os.listdir(temp_dir)
+                if f.startswith("chunk_") and f.endswith(".webm")
+            ])
+
+            if not chunk_files:
+                raise Exception("No chunks were created by FFmpeg")
+
+            self.logger.info(f"Created {len(chunk_files)} duration-based chunks")
+
+            # Process chunks sequentially with delays
+            transcriptions = []
+            for i, chunk_file in enumerate(chunk_files):
                 try:
-                    import gc
-                    gc.collect()
+                    # Add delay between chunks to avoid rate limiting
+                    if i > 0:
+                        delay = min(3 + i * 0.5, 10)  # Progressive delay, max 10 seconds
+                        self.logger.info(f"Waiting {delay} seconds before processing chunk {i+1}")
+                        time.sleep(delay)
+
+                    # Read chunk data
+                    with open(chunk_file, 'rb') as f:
+                        chunk_data = f.read()
+
+                    chunk_size_mb = len(chunk_data) / (1024 * 1024)
+                    self.logger.info(f"Processing chunk {i+1}/{len(chunk_files)} ({chunk_size_mb:.2f} MB)")
+
+                    # Transcribe chunk
+                    chunk_transcription = self._transcribe_with_gemini_internal(chunk_data, language, model_name)
+                    transcriptions.append(chunk_transcription)
+
+                    self.logger.info(f"Successfully transcribed chunk {i+1}: {len(chunk_transcription)} characters")
+
+                    # Free memory
+                    del chunk_data
+
+                except Exception as e:
+                    self.logger.error(f"Error processing chunk {i+1}: {str(e)}")
+                    # Continue with other chunks
+                    transcriptions.append(f"[Error transcribing segment {i+1}]")
+
+            # Combine transcriptions
+            combined_transcription = " ".join(transcriptions)
+            self.logger.info(f"Combined transcription from {len(transcriptions)} duration-based chunks: {len(combined_transcription)} characters")
+
+            return combined_transcription
+
+        finally:
+            # Clean up temporary files
+            if temp_input_path and os.path.exists(temp_input_path):
+                try:
+                    os.remove(temp_input_path)
                 except:
                     pass
 
-        # Combine the transcriptions
-        combined_transcription = " ".join(transcriptions)
-        self.logger.info(f"Combined transcription from {total_chunks} chunks: {len(combined_transcription)} characters")
+            if temp_dir and os.path.exists(temp_dir):
+                try:
+                    import shutil
+                    shutil.rmtree(temp_dir, ignore_errors=True)
+                except:
+                    pass
 
-        # Free memory
-        del chunks
-        del transcriptions
+    def _transcribe_sequentially(self, audio_data, language, model_name):
+        """
+        Sequential processing fallback when FFmpeg is not available.
+        Processes the file in smaller segments using Gemini's Files API with better state management.
+        """
+        file_size_mb = len(audio_data) / (1024 * 1024)
+        self.logger.info(f"Using sequential processing for file ({file_size_mb:.2f} MB)")
 
-        return combined_transcription
+        # For sequential processing, try to process the whole file with improved error handling
+        try:
+            return self._transcribe_with_gemini_internal_improved(audio_data, language, model_name)
+        except Exception as e:
+            self.logger.error(f"Sequential processing failed: {str(e)}")
+            # As last resort, try the original chunking method with smaller chunks
+            return self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=3)
+
+    def _transcribe_with_gemini_internal_improved(self, audio_data, language, model_name):
+        """
+        Improved version of the internal Gemini transcription method with better error handling
+        and enhanced Files API state management.
+        """
+        temp_file_path = None
+
+        try:
+            self.logger.info(f"Using improved Gemini transcription with model: {model_name}, language: {language}")
+
+            # Map model name to actual Gemini model ID
+            gemini_model_id = self._map_model_name(model_name)
+            self.logger.info(f"Mapped model name '{model_name}' to Gemini model ID: {gemini_model_id}")
+
+            # Create a temporary file to store the audio
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as temp_file:
+                temp_file.write(audio_data)
+                temp_file_path = temp_file.name
+                self.logger.info(f"Created temporary WebM file: {temp_file_path} ({len(audio_data)} bytes)")
+
+            # Initialize the Gemini model
+            model = genai.GenerativeModel(gemini_model_id)
+
+            # Prepare generation config
+            generation_config = {
+                "temperature": 0,
+            }
+
+            # Determine file size and processing method
+            file_size_mb = len(audio_data) / (1024 * 1024)
+            self.logger.info(f"Audio file size: {file_size_mb:.2f} MB")
+
+            # Use Files API for better reliability with improved state management
+            return self._transcribe_with_files_api_improved(
+                temp_file_path, model, generation_config, language, file_size_mb
+            )
+
+        finally:
+            # Clean up temporary file
+            if temp_file_path and os.path.exists(temp_file_path):
+                try:
+                    os.remove(temp_file_path)
+                    self.logger.info(f"Removed temporary WebM file: {temp_file_path}")
+                except Exception as cleanup_error:
+                    self.logger.warning(f"Failed to remove temporary WebM file: {str(cleanup_error)}")
+
+    def _map_model_name(self, model_name):
+        """Helper method to map model names to Gemini model IDs."""
+        gemini_model_id = 'gemini-2.0-flash-lite'  # Default model
+        if model_name == 'gemini-2.0-flash-lite':
+            gemini_model_id = 'gemini-2.0-flash-lite'
+        elif model_name == 'gemini-2.5-flash-preview-04-17':
+            gemini_model_id = 'gemini-2.5-flash-preview-04-17'
+        elif model_name == 'gemini-2.5-flash-preview':
+            gemini_model_id = 'gemini-2.5-flash-preview-04-17'
+        elif model_name == 'gemini-2.5-flash':
+            gemini_model_id = 'gemini-2.5-flash-preview-04-17'
+        elif model_name == 'gemini-2.5-pro-preview':
+            gemini_model_id = 'gemini-2.5-pro-preview-03-25'
+        elif model_name == 'gemini' or model_name == 'gemini-1.5-flash':
+            gemini_model_id = 'gemini-2.0-flash-lite'
+        return gemini_model_id
+
+    def _transcribe_with_files_api_improved(self, temp_file_path, model, generation_config, language, file_size_mb):
+        """
+        Improved Files API transcription with better state management and exponential backoff.
+        """
+        try:
+            # Upload the file using the Files API
+            self.logger.info(f"Uploading file to Gemini Files API: {temp_file_path}")
+            file_obj = genai.upload_file(path=temp_file_path)
+            self.logger.info(f"File uploaded successfully with name: {file_obj.name}")
+
+            # Improved file state management with exponential backoff
+            max_wait_time = 300  # 5 minutes maximum wait time
+            base_wait_interval = 2  # Base wait interval
+            max_attempts = 40
+            wait_start_time = time.time()
+            attempts = 0
+
+            # Check file state with exponential backoff
+            while attempts < max_attempts:
+                attempts += 1
+
+                try:
+                    # Get current file state
+                    current_file = genai.get_file(file_obj.name)
+                    file_state = current_file.state
+
+                    self.logger.info(f"File state check {attempts}/{max_attempts}: {file_state} (type: {type(file_state).__name__})")
+
+                    # Check if file is in ACTIVE state
+                    is_active = (
+                        (isinstance(file_state, str) and file_state == "ACTIVE") or
+                        (isinstance(file_state, int) and file_state == 2)
+                    )
+
+                    if is_active:
+                        self.logger.info(f"File is now ACTIVE after {attempts} attempts")
+                        file_obj = current_file  # Update file object
+                        break
+
+                    # Check timeout
+                    elapsed = time.time() - wait_start_time
+                    if elapsed > max_wait_time:
+                        self.logger.warning(f"Maximum wait time ({max_wait_time}s) exceeded")
+                        break
+
+                    # Adaptive waiting based on file size and attempts
+                    if file_size_mb > 30:
+                        # For very large files, be more patient
+                        if attempts >= 20:
+                            self.logger.warning(f"Very large file ({file_size_mb:.2f} MB): proceeding after {attempts} attempts")
+                            break
+                    elif file_size_mb > 15:
+                        # For large files, moderate patience
+                        if attempts >= 15:
+                            self.logger.warning(f"Large file ({file_size_mb:.2f} MB): proceeding after {attempts} attempts")
+                            break
+                    else:
+                        # For smaller files, less patience needed
+                        if attempts >= 10:
+                            self.logger.warning(f"Medium file ({file_size_mb:.2f} MB): proceeding after {attempts} attempts")
+                            break
+
+                    # Exponential backoff with jitter
+                    wait_interval = min(base_wait_interval * (1.5 ** (attempts - 1)), 30)  # Max 30 seconds
+                    jitter = wait_interval * 0.1 * (0.5 - time.time() % 1)  # Add some randomness
+                    actual_wait = wait_interval + jitter
+
+                    self.logger.info(f"File not yet ACTIVE (state: {file_state}). Waiting {actual_wait:.1f}s before retry...")
+                    time.sleep(actual_wait)
+
+                except Exception as state_error:
+                    self.logger.error(f"Error checking file state: {str(state_error)}")
+                    # Continue with shorter wait
+                    time.sleep(base_wait_interval)
+
+            # Prepare prompt
+            prompt = f"Please transcribe the following audio. The language is {language}." if language and language != "auto" else "Please transcribe this audio."
+
+            # Generate content with improved error handling
+            self.logger.info("Generating content with Files API")
+            start_time = time.time()
+
+            try:
+                response = model.generate_content([
+                    prompt,
+                    file_obj
+                ], generation_config=generation_config)
+
+                elapsed_time = time.time() - start_time
+                self.logger.info(f"Gemini API call completed in {elapsed_time:.2f} seconds")
+
+                # Extract and clean transcription
+                transcription = response.text
+                cleaned_transcription = self._clean_gemini_transcription(transcription)
+
+                self.logger.info(f"Improved Gemini transcription successful: {len(cleaned_transcription)} characters")
+                return cleaned_transcription
+
+            except Exception as generation_error:
+                # Enhanced error handling for generation
+                error_msg = str(generation_error).lower()
+                if "not in an active state" in error_msg or "failedprecondition" in error_msg:
+                    self.logger.warning("File not in ACTIVE state, attempting retry with current file object...")
+                    # Try once more with a delay
+                    time.sleep(5)
+                    response = model.generate_content([prompt, file_obj], generation_config=generation_config)
+                    transcription = response.text
+                    cleaned_transcription = self._clean_gemini_transcription(transcription)
+                    self.logger.info(f"Retry successful: {len(cleaned_transcription)} characters")
+                    return cleaned_transcription
+                else:
+                    raise generation_error
+
+        except Exception as e:
+            self.logger.error(f"Improved Files API transcription failed: {str(e)}")
+            raise
 
     def transcribe_with_gemini(self, audio_data, language, model_name="gemini"):
         """
@@ -860,12 +1148,13 @@ class TranscriptionService(BaseService):
             return {"status": "processing", "job_id": job_id}
 
         # Set chunking threshold to ensure better reliability
-        CHUNKING_THRESHOLD_MB = 15  # Standard threshold for regular files
+        # Increased thresholds to avoid unnecessary chunking for medium-sized files
+        CHUNKING_THRESHOLD_MB = 25  # Standard threshold for regular files (increased from 15MB)
 
-        # For WebM recordings, use an appropriate chunking threshold
-        # This allows for longer recordings without memory issues
+        # For WebM recordings, use a more reasonable chunking threshold
+        # This allows for longer recordings without premature chunking
         if is_webm_recording:
-            CHUNKING_THRESHOLD_MB = 3.0  # 3MB threshold for WebM recordings (about 3-4 minutes)
+            CHUNKING_THRESHOLD_MB = 15.0  # 15MB threshold for WebM recordings (about 15-20 minutes)
 
         # Check if FFmpeg is available for chunking
         ffmpeg_available = self._check_ffmpeg_available()
@@ -874,18 +1163,17 @@ class TranscriptionService(BaseService):
         if file_size_mb > CHUNKING_THRESHOLD_MB:
             self.logger.info(f"Large file detected ({file_size_mb:.2f} MB). Using chunked transcription.")
 
-            # For very large files (>25MB), split into smaller chunks before sending to API
-            if file_size_mb > 25:
-                self.logger.info(f"Very large file detected ({file_size_mb:.2f} MB). Using manual chunking.")
+            # Try direct processing first for moderately large files (25-50MB)
+            if file_size_mb <= 50:
+                self.logger.info(f"Attempting direct processing for moderately large file ({file_size_mb:.2f} MB)")
+                try:
+                    # Try direct processing with extended timeout
+                    return self._transcribe_with_gemini_internal(audio_data, language, model_name)
+                except Exception as e:
+                    self.logger.warning(f"Direct processing failed: {str(e)}. Falling back to chunking.")
 
-                # Use memory-optimized chunking with smaller chunks
-                chunk_size_mb = 5  # Use smaller chunks for very large files
-
-                self.logger.info(f"Using memory-optimized chunking with {chunk_size_mb}MB chunks")
-                return self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=chunk_size_mb)
-
-            # For moderately large files, try the production chunker if FFmpeg is available
-            elif ffmpeg_available:
+            # For very large files (>50MB) or when direct processing fails, use chunking
+            if ffmpeg_available:
                 try:
                     self.logger.info(f"Using production-ready RobustChunker for large file ({file_size_mb:.2f} MB)")
 
@@ -893,18 +1181,18 @@ class TranscriptionService(BaseService):
                     if hasattr(self, 'ffmpeg_path'):
                         self.robust_chunker.ffmpeg_path = self.ffmpeg_path
 
-                    # Use the production-ready RobustChunker for chunking
+                    # Use the production-ready RobustChunker for duration-based chunking
                     return self._transcribe_with_production_chunker(audio_data, language, model_name)
                 except Exception as e:
                     self.logger.error(f"RobustChunker failed: {str(e)}")
-                    # Fall back to memory-optimized chunking
-                    self.logger.info("Falling back to memory-optimized chunking")
-                    return self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=5)
+                    # Fall back to improved chunking
+                    self.logger.info("Falling back to improved duration-based chunking")
+                    return self._transcribe_chunked_audio_improved(audio_data, language, model_name)
 
-            # Fall back to memory-optimized chunking if FFmpeg is not available
+            # Fall back to improved chunking if FFmpeg is not available
             else:
-                self.logger.warning("FFmpeg not available. Using memory-optimized chunking.")
-                return self._transcribe_chunked_audio(audio_data, language, model_name, chunk_size_mb=5)
+                self.logger.warning("FFmpeg not available. Using improved duration-based chunking.")
+                return self._transcribe_chunked_audio_improved(audio_data, language, model_name)
 
         # For smaller files, use the standard transcription method
         return self._transcribe_with_gemini_internal(audio_data, language, model_name)
@@ -928,13 +1216,23 @@ class TranscriptionService(BaseService):
             self.logger.info(f"Using Gemini for transcription with model: {model_name}, language: {language}")
 
             # Map model name to actual Gemini model ID
-            gemini_model_id = 'gemini-1.5-flash'  # Default model
+            gemini_model_id = 'gemini-2.0-flash-lite'  # Default model (updated to use 2.0 Flash Lite)
             if model_name == 'gemini-2.0-flash-lite':
-                gemini_model_id = 'gemini-1.5-flash'
+                gemini_model_id = 'gemini-2.0-flash-lite'
+            elif model_name == 'gemini-2.5-flash-preview-04-17':
+                # This is the model ID used in the UI for "Gemini 2.5 Flash Preview"
+                gemini_model_id = 'gemini-2.5-flash-preview-04-17'
             elif model_name == 'gemini-2.5-flash-preview':
-                gemini_model_id = 'gemini-1.5-flash-preview'
+                # Legacy mapping for older model name
+                gemini_model_id = 'gemini-2.5-flash-preview-04-17'
+            elif model_name == 'gemini-2.5-flash':
+                # Alternative model name mapping
+                gemini_model_id = 'gemini-2.5-flash-preview-04-17'
             elif model_name == 'gemini-2.5-pro-preview':
-                gemini_model_id = 'gemini-1.5-pro-preview'
+                gemini_model_id = 'gemini-2.5-pro-preview-03-25'
+            elif model_name == 'gemini' or model_name == 'gemini-1.5-flash':
+                # Legacy fallback to 2.0 Flash Lite
+                gemini_model_id = 'gemini-2.0-flash-lite'
 
             self.logger.info(f"Mapped model name '{model_name}' to Gemini model ID: {gemini_model_id}")
 
@@ -1003,9 +1301,9 @@ class TranscriptionService(BaseService):
 
                                 # Wait for file to be processed (reach ACTIVE state)
                                 # This is necessary for large files to avoid "not in an ACTIVE state" errors
-                                max_wait_time = 120  # Increased maximum wait time to 2 minutes
-                                wait_interval = 2    # Check interval in seconds
-                                max_attempts = 20    # Increased maximum attempts
+                                max_wait_time = 180  # Increased maximum wait time to 3 minutes
+                                wait_interval = 3    # Check interval in seconds (increased)
+                                max_attempts = 30    # Increased maximum attempts
                                 wait_start_time = time.time()
                                 attempts = 0
 
@@ -1375,7 +1673,10 @@ class TranscriptionService(BaseService):
             try:
                 # Run FFmpeg to convert the file with detailed logging
                 self.logger.info("Starting FFmpeg conversion process...")
-                ffmpeg_cmd = ['ffmpeg', '-i', temp_file_path, '-vn', '-ar', '44100', '-ac', '2', '-b:a', '192k', mp3_file_path]
+
+                # Use the stored FFmpeg path
+                ffmpeg_executable = getattr(self, 'ffmpeg_path', 'ffmpeg')
+                ffmpeg_cmd = [ffmpeg_executable, '-i', temp_file_path, '-vn', '-ar', '44100', '-ac', '2', '-b:a', '192k', mp3_file_path]
                 self.logger.info(f"FFmpeg command: {' '.join(ffmpeg_cmd)}")
 
                 result = subprocess.run(

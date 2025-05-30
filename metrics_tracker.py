@@ -350,8 +350,16 @@ def track_transcription_metrics(func):
         try:
             result = func(*args, **kwargs)
 
-            # Extract model name from kwargs or use default
-            model = kwargs.get('model_type', 'unknown')
+            # Extract model name from kwargs or args - check multiple possible parameter names
+            model = kwargs.get('model') or kwargs.get('model_type') or kwargs.get('model_name')
+
+            # If not in kwargs, try to get from args (positional parameters)
+            if not model and len(args) >= 3:
+                model = args[2]  # Third parameter is typically the model
+
+            # Default to unknown if still not found
+            if not model:
+                model = 'unknown'
 
             # Log the original model name for debugging
             logger.info(f"Original transcription model name: {model}")

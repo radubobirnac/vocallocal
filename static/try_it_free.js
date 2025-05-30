@@ -692,7 +692,18 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
           if (data.status === 'completed') {
             clearInterval(pollInterval);
-            displayTranscription(data.result.text || data.result, speakerNum);
+
+            // Handle both string and object result formats
+            let transcriptionText;
+            if (typeof data.result === 'string') {
+              transcriptionText = data.result;
+            } else if (data.result && data.result.text) {
+              transcriptionText = data.result.text;
+            } else {
+              transcriptionText = data.result || 'Transcription completed but no text was returned.';
+            }
+
+            displayTranscription(transcriptionText, speakerNum);
           } else if (data.status === 'error') {
             clearInterval(pollInterval);
             throw new Error(data.error || 'Transcription failed');
