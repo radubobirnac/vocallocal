@@ -372,15 +372,11 @@ def google_login():
         # Get the current host from the request
         host = request.host_url.rstrip('/')
 
-        # If we're on Render, use the specific domain
-        if 'onrender.com' in host:
-            if 'vocallocal.onrender.com' in host:
-                redirect_uri = "https://vocallocal.onrender.com/auth/callback"
-            elif 'vocallocal-aj6b.onrender.com' in host:
-                redirect_uri = "https://vocallocal-aj6b.onrender.com/auth/callback"
-            else:
-                # Fallback for any other Render domain
-                redirect_uri = f"{host}/auth/callback"
+        # Determine the appropriate redirect URI based on the host
+        if 'ondigitalocean.app' in host:
+            redirect_uri = f"{host}/auth/callback"
+        elif 'onrender.com' in host:
+            redirect_uri = f"{host}/auth/callback"
         else:
             # Local development
             redirect_uri = url_for('auth.google_callback', _external=True)
@@ -419,7 +415,16 @@ def google_callback():
 
                 # Manually exchange the code for a token
                 token_endpoint = 'https://oauth2.googleapis.com/token'
-                redirect_uri = "https://vocallocal-aj6b.onrender.com/auth/callback"
+
+                # Determine the appropriate redirect URI based on the host
+                host = request.host_url.rstrip('/')
+                if 'ondigitalocean.app' in host:
+                    redirect_uri = f"{host}/auth/callback"
+                elif 'onrender.com' in host:
+                    redirect_uri = f"{host}/auth/callback"
+                else:
+                    # Local development
+                    redirect_uri = url_for('auth.google_callback', _external=True)
 
                 token_data = {
                     'code': code,
@@ -510,14 +515,10 @@ def _handle_google_callback():
 
                 # Determine the appropriate redirect URI based on the host
                 host = request.host_url.rstrip('/')
-                if 'onrender.com' in host:
-                    if 'vocallocal.onrender.com' in host:
-                        redirect_uri = "https://vocallocal.onrender.com/auth/callback"
-                    elif 'vocallocal-aj6b.onrender.com' in host:
-                        redirect_uri = "https://vocallocal-aj6b.onrender.com/auth/callback"
-                    else:
-                        # Fallback for any other Render domain
-                        redirect_uri = f"{host}/auth/callback"
+                if 'ondigitalocean.app' in host:
+                    redirect_uri = f"{host}/auth/callback"
+                elif 'onrender.com' in host:
+                    redirect_uri = f"{host}/auth/callback"
                 else:
                     # Local development
                     redirect_uri = url_for('auth.google_callback', _external=True)
@@ -660,8 +661,8 @@ def oauth_debug():
         "client_id": google.client_id if google else None,
         "redirect_uris_in_code": [
             url_for('auth.google_callback', _external=True),
-            "https://vocallocal.onrender.com/auth/callback",
-            "https://vocallocal-aj6b.onrender.com/auth/callback"
+            "https://vocallocal-l5et5.ondigitalocean.app/auth/callback",
+            "https://vocallocal.onrender.com/auth/callback"
         ],
         "current_host": request.host_url,
         "is_secure": request.is_secure
