@@ -194,7 +194,7 @@ class DigitalOceanDeployer:
         return working_count, len(routes_to_test)
 
 def main():
-    api_token = "dop_v1_f8ea2bbb3908c9c11cca7c631a3973eff1966ab5ab3fc376b5820b4630670891"
+    api_token = "os.environ.get("DIGITALOCEAN_API_TOKEN")"
     
     print("🚀 VOCALLOCAL COMPLETE DEPLOYMENT PIPELINE")
     print("=" * 60)
