@@ -23,25 +23,38 @@ def initialize_firebase():
             cred = None
             auth_methods_tried = []
 
-            # Try multiple possible paths for the secret file
-            possible_paths = [
-                "/etc/secrets/firebase-credentials.json",
-                "/etc/secrets/firebase-credentials",
-                "/etc/secrets/firebase-credentials.json.txt"
-            ]
+            # Method 1: Try FIREBASE_CREDENTIALS environment variable (JSON string)
+            cred_json = os.getenv('FIREBASE_CREDENTIALS')
+            if cred_json:
+                auth_methods_tried.append("FIREBASE_CREDENTIALS environment variable")
+                try:
+                    print("Found FIREBASE_CREDENTIALS environment variable")
+                    cred_dict = json.loads(cred_json)
+                    cred = credentials.Certificate(cred_dict)
+                    print("Using Firebase credentials from FIREBASE_CREDENTIALS environment variable")
+                except Exception as e:
+                    print(f"Error using FIREBASE_CREDENTIALS environment variable: {str(e)}")
 
-            for path in possible_paths:
-                if os.path.exists(path):
-                    auth_methods_tried.append(f"Secret file: {path}")
-                    try:
-                        print(f"Found credentials at: {path}")
-                        cred = credentials.Certificate(path)
-                        print(f"Using Firebase credentials from: {path}")
-                        break
-                    except Exception as e:
-                        print(f"Error using credentials from {path}: {str(e)}")
+            # Method 2: Try multiple possible paths for the secret file
+            if not cred:
+                possible_paths = [
+                    "/etc/secrets/firebase-credentials.json",
+                    "/etc/secrets/firebase-credentials",
+                    "/etc/secrets/firebase-credentials.json.txt"
+                ]
 
-            # Method 2: For local development with service account file
+                for path in possible_paths:
+                    if os.path.exists(path):
+                        auth_methods_tried.append(f"Secret file: {path}")
+                        try:
+                            print(f"Found credentials at: {path}")
+                            cred = credentials.Certificate(path)
+                            print(f"Using Firebase credentials from: {path}")
+                            break
+                        except Exception as e:
+                            print(f"Error using credentials from {path}: {str(e)}")
+
+            # Method 3: For local development with service account file
             if not cred:
                 cred_path = os.getenv('FIREBASE_CREDENTIALS_PATH', 'firebase-credentials.json')
                 auth_methods_tried.append(f"FIREBASE_CREDENTIALS_PATH: {cred_path}")
@@ -62,7 +75,7 @@ def initialize_firebase():
                     except Exception as e:
                         print(f"Error loading credentials from {path}: {str(e)}")
 
-            # Method 3: Try Application Default Credentials as a fallback
+            # Method 4: Try Application Default Credentials as a fallback
             if not cred:
                 auth_methods_tried.append("Application Default Credentials")
                 try:

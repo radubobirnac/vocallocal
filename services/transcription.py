@@ -1849,5 +1849,119 @@ class TranscriptionService(BaseService):
 
         return self.job_statuses[job_id]
 
+    def transcribe_simple_chunk(self, audio_data, language, model):
+        """
+        Transcribe a single audio chunk without complex chunking logic.
+        Optimized for progressive transcription of ~60-70 second chunks.
+
+        Args:
+            audio_data (bytes): The audio data to transcribe
+            language (str): The language code (e.g., 'en', 'es')
+            model (str): The model to use ('gemini', 'gpt-4o-mini-transcribe', etc.)
+
+        Returns:
+            str: The transcribed text
+        """
+        file_size_mb = len(audio_data) / (1024 * 1024)
+        self.logger.info(f"Transcribing simple chunk ({file_size_mb:.2f} MB) with model {model}")
+
+        try:
+            # For chunks, prefer OpenAI since it's more reliable for real-time processing
+            # Gemini Files API has delays that make it unsuitable for progressive transcription
+            if self.openai_available and self._check_ffmpeg_available():
+                self.logger.info("Using OpenAI for chunk transcription (more reliable for real-time)")
+                return self._transcribe_with_openai_internal(audio_data, language, "gpt-4o-mini-transcribe")
+
+            # If OpenAI is not available or FFmpeg is missing, try Gemini
+            elif model.startswith('gemini-') or model == 'gemini':
+                if not self.gemini_available:
+                    raise Exception("Gemini not available and OpenAI fallback failed")
+
+                return self._transcribe_with_gemini_internal(audio_data, language, model)
+            else:
+                # Use OpenAI for transcription
+                if not self.openai_available:
+                    self.logger.warning("OpenAI not available. Falling back to Gemini.")
+                    return self._transcribe_with_gemini_internal(audio_data, language, "gemini")
+
+                return self._transcribe_with_openai_internal(audio_data, language, model)
+
+        except Exception as e:
+            self.logger.error(f"Error in simple chunk transcription: {str(e)}")
+            # Try fallback
+            try:
+                if model.startswith('gemini') and self.openai_available and self._check_ffmpeg_available():
+                    self.logger.info("Trying OpenAI fallback for chunk")
+                    return self._transcribe_with_openai_internal(audio_data, language, "gpt-4o-mini-transcribe")
+                elif self.gemini_available:
+                    self.logger.info("Trying Gemini fallback for chunk")
+                    return self._transcribe_with_gemini_internal(audio_data, language, "gemini")
+                else:
+                    raise Exception("No transcription services available")
+            except Exception as fallback_error:
+                self.logger.error(f"Fallback also failed: {str(fallback_error)}")
+                raise Exception(f"Chunk transcription failed: {str(e)}")
+
+    def _transcribe_with_openai_internal(self, audio_data, language, model):
+        """Internal method for OpenAI transcription without chunking"""
+        self.logger.info(f"Using OpenAI {model} for chunk transcription")
+
+        # Check if FFmpeg is available for WebM conversion
+        if not self._check_ffmpeg_available():
+            self.logger.error("FFmpeg is required for OpenAI transcription but not available")
+            raise Exception("FFmpeg not installed. Cannot convert WebM to MP3 for OpenAI transcription.")
+
+        # Create a temporary file for the audio data
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as temp_file:
+            temp_file.write(audio_data)
+            temp_file_path = temp_file.name
+
+        mp3_file_path = None
+        try:
+            # Convert WebM to MP3 using FFmpeg (OpenAI doesn't support WebM)
+            mp3_file_path = temp_file_path.replace('.webm', '.mp3')
+            self.logger.info(f"Converting WebM to MP3 for OpenAI: {temp_file_path} -> {mp3_file_path}")
+
+            # Use the stored FFmpeg path
+            ffmpeg_executable = getattr(self, 'ffmpeg_path', 'ffmpeg')
+            ffmpeg_cmd = [ffmpeg_executable, '-i', temp_file_path, '-vn', '-ar', '44100', '-ac', '2', '-b:a', '192k', mp3_file_path]
+
+            result = subprocess.run(
+                ffmpeg_cmd,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+
+            self.logger.info(f"FFmpeg conversion successful: {os.path.getsize(mp3_file_path)} bytes")
+
+            # Use OpenAI API with the converted MP3 file
+            with open(mp3_file_path, 'rb') as audio_file:
+                response = openai.audio.transcriptions.create(
+                    model="whisper-1",  # OpenAI's Whisper model
+                    file=audio_file,
+                    language=language if language != 'auto' else None
+                )
+
+            result = response.text
+            self.logger.info(f"OpenAI chunk transcription completed: {len(result)} characters")
+            return result
+
+        except subprocess.CalledProcessError as e:
+            self.logger.error(f"FFmpeg conversion failed: {e.stderr}")
+            raise Exception(f"Audio conversion failed for OpenAI: {e.stderr}")
+        except FileNotFoundError:
+            self.logger.error("FFmpeg not found. Please install FFmpeg.")
+            raise Exception("FFmpeg not installed. Cannot convert audio format for OpenAI.")
+        finally:
+            # Clean up temporary files
+            try:
+                if os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
+                if mp3_file_path and os.path.exists(mp3_file_path):
+                    os.unlink(mp3_file_path)
+            except Exception as e:
+                self.logger.warning(f"Failed to delete temporary files: {str(e)}")
+
 # Create a singleton instance
 transcription_service = TranscriptionService()

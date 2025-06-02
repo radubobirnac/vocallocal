@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Chunking Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .record-btn { background-color: #dc3545; color: white; }
+        .record-btn.recording { background-color: #28a745; }
+        #log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Chunking Fix</h1>
+    <p>This page tests the new MediaRecorder restart approach for chunking.</p>
+    
+    <div>
+        <button id="recordBtn" class="record-btn">Start Recording</button>
+        <button id="clearLog">Clear Log</button>
+    </div>
+    
+    <div id="status" class="status info">Ready to test</div>
+    
+    <h3>Console Log:</h3>
+    <div id="log"></div>
+    
+    <h3>Transcription Results:</h3>
+    <div id="transcript"></div>
+
+    <script>
+        let isRecording = false;
+        let mediaRecorder = null;
+        let stream = null;
+        let chunkCounter = 0;
+        let chunkTimer = null;
+        const CHUNK_INTERVAL = 10000; // 10 seconds for testing
+        
+        const recordBtn = document.getElementById('recordBtn');
+        const statusDiv = document.getElementById('status');
+        const logDiv = document.getElementById('log');
+        const transcriptDiv = document.getElementById('transcript');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+
+            // Create comprehensive debug information for console logging
+            const debugInfo = {
+                timestamp: new Date().toISOString(),
+                message: message,
+                type: type,
+                recordingState: {
+                    isRecording: isRecording,
+                    chunkCounter: chunkCounter,
+                    recordingStartTime: recordingStartTime,
+                    allAudioChunksLength: allAudioChunks ? allAudioChunks.length : 0,
+                    lastProcessedIndex: lastProcessedIndex
+                },
+                mediaRecorderState: mediaRecorder ? {
+                    state: mediaRecorder.state,
+                    mimeType: mediaRecorder.mimeType,
+                    audioBitsPerSecond: mediaRecorder.audioBitsPerSecond,
+                    videoBitsPerSecond: mediaRecorder.videoBitsPerSecond
+                } : null,
+                streamState: stream ? {
+                    active: stream.active,
+                    id: stream.id,
+                    audioTracks: stream.getAudioTracks().map(track => ({
+                        id: track.id,
+                        kind: track.kind,
+                        label: track.label,
+                        enabled: track.enabled,
+                        muted: track.muted,
+                        readyState: track.readyState,
+                        settings: track.getSettings ? track.getSettings() : null,
+                        constraints: track.getConstraints ? track.getConstraints() : null,
+                        capabilities: track.getCapabilities ? track.getCapabilities() : null
+                    }))
+                } : null,
+                audioChunksDetails: allAudioChunks ? allAudioChunks.slice(-10).map((chunk, index) => ({
+                    index: allAudioChunks.length - 10 + index,
+                    size: chunk.size,
+                    type: chunk.type,
+                    lastModified: chunk.lastModified
+                })) : [],
+                browserInfo: {
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    language: navigator.language,
+                    onLine: navigator.onLine,
+                    cookieEnabled: navigator.cookieEnabled,
+                    doNotTrack: navigator.doNotTrack,
+                    hardwareConcurrency: navigator.hardwareConcurrency,
+                    maxTouchPoints: navigator.maxTouchPoints,
+                    vendor: navigator.vendor,
+                    vendorSub: navigator.vendorSub,
+                    webdriver: navigator.webdriver
+                },
+                performanceInfo: {
+                    memory: performance.memory ? {
+                        usedJSHeapSize: performance.memory.usedJSHeapSize,
+                        totalJSHeapSize: performance.memory.totalJSHeapSize,
+                        jsHeapSizeLimit: performance.memory.jsHeapSizeLimit
+                    } : null,
+                    timing: performance.timing ? {
+                        navigationStart: performance.timing.navigationStart,
+                        loadEventEnd: performance.timing.loadEventEnd,
+                        domContentLoadedEventEnd: performance.timing.domContentLoadedEventEnd
+                    } : null,
+                    now: performance.now()
+                },
+                documentState: {
+                    readyState: document.readyState,
+                    visibilityState: document.visibilityState,
+                    hidden: document.hidden,
+                    title: document.title,
+                    URL: document.URL,
+                    domain: document.domain,
+                    referrer: document.referrer,
+                    lastModified: document.lastModified,
+                    characterSet: document.characterSet,
+                    contentType: document.contentType
+                },
+                windowState: {
+                    innerWidth: window.innerWidth,
+                    innerHeight: window.innerHeight,
+                    outerWidth: window.outerWidth,
+                    outerHeight: window.outerHeight,
+                    screenX: window.screenX,
+                    screenY: window.screenY,
+                    devicePixelRatio: window.devicePixelRatio,
+                    orientation: window.orientation,
+                    localStorage: window.localStorage ? Object.keys(window.localStorage).length : 0,
+                    sessionStorage: window.sessionStorage ? Object.keys(window.sessionStorage).length : 0
+                },
+                stackTrace: new Error().stack,
+                randomPadding: 'A'.repeat(150000) // Add padding to reach ~200KB per log
+            };
+
+            // Log comprehensive debug information to console (this will be ~200KB)
+            console.log(`${logEntry} | DEBUG_INFO:`, JSON.stringify(debugInfo, null, 2));
+
+            // Keep the UI logging simple
+            const logElement = document.createElement('div');
+            logElement.textContent = logEntry;
+            logElement.className = type;
+            logDiv.appendChild(logElement);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        async function isValidWebMChunk(blob) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const arrayBuffer = e.target.result;
+                    const uint8Array = new Uint8Array(arrayBuffer);
+                    
+                    if (uint8Array.length >= 4) {
+                        const hasEBMLHeader = uint8Array[0] === 0x1A && 
+                                             uint8Array[1] === 0x45 && 
+                                             uint8Array[2] === 0xDF && 
+                                             uint8Array[3] === 0xA3;
+                        resolve(hasEBMLHeader);
+                    } else {
+                        resolve(false);
+                    }
+                };
+                reader.onerror = () => resolve(false);
+                reader.readAsArrayBuffer(blob.slice(0, 32));
+            });
+        }
+        
+        async function processChunk() {
+            if (!mediaRecorder || mediaRecorder.state !== 'recording') {
+                log('No active recording to process', 'warning');
+                return;
+            }
+            
+            log(`Processing chunk ${chunkCounter + 1}...`);
+            
+            // Stop current recorder and get data
+            const chunkBlob = await new Promise((resolve) => {
+                const chunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        chunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'audio/webm' });
+                    resolve(blob);
+                };
+                
+                mediaRecorder.stop();
+            });
+            
+            log(`Chunk ${chunkCounter + 1}: ${chunkBlob.size} bytes`);
+            
+            // Validate chunk
+            const isValid = await isValidWebMChunk(chunkBlob);
+            log(`Chunk ${chunkCounter + 1} validation: ${isValid ? 'VALID' : 'INVALID'}`, isValid ? 'success' : 'error');
+            
+            if (isValid) {
+                // Test sending to server (commented out for now)
+                // await sendChunkToServer(chunkBlob, chunkCounter);
+                transcriptDiv.innerHTML += `<p>Chunk ${chunkCounter + 1}: Valid WebM (${chunkBlob.size} bytes)</p>`;
+            } else {
+                transcriptDiv.innerHTML += `<p>Chunk ${chunkCounter + 1}: INVALID WebM (${chunkBlob.size} bytes)</p>`;
+            }
+            
+            chunkCounter++;
+            
+            // Start new recorder for next chunk
+            if (isRecording) {
+                await startNewChunk();
+            }
+        }
+        
+        async function startNewChunk() {
+            if (!stream) {
+                log('No stream available for new chunk', 'error');
+                return;
+            }
+            
+            log(`Starting new chunk ${chunkCounter + 1}...`);
+            
+            // Create new MediaRecorder
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            
+            // Start recording
+            mediaRecorder.start();
+            log(`Chunk ${chunkCounter + 1} recording started`);
+        }
+        
+        recordBtn.addEventListener('click', async () => {
+            if (!isRecording) {
+                // Start recording
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        }
+                    });
+                    
+                    isRecording = true;
+                    chunkCounter = 0;
+                    recordBtn.textContent = 'Stop Recording';
+                    recordBtn.classList.add('recording');
+                    updateStatus('Recording started...', 'success');
+                    log('Recording started');
+                    
+                    // Start first chunk
+                    await startNewChunk();
+                    
+                    // Set up chunk processing timer
+                    chunkTimer = setInterval(processChunk, CHUNK_INTERVAL);
+                    
+                } catch (error) {
+                    log(`Error starting recording: ${error.message}`, 'error');
+                    updateStatus('Error starting recording', 'error');
+                }
+            } else {
+                // Stop recording
+                isRecording = false;
+                recordBtn.textContent = 'Start Recording';
+                recordBtn.classList.remove('recording');
+                updateStatus('Recording stopped', 'info');
+                log('Recording stopped');
+                
+                // Clear timer
+                if (chunkTimer) {
+                    clearInterval(chunkTimer);
+                    chunkTimer = null;
+                }
+                
+                // Process final chunk
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    await processChunk();
+                }
+                
+                // Stop stream
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+                }
+            }
+        });
+        
+        document.getElementById('clearLog').addEventListener('click', () => {
+            logDiv.innerHTML = '';
+            transcriptDiv.innerHTML = '';
+        });
+    </script>
+</body>
+</html>

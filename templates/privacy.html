@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy & Ethical Guidelines - VocalLocal</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="{{ versioned_url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+
+  <!-- Cache Control Meta Tags -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='auth.css') }}">
+  
+  <style>
+    .privacy-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+      line-height: 1.6;
+    }
+    
+    .privacy-header {
+      text-align: center;
+      margin-bottom: 3rem;
+      padding: 2rem;
+      background: linear-gradient(135deg, #6f42c1, #8e44ad);
+      color: white;
+      border-radius: 10px;
+    }
+    
+    .privacy-section {
+      margin-bottom: 2.5rem;
+      padding: 1.5rem;
+      background: var(--card-background);
+      border-radius: 8px;
+      border-left: 4px solid var(--primary-color);
+    }
+    
+    .privacy-section h2 {
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .privacy-section h3 {
+      color: var(--text-color);
+      margin: 1.5rem 0 0.5rem 0;
+    }
+    
+    .privacy-section ul {
+      margin: 1rem 0;
+      padding-left: 1.5rem;
+    }
+    
+    .privacy-section li {
+      margin-bottom: 0.5rem;
+    }
+    
+    .highlight-box {
+      background: var(--accent-color);
+      padding: 1rem;
+      border-radius: 6px;
+      margin: 1rem 0;
+      border-left: 3px solid var(--primary-color);
+    }
+    
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 500;
+      margin-bottom: 2rem;
+    }
+    
+    .back-link:hover {
+      text-decoration: underline;
+    }
+    
+    .contact-info {
+      background: var(--background-color);
+      padding: 1.5rem;
+      border-radius: 8px;
+      text-align: center;
+      margin-top: 2rem;
+    }
+    
+    .last-updated {
+      text-align: center;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="privacy-container">
+    <a href="/" class="back-link">
+      <i class="fas fa-arrow-left"></i> Back to Home
+    </a>
+    
+    <div class="privacy-header">
+      <h1><i class="fas fa-shield-alt"></i> Privacy Policy & Ethical Guidelines</h1>
+      <p>Our commitment to protecting your privacy and using AI responsibly</p>
+    </div>
+
+    <div class="privacy-section">
+      <h2><i class="fas fa-info-circle"></i> Overview</h2>
+      <p>
+        VocalLocal is committed to protecting your privacy and using artificial intelligence responsibly. 
+        This document outlines our ethical principles, data handling practices, and your rights when using 
+        our speech-to-text, translation, and AI interpretation services.
+      </p>
+      
+      <div class="highlight-box">
+        <strong>Key Principle:</strong> We believe that AI-powered transcription services must prioritize 
+        user privacy, data security, and ethical AI practices above all else.
+      </div>
+    </div>
+
+    <div class="privacy-section">
+      <h2><i class="fas fa-database"></i> Data Collection & Processing</h2>
+      
+      <h3>What We Collect</h3>
+      <ul>
+        <li><strong>Audio Data:</strong> Voice recordings you upload or record through our platform</li>
+        <li><strong>Account Information:</strong> Email address, username, and authentication data</li>
+        <li><strong>Usage Data:</strong> Service usage statistics, error logs, and performance metrics</li>
+        <li><strong>Technical Data:</strong> IP address, browser type, and device information</li>
+      </ul>
+      
+      <h3>How We Process Your Data</h3>
+      <ul>
+        <li><strong>AI Processing:</strong> Audio is sent to Google Gemini and OpenAI APIs for transcription</li>
+        <li><strong>Temporary Storage:</strong> Audio files are temporarily stored during processing only</li>
+        <li><strong>Encryption:</strong> All data is encrypted during transmission using TLS/SSL</li>
+        <li><strong>No Permanent Audio Storage:</strong> We do not permanently store your audio recordings</li>
+      </ul>
+      
+      <div class="highlight-box">
+        <strong>Important:</strong> Your audio data is processed by third-party AI services (Google and OpenAI) 
+        according to their respective privacy policies. We have chosen these providers based on their 
+        strong privacy and security commitments.
+      </div>
+    </div>
+
+    <div class="privacy-section">
+      <h2><i class="fas fa-balance-scale"></i> Ethical AI Principles</h2>
+      
+      <h3>Fairness & Non-Discrimination</h3>
+      <ul>
+        <li>We actively monitor for bias in transcription accuracy across different languages and accents</li>
+        <li>We provide equal service quality regardless of user demographics or speech patterns</li>
+        <li>We continuously work to improve AI model performance for underrepresented languages</li>
+      </ul>
+      
+      <h3>Transparency & Explainability</h3>
+      <ul>
+        <li>We clearly disclose which AI models process your data (Gemini 2.0 Flash, GPT-4o Mini, etc.)</li>
+        <li>We provide accuracy estimates and limitations for different languages and use cases</li>
+        <li>We explain how our AI interpretation features work and their potential limitations</li>
+      </ul>
+      
+      <h3>Human Oversight & Control</h3>
+      <ul>
+        <li>Users maintain full control over their data and can delete transcriptions at any time</li>
+        <li>We provide manual review options for critical transcriptions</li>
+        <li>Human oversight is maintained in our AI model selection and quality assurance processes</li>
+      </ul>
+    </div>
+
+    <div class="privacy-section">
+      <h2><i class="fas fa-shield-alt"></i> Data Security & Protection</h2>
+      
+      <h3>Security Measures</h3>
+      <ul>
+        <li><strong>Encryption:</strong> End-to-end encryption for all data transmission</li>
+        <li><strong>Access Controls:</strong> Strict access controls and authentication requirements</li>
+        <li><strong>Regular Audits:</strong> Regular security audits and vulnerability assessments</li>
+        <li><strong>Incident Response:</strong> Comprehensive data breach response procedures</li>
+      </ul>
+      
+      <h3>Data Retention</h3>
+      <ul>
+        <li><strong>Audio Files:</strong> Deleted immediately after processing (within 24 hours)</li>
+        <li><strong>Transcriptions:</strong> Stored only if you choose to save them to your account</li>
+        <li><strong>Account Data:</strong> Retained until account deletion or as required by law</li>
+        <li><strong>Usage Logs:</strong> Anonymized and retained for service improvement (30 days)</li>
+      </ul>
+    </div>
+
+    <div class="privacy-section">
+      <h2><i class="fas fa-user-check"></i> Your Rights & Controls</h2>
+      
+      <h3>Data Rights</h3>
+      <ul>
+        <li><strong>Access:</strong> Request access to your personal data</li>
+        <li><strong>Correction:</strong> Request correction of inaccurate data</li>
+        <li><strong>Deletion:</strong> Request deletion of your data (right to be forgotten)</li>
+        <li><strong>Portability:</strong> Request export of your data in a portable format</li>
+        <li><strong>Objection:</strong> Object to certain types of data processing</li>
+      </ul>
+      
+      <h3>Consent Management</h3>
+      <ul>
+        <li>Clear consent requests for data processing activities</li>
+        <li>Ability to withdraw consent at any time</li>
+        <li>Granular controls for different types of data usage</li>
+        <li>Regular consent renewal for ongoing services</li>
+      </ul>
+    </div>
+
+    <div class="privacy-section">
+      <h2><i class="fas fa-gavel"></i> Legal Compliance</h2>
+
+      <h3>GDPR Compliance (European Union)</h3>
+      <ul>
+        <li>Lawful basis for processing personal data</li>
+        <li>Data Protection Impact Assessments (DPIAs) for high-risk processing</li>
+        <li>Appointment of Data Protection Officer (DPO) when required</li>
+        <li>Cross-border data transfer safeguards</li>
+      </ul>
+
+      <h3>CCPA Compliance (California)</h3>
+      <ul>
+        <li>Consumer rights to know, delete, and opt-out</li>
+        <li>Non-discrimination for exercising privacy rights</li>
+        <li>Clear privacy disclosures and opt-out mechanisms</li>
+      </ul>
+
+      <h3>Industry-Specific Compliance</h3>
+      <ul>
+        <li><strong>Healthcare:</strong> HIPAA compliance considerations for medical transcriptions</li>
+        <li><strong>Legal:</strong> Attorney-client privilege protection measures</li>
+        <li><strong>Education:</strong> FERPA compliance for educational content</li>
+        <li><strong>Financial:</strong> SOX and financial privacy regulations</li>
+      </ul>
+    </div>
+
+    <div class="privacy-section">
+      <h2><i class="fas fa-exclamation-triangle"></i> Limitations & Disclaimers</h2>
+
+      <h3>AI Accuracy Limitations</h3>
+      <ul>
+        <li>Transcription accuracy varies by language, accent, audio quality, and content type</li>
+        <li>AI models may have biases that affect accuracy for certain demographics</li>
+        <li>Technical jargon, proper names, and specialized terminology may be less accurate</li>
+        <li>Users should review and verify transcriptions for critical applications</li>
+      </ul>
+
+      <h3>Use Case Restrictions</h3>
+      <ul>
+        <li><strong>Not for Emergency Services:</strong> Do not use for 911 or emergency communications</li>
+        <li><strong>Not for Legal Evidence:</strong> Transcriptions are not certified for legal proceedings</li>
+        <li><strong>Not for Medical Diagnosis:</strong> Not suitable for medical diagnosis or treatment decisions</li>
+        <li><strong>Recording Consent:</strong> Users must obtain proper consent before recording others</li>
+      </ul>
+    </div>
+
+    <div class="privacy-section">
+      <h2><i class="fas fa-handshake"></i> Third-Party Services</h2>
+
+      <h3>AI Service Providers</h3>
+      <ul>
+        <li><strong>Google Gemini:</strong> Subject to Google's AI Principles and Privacy Policy</li>
+        <li><strong>OpenAI:</strong> Subject to OpenAI's Usage Policies and Privacy Policy</li>
+        <li><strong>Data Processing Agreements:</strong> We maintain appropriate data processing agreements</li>
+      </ul>
+
+      <h3>Infrastructure Providers</h3>
+      <ul>
+        <li><strong>Firebase:</strong> Google's cloud platform for authentication and data storage</li>
+        <li><strong>Render:</strong> Cloud hosting platform with security certifications</li>
+        <li><strong>CDN Services:</strong> Content delivery networks for improved performance</li>
+      </ul>
+    </div>
+
+    <div class="privacy-section">
+      <h2><i class="fas fa-sync-alt"></i> Policy Updates</h2>
+      <p>
+        We may update this Privacy Policy and Ethical Guidelines document to reflect changes in our
+        practices, technology, legal requirements, or other factors. We will notify users of significant
+        changes through:
+      </p>
+      <ul>
+        <li>Email notifications to registered users</li>
+        <li>Prominent notices on our website</li>
+        <li>In-app notifications for significant changes</li>
+      </ul>
+
+      <div class="highlight-box">
+        <strong>Continued Use:</strong> Your continued use of VocalLocal after policy updates
+        constitutes acceptance of the revised terms.
+      </div>
+    </div>
+
+    <div class="contact-info">
+      <h2><i class="fas fa-envelope"></i> Contact Us</h2>
+      <p>
+        If you have questions about this Privacy Policy, want to exercise your data rights,
+        or have concerns about our AI practices, please contact us:
+      </p>
+      <p>
+        <strong>Email:</strong> privacy@vocallocal.com<br>
+        <strong>Data Protection Officer:</strong> dpo@vocallocal.com<br>
+        <strong>Address:</strong> [Your Business Address]
+      </p>
+    </div>
+
+    <div class="last-updated">
+      <p><strong>Last Updated:</strong> January 30, 2025</p>
+      <p><strong>Effective Date:</strong> January 30, 2025</p>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="{{ versioned_url_for('static', filename='cache-manager.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='common.js') }}"></script>
+</body>
+</html>

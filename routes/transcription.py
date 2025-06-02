@@ -4,7 +4,7 @@ Transcription routes for VocalLocal
 import os
 import time
 import traceback
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, session
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 from services.transcription import TranscriptionService
@@ -23,6 +23,47 @@ except ImportError:
 
 # Create a blueprint for the transcription routes
 bp = Blueprint('transcription', __name__, url_prefix='/api')
+
+def deduplicate_overlapping_text(prev_text, current_text, overlap_seconds):
+    """
+    Simple deduplication for overlapping transcription chunks.
+    Removes duplicate words from the beginning of current_text that appear at the end of prev_text.
+    """
+    if not prev_text or not current_text:
+        return current_text
+
+    # Split into words
+    prev_words = prev_text.strip().split()
+    current_words = current_text.strip().split()
+
+    if not prev_words or not current_words:
+        return current_text
+
+    # Estimate overlap based on time (rough: ~3 words per second)
+    estimated_overlap_words = max(1, overlap_seconds * 3)
+
+    # Look for overlap in the last N words of previous text
+    search_window = min(len(prev_words), estimated_overlap_words + 5)
+    prev_tail = prev_words[-search_window:]
+
+    # Find the longest matching sequence at the start of current text
+    best_match_length = 0
+    for i in range(min(len(current_words), search_window)):
+        # Check if current_words[0:i+1] matches any suffix of prev_tail
+        current_prefix = current_words[0:i+1]
+        for j in range(len(prev_tail) - len(current_prefix) + 1):
+            if prev_tail[j:j+len(current_prefix)] == current_prefix:
+                best_match_length = len(current_prefix)
+                break
+
+    # Remove the overlapping words from current text
+    if best_match_length > 0:
+        deduplicated_words = current_words[best_match_length:]
+        result = ' '.join(deduplicated_words)
+        current_app.logger.info(f"Removed {best_match_length} overlapping words: {' '.join(current_words[:best_match_length])}")
+        return result
+
+    return current_text
 
 # Initialize the transcription service
 transcription_service = TranscriptionService()
@@ -246,7 +287,9 @@ def transcribe_audio():
                         }
 
                     # Reset usage if it's been more than 24 hours since last reset
-                    if time.time() - session['free_trial_usage']['last_reset'] > 86400:  # 24 hours in seconds
+                    # Check if 'last_reset' key exists to avoid KeyError
+                    last_reset = session['free_trial_usage'].get('last_reset', time.time())
+                    if time.time() - last_reset > 86400:  # 24 hours in seconds
                         session['free_trial_usage'] = {
                             'total_duration': 0,
                             'last_reset': time.time(),
@@ -395,7 +438,205 @@ def transcribe_audio():
 
     return jsonify({'error': f'Invalid file type. Allowed types: {", ".join(Config.ALLOWED_EXTENSIONS)}'}), 400
 
-@bp.route('/api/transcription_status/<job_id>', methods=['GET'])
+@bp.route('/test_transcribe_chunk', methods=['POST'])
+def test_transcribe_chunk():
+    """Test-only endpoint for chunk transcription that bypasses usage tracking and authentication"""
+    try:
+        current_app.logger.info("=== TEST TRANSCRIBE CHUNK ENDPOINT CALLED ===")
+
+        # Check if we're in development mode
+        if not current_app.debug and not current_app.config.get('TESTING', False):
+            current_app.logger.warning("Test endpoint called but not in debug mode")
+            return jsonify({'error': 'Test endpoint only available in development mode'}), 403
+
+        current_app.logger.info("Debug mode confirmed, proceeding with test transcription")
+
+        # Check if file is present
+        if 'audio' not in request.files:
+            current_app.logger.error("No audio file in request")
+            return jsonify({'error': 'No audio file provided'}), 400
+
+        audio_file = request.files['audio']
+        if audio_file.filename == '':
+            current_app.logger.error("Empty filename provided")
+            return jsonify({'error': 'No file selected'}), 400
+
+        # Get parameters
+        language = request.form.get('language', 'en')
+        model = request.form.get('model', 'gemini-2.0-flash-lite')
+        chunk_number = request.form.get('chunk_number', '0')
+        element_id = request.form.get('element_id', 'test-sandbox')
+        has_overlap = request.form.get('has_overlap', 'false').lower() == 'true'
+        overlap_seconds = int(request.form.get('overlap_seconds', '0'))
+
+        current_app.logger.info(f"TEST MODE: Processing chunk {chunk_number} for element {element_id} (overlap: {has_overlap}, {overlap_seconds}s)")
+
+        # Read audio data
+        audio_data = audio_file.read()
+        current_app.logger.info(f"TEST MODE: Received chunk {chunk_number}: {len(audio_data)} bytes, format: {audio_file.content_type}")
+
+        # Basic validation
+        if len(audio_data) == 0:
+            current_app.logger.error("TEST MODE: Empty audio file received")
+            return jsonify({'error': 'Empty audio file', 'test_mode': True}), 400
+
+        # Skip all usage tracking and authentication for test mode
+        # Use the transcription service to process the chunk
+        from services.transcription import transcription_service
+
+        # For chunks, we want fast processing without complex chunking
+        result = transcription_service.transcribe_simple_chunk(audio_data, language, model)
+
+        current_app.logger.info(f"TEST MODE: Chunk {chunk_number} transcription completed: {len(result)} characters")
+
+        return jsonify({
+            'text': result,
+            'chunk_number': int(chunk_number),
+            'element_id': element_id,
+            'status': 'completed',
+            'has_overlap': has_overlap,
+            'overlap_seconds': overlap_seconds,
+            'test_mode': True
+        })
+
+    except Exception as e:
+        current_app.logger.error(f"TEST MODE: Error processing chunk: {str(e)}")
+        return jsonify({
+            'error': str(e),
+            'chunk_number': int(request.form.get('chunk_number', '0')),
+            'status': 'error',
+            'test_mode': True
+        }), 500
+
+@bp.route('/transcribe_chunk', methods=['POST'])
+def transcribe_chunk():
+    """Process a single audio chunk for progressive transcription"""
+    try:
+        # Check if file is present
+        if 'audio' not in request.files:
+            return jsonify({'error': 'No audio file provided'}), 400
+
+        audio_file = request.files['audio']
+        if audio_file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+
+        # Get parameters
+        language = request.form.get('language', 'en')
+        model = request.form.get('model', 'gemini-2.0-flash-lite')
+        chunk_number = request.form.get('chunk_number', '0')
+        element_id = request.form.get('element_id', 'basic-transcript')
+        has_overlap = request.form.get('has_overlap', 'false').lower() == 'true'
+        overlap_seconds = int(request.form.get('overlap_seconds', '0'))
+
+        current_app.logger.info(f"Processing chunk {chunk_number} for element {element_id} (overlap: {has_overlap}, {overlap_seconds}s)")
+
+        # Read audio data
+        audio_data = audio_file.read()
+        current_app.logger.info(f"Received chunk {chunk_number}: {len(audio_data)} bytes, format: {audio_file.content_type}")
+
+        # Basic validation
+        if len(audio_data) == 0:
+            return jsonify({'error': 'Empty audio file'}), 400
+
+        if len(audio_data) > 150 * 1024 * 1024:  # 150MB limit
+            return jsonify({'error': 'Audio file too large (max 150MB)'}), 400
+
+        # WebM validation for chunks
+        if audio_file.content_type == 'audio/webm' or audio_file.filename.endswith('.webm'):
+            # Check for WebM EBML header
+            if len(audio_data) >= 4:
+                ebml_signature = audio_data[:4]
+                has_ebml_header = (ebml_signature[0] == 0x1A and
+                                 ebml_signature[1] == 0x45 and
+                                 ebml_signature[2] == 0xDF and
+                                 ebml_signature[3] == 0xA3)
+
+                current_app.logger.info(f"WebM chunk validation: hasEBMLHeader={has_ebml_header}, first4bytes={[hex(b) for b in ebml_signature]}")
+
+                if not has_ebml_header:
+                    current_app.logger.warning(f"Chunk {chunk_number} appears to be corrupted WebM (no EBML header)")
+                    return jsonify({'error': 'Corrupted WebM chunk detected'}), 400
+            else:
+                current_app.logger.warning(f"Chunk {chunk_number} too small for WebM validation")
+                return jsonify({'error': 'WebM chunk too small'}), 400
+
+        # Get user email for RBAC (if available)
+        user_email = None
+        if current_user.is_authenticated:
+            user_email = current_user.email
+
+        # For unauthenticated users (free trial), check usage limits
+        if not current_user.is_authenticated:
+            # Initialize session tracking if not exists
+            if 'free_trial_usage' not in session:
+                session['free_trial_usage'] = {
+                    'total_duration': 0,
+                    'requests': 0,
+                    'start_time': time.time()
+                }
+
+            # Estimate duration for this chunk (assume 60 seconds per chunk)
+            estimated_duration_minutes = 1.0  # 60 seconds = 1 minute
+
+            # Check if adding this chunk would exceed the limit
+            projected_total = session['free_trial_usage']['total_duration'] + estimated_duration_minutes
+            if projected_total > 3:
+                return jsonify({
+                    'error': 'You have exceeded the free trial limit of 3 minutes per day.',
+                    'errorType': 'FreeTrial_DailyLimitExceeded',
+                    'details': 'Please sign up for a full account to continue using VocalLocal.',
+                    'usage': session['free_trial_usage']
+                }), 429  # 429 Too Many Requests
+
+            # Update usage tracking
+            session['free_trial_usage']['total_duration'] += estimated_duration_minutes
+            session['free_trial_usage']['requests'] += 1
+
+        # Use the transcription service to process the chunk
+        from services.transcription import transcription_service
+
+        # For chunks, we want fast processing without complex chunking
+        result = transcription_service.transcribe_simple_chunk(audio_data, language, model)
+
+        current_app.logger.info(f"Chunk {chunk_number} transcription completed: {len(result)} characters")
+
+        # Store previous chunk result for deduplication (simple session-based storage)
+        if 'chunk_results' not in session:
+            session['chunk_results'] = {}
+
+        # Simple deduplication for overlapping chunks
+        if has_overlap and chunk_number != '1':
+            # Get previous chunk result
+            prev_chunk_key = f"{element_id}_{int(chunk_number) - 1}"
+            if prev_chunk_key in session['chunk_results']:
+                prev_result = session['chunk_results'][prev_chunk_key]
+
+                # Simple word-based deduplication
+                result = deduplicate_overlapping_text(prev_result, result, overlap_seconds)
+                current_app.logger.info(f"Deduplication applied for chunk {chunk_number}")
+
+        # Store current result
+        current_chunk_key = f"{element_id}_{chunk_number}"
+        session['chunk_results'][current_chunk_key] = result
+
+        return jsonify({
+            'text': result,
+            'chunk_number': int(chunk_number),
+            'element_id': element_id,
+            'status': 'completed',
+            'has_overlap': has_overlap,
+            'overlap_seconds': overlap_seconds
+        })
+
+    except Exception as e:
+        current_app.logger.error(f"Error processing chunk: {str(e)}")
+        return jsonify({
+            'error': str(e),
+            'chunk_number': int(request.form.get('chunk_number', '0')),
+            'status': 'error'
+        }), 500
+
+@bp.route('/transcription_status/<job_id>', methods=['GET'])
 def transcription_status(job_id):
     """Check the status of a background transcription job"""
     from services.transcription import transcription_service

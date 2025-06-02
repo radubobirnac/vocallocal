@@ -67,6 +67,8 @@ document.addEventListener('DOMContentLoaded', function() {
   let circleProgress = null;
   let lastChunkTime = 0;
   let partialTranscriptions = {}; // Store partial transcriptions by speaker
+  let isProcessingChunk = false; // Flag to prevent multiple chunk processing
+  let lastProcessedChunkIndex = 0; // Track which audio chunks have been processed
 
   // Initialize circular progress indicator
   function initializeCircularProgress() {
@@ -118,9 +120,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Check if it's time to process a chunk (every CHUNK_INTERVAL seconds)
-    if (isRecording && elapsedTime >= CHUNK_INTERVAL && elapsedTime - lastChunkTime >= CHUNK_INTERVAL) {
+    if (isRecording && !isProcessingChunk && elapsedTime >= CHUNK_INTERVAL && elapsedTime - lastChunkTime >= CHUNK_INTERVAL) {
+      console.log(`🎯 CHUNK TIME! Processing chunk at ${elapsedTime}s for speaker ${speakerNum}`);
+      console.log(`📊 Chunk timing: elapsedTime=${elapsedTime}, lastChunkTime=${lastChunkTime}, isProcessingChunk=${isProcessingChunk}`);
+      isProcessingChunk = true; // Set flag to prevent multiple processing
       processPartialRecording(speakerNum);
       lastChunkTime = elapsedTime;
+    }
+
+    // Debug: Log every 10 seconds to see if we're approaching chunk time
+    if (isRecording && Math.floor(elapsedTime) % 10 === 0 && Math.floor(elapsedTime) !== Math.floor((elapsedTime - 0.1))) {
+      console.log(`⏰ Recording progress: ${elapsedTime.toFixed(1)}s, next chunk at: ${lastChunkTime + CHUNK_INTERVAL}s, isProcessingChunk: ${isProcessingChunk}`);
     }
 
     // Auto-stop recording if max duration reached
@@ -131,11 +141,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Process partial recording
   function processPartialRecording(speakerNum = null) {
-    // Create a copy of the current audio chunks
-    const currentChunks = [...audioChunks];
+    // Get only the new audio chunks since the last processing
+    const newChunks = audioChunks.slice(lastProcessedChunkIndex);
 
-    // Create a blob from the current chunks
-    const audioBlob = new Blob(currentChunks, { type: 'audio/webm' });
+    console.log(`🔍 DEBUG: Total audioChunks: ${audioChunks.length}, lastProcessedChunkIndex: ${lastProcessedChunkIndex}, newChunks: ${newChunks.length}`);
+
+    // Check if we have new chunks to process
+    if (newChunks.length === 0) {
+      console.log(`⚠️ No new audio chunks to process. Skipping.`);
+      isProcessingChunk = false;
+      return;
+    }
+
+    // Update the last processed chunk index
+    lastProcessedChunkIndex = audioChunks.length;
+
+    // Create a blob from only the new chunks
+    const audioBlob = new Blob(newChunks, { type: 'audio/webm' });
+
+    console.log(`🎵 Processing new audio chunk: ${newChunks.length} chunks, ${audioBlob.size} bytes`);
+
+    // Check if the blob is too small (might be empty or corrupted)
+    if (audioBlob.size < 1000) { // Less than 1KB
+      console.log(`⚠️ Audio blob too small (${audioBlob.size} bytes). Skipping transcription.`);
+      isProcessingChunk = false;
+      return;
+    }
 
     // Show a "processing" indicator
     showPartialProcessingIndicator(speakerNum);
@@ -173,9 +204,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Process partial audio
   function processPartialAudio(audioBlob, speakerNum = null) {
+    console.log(`🔄 Processing partial audio for speaker ${speakerNum}, blob size: ${audioBlob.size} bytes`);
+
     // Create FormData for API request
     const formData = new FormData();
-    formData.append('file', audioBlob, 'partial_recording.webm');
+    formData.append('audio', audioBlob, 'partial_recording.webm');
 
     // Determine which language to use
     let selectedLanguage;
@@ -198,21 +231,50 @@ document.addEventListener('DOMContentLoaded', function() {
 
     formData.append('model', selectedModel);
 
-    // Add a flag to indicate this is a partial transcription
-    formData.append('is_partial', 'true');
+    // Add chunk number and element ID
+    const chunkNumber = partialTranscriptions[speakerNum] ? partialTranscriptions[speakerNum].length : 0;
+    formData.append('chunk_number', chunkNumber.toString());
 
-    // Send to API
-    fetch('/api/transcribe', {
+    // Determine element ID based on speaker
+    let elementId;
+    if (speakerNum === 1) {
+      elementId = 'transcription-text-1';
+    } else if (speakerNum === 2) {
+      elementId = 'transcription-text-2';
+    } else {
+      elementId = 'transcription-text';
+    }
+    formData.append('element_id', elementId);
+
+    // Send to new chunk API endpoint
+    console.log(`📡 Sending chunk to /api/transcribe_chunk with data:`, {
+      language: selectedLanguage,
+      model: selectedModel,
+      chunkNumber: chunkNumber,
+      elementId: elementId
+    });
+
+
+
+    // Create an AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
+    fetch('/api/transcribe_chunk', {
       method: 'POST',
-      body: formData
+      body: formData,
+      signal: controller.signal
     })
     .then(response => {
+      clearTimeout(timeoutId); // Clear timeout on successful response
+      console.log(`📥 Received response:`, response.status, response.statusText);
       if (!response.ok) {
         throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
       }
       return response.json();
     })
     .then(data => {
+      console.log(`✅ Chunk transcription result:`, data);
       if (data.error) {
         throw new Error(data.error);
       }
@@ -221,8 +283,25 @@ document.addEventListener('DOMContentLoaded', function() {
       displayPartialTranscription(data.text || data, speakerNum);
     })
     .catch(error => {
-      console.error('Error transcribing partial audio:', error);
+      clearTimeout(timeoutId); // Clear timeout on error
+      if (error.name === 'AbortError') {
+        console.error('❌ Chunk transcription timed out after 60 seconds');
+        console.error('This usually means the server is overloaded or there\'s an issue with the transcription service');
+      } else {
+        console.error('❌ Error transcribing partial audio:', error);
+      }
+      console.error('Error details:', {
+        speakerNum: speakerNum,
+        blobSize: audioBlob.size,
+        selectedLanguage: selectedLanguage,
+        selectedModel: selectedModel
+      });
       // Handle error but don't disrupt recording
+    })
+    .finally(() => {
+      // Reset the processing flag
+      isProcessingChunk = false;
+      console.log(`🔓 Chunk processing complete, flag reset`);
     });
   }
 
@@ -396,10 +475,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Store this partial transcription
     partialTranscriptions[speakerNum].push(text);
 
-    // Display all partial transcriptions
+    // Now that we're sending only new audio chunks, we can accumulate the transcriptions
     if (transcriptionTextToUse) {
+      // Combine all partial transcriptions to show progressive results
       const combinedText = partialTranscriptions[speakerNum].join(' ');
       transcriptionTextToUse.innerHTML = `<p>${combinedText}</p>`;
+
+      // Add a small indicator showing this is a partial result
+      const chunkNumber = partialTranscriptions[speakerNum].length;
+      const indicator = document.createElement('div');
+      indicator.className = 'chunk-indicator';
+      indicator.style.cssText = 'font-size: 0.8em; color: #666; margin-top: 5px; font-style: italic;';
+      indicator.textContent = `Partial transcription (${chunkNumber} chunks) - Recording in progress...`;
+      transcriptionTextToUse.appendChild(indicator);
 
       // Enable copy button
       let copyButtonToUse;
@@ -461,6 +549,8 @@ document.addEventListener('DOMContentLoaded', function() {
       mediaRecorder.start(100);
       isRecording = true;
       lastChunkTime = 0;
+      isProcessingChunk = false; // Reset chunk processing flag
+      lastProcessedChunkIndex = 0; // Reset chunk tracking
 
       // Reset partial transcriptions for this speaker
       if (partialTranscriptions[speakerNum]) {

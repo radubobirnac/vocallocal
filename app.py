@@ -6,7 +6,7 @@ import os
 import sys
 import subprocess
 import tempfile
-from flask import Flask, redirect, url_for, flash, render_template, jsonify
+from flask import Flask, redirect, url_for, flash, render_template, jsonify, send_from_directory
 from config import Config
 import jinja2
 
@@ -181,6 +181,32 @@ def root_auth_callback():
         flash("Error during authentication. Please try again.", "danger")
         return redirect(url_for('auth.login'))
 
+# Add missing routes that were showing 404
+@app.route('/health')
+def health_check():
+    """Health check endpoint."""
+    return jsonify({'status': 'healthy', 'service': 'VocalLocal'})
+
+@app.route('/api/health')
+def api_health_check():
+    """API health check endpoint."""
+    return jsonify({'status': 'healthy', 'api': 'VocalLocal API'})
+
+@app.route('/pricing')
+def pricing():
+    """Pricing page."""
+    return render_template('pricing.html')
+
+@app.route('/transcribe')
+def transcribe():
+    """Transcribe page."""
+    return render_template('transcribe.html')
+
+@app.route('/translate')
+def translate():
+    """Translate page."""
+    return render_template('translate.html')
+
 # Register blueprints
 from routes import main, transcription, translation, tts, admin, interpretation, usage_tracking
 
@@ -192,8 +218,10 @@ app.register_blueprint(admin.bp)
 app.register_blueprint(interpretation.bp)
 app.register_blueprint(usage_tracking.bp)
 
-# Register auth blueprint with a different name to avoid conflicts
+# Register auth blueprint without URL prefix to make /login work
 from auth import auth_bp
+# Remove the URL prefix so /login works directly
+auth_bp.url_prefix = None
 app.register_blueprint(auth_bp, name='auth_blueprint')
 
 # Import the transcription service for the status endpoint
@@ -207,6 +235,49 @@ def transcription_status(job_id):
     return jsonify(status)
 
 # Add API route for user available models
+@app.route('/test-sandbox')
+def test_sandbox():
+    """Test sandbox page for development and testing"""
+    return send_from_directory('static', 'test_sandbox.html')
+
+@app.route('/progressive-test')
+def progressive_test():
+    """Progressive recording test page with 7-minute chunks and 10-second overlap"""
+    return send_from_directory('static', 'progressive_test.html')
+
+@app.route('/test-chunking-fix')
+def test_chunking_fix():
+    """Test chunking fix page"""
+    return send_from_directory('.', 'test_chunking_fix.html')
+
+@app.route('/debug-test')
+def debug_test():
+    """Simple debug test to verify server is working"""
+    return """
+    <html>
+        <head><title>VocalLocal Debug Test</title></head>
+        <body>
+            <h1>🎉 SUCCESS! Your Flask server is working!</h1>
+            <p>Server is running properly on HTTPS.</p>
+            <h2>Available Test URLs:</h2>
+            <ul>
+                <li><a href="/progressive-test">🎤 Progressive Recording Test (NEW!)</a> - 7-minute chunks with 10s overlap</li>
+                <li><a href="/test-sandbox">Test Sandbox (OLD)</a></li>
+                <li><a href="/test-chunking-fix">Test Chunking Fix</a></li>
+                <li><a href="/">Main App</a></li>
+            </ul>
+            <h2>Static Files Test:</h2>
+            <p>CSS: <link rel="stylesheet" href="/static/styles.css"></p>
+            <p>JS: <script src="/static/script.js"></script></p>
+        </body>
+    </html>
+    """
+
+@app.route('/privacy')
+def privacy():
+    """Privacy policy and ethical guidelines page"""
+    return render_template('privacy.html')
+
 @app.route('/api/user/available-models', methods=['GET'])
 def get_user_available_models():
     """API endpoint to get available models for the current user"""
