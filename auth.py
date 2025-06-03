@@ -159,7 +159,10 @@ def init_app(app):
                             client_id=client_id,
                             client_secret=client_secret,
                             authorize_url=auth_uri,
-                            authorize_params=None,
+                            authorize_params={
+                                'prompt': 'select_account',
+                                'access_type': 'offline'
+                            },
                             access_token_url=token_uri,
                             access_token_params=None,
                             refresh_token_url=token_uri,
@@ -190,7 +193,10 @@ def init_app(app):
                 client_id=google_client_id,
                 client_secret=google_client_secret,
                 authorize_url='https://accounts.google.com/o/oauth2/auth',
-                authorize_params=None,
+                authorize_params={
+                    'prompt': 'select_account',
+                    'access_type': 'offline'
+                },
                 access_token_url='https://oauth2.googleapis.com/token',
                 access_token_params=None,
                 refresh_token_url='https://oauth2.googleapis.com/token',
@@ -426,8 +432,12 @@ def google_login():
 
         print(f"Using redirect URI: {redirect_uri}")
 
-        # Use the specific redirect URI
-        return google.authorize_redirect(redirect_uri)
+        # Use the specific redirect URI with account selection prompt
+        return google.authorize_redirect(
+            redirect_uri,
+            prompt='select_account',
+            access_type='offline'
+        )
     except Exception as e:
         flash(f"Error with Google login: {str(e)}", "danger")
         print(f"Google OAuth error: {str(e)}")
