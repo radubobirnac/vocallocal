@@ -40,7 +40,11 @@ class FirebaseService:
             # Check if already initialized
             if not firebase_admin._apps:
                 # Get credentials from environment or file
-                cred_json = os.environ.get('FIREBASE_CREDENTIALS')
+                cred_json = os.environ.get('FIREBASE_CREDENTIALS_JSON')
+                if not cred_json:
+                    # Fallback to legacy environment variable name
+                    cred_json = os.environ.get('FIREBASE_CREDENTIALS')
+
                 cred_path = os.environ.get('FIREBASE_CREDENTIALS_PATH')
 
                 if cred_json:

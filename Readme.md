@@ -102,6 +102,27 @@ GOOGLE_REDIRECT_URI=https://localhost:5001/auth/callback
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
+#### Secure Credential Configuration (Recommended for Production)
+
+VocalLocal supports secure environment variable configuration for credentials:
+
+```bash
+# For production deployment - complete JSON credentials as environment variables
+GOOGLE_OAUTH_CREDENTIALS_JSON={"web":{"client_id":"...","project_id":"...","client_secret":"..."}}
+FIREBASE_CREDENTIALS_JSON={"type":"service_account","project_id":"...","private_key":"..."}}
+```
+
+**Benefits:**
+- ✅ Keeps sensitive credentials out of version control
+- ✅ Improves deployment security
+- ✅ Works with all deployment platforms (Render, Heroku, DigitalOcean, etc.)
+- ✅ Maintains fallback to file-based credentials for development
+
+**Setup:**
+1. Use the conversion utility: `python convert_json_to_env.py`
+2. Copy the generated environment variables to your deployment platform
+3. See `ENVIRONMENT_VARIABLES_GUIDE.md` for detailed instructions
+
 ### 5. Set Up SSL Certificates (for HTTPS)
 
 Generate self-signed certificates for local development:

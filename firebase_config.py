@@ -35,17 +35,30 @@ def initialize_firebase():
             cred = None
             auth_methods_tried = []
 
-            # Method 1: Try FIREBASE_CREDENTIALS environment variable (JSON string)
-            cred_json = os.getenv('FIREBASE_CREDENTIALS')
+            # Method 1: Try FIREBASE_CREDENTIALS_JSON environment variable (JSON string)
+            cred_json = os.getenv('FIREBASE_CREDENTIALS_JSON')
             if cred_json:
-                auth_methods_tried.append("FIREBASE_CREDENTIALS environment variable")
+                auth_methods_tried.append("FIREBASE_CREDENTIALS_JSON environment variable")
                 try:
-                    print("Found FIREBASE_CREDENTIALS environment variable")
+                    print("Found FIREBASE_CREDENTIALS_JSON environment variable")
                     cred_dict = json.loads(cred_json)
                     cred = credentials.Certificate(cred_dict)
-                    print("Using Firebase credentials from FIREBASE_CREDENTIALS environment variable")
+                    print("Using Firebase credentials from FIREBASE_CREDENTIALS_JSON environment variable")
                 except Exception as e:
-                    print(f"Error using FIREBASE_CREDENTIALS environment variable: {str(e)}")
+                    print(f"Error using FIREBASE_CREDENTIALS_JSON environment variable: {str(e)}")
+
+            # Method 1b: Try legacy FIREBASE_CREDENTIALS environment variable (for backward compatibility)
+            if not cred:
+                cred_json = os.getenv('FIREBASE_CREDENTIALS')
+                if cred_json:
+                    auth_methods_tried.append("FIREBASE_CREDENTIALS environment variable (legacy)")
+                    try:
+                        print("Found FIREBASE_CREDENTIALS environment variable (legacy)")
+                        cred_dict = json.loads(cred_json)
+                        cred = credentials.Certificate(cred_dict)
+                        print("Using Firebase credentials from FIREBASE_CREDENTIALS environment variable (legacy)")
+                    except Exception as e:
+                        print(f"Error using FIREBASE_CREDENTIALS environment variable (legacy): {str(e)}")
 
             # Method 2: Try multiple possible paths for the secret file
             if not cred:

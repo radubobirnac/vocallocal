@@ -1,5 +1,6 @@
 """Authentication module for VocalLocal."""
 import os
+import json
 from functools import wraps
 from flask import Blueprint, redirect, url_for, session, request, flash, render_template, jsonify
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
@@ -70,7 +71,48 @@ def init_app(app):
 
     # Configure Google OAuth
     try:
-        # Try to load credentials from OAuth.json first
+        # Method 1: Try GOOGLE_OAUTH_CREDENTIALS_JSON environment variable (JSON string)
+        oauth_json_str = os.getenv('GOOGLE_OAUTH_CREDENTIALS_JSON')
+        if oauth_json_str:
+            app.logger.info("Found OAuth credentials in GOOGLE_OAUTH_CREDENTIALS_JSON environment variable")
+            try:
+                oauth_data = json.loads(oauth_json_str)
+
+                if 'web' in oauth_data:
+                    web_config = oauth_data['web']
+                    client_id = web_config.get('client_id')
+                    client_secret = web_config.get('client_secret')
+                    auth_uri = web_config.get('auth_uri', 'https://accounts.google.com/o/oauth2/auth')
+                    token_uri = web_config.get('token_uri', 'https://oauth2.googleapis.com/token')
+
+                    app.logger.info(f"Using OAuth client ID from env var: {client_id[:5]}...{client_id[-5:] if client_id else 'None'}")
+
+                    if client_id and client_secret:
+                        # Register the OAuth provider with credentials from environment variable
+                        oauth.register(
+                            name='google',
+                            client_id=client_id,
+                            client_secret=client_secret,
+                            authorize_url=auth_uri,
+                            authorize_params=None,
+                            access_token_url=token_uri,
+                            access_token_params=None,
+                            refresh_token_url=token_uri,
+                            redirect_uri=None,
+                            client_kwargs={
+                                'scope': 'openid email profile',
+                                'token_endpoint_auth_method': 'client_secret_post'
+                            },
+                            jwks_uri='https://www.googleapis.com/oauth2/v3/certs',  # Add JWKS URI
+                        )
+                        google = oauth.google
+                        app.logger.info("Google OAuth configured successfully from GOOGLE_OAUTH_CREDENTIALS_JSON environment variable")
+                        return  # Exit early if successful
+            except Exception as e:
+                app.logger.error(f"Error parsing GOOGLE_OAUTH_CREDENTIALS_JSON environment variable: {str(e)}")
+                # Continue to other methods if this fails
+
+        # Method 2: Try to load credentials from OAuth.json file
         oauth_file_path = None
         possible_oauth_paths = [
             os.path.join(os.path.dirname(__file__), 'Oauth.json'),  # Local file

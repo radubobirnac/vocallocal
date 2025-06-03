@@ -83,10 +83,15 @@ def init_app(app):
 
     # Configure Google OAuth
     try:
-        # Method 1: Try OAUTH_CREDENTIALS environment variable (JSON string)
-        oauth_json_str = os.getenv('OAUTH_CREDENTIALS')
+        # Method 1: Try GOOGLE_OAUTH_CREDENTIALS_JSON environment variable (JSON string)
+        oauth_json_str = os.getenv('GOOGLE_OAUTH_CREDENTIALS_JSON')
+        if not oauth_json_str:
+            # Fallback to legacy environment variable name
+            oauth_json_str = os.getenv('OAUTH_CREDENTIALS')
+
         if oauth_json_str:
-            app.logger.info("Found OAuth credentials in OAUTH_CREDENTIALS environment variable")
+            env_var_name = "GOOGLE_OAUTH_CREDENTIALS_JSON" if os.getenv('GOOGLE_OAUTH_CREDENTIALS_JSON') else "OAUTH_CREDENTIALS"
+            app.logger.info(f"Found OAuth credentials in {env_var_name} environment variable")
             try:
                 oauth_data = json.loads(oauth_json_str)
                 
@@ -118,10 +123,10 @@ def init_app(app):
                             jwks_uri='https://www.googleapis.com/oauth2/v3/certs',
                         )
                         google = oauth.google
-                        app.logger.info("Google OAuth configured successfully from OAUTH_CREDENTIALS environment variable")
+                        app.logger.info(f"Google OAuth configured successfully from {env_var_name} environment variable")
                         return  # Exit early if successful
             except Exception as e:
-                app.logger.error(f"Error parsing OAUTH_CREDENTIALS environment variable: {str(e)}")
+                app.logger.error(f"Error parsing {env_var_name} environment variable: {str(e)}")
                 # Continue to other methods if this fails
 
         # Method 2: Try to load credentials from OAuth.json file
