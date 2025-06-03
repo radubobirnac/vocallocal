@@ -40,19 +40,38 @@ class CacheBuster:
     def get_file_version(self, filename):
         """
         Get version string for a static file based on modification time.
-        
+
         Args:
             filename (str): The filename relative to static folder
-            
+
         Returns:
             str: Version string (timestamp or hash)
         """
         if not filename:
             return str(int(time.time()))
-        
+
+        # Force refresh for script.js to ensure latest version is served
+        if filename == 'script.js':
+            current_time = time.time()
+            try:
+                static_folder = current_app.static_folder
+                if static_folder:
+                    file_path = os.path.join(static_folder, filename)
+                    if os.path.exists(file_path):
+                        # Use file modification time as version
+                        mtime = os.path.getmtime(file_path)
+                        version = str(int(mtime))
+                        self._file_versions[filename] = version
+                        self._last_check[filename] = current_time
+                        return version
+            except (OSError, IOError):
+                pass
+            # Fallback to current timestamp for script.js
+            return str(int(current_time))
+
         # Check if we need to refresh the version
         current_time = time.time()
-        if (filename not in self._last_check or 
+        if (filename not in self._last_check or
             current_time - self._last_check[filename] > self.check_interval):
             
             try:
