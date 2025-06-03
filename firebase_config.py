@@ -20,6 +20,18 @@ def initialize_firebase():
                 db_url = "https://vocal-local-e1e70-default-rtdb.firebaseio.com"
                 print(f"Warning: Using default Firebase URL: {db_url}")
 
+            # Get storage bucket from environment or use default
+            storage_bucket = os.getenv('FIREBASE_STORAGE_BUCKET')
+            if not storage_bucket:
+                storage_bucket = "vocal-local-e1e70.appspot.com"
+                print(f"Warning: Using default storage bucket: {storage_bucket}")
+
+            # Prepare config for Firebase initialization
+            config = {
+                'databaseURL': db_url,
+                'storageBucket': storage_bucket
+            }
+
             cred = None
             auth_methods_tried = []
 
@@ -94,16 +106,6 @@ def initialize_firebase():
                 raise ValueError(f"Could not initialize Firebase. Tried: {', '.join(auth_methods_tried)}")
 
             # Initialize app with database URL and storage bucket
-            config = {'databaseURL': db_url}
-
-            # Add storage bucket if available
-            storage_bucket = os.getenv('FIREBASE_STORAGE_BUCKET')
-            if not storage_bucket:
-                storage_bucket = "vocal-local-e1e70.appspot.com"
-                print(f"Warning: Using default storage bucket: {storage_bucket}")
-
-            config['storageBucket'] = storage_bucket
-
             firebase_admin.initialize_app(cred, config)
             print("Firebase initialized successfully")
 
