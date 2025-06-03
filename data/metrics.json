@@ -87,10 +87,10 @@
       "failures": 0
     },
     "en": {
-      "calls": 22,
-      "tokens": 8868,
-      "chars": 26620,
-      "time": 163.43952465057373,
+      "calls": 24,
+      "tokens": 8940,
+      "chars": 26837,
+      "time": 168.99150252342224,
       "failures": 0
     }
   },
@@ -170,6 +170,11 @@
       "transcription": {
         "unknown": 904,
         "en": 8868
+      }
+    },
+    "2025-06-03": {
+      "transcription": {
+        "en": 72
       }
     }
   },
@@ -379,6 +384,11 @@
     "2025-05-30-20": {
       "transcription": {
         "en": 340
+      }
+    },
+    "2025-06-03-22": {
+      "transcription": {
+        "en": 72
       }
     }
   },

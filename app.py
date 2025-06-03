@@ -177,7 +177,7 @@ def translate():
     return render_template('translate.html')
 
 # Register blueprints
-from routes import main, transcription, translation, tts, admin, interpretation, usage_tracking
+from routes import main, transcription, translation, tts, admin, interpretation, usage_tracking, user
 
 app.register_blueprint(main.bp)
 app.register_blueprint(transcription.bp)
@@ -186,6 +186,7 @@ app.register_blueprint(tts.bp)
 app.register_blueprint(admin.bp)
 app.register_blueprint(interpretation.bp)
 app.register_blueprint(usage_tracking.bp)
+app.register_blueprint(user.bp)
 
 # Register auth blueprint without URL prefix to make /login work
 from auth import auth_bp
@@ -246,6 +247,11 @@ def debug_test():
 def privacy():
     """Privacy policy and ethical guidelines page"""
     return render_template('privacy.html')
+
+@app.route('/debug-recording')
+def debug_recording():
+    """Debug page for recording issues"""
+    return send_from_directory('.', 'debug_recording.html')
 
 if __name__ == '__main__':
     import argparse

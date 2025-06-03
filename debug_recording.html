@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VocalLocal Recording Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .debug-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .debug-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .debug-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.info { background-color: #d1ecf1; color: #0c5460; }
+        .status.success { background-color: #d4edda; color: #155724; }
+        .status.warning { background-color: #fff3cd; color: #856404; }
+        .status.error { background-color: #f8d7da; color: #721c24; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        button.recording { background-color: #dc3545; }
+        #debugLog {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>🎤 VocalLocal Recording Debug Tool</h1>
+        
+        <div class="debug-section">
+            <h3>Browser Compatibility Check</h3>
+            <div id="compatibilityStatus"></div>
+        </div>
+
+        <div class="debug-section">
+            <h3>Microphone Test</h3>
+            <button id="testMicBtn">Test Microphone Access</button>
+            <div id="micStatus"></div>
+        </div>
+
+        <div class="debug-section">
+            <h3>Recording Test</h3>
+            <button id="recordBtn">Start Recording</button>
+            <div id="recordingStatus">Click to start recording</div>
+            <div id="audioInfo"></div>
+        </div>
+
+        <div class="debug-section">
+            <h3>API Test</h3>
+            <button id="testApiBtn">Test /api/transcribe Endpoint</button>
+            <div id="apiStatus"></div>
+        </div>
+
+        <div class="debug-section">
+            <h3>Debug Log</h3>
+            <div id="debugLog"></div>
+            <button id="clearLogBtn">Clear Log</button>
+        </div>
+    </div>
+
+    <script>
+        // Debug logging function
+        function debugLog(message, type = 'info') {
+            const log = document.getElementById('debugLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            log.textContent += logEntry;
+            log.scrollTop = log.scrollHeight;
+            console.log(`[DEBUG] ${message}`);
+        }
+
+        // Status display function
+        function showStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        // Check browser compatibility
+        function checkCompatibility() {
+            debugLog('Checking browser compatibility...');
+            
+            const checks = {
+                'MediaRecorder API': typeof MediaRecorder !== 'undefined',
+                'getUserMedia': navigator.mediaDevices && navigator.mediaDevices.getUserMedia,
+                'Fetch API': typeof fetch !== 'undefined',
+                'Blob API': typeof Blob !== 'undefined',
+                'FormData API': typeof FormData !== 'undefined'
+            };
+
+            let allSupported = true;
+            let statusHtml = '';
+
+            for (const [feature, supported] of Object.entries(checks)) {
+                const status = supported ? '✅' : '❌';
+                statusHtml += `<div>${status} ${feature}: ${supported ? 'Supported' : 'Not Supported'}</div>`;
+                if (!supported) allSupported = false;
+                debugLog(`${feature}: ${supported ? 'Supported' : 'Not Supported'}`);
+            }
+
+            showStatus('compatibilityStatus', statusHtml, allSupported ? 'success' : 'error');
+            return allSupported;
+        }
+
+        // Test microphone access
+        async function testMicrophone() {
+            debugLog('Testing microphone access...');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                debugLog('Microphone access granted');
+                showStatus('micStatus', '✅ Microphone access granted', 'success');
+                
+                // Stop the stream
+                stream.getTracks().forEach(track => track.stop());
+                return true;
+            } catch (error) {
+                debugLog(`Microphone access failed: ${error.message}`, 'error');
+                showStatus('micStatus', `❌ Microphone access failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Recording variables
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+
+        // Test recording
+        async function testRecording() {
+            const recordBtn = document.getElementById('recordBtn');
+            const statusDiv = document.getElementById('recordingStatus');
+            const audioInfoDiv = document.getElementById('audioInfo');
+
+            if (!isRecording) {
+                try {
+                    debugLog('Starting recording test...');
+                    statusDiv.textContent = 'Starting recording...';
+                    
+                    // Get microphone access
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    debugLog('Got media stream');
+
+                    // Create MediaRecorder
+                    const options = { mimeType: 'audio/webm' };
+                    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                        options.mimeType = 'audio/mp4';
+                        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                            options.mimeType = '';
+                        }
+                    }
+
+                    mediaRecorder = new MediaRecorder(stream, options);
+                    debugLog(`MediaRecorder created with mimeType: ${mediaRecorder.mimeType}`);
+
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                            debugLog(`Audio chunk received: ${event.data.size} bytes`);
+                        }
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        debugLog('MediaRecorder stopped');
+                        processRecording();
+                    };
+
+                    mediaRecorder.onerror = (event) => {
+                        debugLog(`MediaRecorder error: ${event.error}`, 'error');
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    recordBtn.textContent = 'Stop Recording';
+                    recordBtn.classList.add('recording');
+                    statusDiv.textContent = 'Recording... Click stop when done';
+                    debugLog('Recording started');
+
+                } catch (error) {
+                    debugLog(`Recording start failed: ${error.message}`, 'error');
+                    statusDiv.textContent = `Error: ${error.message}`;
+                }
+            } else {
+                debugLog('Stopping recording...');
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+                recordBtn.textContent = 'Start Recording';
+                recordBtn.classList.remove('recording');
+                statusDiv.textContent = 'Processing recording...';
+            }
+        }
+
+        // Process the recorded audio
+        function processRecording() {
+            debugLog('Processing recorded audio...');
+            
+            try {
+                if (audioChunks.length === 0) {
+                    throw new Error('No audio data recorded');
+                }
+
+                const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+                debugLog(`Created audio blob: ${audioBlob.size} bytes, type: ${audioBlob.type}`);
+
+                if (audioBlob.size === 0) {
+                    throw new Error('Audio blob is empty');
+                }
+
+                const audioFile = new File([audioBlob], 'test-recording.webm', { type: audioBlob.type });
+                debugLog(`Created audio file: ${audioFile.name}, size: ${audioFile.size}`);
+
+                // Display audio info
+                const audioInfoDiv = document.getElementById('audioInfo');
+                audioInfoDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ Recording processed successfully<br>
+                        File size: ${audioFile.size} bytes<br>
+                        MIME type: ${audioFile.type}<br>
+                        Chunks: ${audioChunks.length}
+                    </div>
+                `;
+
+                document.getElementById('recordingStatus').textContent = 'Recording ready for upload';
+                
+                // Test API upload
+                testApiUpload(audioFile);
+
+            } catch (error) {
+                debugLog(`Processing failed: ${error.message}`, 'error');
+                document.getElementById('audioInfo').innerHTML = `<div class="status error">❌ ${error.message}</div>`;
+                document.getElementById('recordingStatus').textContent = 'Processing failed';
+            }
+        }
+
+        // Test API upload
+        async function testApiUpload(audioFile) {
+            debugLog('Testing API upload...');
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', audioFile);
+                formData.append('language', 'en');
+                formData.append('model', 'gemini-2.0-flash-lite');
+
+                debugLog('Sending request to /api/transcribe...');
+                
+                const response = await fetch('/api/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                debugLog(`Response status: ${response.status}`);
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const result = await response.json();
+                debugLog(`Response received: ${JSON.stringify(result)}`);
+
+                if (result.text) {
+                    showStatus('apiStatus', `✅ API test successful! Transcription: "${result.text.substring(0, 100)}..."`, 'success');
+                } else if (result.error) {
+                    showStatus('apiStatus', `❌ API returned error: ${result.error}`, 'error');
+                } else {
+                    showStatus('apiStatus', `⚠️ API returned unexpected response: ${JSON.stringify(result)}`, 'warning');
+                }
+
+            } catch (error) {
+                debugLog(`API test failed: ${error.message}`, 'error');
+                showStatus('apiStatus', `❌ API test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test API endpoint without recording
+        async function testApiEndpoint() {
+            debugLog('Testing API endpoint with dummy data...');
+            
+            try {
+                // Create a small dummy audio file
+                const dummyBlob = new Blob(['dummy audio data'], { type: 'audio/webm' });
+                const dummyFile = new File([dummyBlob], 'test.webm', { type: 'audio/webm' });
+
+                const formData = new FormData();
+                formData.append('file', dummyFile);
+                formData.append('language', 'en');
+                formData.append('model', 'gemini-2.0-flash-lite');
+
+                const response = await fetch('/api/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                debugLog(`API response status: ${response.status}`);
+                const result = await response.json();
+                debugLog(`API response: ${JSON.stringify(result)}`);
+
+                if (response.ok) {
+                    showStatus('apiStatus', `✅ API endpoint is accessible. Response: ${JSON.stringify(result)}`, 'success');
+                } else {
+                    showStatus('apiStatus', `⚠️ API returned ${response.status}: ${JSON.stringify(result)}`, 'warning');
+                }
+
+            } catch (error) {
+                debugLog(`API endpoint test failed: ${error.message}`, 'error');
+                showStatus('apiStatus', `❌ API endpoint test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('testMicBtn').addEventListener('click', testMicrophone);
+        document.getElementById('recordBtn').addEventListener('click', testRecording);
+        document.getElementById('testApiBtn').addEventListener('click', testApiEndpoint);
+        document.getElementById('clearLogBtn').addEventListener('click', () => {
+            document.getElementById('debugLog').textContent = '';
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            debugLog('Debug tool initialized');
+            checkCompatibility();
+        });
+    </script>
+</body>
+</html>

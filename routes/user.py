@@ -34,7 +34,9 @@ def get_user_plan():
             }), 401
 
         # Get user account data from Firebase
-        user_account = UserAccountService.get_user_account(current_user.email)
+        # Encode email for Firebase path safety (replace dots with commas)
+        user_id = current_user.email.replace('.', ',')
+        user_account = UserAccountService.get_user_account(user_id)
         
         if not user_account:
             # Return default free plan if no account data exists
@@ -141,7 +143,9 @@ def get_user_role_info():
         else:
             # Check subscription plan for premium access
             try:
-                user_account = UserAccountService.get_user_account(current_user.email)
+                # Encode email for Firebase path safety (replace dots with commas)
+                user_id = current_user.email.replace('.', ',')
+                user_account = UserAccountService.get_user_account(user_id)
                 if user_account:
                     subscription = user_account.get('subscription', {})
                     plan_type = subscription.get('planType', 'free')

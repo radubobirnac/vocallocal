@@ -540,6 +540,7 @@ function updateModelDropdown(selectElement, models, modelType) {
   let lastProcessedIndex = 0;
   let currentMediaRecorder = null;
   let currentStream = null;
+  let isChunkRecording = false;
 
   // Format seconds as MM:SS
   function formatTime(seconds) {
@@ -1140,6 +1141,15 @@ function updateModelDropdown(selectElement, models, modelType) {
   function sendToServer(formData, endpoint = '/api/transcribe', maxRetries = 1) {
     return new Promise(async (resolve, reject) => {
       let attempt = 0;
+
+      console.log('sendToServer called with:', {
+        endpoint,
+        maxRetries,
+        formDataEntries: Array.from(formData.entries()).map(([key, value]) => [
+          key,
+          value instanceof File ? `File(${value.name}, ${value.size} bytes, ${value.type})` : value
+        ])
+      });
 
       // Check model access permissions before making API call
       if (window.modelAccessControl && window.modelAccessControl.hasLoadedUserRole) {
@@ -2230,7 +2240,15 @@ function updateModelDropdown(selectElement, models, modelType) {
 
           } catch (error) {
             console.error('Error stopping recording:', error);
-            showStatus('Error processing recording. Please try again.', 'error');
+            console.error('Error details:', {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+              recording: recording,
+              audioChunks: recording?.audioChunks?.length || 'undefined',
+              mediaRecorder: recording?.mediaRecorder?.state || 'undefined'
+            });
+            showStatus(`Error processing recording: ${error.message}. Please try again.`, 'error');
             basicRecordBtn.classList.remove('recording');
             const recordingStatus = document.getElementById('basic-recording-status');
             if (recordingStatus) {
@@ -2441,7 +2459,16 @@ function updateModelDropdown(selectElement, models, modelType) {
 
             } catch (error) {
               console.error('Error stopping recording:', error);
-              showStatus('Error processing recording. Please try again.', 'error');
+              console.error('Error details:', {
+                name: error.name,
+                message: error.message,
+                stack: error.stack,
+                speakerId: speaker.id,
+                recording: speaker.recording,
+                audioChunks: speaker.recording?.audioChunks?.length || 'undefined',
+                mediaRecorder: speaker.recording?.mediaRecorder?.state || 'undefined'
+              });
+              showStatus(`Error processing recording: ${error.message}. Please try again.`, 'error');
               speaker.recordBtn.classList.remove('recording');
               if (speaker.recordingStatus) {
                 speaker.recordingStatus.textContent = 'Click to start recording';
