@@ -39,24 +39,49 @@ class FirebaseService:
         try:
             # Check if already initialized
             if not firebase_admin._apps:
-                # Get credentials from environment or file
-                cred_json = os.environ.get('FIREBASE_CREDENTIALS_JSON')
-                if not cred_json:
-                    # Fallback to legacy environment variable name
-                    cred_json = os.environ.get('FIREBASE_CREDENTIALS')
+                cred = None
 
-                cred_path = os.environ.get('FIREBASE_CREDENTIALS_PATH')
+                # Method 1: Try credential files in common locations
+                credential_file_paths = [
+                    "firebase-credentials.json",  # App root
+                    "/etc/secrets/firebase-credentials.json",  # Deployment platforms
+                    "/app/firebase-credentials.json",  # Heroku-style
+                    os.path.expanduser("~/firebase-credentials.json")  # User home
+                ]
 
-                if cred_json:
-                    # Use credentials from environment variable
-                    cred_dict = json.loads(cred_json)
-                    cred = credentials.Certificate(cred_dict)
-                elif cred_path and os.path.exists(cred_path):
-                    # Use credentials from file
-                    cred = credentials.Certificate(cred_path)
-                else:
-                    # Fall back to application default credentials
-                    cred = None
+                for path in credential_file_paths:
+                    if os.path.exists(path):
+                        try:
+                            cred = credentials.Certificate(path)
+                            logger.info(f"Using Firebase credentials from: {path}")
+                            break
+                        except Exception as e:
+                            logger.warning(f"Error loading credentials from {path}: {str(e)}")
+
+                # Method 2: Try environment variables (fallback)
+                if not cred:
+                    cred_json = os.environ.get('FIREBASE_CREDENTIALS_JSON') or os.environ.get('FIREBASE_CREDENTIALS')
+                    if cred_json:
+                        try:
+                            cred_dict = json.loads(cred_json)
+                            cred = credentials.Certificate(cred_dict)
+                            logger.info("Using Firebase credentials from environment variable")
+                        except Exception as e:
+                            logger.warning(f"Error using environment variable credentials: {str(e)}")
+
+                # Method 3: Try custom file path
+                if not cred:
+                    cred_path = os.environ.get('FIREBASE_CREDENTIALS_PATH')
+                    if cred_path and os.path.exists(cred_path):
+                        try:
+                            cred = credentials.Certificate(cred_path)
+                            logger.info(f"Using Firebase credentials from custom path: {cred_path}")
+                        except Exception as e:
+                            logger.warning(f"Error loading credentials from {cred_path}: {str(e)}")
+
+                # Method 4: Fall back to application default credentials
+                if not cred:
+                    cred = None  # This will use Application Default Credentials
 
                 # Initialize app with database URL and storage bucket if available
                 db_url = os.environ.get('FIREBASE_DATABASE_URL')

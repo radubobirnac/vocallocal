@@ -1,5 +1,6 @@
 """Authentication module for VocalLocal."""
 import os
+import json
 from functools import wraps
 from flask import Blueprint, redirect, url_for, session, request, flash, render_template, jsonify
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
@@ -83,18 +84,28 @@ def init_app(app):
 
     # Configure Google OAuth
     try:
-        # Method 1: Try GOOGLE_OAUTH_CREDENTIALS_JSON environment variable (JSON string)
-        oauth_json_str = os.getenv('GOOGLE_OAUTH_CREDENTIALS_JSON')
-        if not oauth_json_str:
-            # Fallback to legacy environment variable name
-            oauth_json_str = os.getenv('OAUTH_CREDENTIALS')
+        # Method 1: Try OAuth credential files in common locations
+        oauth_file_paths = [
+            "Oauth.json",  # App root (local development)
+            os.path.join(os.path.dirname(__file__), 'Oauth.json'),  # Relative to auth module
+            "/etc/secrets/Oauth.json",  # Deployment platforms (Render, etc.)
+            "/etc/secrets/oauth-json",  # Alternative naming
+            "/app/Oauth.json",  # Heroku-style deployment
+            os.path.expanduser("~/Oauth.json")  # User home directory
+        ]
 
-        if oauth_json_str:
-            env_var_name = "GOOGLE_OAUTH_CREDENTIALS_JSON" if os.getenv('GOOGLE_OAUTH_CREDENTIALS_JSON') else "OAUTH_CREDENTIALS"
-            app.logger.info(f"Found OAuth credentials in {env_var_name} environment variable")
+        oauth_file_path = None
+        for path in oauth_file_paths:
+            if os.path.exists(path):
+                oauth_file_path = path
+                app.logger.info(f"Found OAuth credentials at: {path}")
+                break
+
+        if oauth_file_path:
             try:
-                oauth_data = json.loads(oauth_json_str)
-                
+                with open(oauth_file_path, 'r') as f:
+                    oauth_data = json.load(f)
+
                 if 'web' in oauth_data:
                     web_config = oauth_data['web']
                     client_id = web_config.get('client_id')
@@ -102,10 +113,10 @@ def init_app(app):
                     auth_uri = web_config.get('auth_uri', 'https://accounts.google.com/o/oauth2/auth')
                     token_uri = web_config.get('token_uri', 'https://oauth2.googleapis.com/token')
 
-                    app.logger.info(f"Using OAuth client ID from env var: {client_id[:5]}...{client_id[-5:] if client_id else 'None'}")
+                    app.logger.info(f"Using OAuth client ID from file: {client_id[:5]}...{client_id[-5:] if client_id else 'None'}")
 
                     if client_id and client_secret:
-                        # Register the OAuth provider with credentials from environment variable
+                        # Register the OAuth provider with credentials from file
                         oauth.register(
                             name='google',
                             client_id=client_id,
@@ -123,63 +134,49 @@ def init_app(app):
                             jwks_uri='https://www.googleapis.com/oauth2/v3/certs',
                         )
                         google = oauth.google
-                        app.logger.info(f"Google OAuth configured successfully from {env_var_name} environment variable")
+                        app.logger.info("Google OAuth configured successfully from credential file")
                         return  # Exit early if successful
             except Exception as e:
-                app.logger.error(f"Error parsing {env_var_name} environment variable: {str(e)}")
-                # Continue to other methods if this fails
+                app.logger.error(f"Error loading OAuth credentials from {oauth_file_path}: {str(e)}")
 
-        # Method 2: Try to load credentials from OAuth.json file
-        oauth_file_path = None
-        possible_oauth_paths = [
-            os.path.join(os.path.dirname(__file__), 'Oauth.json'),  # Local file
-            "/etc/secrets/Oauth.json",  # Render secret file
-            "/etc/secrets/oauth-json"   # Render secret file (no extension)
-        ]
+        # Method 2: Try environment variables (for advanced users)
+        oauth_json_str = os.getenv('GOOGLE_OAUTH_CREDENTIALS_JSON') or os.getenv('OAUTH_CREDENTIALS')
+        if oauth_json_str:
+            try:
+                app.logger.info("Found OAuth credentials in environment variable")
+                oauth_data = json.loads(oauth_json_str)
 
-        for path in possible_oauth_paths:
-            if os.path.exists(path):
-                oauth_file_path = path
-                app.logger.info(f"Found OAuth.json at: {path}")
-                break
+                if 'web' in oauth_data:
+                    web_config = oauth_data['web']
+                    client_id = web_config.get('client_id')
+                    client_secret = web_config.get('client_secret')
+                    auth_uri = web_config.get('auth_uri', 'https://accounts.google.com/o/oauth2/auth')
+                    token_uri = web_config.get('token_uri', 'https://oauth2.googleapis.com/token')
 
-        if oauth_file_path:
-            import json
-            with open(oauth_file_path, 'r') as f:
-                oauth_data = json.load(f)
+                    if client_id and client_secret:
+                        oauth.register(
+                            name='google',
+                            client_id=client_id,
+                            client_secret=client_secret,
+                            authorize_url=auth_uri,
+                            authorize_params=None,
+                            access_token_url=token_uri,
+                            access_token_params=None,
+                            refresh_token_url=token_uri,
+                            redirect_uri=None,
+                            client_kwargs={
+                                'scope': 'openid email profile',
+                                'token_endpoint_auth_method': 'client_secret_post'
+                            },
+                            jwks_uri='https://www.googleapis.com/oauth2/v3/certs',
+                        )
+                        google = oauth.google
+                        app.logger.info("Google OAuth configured successfully from environment variable")
+                        return  # Exit early if successful
+            except Exception as e:
+                app.logger.error(f"Error parsing OAuth environment variable: {str(e)}")
 
-            if 'web' in oauth_data:
-                web_config = oauth_data['web']
-                client_id = web_config.get('client_id')
-                client_secret = web_config.get('client_secret')
-                auth_uri = web_config.get('auth_uri', 'https://accounts.google.com/o/oauth2/auth')
-                token_uri = web_config.get('token_uri', 'https://oauth2.googleapis.com/token')
-
-                app.logger.info(f"Using OAuth client ID from file: {client_id[:5]}...{client_id[-5:] if client_id else 'None'}")
-
-                if client_id and client_secret:
-                    # Register the OAuth provider with credentials from file
-                    oauth.register(
-                        name='google',
-                        client_id=client_id,
-                        client_secret=client_secret,
-                        authorize_url=auth_uri,
-                        authorize_params=None,
-                        access_token_url=token_uri,
-                        access_token_params=None,
-                        refresh_token_url=token_uri,
-                        redirect_uri=None,
-                        client_kwargs={
-                            'scope': 'openid email profile',
-                            'token_endpoint_auth_method': 'client_secret_post'
-                        },
-                        jwks_uri='https://www.googleapis.com/oauth2/v3/certs',  # Add JWKS URI
-                    )
-                    google = oauth.google
-                    app.logger.info("Google OAuth configured successfully from OAuth.json")
-                    return  # Exit early if successful
-
-        # Method 3: Fall back to environment variables
+        # Method 3: Fall back to individual environment variables
         app.logger.info("OAuth.json not found or invalid, using individual environment variables")
         google_client_id = os.getenv('GOOGLE_CLIENT_ID')
         google_client_secret = os.getenv('GOOGLE_CLIENT_SECRET')

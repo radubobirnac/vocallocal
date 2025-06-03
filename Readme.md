@@ -102,25 +102,55 @@ GOOGLE_REDIRECT_URI=https://localhost:5001/auth/callback
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-#### Secure Credential Configuration (Recommended for Production)
+#### Console-Based Credential Setup (Recommended for Production)
 
-VocalLocal supports secure environment variable configuration for credentials:
+VocalLocal uses a simple console-based credential setup that's secure and easy to use:
+
+**Create credential files directly on your deployment server:**
 
 ```bash
-# For production deployment - complete JSON credentials as environment variables
-GOOGLE_OAUTH_CREDENTIALS_JSON={"web":{"client_id":"...","project_id":"...","client_secret":"..."}}
-FIREBASE_CREDENTIALS_JSON={"type":"service_account","project_id":"...","private_key":"..."}}
+# Example for Render (use Shell tab in dashboard)
+cat > Oauth.json << 'EOF'
+{
+  "web": {
+    "client_id": "your-client-id",
+    "project_id": "your-project-id",
+    "client_secret": "your-client-secret",
+    "redirect_uris": ["https://your-app.onrender.com/auth/callback"]
+  }
+}
+EOF
+
+cat > firebase-credentials.json << 'EOF'
+{
+  "type": "service_account",
+  "project_id": "your-project-id",
+  "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+  "client_email": "your-service-account@your-project.iam.gserviceaccount.com"
+}
+EOF
 ```
 
 **Benefits:**
-- ✅ Keeps sensitive credentials out of version control
-- ✅ Improves deployment security
-- ✅ Works with all deployment platforms (Render, Heroku, DigitalOcean, etc.)
-- ✅ Maintains fallback to file-based credentials for development
+- ✅ Simple copy-paste setup using familiar console commands
+- ✅ Works on all platforms (Render, Heroku, DigitalOcean, VPS)
+- ✅ Credentials exist only on server, never in version control
+- ✅ No complex environment variable configuration needed
+- ✅ Uses existing file-based credential system
 
-**Setup:**
+**Platform-Specific Instructions:**
+- **Render**: Use the "Shell" tab in your service dashboard
+- **Heroku**: Use `heroku run bash -a your-app-name`
+- **DigitalOcean**: Use the Console tab in your app
+- **VPS**: SSH into your server and navigate to app directory
+
+See `CONSOLE_CREDENTIAL_SETUP.md` for detailed platform-specific instructions.
+
+#### Advanced: Environment Variable Setup (Optional)
+
+For advanced users who prefer environment variables:
 1. Use the conversion utility: `python convert_json_to_env.py`
-2. Copy the generated environment variables to your deployment platform
+2. Set environment variables in your deployment platform
 3. See `ENVIRONMENT_VARIABLES_GUIDE.md` for detailed instructions
 
 ### 5. Set Up SSL Certificates (for HTTPS)
@@ -139,8 +169,9 @@ Firebase is required for user authentication, transcript history, data storage, 
 
 1. Create a Firebase project at [firebase.google.com](https://firebase.google.com)
 2. Generate a service account key from Project Settings > Service Accounts
-3. Save the JSON file as `firebase-credentials.json` in the project root
-4. Set up the following in your Firebase database:
+3. **For local development**: Save the JSON file as `firebase-credentials.json` in the project root
+4. **For production deployment**: Use console commands to create the file on your server (see `CONSOLE_CREDENTIAL_SETUP.md`)
+5. Set up the following in your Firebase database:
    - Create a collection for `users` to store user information
    - Create collections for `transcripts`, `transcriptions`, and `translations` to store user data
    - Add indexes on the `timestamp` field for these collections with the following rules:
@@ -179,9 +210,12 @@ Firebase is required for user authentication, transcript history, data storage, 
 To enable Google Sign-In (recommended authentication method):
 
 1. Create OAuth credentials in the [Google Cloud Console](https://console.cloud.google.com)
-2. Set the authorized redirect URI to `https://localhost:5001/auth/callback`
-3. Save the client ID and secret in your `.env` file
-4. Alternatively, save your OAuth credentials in an `OAuth.json` file in the project root
+2. Set the authorized redirect URI to match your deployment:
+   - Local development: `https://localhost:5001/auth/callback`
+   - Production: `https://your-app-domain.com/auth/callback`
+3. **For local development**: Save your OAuth credentials as `Oauth.json` in the project root
+4. **For production deployment**: Use console commands to create the file on your server (see `CONSOLE_CREDENTIAL_SETUP.md`)
+5. Alternatively, set individual environment variables in your `.env` file
 
 ## Running the Application
 

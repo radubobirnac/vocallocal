@@ -35,70 +35,56 @@ def initialize_firebase():
             cred = None
             auth_methods_tried = []
 
-            # Method 1: Try FIREBASE_CREDENTIALS_JSON environment variable (JSON string)
-            cred_json = os.getenv('FIREBASE_CREDENTIALS_JSON')
-            if cred_json:
-                auth_methods_tried.append("FIREBASE_CREDENTIALS_JSON environment variable")
-                try:
-                    print("Found FIREBASE_CREDENTIALS_JSON environment variable")
-                    cred_dict = json.loads(cred_json)
-                    cred = credentials.Certificate(cred_dict)
-                    print("Using Firebase credentials from FIREBASE_CREDENTIALS_JSON environment variable")
-                except Exception as e:
-                    print(f"Error using FIREBASE_CREDENTIALS_JSON environment variable: {str(e)}")
+            # Method 1: Try credential files in common deployment locations
+            credential_file_paths = [
+                "firebase-credentials.json",  # Local development and app root
+                os.path.join(os.path.dirname(__file__), "firebase-credentials.json"),  # Relative to this file
+                "/etc/secrets/firebase-credentials.json",  # Render and other platforms
+                "/etc/secrets/firebase-credentials",  # Alternative naming
+                "/app/firebase-credentials.json",  # Heroku and similar platforms
+                os.path.expanduser("~/firebase-credentials.json")  # User home directory
+            ]
 
-            # Method 1b: Try legacy FIREBASE_CREDENTIALS environment variable (for backward compatibility)
-            if not cred:
-                cred_json = os.getenv('FIREBASE_CREDENTIALS')
-                if cred_json:
-                    auth_methods_tried.append("FIREBASE_CREDENTIALS environment variable (legacy)")
+            for path in credential_file_paths:
+                if os.path.exists(path):
+                    auth_methods_tried.append(f"Credential file: {path}")
                     try:
-                        print("Found FIREBASE_CREDENTIALS environment variable (legacy)")
-                        cred_dict = json.loads(cred_json)
-                        cred = credentials.Certificate(cred_dict)
-                        print("Using Firebase credentials from FIREBASE_CREDENTIALS environment variable (legacy)")
-                    except Exception as e:
-                        print(f"Error using FIREBASE_CREDENTIALS environment variable (legacy): {str(e)}")
-
-            # Method 2: Try multiple possible paths for the secret file
-            if not cred:
-                possible_paths = [
-                    "/etc/secrets/firebase-credentials.json",
-                    "/etc/secrets/firebase-credentials",
-                    "/etc/secrets/firebase-credentials.json.txt"
-                ]
-
-                for path in possible_paths:
-                    if os.path.exists(path):
-                        auth_methods_tried.append(f"Secret file: {path}")
-                        try:
-                            print(f"Found credentials at: {path}")
-                            cred = credentials.Certificate(path)
-                            print(f"Using Firebase credentials from: {path}")
-                            break
-                        except Exception as e:
-                            print(f"Error using credentials from {path}: {str(e)}")
-
-            # Method 3: For local development with service account file
-            if not cred:
-                cred_path = os.getenv('FIREBASE_CREDENTIALS_PATH', 'firebase-credentials.json')
-                auth_methods_tried.append(f"FIREBASE_CREDENTIALS_PATH: {cred_path}")
-
-                # Try different path resolutions
-                possible_paths = [
-                    cred_path,  # As provided in .env
-                    os.path.join(os.path.dirname(__file__), cred_path),  # Relative to this file
-                    os.path.abspath(cred_path)  # Absolute path
-                ]
-
-                for path in possible_paths:
-                    try:
-                        if os.path.exists(path):
-                            print(f"Found Firebase credentials at: {path}")
-                            cred = credentials.Certificate(path)
-                            break
+                        print(f"Found Firebase credentials at: {path}")
+                        cred = credentials.Certificate(path)
+                        print(f"Using Firebase credentials from: {path}")
+                        break
                     except Exception as e:
                         print(f"Error loading credentials from {path}: {str(e)}")
+
+            # Method 2: Try environment variables (for advanced users)
+            if not cred:
+                # Try FIREBASE_CREDENTIALS_JSON first (new format)
+                cred_json = os.getenv('FIREBASE_CREDENTIALS_JSON')
+                if not cred_json:
+                    # Fallback to legacy FIREBASE_CREDENTIALS
+                    cred_json = os.getenv('FIREBASE_CREDENTIALS')
+
+                if cred_json:
+                    auth_methods_tried.append("Environment variable (JSON)")
+                    try:
+                        print("Found Firebase credentials in environment variable")
+                        cred_dict = json.loads(cred_json)
+                        cred = credentials.Certificate(cred_dict)
+                        print("Using Firebase credentials from environment variable")
+                    except Exception as e:
+                        print(f"Error using environment variable credentials: {str(e)}")
+
+            # Method 3: Try custom file path from environment
+            if not cred:
+                cred_path = os.getenv('FIREBASE_CREDENTIALS_PATH')
+                if cred_path and os.path.exists(cred_path):
+                    auth_methods_tried.append(f"Custom path: {cred_path}")
+                    try:
+                        print(f"Found Firebase credentials at custom path: {cred_path}")
+                        cred = credentials.Certificate(cred_path)
+                        print(f"Using Firebase credentials from: {cred_path}")
+                    except Exception as e:
+                        print(f"Error loading credentials from {cred_path}: {str(e)}")
 
             # Method 4: Try Application Default Credentials as a fallback
             if not cred:
