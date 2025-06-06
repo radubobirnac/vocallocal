@@ -524,23 +524,40 @@ function updateModelDropdown(selectElement, models, modelType) {
   let recordingTimer = null;
   let recordingStartTime = null;
   let recordingDuration = 0;
-  const MAX_RECORDING_DURATION = 20 * 60; // 20 minutes in seconds
-  const WARNING_THRESHOLD = 19 * 60; // 19 minutes in seconds
+  let MAX_RECORDING_DURATION = 20 * 60; // 20 minutes in seconds
+  let WARNING_THRESHOLD = 19 * 60; // 19 minutes in seconds
 
-  // Progressive transcription variables
-  let progressiveTimer = null;
-  let currentChunkData = [];
-  let chunkCounter = 0;
-  let lastChunkTime = null;
-  const CHUNK_INTERVAL = 65000; // 65 seconds for flexible timing
-  const OVERLAP_PERCENTAGE = 0.10; // 10% overlap to prevent word loss
-
-  // Overlapping chunk management
-  let allAudioChunks = [];
-  let lastProcessedIndex = 0;
+  // Simple recording variables
   let currentMediaRecorder = null;
   let currentStream = null;
-  let isChunkRecording = false;
+
+  // Function to reset recording state between sessions
+  function resetRecordingState() {
+    // Clear timers
+    if (recordingTimer) {
+      clearInterval(recordingTimer);
+      recordingTimer = null;
+    }
+
+    // Reset timing variables
+    recordingStartTime = null;
+    recordingDuration = 0;
+
+    // Clean up stream
+    if (currentStream) {
+      currentStream.getTracks().forEach(track => track.stop());
+      currentStream = null;
+    }
+
+    // Reset recorder
+    currentMediaRecorder = null;
+
+    // Reset duration limits to defaults
+    MAX_RECORDING_DURATION = 20 * 60; // 20 minutes
+    WARNING_THRESHOLD = 19 * 60; // 19 minutes
+
+    console.log('Recording state reset for new session');
+  }
 
   // Format seconds as MM:SS
   function formatTime(seconds) {
@@ -549,390 +566,11 @@ function updateModelDropdown(selectElement, models, modelType) {
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
 
-  // Progressive transcription functions
-  function startProgressiveTranscription(elementId = 'basic-transcript') {
-    console.log('Starting progressive transcription for element:', elementId);
-    chunkCounter = 0;
-    currentChunkData = [];
-    lastChunkTime = Date.now();
 
-    // Clear any existing timer
-    if (progressiveTimer) {
-      clearInterval(progressiveTimer);
-    }
 
-    // Start the chunk processing timer - this will restart MediaRecorder for each chunk
-    progressiveTimer = setInterval(() => {
-      processCurrentChunkWithRestart(elementId);
-    }, CHUNK_INTERVAL);
-  }
 
-  function stopProgressiveTranscription() {
-    console.log('Stopping progressive transcription');
-    if (progressiveTimer) {
-      clearInterval(progressiveTimer);
-      progressiveTimer = null;
-    }
 
-    // Stop chunk recording if active
-    if (isChunkRecording && currentMediaRecorder) {
-      stopChunkRecording();
-    }
 
-    // Process any remaining chunk data
-    if (currentChunkData.length > 0) {
-      processCurrentChunk();
-    }
-  }
-
-  async function stopProgressiveTranscriptionWithFinalChunk() {
-    console.log('Stopping progressive transcription with final chunk processing');
-
-    // Stop the timer first
-    if (progressiveTimer) {
-      clearInterval(progressiveTimer);
-      progressiveTimer = null;
-    }
-
-    // Process the final chunk if we have active chunk recording
-    if (isChunkRecording && currentMediaRecorder) {
-      try {
-        console.log('Processing final chunk before stopping');
-        const finalChunkBlob = await stopChunkRecording();
-
-        if (finalChunkBlob && finalChunkBlob.size > 1000) {
-          // Validate the final WebM chunk before sending
-          const isValid = await isValidWebMChunk(finalChunkBlob);
-
-          if (isValid) {
-            console.log(`✅ Final chunk is valid WebM, proceeding with transcription`);
-
-            // Show processing status for final chunk
-            showChunkProcessing(chunkCounter);
-
-            // Send final chunk for transcription
-            const elementId = 'basic-transcript'; // Default element
-            const result = await sendChunkForTranscription(finalChunkBlob, chunkCounter, elementId);
-
-            if (result && result.text) {
-              // Append result to transcript
-              appendChunkResult(result.text, chunkCounter, elementId);
-              showChunkComplete(chunkCounter);
-            }
-          } else {
-            console.log(`❌ Final chunk is invalid WebM, skipping transcription`);
-          }
-        }
-      } catch (error) {
-        console.error('Error processing final chunk:', error);
-      }
-    }
-
-    // Clean up stream
-    if (currentStream) {
-      currentStream.getTracks().forEach(track => track.stop());
-      currentStream = null;
-    }
-
-    // Reset chunk recording state
-    isChunkRecording = false;
-    currentMediaRecorder = null;
-  }
-
-  // New function to handle overlapping chunk processing
-  async function processCurrentChunkWithRestart(elementId = 'basic-transcript') {
-    if (!currentMediaRecorder || currentMediaRecorder.state !== 'recording') {
-      console.log('No active recording for chunk processing');
-      return;
-    }
-
-    console.log(`Processing overlapping chunk ${chunkCounter + 1}...`);
-
-    try {
-      // Calculate overlap (10% overlap to prevent word loss during chunking)
-      const overlapChunks = Math.max(0, Math.floor(allAudioChunks.length * OVERLAP_PERCENTAGE));
-      const startIndex = Math.max(0, lastProcessedIndex - overlapChunks);
-
-      // Create chunk from overlapping audio data
-      const chunkData = allAudioChunks.slice(startIndex);
-      const chunkBlob = new Blob(chunkData, { type: 'audio/webm' });
-
-      console.log(`📦 Chunk ${chunkCounter + 1}: ${chunkBlob.size} bytes (${Math.round(OVERLAP_PERCENTAGE * 100)}% overlap: ${overlapChunks} pieces, total: ${chunkData.length} pieces)`);
-
-      if (chunkBlob && chunkBlob.size > 1000) { // Ensure chunk has meaningful data
-        // Validate the WebM chunk before sending
-        const isValid = await isValidWebMChunk(chunkBlob);
-
-        if (isValid) {
-          console.log(`✅ Chunk ${chunkCounter + 1} is valid WebM, proceeding with transcription`);
-
-          // Show processing status
-          showChunkProcessing(chunkCounter);
-
-          // Send chunk for transcription with overlap info
-          const result = await sendChunkForTranscription(chunkBlob, chunkCounter, elementId, {
-            hasOverlap: overlapChunks > 0,
-            overlapSeconds: Math.floor(overlapChunks * 0.1), // Estimate overlap time
-            overlapPercentage: Math.round(OVERLAP_PERCENTAGE * 100)
-          });
-
-          if (result && result.text) {
-            // Append result to transcript
-            appendChunkResult(result.text, chunkCounter, elementId);
-            showChunkComplete(chunkCounter);
-          }
-
-          chunkCounter++;
-        } else {
-          console.log(`❌ Chunk ${chunkCounter + 1} is invalid WebM, skipping transcription`);
-          showStatus(`Chunk ${chunkCounter + 1} invalid, skipping`, 'warning');
-        }
-      } else {
-        console.log('Chunk too small or empty, skipping transcription');
-      }
-
-      // Update the last processed index
-      lastProcessedIndex = allAudioChunks.length;
-
-    } catch (error) {
-      console.error('Error processing overlapping chunk:', error);
-      showStatus(`Error processing chunk ${chunkCounter + 1}: ${error.message}`, 'error');
-    }
-  }
-
-  // Helper function to validate WebM chunks
-  function isValidWebMChunk(blob) {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const arrayBuffer = e.target.result;
-        const uint8Array = new Uint8Array(arrayBuffer);
-
-        // Check for WebM signature (EBML header)
-        // WebM files start with 0x1A, 0x45, 0xDF, 0xA3 (EBML signature)
-        if (uint8Array.length >= 4) {
-          const hasEBMLHeader = uint8Array[0] === 0x1A &&
-                               uint8Array[1] === 0x45 &&
-                               uint8Array[2] === 0xDF &&
-                               uint8Array[3] === 0xA3;
-
-          console.log(`WebM validation: size=${blob.size}, hasEBMLHeader=${hasEBMLHeader}`);
-          resolve(hasEBMLHeader);
-        } else {
-          console.log(`WebM validation: size=${blob.size}, too small`);
-          resolve(false);
-        }
-      };
-      reader.onerror = () => resolve(false);
-      reader.readAsArrayBuffer(blob.slice(0, 32)); // Read first 32 bytes for header check
-    });
-  }
-
-  // Helper functions for chunk recording management
-  async function startChunkRecording() {
-    if (!currentStream) {
-      throw new Error('No active stream available for chunk recording');
-    }
-
-    console.log('Starting new chunk recording');
-
-    // Get the best supported MIME type
-    const { bestType } = getSupportedMediaTypes();
-
-    // Create new MediaRecorder for this chunk
-    const recorderOptions = bestType ? { mimeType: bestType } : {};
-    currentMediaRecorder = new MediaRecorder(currentStream, recorderOptions);
-
-    // Setup data collection for this chunk
-    currentChunkData = [];
-
-    // Data available listener
-    currentMediaRecorder.addEventListener('dataavailable', event => {
-      if (event.data.size > 0) {
-        currentChunkData.push(event.data);
-      }
-    });
-
-    // Start recording this chunk
-    currentMediaRecorder.start();
-    isChunkRecording = true;
-
-    console.log('Chunk recording started with MIME type:', bestType || 'default');
-  }
-
-  async function stopChunkRecording() {
-    return new Promise((resolve, reject) => {
-      if (!currentMediaRecorder || !isChunkRecording) {
-        resolve(null);
-        return;
-      }
-
-      console.log('Stopping chunk recording');
-
-      // Set up the stop handler
-      currentMediaRecorder.addEventListener('stop', () => {
-        console.log(`Chunk recording stopped, collected ${currentChunkData.length} data pieces`);
-
-        // Create blob from collected data
-        const chunkBlob = new Blob(currentChunkData, { type: currentMediaRecorder.mimeType || 'audio/webm' });
-        console.log(`Created chunk blob: ${chunkBlob.size} bytes, type: ${chunkBlob.type}`);
-
-        isChunkRecording = false;
-        resolve(chunkBlob);
-      });
-
-      // Set up error handler
-      currentMediaRecorder.addEventListener('error', (event) => {
-        console.error('MediaRecorder error during stop:', event.error);
-        isChunkRecording = false;
-        reject(event.error);
-      });
-
-      // Stop the recorder
-      currentMediaRecorder.stop();
-    });
-  }
-
-  async function processCurrentChunk(elementId = 'basic-transcript') {
-    if (currentChunkData.length === 0) {
-      console.log('No chunk data to process');
-      return;
-    }
-
-    console.log(`Processing chunk ${chunkCounter + 1} with ${currentChunkData.length} audio pieces`);
-
-    try {
-      // Create blob from current chunk data
-      const chunkBlob = new Blob(currentChunkData, { type: 'audio/webm' });
-
-      // Show processing status
-      showChunkProcessing(chunkCounter);
-
-      // Send chunk for transcription
-      const result = await sendChunkForTranscription(chunkBlob, chunkCounter, elementId);
-
-      if (result && result.text) {
-        // Append result to transcript
-        appendChunkResult(result.text, chunkCounter, elementId);
-        showChunkComplete(chunkCounter);
-      }
-
-      chunkCounter++;
-
-      // Keep last portion for overlap (approximate)
-      const overlapSize = Math.max(1, Math.floor(currentChunkData.length * 0.1)); // Keep ~10%
-      currentChunkData = currentChunkData.slice(-overlapSize);
-
-    } catch (error) {
-      console.error('Error processing chunk:', error);
-      showStatus(`Error processing chunk ${chunkCounter + 1}: ${error.message}`, 'error');
-    }
-  }
-
-  async function sendChunkForTranscription(chunkBlob, chunkNumber, elementId, overlapInfo = {}) {
-    console.log(`Sending chunk ${chunkNumber + 1} for transcription`);
-
-    const formData = new FormData();
-    formData.append('audio', chunkBlob, `chunk_${chunkNumber}.webm`);
-    formData.append('language', document.getElementById('language-select')?.value || 'en');
-    formData.append('model', document.getElementById('model-select')?.value || 'gemini-2.0-flash-lite');
-    formData.append('chunk_number', chunkNumber.toString());
-    formData.append('element_id', elementId);
-
-    // Add overlap metadata
-    if (overlapInfo.hasOverlap) {
-      formData.append('has_overlap', 'true');
-      formData.append('overlap_seconds', overlapInfo.overlapSeconds.toString());
-      formData.append('overlap_percentage', overlapInfo.overlapPercentage.toString());
-    }
-
-    try {
-      const response = await fetch('/api/transcribe_chunk', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log(`Chunk ${chunkNumber + 1} transcription result:`, result);
-      return result;
-
-    } catch (error) {
-      console.error(`Error transcribing chunk ${chunkNumber + 1}:`, error);
-      throw error;
-    }
-  }
-
-  function appendChunkResult(text, chunkNumber, elementId) {
-    console.log(`Appending chunk ${chunkNumber + 1} result to ${elementId}`);
-
-    const transcriptEl = document.getElementById(elementId);
-    if (!transcriptEl) {
-      console.error(`Element ${elementId} not found`);
-      return;
-    }
-
-    const currentText = transcriptEl.value;
-    const timestamp = Math.floor((chunkNumber * 65) / 60); // Approximate minutes
-
-    // Simple deduplication - remove common ending/beginning words
-    let cleanText = text;
-    if (currentText && chunkNumber > 0) {
-      cleanText = simpleDeduplication(text, currentText);
-    }
-
-    // Append with timestamp
-    const newText = currentText +
-      (currentText ? '\n\n' : '') +
-      `[${timestamp}m${Math.floor((chunkNumber * 65) % 60)}s] ${cleanText}`;
-
-    transcriptEl.value = newText;
-
-    // Auto-scroll to bottom
-    transcriptEl.scrollTop = transcriptEl.scrollHeight;
-
-    // Trigger change event for any listeners
-    const event = new Event('change');
-    transcriptEl.dispatchEvent(event);
-  }
-
-  function simpleDeduplication(newText, previousText) {
-    if (!previousText || !newText) return newText;
-
-    // Get last 10 words from previous text
-    const prevWords = previousText.trim().split(/\s+/).slice(-10);
-    const newWords = newText.trim().split(/\s+/);
-
-    // Find overlap and remove from new text
-    for (let i = 1; i <= Math.min(prevWords.length, newWords.length); i++) {
-      const prevEnd = prevWords.slice(-i).join(' ').toLowerCase();
-      const newStart = newWords.slice(0, i).join(' ').toLowerCase();
-
-      if (prevEnd === newStart) {
-        return newWords.slice(i).join(' ');
-      }
-    }
-
-    return newText;
-  }
-
-  function showChunkProcessing(chunkNumber) {
-    showStatus(`Processing chunk ${chunkNumber + 1}...`, 'info');
-  }
-
-  function showChunkComplete(chunkNumber) {
-    showStatus(`Chunk ${chunkNumber + 1} transcribed. Recording continues...`, 'success');
-
-    // Clear status after 2 seconds
-    setTimeout(() => {
-      if (recordingStartTime) { // Only if still recording
-        showStatus('Recording in progress...', 'info');
-      }
-    }, 2000);
-  }
 
   // Update recording timer display
   function updateRecordingTimer(elementId = 'recording-timer') {
@@ -961,9 +599,12 @@ function updateModelDropdown(selectElement, models, modelType) {
     }
   }
 
-  // Audio recording function
+  // Audio recording function - simplified without chunking
   async function startRecording(options = {}) {
     try {
+      // Reset recording state for clean session
+      resetRecordingState();
+
       // Visual indication that we're requesting mic access
       showStatus('Requesting microphone access...', 'info');
 
@@ -978,32 +619,30 @@ function updateModelDropdown(selectElement, models, modelType) {
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      // Store stream for chunk recording
+      // Store stream reference
       currentStream = stream;
 
       // Get the best supported MIME type
       const { bestType } = getSupportedMediaTypes();
 
-      // Configure recorder for main recording (full recording)
+      // Configure recorder for single-session recording
       const recorderOptions = bestType ? { mimeType: bestType } : {};
       const mediaRecorder = new MediaRecorder(stream, recorderOptions);
 
-      // Setup data array for main recording
+      // Setup data array for recording
       const audioChunks = [];
 
-      // Data available listener for main recording
+      // Data available listener
       mediaRecorder.addEventListener('dataavailable', event => {
         if (event.data.size > 0) {
           audioChunks.push(event.data);
-          // Also add to overlapping chunks array
-          allAudioChunks.push(event.data);
         }
       });
 
-      // Start main recording
+      // Start recording
       mediaRecorder.start(100); // Get events more frequently for better responsiveness
 
-      // Store as current recorder for chunk processing
+      // Store as current recorder
       currentMediaRecorder = mediaRecorder;
       showStatus('Recording started', 'success');
 
@@ -1017,15 +656,6 @@ function updateModelDropdown(selectElement, models, modelType) {
       recordingStartTime = new Date();
       if (recordingTimer) clearInterval(recordingTimer);
       recordingTimer = setInterval(() => updateRecordingTimer(), 1000);
-
-      // Start progressive transcription
-      const elementId = options.elementId || 'basic-transcript';
-
-      // Reset chunk tracking for overlapping approach
-      allAudioChunks = [];
-      lastProcessedIndex = 0;
-
-      startProgressiveTranscription(elementId);
 
       // Create continue button if needed
       let continueButton = document.getElementById('continue-recording');
@@ -1242,6 +872,49 @@ function updateModelDropdown(selectElement, models, modelType) {
           reject(error);
           return;
         }
+      }
+    });
+  }
+
+  // Smart file size detection and routing
+  function processAudioWithSmartRouting(audioChunks, mimeType, formData) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // First process the audio to get the file
+        const processedFormData = await processAudio(audioChunks, mimeType, formData);
+        const file = processedFormData.get('file');
+
+        if (!file) {
+          reject(new Error('No audio file created'));
+          return;
+        }
+
+        // Check file size (25MB threshold)
+        const fileSizeMB = file.size / (1024 * 1024);
+        const CHUNKING_THRESHOLD_MB = 25;
+
+        console.log(`Audio file size: ${fileSizeMB.toFixed(2)} MB`);
+
+        if (fileSizeMB <= CHUNKING_THRESHOLD_MB) {
+          // Small file - use direct transcription
+          console.log(`File size (${fileSizeMB.toFixed(2)} MB) is under ${CHUNKING_THRESHOLD_MB}MB threshold. Using direct transcription.`);
+          showStatus(`Processing ${fileSizeMB.toFixed(1)}MB recording...`, 'info');
+
+          // Send directly to transcription endpoint
+          const result = await sendToServer(processedFormData, '/api/transcribe');
+          resolve(result);
+        } else {
+          // Large file - backend will handle chunking automatically
+          console.log(`File size (${fileSizeMB.toFixed(2)} MB) exceeds ${CHUNKING_THRESHOLD_MB}MB threshold. Backend will handle chunking.`);
+          showStatus(`Processing large ${fileSizeMB.toFixed(1)}MB recording with smart chunking...`, 'info');
+
+          // Send to transcription endpoint - backend will detect size and chunk if needed
+          const result = await sendToServer(processedFormData, '/api/transcribe');
+          resolve(result);
+        }
+      } catch (error) {
+        console.error('Error in smart audio routing:', error);
+        reject(error);
       }
     });
   }
@@ -2167,8 +1840,11 @@ function updateModelDropdown(selectElement, models, modelType) {
               recordingTimer = null;
             }
 
-            // Stop progressive transcription and process final chunk
-            await stopProgressiveTranscriptionWithFinalChunk();
+            // Clean up stream
+            if (currentStream) {
+              currentStream.getTracks().forEach(track => track.stop());
+              currentStream = null;
+            }
 
             // No timer display in main app
 
@@ -2192,18 +1868,12 @@ function updateModelDropdown(selectElement, models, modelType) {
             // Process the recorded audio after a short delay to ensure all data is collected
             setTimeout(async () => {
               try {
-                // Process audio data
-                const processedFormData = await processAudio(
+                // Process audio data with smart routing
+                const result = await processAudioWithSmartRouting(
                   recording.audioChunks,
                   recording.mediaRecorder.mimeType,
                   formData
                 );
-
-                // Show transcribing status
-                showStatus('Transcribing your recording...', 'info');
-
-                // Send to server
-                const result = await sendToServer(processedFormData);
 
                 if (result.text) {
                   // Update transcript
@@ -2230,12 +1900,13 @@ function updateModelDropdown(selectElement, models, modelType) {
                 }
               }
 
-              // Reset UI
+              // Reset UI and recording state
               basicRecordBtn.classList.remove('recording');
               const recordingStatus = document.getElementById('basic-recording-status');
               if (recordingStatus) {
                 recordingStatus.textContent = 'Click to start recording';
               }
+              resetRecordingState();
             }, 500); // Short delay to ensure all data is collected
 
           } catch (error) {
@@ -2254,6 +1925,7 @@ function updateModelDropdown(selectElement, models, modelType) {
             if (recordingStatus) {
               recordingStatus.textContent = 'Click to start recording';
             }
+            resetRecordingState();
           }
         }
 
@@ -2361,8 +2033,11 @@ function updateModelDropdown(selectElement, models, modelType) {
                 recordingTimer = null;
               }
 
-              // Stop progressive transcription and process final chunk
-              await stopProgressiveTranscriptionWithFinalChunk();
+              // Clean up stream
+              if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+              }
 
               // No timer display in main app
 
@@ -2388,18 +2063,12 @@ function updateModelDropdown(selectElement, models, modelType) {
               // Process the recorded audio after a short delay
               setTimeout(async () => {
                 try {
-                  // Process audio data
-                  const processedFormData = await processAudio(
+                  // Process audio data with smart routing
+                  const result = await processAudioWithSmartRouting(
                     speaker.recording.audioChunks,
                     speaker.recording.mediaRecorder.mimeType,
                     formData
                   );
-
-                  // Show transcribing status
-                  showStatus(`Transcribing Speaker ${speaker.id}'s recording...`, 'info');
-
-                  // Send to server
-                  const result = await sendToServer(processedFormData);
 
                   if (result.text) {
                     // Update transcript
@@ -2450,11 +2119,12 @@ function updateModelDropdown(selectElement, models, modelType) {
                   }
                 }
 
-                // Reset UI
+                // Reset UI and recording state
                 speaker.recordBtn.classList.remove('recording');
                 if (speaker.recordingStatus) {
                   speaker.recordingStatus.textContent = 'Click to start recording';
                 }
+                resetRecordingState();
               }, 500); // Short delay to ensure all data is collected
 
             } catch (error) {
@@ -2473,6 +2143,7 @@ function updateModelDropdown(selectElement, models, modelType) {
               if (speaker.recordingStatus) {
                 speaker.recordingStatus.textContent = 'Click to start recording';
               }
+              resetRecordingState();
             }
           }
 
@@ -2918,8 +2589,21 @@ function updateModelDropdown(selectElement, models, modelType) {
           // Continue polling
           showStatus(`Processing large file... ${status.progress || ''}`, 'info', true);
           return false;
+        } else if (status.status === 'not_found') {
+          // Job not found - this can happen if the job hasn't been stored yet
+          // Continue polling for a few attempts before giving up
+          if (attempts <= 5) {
+            console.log(`Job ${jobId} not found yet, continuing to poll (attempt ${attempts})`);
+            showStatus('Starting background processing...', 'info', true);
+            return false; // Continue polling
+          } else {
+            console.error(`Job ${jobId} not found after ${attempts} attempts`);
+            showStatus('Background job not found. Please try again.', 'error');
+            return true; // Stop polling
+          }
         } else {
-          showStatus('Transcription status unknown', 'warning');
+          console.warn(`Unknown status for job ${jobId}:`, status);
+          showStatus(`Transcription status: ${status.status}`, 'warning');
           return true;
         }
       } catch (error) {

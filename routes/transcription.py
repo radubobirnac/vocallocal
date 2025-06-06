@@ -7,7 +7,7 @@ import traceback
 from flask import Blueprint, request, jsonify, current_app, session
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
-from services.transcription import TranscriptionService
+
 from config import Config
 from models.firebase_models import Transcription
 
@@ -65,8 +65,8 @@ def deduplicate_overlapping_text(prev_text, current_text, overlap_seconds):
 
     return current_text
 
-# Initialize the transcription service
-transcription_service = TranscriptionService()
+# Use the singleton transcription service instance
+from services.transcription import transcription_service
 
 def safe_remove_file(filepath, max_retries=3, retry_delay=0.5):
     """Safely remove a file with retries for Windows file locking issues"""

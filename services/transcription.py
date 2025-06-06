@@ -1138,6 +1138,20 @@ class TranscriptionService(BaseService):
             # Return a job ID and process in background
             job_id = str(uuid.uuid4())
 
+            # Initialize job storage immediately to avoid "not_found" errors
+            if not hasattr(self, 'job_statuses'):
+                self.job_statuses = {}
+
+            # Store initial job status immediately
+            self.job_statuses[job_id] = {
+                "status": "processing",
+                "progress": 0,
+                "result": None,
+                "error": None
+            }
+
+            self.logger.info(f"Created background job {job_id} for {file_size_mb:.2f}MB file. Job stored in memory.")
+
             # Start background processing
             threading.Thread(
                 target=self._background_transcribe,
@@ -1148,13 +1162,8 @@ class TranscriptionService(BaseService):
             return {"status": "processing", "job_id": job_id}
 
         # Set chunking threshold to ensure better reliability
-        # Increased thresholds to avoid unnecessary chunking for medium-sized files
-        CHUNKING_THRESHOLD_MB = 25  # Standard threshold for regular files (increased from 15MB)
-
-        # For WebM recordings, use a more reasonable chunking threshold
-        # This allows for longer recordings without premature chunking
-        if is_webm_recording:
-            CHUNKING_THRESHOLD_MB = 15.0  # 15MB threshold for WebM recordings (about 15-20 minutes)
+        # Use consistent 25MB threshold for all files to match frontend smart routing
+        CHUNKING_THRESHOLD_MB = 25  # Standard threshold for all files (consistent with frontend)
 
         # Check if FFmpeg is available for chunking
         ffmpeg_available = self._check_ffmpeg_available()
@@ -1803,7 +1812,7 @@ class TranscriptionService(BaseService):
                     "error": None
                 }
 
-                self.logger.info(f"Background transcription job {job_id} completed successfully")
+                self.logger.info(f"Background transcription job {job_id} completed successfully. Result length: {len(result) if result else 0} characters")
 
             except Exception as e:
                 self.logger.error(f"Error in background transcription: {str(e)}")
@@ -1840,14 +1849,18 @@ class TranscriptionService(BaseService):
         """
         if not hasattr(self, 'job_statuses'):
             self.job_statuses = {}
+            self.logger.warning(f"Job statuses not initialized when checking job {job_id}")
 
         if job_id not in self.job_statuses:
+            self.logger.warning(f"Job {job_id} not found. Available jobs: {list(self.job_statuses.keys())}")
             return {
                 "status": "not_found",
                 "error": "Job ID not found"
             }
 
-        return self.job_statuses[job_id]
+        status = self.job_statuses[job_id]
+        self.logger.info(f"Retrieved status for job {job_id}: {status['status']}")
+        return status
 
     def transcribe_simple_chunk(self, audio_data, language, model):
         """
