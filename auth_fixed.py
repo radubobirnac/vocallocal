@@ -390,7 +390,13 @@ def google_login():
                 # Fallback for any other Render domain
                 redirect_uri = f"{host}/auth/callback"
         elif 'ondigitalocean.app' in host:
-            redirect_uri = "https://vocallocal-l5et5.ondigitalocean.app/auth/callback"
+            if 'vocallocal-l5et5.ondigitalocean.app' in host:
+                redirect_uri = "https://vocallocal-l5et5.ondigitalocean.app/auth/callback"
+            elif 'test-vocallocal-x9n74.ondigitalocean.app' in host:
+                redirect_uri = "https://test-vocallocal-x9n74.ondigitalocean.app/auth/callback"
+            else:
+                # Fallback for any other DigitalOcean domain
+                redirect_uri = f"{host}/auth/callback"
         else:
             # Local development
             redirect_uri = url_for('auth.google_callback', _external=True)
@@ -440,7 +446,13 @@ def google_callback():
                     else:
                         redirect_uri = f"{host}/auth/callback"
                 elif 'ondigitalocean.app' in host:
-                    redirect_uri = "https://vocallocal-l5et5.ondigitalocean.app/auth/callback"
+                    if 'vocallocal-l5et5.ondigitalocean.app' in host:
+                        redirect_uri = "https://vocallocal-l5et5.ondigitalocean.app/auth/callback"
+                    elif 'test-vocallocal-x9n74.ondigitalocean.app' in host:
+                        redirect_uri = "https://test-vocallocal-x9n74.ondigitalocean.app/auth/callback"
+                    else:
+                        # Fallback for any other DigitalOcean domain
+                        redirect_uri = f"{host}/auth/callback"
                 else:
                     redirect_uri = url_for('auth.google_callback', _external=True)
 
@@ -540,6 +552,14 @@ def _handle_google_callback():
                         redirect_uri = "https://vocallocal-aj6b.onrender.com/auth/callback"
                     else:
                         # Fallback for any other Render domain
+                        redirect_uri = f"{host}/auth/callback"
+                elif 'ondigitalocean.app' in host:
+                    if 'vocallocal-l5et5.ondigitalocean.app' in host:
+                        redirect_uri = "https://vocallocal-l5et5.ondigitalocean.app/auth/callback"
+                    elif 'test-vocallocal-x9n74.ondigitalocean.app' in host:
+                        redirect_uri = "https://test-vocallocal-x9n74.ondigitalocean.app/auth/callback"
+                    else:
+                        # Fallback for any other DigitalOcean domain
                         redirect_uri = f"{host}/auth/callback"
                 else:
                     # Local development
@@ -683,7 +703,8 @@ def oauth_debug():
             url_for('auth.google_callback', _external=True),
             "https://vocallocal.onrender.com/auth/callback",
             "https://vocallocal-aj6b.onrender.com/auth/callback",
-            "https://vocallocal-l5et5.ondigitalocean.app/auth/callback"
+            "https://vocallocal-l5et5.ondigitalocean.app/auth/callback",
+            "https://test-vocallocal-x9n74.ondigitalocean.app/auth/callback"
         ],
         "current_host": request.host_url,
         "is_secure": request.is_secure

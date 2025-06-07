@@ -423,7 +423,13 @@ def google_login():
 
         # Determine the appropriate redirect URI based on the host
         if 'ondigitalocean.app' in host:
-            redirect_uri = "https://vocallocal-l5et5.ondigitalocean.app/auth/callback"
+            if 'vocallocal-l5et5.ondigitalocean.app' in host:
+                redirect_uri = "https://vocallocal-l5et5.ondigitalocean.app/auth/callback"
+            elif 'test-vocallocal-x9n74.ondigitalocean.app' in host:
+                redirect_uri = "https://test-vocallocal-x9n74.ondigitalocean.app/auth/callback"
+            else:
+                # Fallback for any other DigitalOcean domain
+                redirect_uri = f"{host}/auth/callback"
         elif 'onrender.com' in host:
             redirect_uri = f"{host}/auth/callback"
         else:
@@ -715,6 +721,7 @@ def oauth_debug():
         "redirect_uris_in_code": [
             url_for('auth.google_callback', _external=True),
             "https://vocallocal-l5et5.ondigitalocean.app/auth/callback",
+            "https://test-vocallocal-x9n74.ondigitalocean.app/auth/callback",
             "https://vocallocal.onrender.com/auth/callback"
         ],
         "current_host": request.host_url,
