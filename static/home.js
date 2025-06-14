@@ -35,41 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Active link highlighting based on scroll position
-  const sections = document.querySelectorAll('section[id]');
-  const navLinks = document.querySelectorAll('.nav-link');
-
-  if (sections.length && navLinks.length) {
-    window.addEventListener('scroll', () => {
-      let current = '';
-      const navbarHeight = document.querySelector('.navbar').offsetHeight;
-
-      sections.forEach(section => {
-        const sectionTop = section.offsetTop - navbarHeight - 100;
-        const sectionHeight = section.offsetHeight;
-
-        if (window.scrollY >= sectionTop && window.scrollY < sectionTop + sectionHeight) {
-          current = section.getAttribute('id');
-        }
-      });
-
-      navLinks.forEach(link => {
-        link.classList.remove('active');
-        if (link.getAttribute('href') === `#${current}`) {
-          link.classList.add('active');
-        }
-      });
-
-      // Always keep Home active if no section is active
-      if (current === '') {
-        navLinks.forEach(link => {
-          if (link.getAttribute('href') === '#') {
-            link.classList.add('active');
-          }
-        });
-      }
-    });
-  }
+  // Navigation is now handled by navigation.js
 
   // Feature card hover effect
   const featureCards = document.querySelectorAll('.feature-card');
