@@ -64,10 +64,10 @@ def get_user_plan():
         # Define plan limits based on plan type
         plan_limits = {
             'free': {
-                'transcription_minutes': 60,
-                'translation_words': 1000,
-                'tts_minutes': 5,
-                'ai_credits': 5
+                'transcription_minutes': 60,  # 60 minutes total for transcription/translation combined
+                'translation_words': 0,       # No translation words for free users
+                'tts_minutes': 0,             # No TTS access for free users
+                'ai_credits': 0               # No AI credits for free users
             },
             'basic': {
                 'transcription_minutes': 280,
@@ -213,4 +213,32 @@ def get_user_info():
                 'message': 'An error occurred while fetching user info',
                 'details': str(e)
             }
+        }), 500
+
+
+@bp.route('/api/user/tts-access', methods=['GET'])
+@login_required
+def check_tts_access():
+    """
+    Check if the current user has access to TTS features.
+
+    Returns:
+        JSON response with TTS access information
+    """
+    try:
+        from services.usage_validation_service import UsageValidationService
+
+        user_email = current_user.email
+        tts_access = UsageValidationService.check_tts_access(user_email)
+
+        return jsonify(tts_access)
+
+    except Exception as e:
+        logger.error(f"Error checking TTS access: {str(e)}")
+        return jsonify({
+            'allowed': False,
+            'plan_type': 'unknown',
+            'reason': 'Unable to verify TTS access',
+            'upgrade_required': True,
+            'message': 'Unable to verify TTS access. Please try again.'
         }), 500

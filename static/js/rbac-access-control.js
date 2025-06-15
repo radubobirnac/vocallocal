@@ -35,11 +35,11 @@ class RBACAccessControl {
             'gemini-2.0-flash-lite': { name: 'Gemini 2.0 Flash Lite', tier: 'free' },
             'gpt-4o-mini-transcribe': { name: 'OpenAI GPT-4o Mini', tier: 'premium' },
             'gpt-4o-transcribe': { name: 'OpenAI GPT-4o', tier: 'premium' },
-            'gpt4o-mini': { name: 'GPT-4o Mini TTS', tier: 'premium' },
-            'openai': { name: 'OpenAI TTS-1', tier: 'premium' },
+            'gpt4o-mini': { name: 'GPT-4o Mini TTS', tier: 'premium', service: 'tts' },
+            'openai': { name: 'OpenAI TTS-1', tier: 'premium', service: 'tts' },
             'gemini-2.5-flash-preview-04-17': { name: 'Gemini 2.5 Flash Preview', tier: 'premium' },
             'gemini-2.5-flash': { name: 'Gemini 2.5 Flash Preview', tier: 'premium' },
-            'gemini-2.5-flash-tts': { name: 'Gemini 2.5 Flash TTS', tier: 'premium' }
+            'gemini-2.5-flash-tts': { name: 'Gemini 2.5 Flash TTS', tier: 'premium', service: 'tts' }
         };
 
         this.init();
@@ -108,6 +108,13 @@ class RBACAccessControl {
 
         // Normal users are restricted to free models unless they have premium subscription
         if (this.userRole === 'normal_user') {
+            // Check if this is a TTS model and user is on free plan
+            const modelInfo = this.modelInfo[model];
+            if (modelInfo && modelInfo.service === 'tts' && this.userPlan === 'free') {
+                console.log(`Model ${model} access denied - TTS not available on free plan`);
+                return false;
+            }
+
             // Free models are always accessible
             if (this.freeModels.includes(model)) {
                 return true;
@@ -142,6 +149,17 @@ class RBACAccessControl {
 
         // Access denied - provide reason
         if (this.userRole === 'normal_user') {
+            // Check if this is a TTS model blocked for free users
+            const modelInfo = this.modelInfo[model];
+            if (modelInfo && modelInfo.service === 'tts' && this.userPlan === 'free') {
+                return {
+                    allowed: false,
+                    reason: 'Text-to-Speech is not available on the Free Plan',
+                    upgradeRequired: true,
+                    ttsBlocked: true
+                };
+            }
+
             if (this.freeModels.includes(model)) {
                 return { allowed: true, reason: 'Free model access' };
             } else {
@@ -186,17 +204,20 @@ class RBACAccessControl {
             const accessInfo = this.getAccessReason(model);
 
             if (!accessInfo.allowed) {
-                // Add lock icon and disable option for restricted models
+                // Add lock icon for restricted models
                 const modelName = this.modelInfo[model]?.name || model;
-                option.textContent = `🔒 ${modelName} (Higher Plan)`;
-                option.disabled = true;
+                const planText = accessInfo.ttsBlocked ? '(Upgrade Required)' : '(Higher Plan)';
+                option.textContent = `🔒 ${modelName} ${planText}`;
+                option.disabled = false; // Keep enabled so we can detect selection attempts
                 option.style.color = '#999';
                 option.title = accessInfo.reason;
-                console.log(`Model ${model} restricted in ${selectorId}`);
+                option.dataset.restricted = 'true'; // Mark as restricted for event handling
+                console.log(`Model ${model} restricted in ${selectorId}: ${accessInfo.reason}`);
             } else {
                 // Ensure accessible models are enabled and remove any lock icons
                 option.disabled = false;
                 option.style.color = '';
+                option.dataset.restricted = 'false'; // Mark as accessible
 
                 // Clean up the option text to remove any existing lock icons
                 const modelName = this.modelInfo[model]?.name || model;
@@ -248,18 +269,24 @@ class RBACAccessControl {
 
     handleModelSelection(selector) {
         const model = selector.value;
+        const selectedOption = selector.options[selector.selectedIndex];
 
-        if (!this.isModelAccessible(model)) {
-            // Prevent selection and show upgrade modal
-            event.preventDefault();
+        // Check if the selected option is marked as restricted
+        if (selectedOption && selectedOption.dataset.restricted === 'true') {
+            // Show upgrade modal immediately
             this.showUpgradeModal(model);
 
-            // Revert to accessible model
+            // Revert to the first accessible model
             const accessibleOption = Array.from(selector.options).find(option =>
-                this.isModelAccessible(option.value)
+                !option.dataset.restricted && option.value !== ''
             );
+
             if (accessibleOption) {
                 selector.value = accessibleOption.value;
+                console.log(`Reverted selection to accessible model: ${accessibleOption.value}`);
+            } else {
+                // Fallback to empty selection
+                selector.value = '';
             }
         }
     }
@@ -271,53 +298,52 @@ class RBACAccessControl {
             return;
         }
 
+        // Close any existing modal first
+        this.closeUpgradeModal();
+
         const modelName = this.modelInfo[model]?.name || model;
         const accessInfo = this.getAccessReason(model);
 
-        // Create modal HTML
+        // Determine if this is a TTS-specific restriction
+        const isTTSBlocked = accessInfo.ttsBlocked;
+        const title = isTTSBlocked ? 'Text-to-Speech Not Available' : 'Premium Feature Required';
+        const description = isTTSBlocked
+            ? 'Text-to-Speech features are not included in the Free Plan.'
+            : `<strong>${modelName}</strong> requires a premium subscription.`;
+
+        // Create enhanced modal HTML with upgrade options using CSS classes
         const modalHtml = `
-            <div id="rbac-upgrade-modal" class="modal-overlay" style="
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 1000;
-            ">
-                <div class="modal-content" style="
-                    background: white;
-                    padding: 2rem;
-                    border-radius: 15px;
-                    max-width: 500px;
-                    margin: 1rem;
-                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-                ">
+            <div id="rbac-upgrade-modal" class="modal-overlay">
+                <div class="modal-content">
+                    <button id="rbac-modal-close-x" class="modal-close-x">×</button>
+
                     <div style="text-align: center;">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
-                        <h2 style="margin: 0 0 1rem 0; color: #333;">Model Access Restricted</h2>
-                        <p style="margin-bottom: 1.5rem; color: #666;">
-                            <strong>${modelName}</strong> requires premium access.
+                        <div class="modal-lock-icon">🔒</div>
+
+                        <h2 class="modal-title">${title}</h2>
+
+                        <p class="modal-description">${description}</p>
+
+                        <p class="modal-subtitle">
+                            Upgrade to unlock premium AI models, higher usage limits, and advanced features.
                         </p>
-                        <p style="margin-bottom: 2rem; color: #666;">
-                            ${accessInfo.reason}
-                        </p>
-                        <div style="display: flex; gap: 1rem; justify-content: center;">
-                            <button id="rbac-close-modal-btn" class="button button-outline" style="
-                                background: transparent;
-                                color: #667eea;
-                                border: 2px solid #667eea;
-                                padding: 0.75rem 1.5rem;
-                                border-radius: 10px;
-                                font-weight: 600;
-                                cursor: pointer;
-                            ">
-                                Close
+
+                        <div class="modal-upgrade-buttons">
+                            <button id="rbac-upgrade-basic-btn" class="upgrade-btn upgrade-btn-basic">
+                                <div class="plan-name">Basic Plan</div>
+                                <div class="plan-price">$4.99/month</div>
+                            </button>
+
+                            <button id="rbac-upgrade-professional-btn" class="upgrade-btn upgrade-btn-professional">
+                                <div class="plan-name">Professional Plan</div>
+                                <div class="plan-price">$12.99/month</div>
+                                <div class="popular-badge">POPULAR</div>
                             </button>
                         </div>
+
+                        <button id="rbac-close-modal-btn" class="modal-close-btn">
+                            Maybe Later
+                        </button>
                     </div>
                 </div>
             </div>
@@ -326,23 +352,127 @@ class RBACAccessControl {
         // Add modal to page
         document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-        // Setup event listeners
-        document.getElementById('rbac-close-modal-btn').addEventListener('click', () => {
+        // Setup event listeners with proper error handling
+        const setupEventListener = (id, handler) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('click', handler);
+            } else {
+                console.warn(`Element with id ${id} not found`);
+            }
+        };
+
+        // Close button event listeners
+        setupEventListener('rbac-close-modal-btn', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             this.closeUpgradeModal();
         });
 
-        // Close on overlay click
-        document.getElementById('rbac-upgrade-modal').addEventListener('click', (e) => {
-            if (e.target.id === 'rbac-upgrade-modal') {
-                this.closeUpgradeModal();
-            }
+        setupEventListener('rbac-modal-close-x', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.closeUpgradeModal();
         });
+
+        // Upgrade button event listeners
+        setupEventListener('rbac-upgrade-basic-btn', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.handleUpgradeClick('basic');
+        });
+
+        setupEventListener('rbac-upgrade-professional-btn', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.handleUpgradeClick('professional');
+        });
+
+        // Close on overlay click (but not on modal content)
+        const modal = document.getElementById('rbac-upgrade-modal');
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target.id === 'rbac-upgrade-modal') {
+                    this.closeUpgradeModal();
+                }
+            });
+        }
+
+        // Close on Escape key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                this.closeUpgradeModal();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+
+        // Prevent body scroll when modal is open
+        document.body.classList.add('modal-open');
     }
 
     closeUpgradeModal() {
         const modal = document.getElementById('rbac-upgrade-modal');
         if (modal) {
-            modal.remove();
+            // Add fade out animation
+            modal.style.opacity = '0';
+            modal.style.transform = 'scale(0.9)';
+            modal.style.transition = 'all 0.2s ease-out';
+
+            setTimeout(() => {
+                modal.remove();
+            }, 200);
+        }
+
+        // Restore body scroll
+        document.body.classList.remove('modal-open');
+
+        // Remove any escape key listeners
+        document.removeEventListener('keydown', this.handleEscape);
+    }
+
+    handleUpgradeClick(planType) {
+        console.log(`Upgrade to ${planType} plan clicked`);
+
+        // Close the modal first
+        this.closeUpgradeModal();
+
+        // Show upgrade information (placeholder for future payment integration)
+        const planDetails = {
+            'basic': {
+                name: 'Basic Plan',
+                price: '$4.99/month',
+                features: [
+                    '280 transcription minutes per month',
+                    '50,000 translation words per month',
+                    '60 TTS minutes per month',
+                    '50 AI credits per month',
+                    'Access to premium AI models',
+                    'Email support'
+                ]
+            },
+            'professional': {
+                name: 'Professional Plan',
+                price: '$12.99/month',
+                features: [
+                    '800 transcription minutes per month',
+                    '160,000 translation words per month',
+                    '200 TTS minutes per month',
+                    '150 AI credits per month',
+                    'Access to all premium AI models',
+                    'Priority support',
+                    'Advanced features'
+                ]
+            }
+        };
+
+        const plan = planDetails[planType];
+        if (plan) {
+            const featuresList = plan.features.map(feature => `• ${feature}`).join('\n');
+
+            // For now, show an alert with plan details
+            // This will be replaced with actual payment processing
+            alert(`${plan.name} (${plan.price})\n\nFeatures included:\n${featuresList}\n\nUpgrade functionality will be available when payment processing is implemented.`);
         }
     }
 

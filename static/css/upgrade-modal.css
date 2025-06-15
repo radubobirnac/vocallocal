@@ -1,0 +1,286 @@
+/**
+ * Enhanced Upgrade Modal Styles
+ * Provides professional styling for tier restriction modals
+ */
+
+/* Modal overlay and base styles */
+.modal-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    z-index: 10000 !important;
+    backdrop-filter: blur(2px);
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+.modal-content {
+    background: white !important;
+    padding: 2.5rem !important;
+    border-radius: 20px !important;
+    max-width: 600px !important;
+    width: 90% !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+    position: relative !important;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+/* Animation keyframes */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Close button styles */
+.modal-close-x {
+    position: absolute !important;
+    top: 1rem !important;
+    right: 1rem !important;
+    background: none !important;
+    border: none !important;
+    font-size: 1.5rem !important;
+    cursor: pointer !important;
+    color: #999 !important;
+    width: 30px !important;
+    height: 30px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    transition: all 0.2s !important;
+}
+
+.modal-close-x:hover {
+    background: #f0f0f0 !important;
+    color: #666 !important;
+}
+
+/* Lock icon gradient */
+.modal-lock-icon {
+    font-size: 4rem !important;
+    margin-bottom: 1rem !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+
+/* Modal title */
+.modal-title {
+    margin: 0 0 1rem 0 !important;
+    color: #333 !important;
+    font-size: 1.8rem !important;
+    font-weight: 700 !important;
+}
+
+/* Modal description */
+.modal-description {
+    margin-bottom: 1.5rem !important;
+    color: #666 !important;
+    font-size: 1.1rem !important;
+    line-height: 1.5 !important;
+}
+
+.modal-subtitle {
+    margin-bottom: 2.5rem !important;
+    color: #888 !important;
+    font-size: 0.95rem !important;
+}
+
+/* Upgrade button container */
+.modal-upgrade-buttons {
+    display: flex !important;
+    gap: 1rem !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    margin-bottom: 1.5rem !important;
+}
+
+/* Upgrade button styles */
+.upgrade-btn {
+    border: none !important;
+    padding: 1rem 2rem !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    cursor: pointer !important;
+    transition: all 0.3s !important;
+    min-width: 180px !important;
+    position: relative !important;
+    color: white !important;
+}
+
+.upgrade-btn-basic {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%) !important;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3) !important;
+}
+
+.upgrade-btn-basic:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4) !important;
+}
+
+.upgrade-btn-professional {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+}
+
+.upgrade-btn-professional:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
+}
+
+/* Popular badge */
+.popular-badge {
+    position: absolute !important;
+    top: -8px !important;
+    right: -8px !important;
+    background: #ff4757 !important;
+    color: white !important;
+    font-size: 0.7rem !important;
+    padding: 0.2rem 0.5rem !important;
+    border-radius: 10px !important;
+    font-weight: bold !important;
+}
+
+/* Plan name and price in buttons */
+.plan-name {
+    font-size: 1.1rem !important;
+    margin-bottom: 0.2rem !important;
+}
+
+.plan-price {
+    font-size: 0.9rem !important;
+    opacity: 0.9 !important;
+}
+
+/* Close/Cancel button */
+.modal-close-btn {
+    background: transparent !important;
+    color: #999 !important;
+    border: 1px solid #ddd !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    font-size: 0.9rem !important;
+}
+
+.modal-close-btn:hover {
+    border-color: #999 !important;
+    color: #666 !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .modal-content {
+        padding: 2rem !important;
+        width: 95% !important;
+        margin: 1rem !important;
+    }
+    
+    .modal-upgrade-buttons {
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+    
+    .upgrade-btn {
+        min-width: 250px !important;
+        width: 100% !important;
+        max-width: 300px !important;
+    }
+    
+    .modal-title {
+        font-size: 1.5rem !important;
+    }
+    
+    .modal-lock-icon {
+        font-size: 3rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-content {
+        padding: 1.5rem !important;
+        width: 98% !important;
+    }
+    
+    .modal-title {
+        font-size: 1.3rem !important;
+    }
+    
+    .modal-description {
+        font-size: 1rem !important;
+    }
+    
+    .upgrade-btn {
+        padding: 0.875rem 1.5rem !important;
+        font-size: 0.9rem !important;
+    }
+}
+
+/* Ensure modal appears above everything */
+#rbac-upgrade-modal,
+#tts-upgrade-modal {
+    z-index: 10000 !important;
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+    overflow: hidden !important;
+}
+
+/* Focus styles for accessibility */
+.upgrade-btn:focus,
+.modal-close-btn:focus,
+.modal-close-x:focus {
+    outline: 2px solid #667eea !important;
+    outline-offset: 2px !important;
+}
+
+/* Loading state for upgrade buttons */
+.upgrade-btn.loading {
+    opacity: 0.7 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}
+
+.upgrade-btn.loading::after {
+    content: '' !important;
+    width: 16px !important;
+    height: 16px !important;
+    border: 2px solid transparent !important;
+    border-top: 2px solid currentColor !important;
+    border-radius: 50% !important;
+    animation: spin 1s linear infinite !important;
+    display: inline-block !important;
+    margin-left: 0.5rem !important;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

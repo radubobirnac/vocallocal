@@ -19,6 +19,7 @@
     <!-- Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/upgrade-modal.css') }}">
 
     <style>
         .dashboard-container {
@@ -474,6 +475,9 @@
                     {% if unlimited_access %}
                         <span class="usage-numbers">{{ "{:,}".format(usage.translation.used|int) }} / Unlimited words</span>
                         <span>Unlimited remaining</span>
+                    {% elif plan_type == 'free' %}
+                        <span class="usage-numbers">{{ "{:,}".format(usage.translation.used|int) }} words used</span>
+                        <span>Included in 60-minute plan</span>
                     {% else %}
                         <span class="usage-numbers">{{ "{:,}".format(usage.translation.used|int) }} / {{ "{:,}".format(usage.translation.limit) }} words</span>
                         <span>{{ "{:,}".format(usage.translation.remaining|int) }} remaining</span>
@@ -482,19 +486,21 @@
                 <div class="usage-bar">
                     {% if unlimited_access %}
                         {% set translation_percent = 0 %}
+                    {% elif plan_type == 'free' %}
+                        {% set translation_percent = (usage.transcription.used / usage.transcription.limit * 100) if usage.transcription.limit > 0 else 0 %}
                     {% else %}
                         {% set translation_percent = (usage.translation.used / usage.translation.limit * 100) if usage.translation.limit > 0 else 0 %}
                     {% endif %}
                     <div class="usage-fill {% if translation_percent >= 90 %}high{% elif translation_percent >= 70 %}medium{% elif translation_percent > 0 %}low{% else %}zero{% endif %}"
                          style="width: {{ translation_percent }}%"></div>
                 </div>
-                {% if not unlimited_access and usage.translation.remaining <= 0 and usage.translation.limit > 0 %}
+                {% if plan_type == 'free' %}
+                <div class="info-message" style="background: #e3f2fd; border: 1px solid #2196f3; color: #1976d2; padding: 0.5rem; border-radius: 4px; font-size: 0.9rem;">
+                    <i class="fas fa-info-circle"></i> Translation shares your 60-minute monthly limit with transcription
+                </div>
+                {% elif not unlimited_access and usage.translation.remaining <= 0 and usage.translation.limit > 0 %}
                 <div class="limit-reached">
                     <i class="fas fa-exclamation-triangle"></i> Translation limit reached!
-                </div>
-                {% elif not unlimited_access and usage.translation.limit == 0 %}
-                <div class="limit-reached">
-                    <i class="fas fa-lock"></i> Translation not available on {{ plan_display }}
                 </div>
                 {% endif %}
             </div>
@@ -684,6 +690,8 @@
     <script src="{{ url_for('static', filename='auth.js') }}"></script>
     <script src="{{ url_for('static', filename='js/usage-validation.js') }}"></script>
     <script src="{{ url_for('static', filename='js/usage-enforcement.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tts-access-control.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/rbac-access-control.js') }}"></script>
     <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
 </body>
 </html>

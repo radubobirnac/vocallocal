@@ -24,6 +24,7 @@
   <!-- Styles -->
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='styles.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='auth.css') }}">
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/upgrade-modal.css') }}">
 </head>
 <body>
   <div class="container">
@@ -657,6 +658,9 @@
 
   <!-- RBAC Model Access Control -->
   <script src="{{ versioned_url_for('static', filename='js/rbac-access-control.js') }}"></script>
+
+  <!-- TTS Access Control -->
+  <script src="{{ versioned_url_for('static', filename='js/tts-access-control.js') }}"></script>
 
   <script src="{{ versioned_url_for('static', filename='background-processing.js') }}"></script>
   <script src="{{ versioned_url_for('static', filename='common.js') }}"></script>

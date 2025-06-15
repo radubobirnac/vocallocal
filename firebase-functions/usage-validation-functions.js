@@ -352,6 +352,21 @@ exports.validateTTSUsage = functions.https.onCall(async (data, context) => {
     const subscription = userData.subscription || {};
     const planType = subscription.status === 'active' ? subscription.planType : 'free';
 
+    // Free users have no TTS access
+    if (planType === 'free') {
+      functions.logger.info(`TTS access denied for free user ${userId}`);
+      return {
+        allowed: false,
+        remaining: 0,
+        planType: 'free',
+        upgradeRequired: true,
+        error: {
+          code: 'tts_not_available_free',
+          message: 'Text-to-Speech is not available on the Free Plan. Upgrade to Basic or Professional plan to access TTS features.'
+        }
+      };
+    }
+
     // Get subscription plan details
     const planData = await getSubscriptionPlan(planType);
 

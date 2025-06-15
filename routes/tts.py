@@ -54,6 +54,30 @@ def text_to_speech():
     language = data['language']
     tts_model = data.get('tts_model', 'gemini-2.5-flash-tts')  # Default to Gemini 2.5 Flash TTS
 
+    # Check TTS access for the current user
+    try:
+        from services.usage_validation_service import UsageValidationService
+        user_email = current_user.email if current_user.is_authenticated else None
+
+        if user_email:
+            tts_access = UsageValidationService.check_tts_access(user_email)
+            if not tts_access['allowed']:
+                print(f"TTS access denied for user {user_email}: {tts_access['reason']}")
+                return jsonify({
+                    'error': 'TTS access denied',
+                    'reason': tts_access['reason'],
+                    'message': tts_access['message'],
+                    'upgrade_required': tts_access['upgrade_required']
+                }), 403
+        else:
+            print("User not authenticated for TTS request")
+            return jsonify({'error': 'Authentication required for TTS'}), 401
+
+    except Exception as access_error:
+        print(f"Error checking TTS access: {str(access_error)}")
+        # Continue with request if access check fails (fallback behavior)
+        pass
+
     # Validate usage for authenticated users (with timeout protection)
     try:
         # Ensure we have a valid user email before proceeding

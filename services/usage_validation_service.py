@@ -17,10 +17,10 @@ class UsageValidationService:
     # Default plan limits (fallback if Firebase data is unavailable)
     DEFAULT_PLAN_LIMITS = {
         'free': {
-            'transcriptionMinutes': 60,
-            'translationWords': 0,
-            'ttsMinutes': 0,
-            'aiCredits': 0
+            'transcriptionMinutes': 60,  # 60 minutes total for transcription/translation combined
+            'translationWords': 0,       # No translation words for free users
+            'ttsMinutes': 0,             # No TTS access for free users
+            'aiCredits': 0               # No AI credits for free users
         },
         'basic': {
             'transcriptionMinutes': 280,
@@ -284,6 +284,20 @@ class UsageValidationService:
 
             allowed = remaining >= minutes_requested
 
+            # For free users, TTS is completely blocked
+            if usage_data['plan_type'] == 'free':
+                return {
+                    'allowed': False,
+                    'service': 'tts',
+                    'requested': minutes_requested,
+                    'limit': 0,
+                    'used': used,
+                    'remaining': 0,
+                    'plan_type': 'free',
+                    'upgrade_required': True,
+                    'message': 'Text-to-Speech is not available on the Free Plan. Please upgrade to access TTS features.'
+                }
+
             return {
                 'allowed': allowed,
                 'service': 'tts',
@@ -364,6 +378,61 @@ class UsageValidationService:
                 'service': 'ai',
                 'error': str(e),
                 'message': 'Error validating usage. Please try again.'
+            }
+
+    @staticmethod
+    def check_tts_access(user_email):
+        """
+        Check if a user has access to TTS features based on their subscription.
+
+        Args:
+            user_email (str): User's email address
+
+        Returns:
+            dict: Access information with allowed status and reason
+        """
+        try:
+            # Check if user has Super User or Admin privileges first
+            user_role = UsageValidationService._get_user_role(user_email)
+            if user_role in ['admin', 'super_user']:
+                return {
+                    'allowed': True,
+                    'plan_type': 'unlimited',
+                    'reason': f'Unlimited TTS access for {user_role} role',
+                    'upgrade_required': False,
+                    'message': 'TTS features are available with unlimited access.'
+                }
+
+            usage_data = UsageValidationService.get_user_usage_data(user_email)
+            plan_type = usage_data['plan_type']
+
+            # Free users have no TTS access
+            if plan_type == 'free':
+                return {
+                    'allowed': False,
+                    'plan_type': plan_type,
+                    'reason': 'TTS features are not available on the Free Plan',
+                    'upgrade_required': True,
+                    'message': 'Upgrade to Basic or Professional plan to access Text-to-Speech features.'
+                }
+
+            # All other plans have TTS access
+            return {
+                'allowed': True,
+                'plan_type': plan_type,
+                'reason': f'TTS access included in {plan_type.title()} plan',
+                'upgrade_required': False,
+                'message': 'TTS features are available.'
+            }
+
+        except Exception as e:
+            print(f"Error checking TTS access: {str(e)}")
+            return {
+                'allowed': False,
+                'plan_type': 'unknown',
+                'reason': 'Unable to verify TTS access',
+                'upgrade_required': True,
+                'message': 'Unable to verify TTS access. Please try again.'
             }
 
     @staticmethod

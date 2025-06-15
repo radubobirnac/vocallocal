@@ -311,6 +311,16 @@ function updateModelDropdown(selectElement, models, modelType) {
     const ttsModelSelect = document.getElementById('tts-model-select');
     const ttsModel = ttsModelSelect ? ttsModelSelect.value : 'auto'; // Default to auto if not found
 
+    // Validate TTS access first
+    if (window.ttsAccessControl && window.ttsAccessControl.hasLoadedUserInfo) {
+      const accessValidation = window.ttsAccessControl.validateTTSAccess();
+      if (!accessValidation.allowed) {
+        window.ttsAccessControl.showTTSUpgradeModal();
+        setTTSButtonState(sourceId, 'error');
+        return;
+      }
+    }
+
     // Validate model access if model access control is available
     if (window.modelAccessControl && window.modelAccessControl.hasLoadedUserRole) {
       if (!window.modelAccessControl.canAccessModel(ttsModel)) {
