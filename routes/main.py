@@ -1,8 +1,73 @@
 """
 Main routes for VocalLocal
 """
-from flask import Blueprint, render_template, send_from_directory, request, flash, redirect, url_for, jsonify
+from flask import Blueprint, render_template, send_from_directory, request, flash, redirect, url_for, jsonify, make_response
 from flask_login import current_user, login_required
+import logging
+from services.user_account_service import UserAccountService
+from services.usage_validation_service import UsageValidationService
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Add the missing function
+def get_user_usage_data():
+    """Get usage data for the current user."""
+    try:
+        # Get user email
+        user_email = current_user.email
+        
+        # Get usage data from UsageValidationService
+        usage_data = UsageValidationService.get_user_usage_data(user_email)
+        
+        # Format data for dashboard display
+        formatted_data = {
+            'transcription': {
+                'used': usage_data.get('used', {}).get('transcriptionMinutes', 0),
+                'limit': usage_data.get('limits', {}).get('transcriptionMinutes', 60),
+                'remaining': max(0, usage_data.get('limits', {}).get('transcriptionMinutes', 60) - 
+                              usage_data.get('used', {}).get('transcriptionMinutes', 0)),
+                'remaining_display': 'Unlimited' if usage_data.get('plan_type') in ['professional', 'unlimited'] else None,
+                'restricted': False
+            },
+            'translation': {
+                'used': usage_data.get('used', {}).get('translationWords', 0),
+                'limit': usage_data.get('limits', {}).get('translationWords', 1000),
+                'remaining': max(0, usage_data.get('limits', {}).get('translationWords', 1000) - 
+                              usage_data.get('used', {}).get('translationWords', 0)),
+                'remaining_display': 'Unlimited' if usage_data.get('plan_type') in ['professional', 'unlimited'] else None,
+                'restricted': usage_data.get('plan_type') == 'free'
+            },
+            'tts': {
+                'used': usage_data.get('used', {}).get('ttsMinutes', 0),
+                'limit': usage_data.get('limits', {}).get('ttsMinutes', 5),
+                'remaining': max(0, usage_data.get('limits', {}).get('ttsMinutes', 5) - 
+                              usage_data.get('used', {}).get('ttsMinutes', 0)),
+                'remaining_display': 'Unlimited' if usage_data.get('plan_type') in ['professional', 'unlimited'] else None,
+                'restricted': usage_data.get('plan_type') == 'free'
+            },
+            'ai_credits': {
+                'used': usage_data.get('used', {}).get('aiCredits', 0),
+                'limit': usage_data.get('limits', {}).get('aiCredits', 5),
+                'remaining': max(0, usage_data.get('limits', {}).get('aiCredits', 5) - 
+                              usage_data.get('used', {}).get('aiCredits', 0)),
+                'remaining_display': 'Unlimited' if usage_data.get('plan_type') in ['professional', 'unlimited'] else None,
+                'restricted': usage_data.get('plan_type') == 'free'
+            }
+        }
+        
+        return formatted_data
+    except Exception as e:
+        logger.error(f"Error getting user usage data: {e}")
+        # Return default data structure for error cases
+        return {
+            'transcription': {'used': 0, 'limit': 60, 'remaining': 60, 'restricted': False},
+            'translation': {'used': 0, 'limit': 1000, 'remaining': 1000, 'restricted': True},
+            'tts': {'used': 0, 'limit': 5, 'remaining': 5, 'restricted': True},
+            'ai_credits': {'used': 0, 'limit': 5, 'remaining': 5, 'restricted': True}
+        }
+
 # Import the Transcription and Translation classes
 # Use a more robust approach to ensure they are available
 import sys
@@ -568,119 +633,98 @@ def check_usage():
 @bp.route('/dashboard')
 @login_required
 def dashboard():
-    """User dashboard showing subscription plan and usage statistics."""
+    """Dashboard page showing usage statistics and available features."""
     try:
-        # Import services with error handling
-        try:
-            from services.user_account_service import UserAccountService
-        except ImportError as e:
-            print(f"Warning: Could not import UserAccountService: {e}")
-            flash("Dashboard temporarily unavailable. Please try again later.", "warning")
-            return redirect(url_for('main.index'))
+        logger.info(f"Dashboard route accessed by user: {current_user.email}")
 
-        try:
-            from utils.error_handler import SafeFirebaseService
-            firebase_service = SafeFirebaseService()
-        except ImportError:
-            # Fallback to regular Firebase service
-            try:
-                from services.firebase_service import FirebaseService
-                firebase_service = FirebaseService()
-            except Exception as e:
-                print(f"Warning: Could not initialize Firebase service: {e}")
-                firebase_service = None
+        # Check if user is admin or super_user
+        user_role = getattr(current_user, 'role', 'normal_user')
+        is_admin = user_role == 'admin'
+        is_super_user = user_role == 'super_user'
 
-        # Get user ID (email with dots replaced by commas for Firebase)
-        user_id = current_user.email.replace('.', ',')
-
-        # Get user account data
-        user_ref = UserAccountService.get_ref(f'users/{user_id}')
-        user_data = user_ref.get()
-
-        if not user_data:
-            # Initialize user account if it doesn't exist
-            UserAccountService.initialize_user_account(
-                user_id=user_id,
-                email=current_user.email,
-                display_name=current_user.username
-            )
-            user_data = user_ref.get()
-
-        # Extract subscription and usage data
-        subscription = user_data.get('subscription', {})
-        usage = user_data.get('usage', {})
-        current_period = usage.get('currentPeriod', {})
-
-        # Get subscription plan details
-        plan_type = subscription.get('planType', 'free')
-
-        # Get plan data with comprehensive error handling
-        plan_data = None
-
-        if firebase_service and firebase_service.initialized:
-            try:
-                # Get plan details from Firebase
-                plan_ref = firebase_service.get_ref(f'subscriptionPlans/{plan_type}')
-                plan_data = plan_ref.get()
-                print(f"Successfully retrieved plan data for {plan_type}")
-            except Exception as e:
-                print(f"Error getting plan data from Firebase: {str(e)}")
+        logger.info(f"User role: {user_role}, is_admin: {is_admin}, is_super_user: {is_super_user}")
+        
+        # Set plan based on role
+        if is_admin or is_super_user:
+            plan_type = 'professional'
+            plan_display = 'Professional Plan'
         else:
-            print("Firebase service not available, using fallback plan data")
+            # Get plan from user account
+            try:
+                user_id = current_user.email.replace('.', ',')
+                user_account = UserAccountService.get_user_account(user_id)
+                if user_account and 'subscription' in user_account:
+                    plan_type = user_account['subscription'].get('planType', 'free')
+                else:
+                    plan_type = 'free'
+                
+                # Set display name
+                if plan_type == 'professional':
+                    plan_display = 'Professional Plan'
+                elif plan_type == 'basic':
+                    plan_display = 'Basic Plan'
+                else:
+                    plan_display = 'Free Plan'
+            except Exception as e:
+                logger.error(f"Error getting user plan: {e}")
+                plan_type = 'free'
+                plan_display = 'Free Plan'
+        
+        # Get usage data
+        logger.info("Getting user usage data...")
+        usage_data = get_user_usage_data()
+        logger.info(f"Usage data retrieved: {usage_data}")
+        
+        # Override usage limits for admin/super_user
+        if is_admin or is_super_user:
+            usage_data['transcription']['limit'] = float('inf')
+            usage_data['translation']['limit'] = float('inf')
+            usage_data['tts']['limit'] = float('inf')
+            usage_data['ai_credits']['limit'] = float('inf')
+            
+            # Set remaining to "Unlimited" for display
+            usage_data['transcription']['remaining_display'] = 'Unlimited'
+            usage_data['translation']['remaining_display'] = 'Unlimited'
+            usage_data['tts']['remaining_display'] = 'Unlimited'
+            usage_data['ai_credits']['remaining_display'] = 'Unlimited'
+            
+            # Remove restrictions
+            usage_data['translation']['restricted'] = False
+            usage_data['tts']['restricted'] = False
+            usage_data['ai_credits']['restricted'] = False
+        
+        # Calculate reset date (next month)
+        from datetime import datetime, timedelta
+        import calendar
 
-        # Use fallback plan data if Firebase failed
-        if not plan_data:
-            print(f"Using fallback plan data for {plan_type}")
-            fallback_plans = {
-                'free': {'transcriptionMinutes': 60, 'translationWords': 0, 'ttsMinutes': 0, 'aiCredits': 0, 'name': 'Free Plan', 'price': 0},
-                'basic': {'transcriptionMinutes': 280, 'translationWords': 50000, 'ttsMinutes': 60, 'aiCredits': 50, 'name': 'Basic Plan', 'price': 4.99},
-                'professional': {'transcriptionMinutes': 800, 'translationWords': 160000, 'ttsMinutes': 200, 'aiCredits': 150, 'name': 'Professional Plan', 'price': 12.99}
-            }
-            plan_data = fallback_plans.get(plan_type, fallback_plans['free'])
+        today = datetime.now()
+        if today.month == 12:
+            reset_date = datetime(today.year + 1, 1, 1)
+        else:
+            reset_date = datetime(today.year, today.month + 1, 1)
 
-        # Calculate usage statistics
-        dashboard_data = {
-            'user': {
-                'email': current_user.email,
-                'username': current_user.username,
-                'plan_type': plan_type,
-                'plan_name': plan_data.get('name', f'{plan_type.title()} Plan'),
-                'plan_price': plan_data.get('price', 0)
-            },
-            'subscription': subscription,
-            'usage': {
-                'transcription': {
-                    'used': current_period.get('transcriptionMinutes', 0),
-                    'limit': plan_data.get('transcriptionMinutes', 0),
-                    'remaining': max(0, plan_data.get('transcriptionMinutes', 0) - current_period.get('transcriptionMinutes', 0))
-                },
-                'translation': {
-                    'used': current_period.get('translationWords', 0),
-                    'limit': plan_data.get('translationWords', 0),
-                    'remaining': max(0, plan_data.get('translationWords', 0) - current_period.get('translationWords', 0))
-                },
-                'tts': {
-                    'used': current_period.get('ttsMinutes', 0),
-                    'limit': plan_data.get('ttsMinutes', 0),
-                    'remaining': max(0, plan_data.get('ttsMinutes', 0) - current_period.get('ttsMinutes', 0))
-                },
-                'ai': {
-                    'used': current_period.get('aiCredits', 0),
-                    'limit': plan_data.get('aiCredits', 0),
-                    'remaining': max(0, plan_data.get('aiCredits', 0) - current_period.get('aiCredits', 0))
-                }
-            },
-            'reset_date': current_period.get('resetDate'),
-            'plan_data': plan_data
-        }
+        logger.info("Rendering dashboard template with variables:")
+        logger.info(f"  - usage: {type(usage_data)}")
+        logger.info(f"  - plan_type: {plan_type}")
+        logger.info(f"  - plan_display: {plan_display}")
+        logger.info(f"  - is_admin: {is_admin}")
+        logger.info(f"  - is_super_user: {is_super_user}")
+        logger.info(f"  - unlimited_access: {is_admin or is_super_user}")
+        logger.info(f"  - reset_date: {reset_date}")
 
-        return render_template('dashboard.html', dashboard=dashboard_data)
-
+        return render_template(
+            'dashboard.html',
+            usage=usage_data,
+            plan_type=plan_type,
+            plan_display=plan_display,
+            is_admin=is_admin,
+            is_super_user=is_super_user,
+            unlimited_access=(is_admin or is_super_user),
+            reset_date=reset_date
+        )
     except Exception as e:
-        print(f"Error loading dashboard: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        flash("Error loading dashboard. Please try again.", "danger")
+        logger.error(f"Error rendering dashboard: {e}")
+        flash(f"Error loading dashboard: {str(e)}", "danger")
         return redirect(url_for('main.index'))
 
 @bp.route('/static/<path:path>')

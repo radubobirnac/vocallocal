@@ -284,6 +284,45 @@
     </style>
 </head>
 <body>
+    <script>
+        // Immediately check user role and update plan display
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/api/user/role-info')
+                .then(response => response.json())
+                .then(data => {
+                    const isUnlimitedUser = (data.role === 'super_user' || data.role === 'admin');
+                    
+                    if (isUnlimitedUser) {
+                        console.log('Super user detected, updating plan display');
+                        
+                        // Update plan display
+                        setTimeout(function() {
+                            // Find the Free Plan element at the top
+                            const planElements = document.querySelectorAll('*');
+                            planElements.forEach(el => {
+                                if (el.textContent === 'Free Plan' && el.children.length === 0) {
+                                    el.textContent = 'Professional Plan';
+                                    el.style.backgroundColor = '#4CAF50';
+                                }
+                            });
+                            
+                            // Remove restriction messages
+                            document.querySelectorAll('.alert-danger').forEach(el => {
+                                if (el.textContent.includes('not available on Free Plan')) {
+                                    el.remove();
+                                }
+                            });
+                            
+                            // Replace usage displays
+                            document.querySelectorAll('[class*="remaining"]').forEach(el => {
+                                el.textContent = 'Unlimited';
+                            });
+                        }, 100);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        });
+    </script>
     <div class="container">
         <!-- Header -->
         <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-1 mb-2 mt-1">
@@ -384,21 +423,17 @@
             <!-- Dashboard Header -->
             <div class="dashboard-header">
                 <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
-                <p>Welcome back, {{ dashboard.user.username }}!</p>
-                <div class="plan-badge">
-                    {{ dashboard.user.plan_name }}
-                    {% if dashboard.user.plan_price > 0 %}
-                        - ${{ "%.2f"|format(dashboard.user.plan_price) }}/month
-                    {% endif %}
+                <p>Welcome back, {{ current_user.username }}!</p>
+                <div class="plan-badge {% if plan_type == 'professional' %}professional-plan{% elif plan_type == 'basic' %}basic-plan{% else %}free-plan{% endif %}">
+                    {{ plan_display }}
                 </div>
             </div>
 
         <!-- Reset Information -->
-        {% if dashboard.reset_date %}
+        {% if reset_date %}
         <div class="reset-info">
             <i class="fas fa-calendar-alt"></i>
-            Your usage will reset on {{ moment(dashboard.reset_date).format('MMMM Do, YYYY') }}
-            ({{ moment(dashboard.reset_date).fromNow() }})
+            Your usage will reset on {{ reset_date.strftime('%B %d, %Y') if reset_date else 'Next billing cycle' }}
         </div>
         {% endif %}
 
@@ -408,15 +443,24 @@
             <div class="stat-card">
                 <h3><i class="fas fa-microphone"></i> Transcription Minutes</h3>
                 <div class="usage-text">
-                    <span class="usage-numbers">{{ "%.1f"|format(dashboard.usage.transcription.used) }} / {{ dashboard.usage.transcription.limit }} minutes</span>
-                    <span>{{ "%.1f"|format(dashboard.usage.transcription.remaining) }} remaining</span>
+                    {% if unlimited_access %}
+                        <span class="usage-numbers">{{ "%.1f"|format(usage.transcription.used) }} / Unlimited minutes</span>
+                        <span>Unlimited remaining</span>
+                    {% else %}
+                        <span class="usage-numbers">{{ "%.1f"|format(usage.transcription.used) }} / {{ usage.transcription.limit }} minutes</span>
+                        <span>{{ "%.1f"|format(usage.transcription.remaining) }} remaining</span>
+                    {% endif %}
                 </div>
                 <div class="usage-bar">
-                    {% set transcription_percent = (dashboard.usage.transcription.used / dashboard.usage.transcription.limit * 100) if dashboard.usage.transcription.limit > 0 else 0 %}
+                    {% if unlimited_access %}
+                        {% set transcription_percent = 0 %}
+                    {% else %}
+                        {% set transcription_percent = (usage.transcription.used / usage.transcription.limit * 100) if usage.transcription.limit > 0 else 0 %}
+                    {% endif %}
                     <div class="usage-fill {% if transcription_percent >= 90 %}high{% elif transcription_percent >= 70 %}medium{% elif transcription_percent > 0 %}low{% else %}zero{% endif %}"
                          style="width: {{ transcription_percent }}%"></div>
                 </div>
-                {% if dashboard.usage.transcription.remaining <= 0 and dashboard.usage.transcription.limit > 0 %}
+                {% if not unlimited_access and usage.transcription.remaining <= 0 and usage.transcription.limit > 0 %}
                 <div class="limit-reached">
                     <i class="fas fa-exclamation-triangle"></i> Transcription limit reached!
                 </div>
@@ -427,21 +471,30 @@
             <div class="stat-card">
                 <h3><i class="fas fa-language"></i> Translation Words</h3>
                 <div class="usage-text">
-                    <span class="usage-numbers">{{ "{:,}".format(dashboard.usage.translation.used|int) }} / {{ "{:,}".format(dashboard.usage.translation.limit) }} words</span>
-                    <span>{{ "{:,}".format(dashboard.usage.translation.remaining|int) }} remaining</span>
+                    {% if unlimited_access %}
+                        <span class="usage-numbers">{{ "{:,}".format(usage.translation.used|int) }} / Unlimited words</span>
+                        <span>Unlimited remaining</span>
+                    {% else %}
+                        <span class="usage-numbers">{{ "{:,}".format(usage.translation.used|int) }} / {{ "{:,}".format(usage.translation.limit) }} words</span>
+                        <span>{{ "{:,}".format(usage.translation.remaining|int) }} remaining</span>
+                    {% endif %}
                 </div>
                 <div class="usage-bar">
-                    {% set translation_percent = (dashboard.usage.translation.used / dashboard.usage.translation.limit * 100) if dashboard.usage.translation.limit > 0 else 0 %}
+                    {% if unlimited_access %}
+                        {% set translation_percent = 0 %}
+                    {% else %}
+                        {% set translation_percent = (usage.translation.used / usage.translation.limit * 100) if usage.translation.limit > 0 else 0 %}
+                    {% endif %}
                     <div class="usage-fill {% if translation_percent >= 90 %}high{% elif translation_percent >= 70 %}medium{% elif translation_percent > 0 %}low{% else %}zero{% endif %}"
                          style="width: {{ translation_percent }}%"></div>
                 </div>
-                {% if dashboard.usage.translation.remaining <= 0 and dashboard.usage.translation.limit > 0 %}
+                {% if not unlimited_access and usage.translation.remaining <= 0 and usage.translation.limit > 0 %}
                 <div class="limit-reached">
                     <i class="fas fa-exclamation-triangle"></i> Translation limit reached!
                 </div>
-                {% elif dashboard.usage.translation.limit == 0 %}
+                {% elif not unlimited_access and usage.translation.limit == 0 %}
                 <div class="limit-reached">
-                    <i class="fas fa-lock"></i> Translation not available on {{ dashboard.user.plan_name }}
+                    <i class="fas fa-lock"></i> Translation not available on {{ plan_display }}
                 </div>
                 {% endif %}
             </div>
@@ -450,21 +503,30 @@
             <div class="stat-card">
                 <h3><i class="fas fa-volume-up"></i> Text-to-Speech Minutes</h3>
                 <div class="usage-text">
-                    <span class="usage-numbers">{{ "%.1f"|format(dashboard.usage.tts.used) }} / {{ dashboard.usage.tts.limit }} minutes</span>
-                    <span>{{ "%.1f"|format(dashboard.usage.tts.remaining) }} remaining</span>
+                    {% if unlimited_access %}
+                        <span class="usage-numbers">{{ "%.1f"|format(usage.tts.used) }} / Unlimited minutes</span>
+                        <span>Unlimited remaining</span>
+                    {% else %}
+                        <span class="usage-numbers">{{ "%.1f"|format(usage.tts.used) }} / {{ usage.tts.limit }} minutes</span>
+                        <span>{{ "%.1f"|format(usage.tts.remaining) }} remaining</span>
+                    {% endif %}
                 </div>
                 <div class="usage-bar">
-                    {% set tts_percent = (dashboard.usage.tts.used / dashboard.usage.tts.limit * 100) if dashboard.usage.tts.limit > 0 else 0 %}
+                    {% if unlimited_access %}
+                        {% set tts_percent = 0 %}
+                    {% else %}
+                        {% set tts_percent = (usage.tts.used / usage.tts.limit * 100) if usage.tts.limit > 0 else 0 %}
+                    {% endif %}
                     <div class="usage-fill {% if tts_percent >= 90 %}high{% elif tts_percent >= 70 %}medium{% elif tts_percent > 0 %}low{% else %}zero{% endif %}"
                          style="width: {{ tts_percent }}%"></div>
                 </div>
-                {% if dashboard.usage.tts.remaining <= 0 and dashboard.usage.tts.limit > 0 %}
+                {% if not unlimited_access and usage.tts.remaining <= 0 and usage.tts.limit > 0 %}
                 <div class="limit-reached">
                     <i class="fas fa-exclamation-triangle"></i> TTS limit reached!
                 </div>
-                {% elif dashboard.usage.tts.limit == 0 %}
+                {% elif not unlimited_access and usage.tts.limit == 0 %}
                 <div class="limit-reached">
-                    <i class="fas fa-lock"></i> TTS not available on {{ dashboard.user.plan_name }}
+                    <i class="fas fa-lock"></i> TTS not available on {{ plan_display }}
                 </div>
                 {% endif %}
             </div>
@@ -473,48 +535,57 @@
             <div class="stat-card">
                 <h3><i class="fas fa-brain"></i> AI Credits</h3>
                 <div class="usage-text">
-                    <span class="usage-numbers">{{ dashboard.usage.ai.used }} / {{ dashboard.usage.ai.limit }} credits</span>
-                    <span>{{ dashboard.usage.ai.remaining }} remaining</span>
+                    {% if unlimited_access %}
+                        <span class="usage-numbers">{{ usage.ai_credits.used }} / Unlimited credits</span>
+                        <span>Unlimited remaining</span>
+                    {% else %}
+                        <span class="usage-numbers">{{ usage.ai_credits.used }} / {{ usage.ai_credits.limit }} credits</span>
+                        <span>{{ usage.ai_credits.remaining }} remaining</span>
+                    {% endif %}
                 </div>
                 <div class="usage-bar">
-                    {% set ai_percent = (dashboard.usage.ai.used / dashboard.usage.ai.limit * 100) if dashboard.usage.ai.limit > 0 else 0 %}
+                    {% if unlimited_access %}
+                        {% set ai_percent = 0 %}
+                    {% else %}
+                        {% set ai_percent = (usage.ai_credits.used / usage.ai_credits.limit * 100) if usage.ai_credits.limit > 0 else 0 %}
+                    {% endif %}
                     <div class="usage-fill {% if ai_percent >= 90 %}high{% elif ai_percent >= 70 %}medium{% elif ai_percent > 0 %}low{% else %}zero{% endif %}"
                          style="width: {{ ai_percent }}%"></div>
                 </div>
-                {% if dashboard.usage.ai.remaining <= 0 and dashboard.usage.ai.limit > 0 %}
+                {% if not unlimited_access and usage.ai_credits.remaining <= 0 and usage.ai_credits.limit > 0 %}
                 <div class="limit-reached">
                     <i class="fas fa-exclamation-triangle"></i> AI credits limit reached!
                 </div>
-                {% elif dashboard.usage.ai.limit == 0 %}
+                {% elif not unlimited_access and usage.ai_credits.limit == 0 %}
                 <div class="limit-reached">
-                    <i class="fas fa-lock"></i> AI credits not available on {{ dashboard.user.plan_name }}
+                    <i class="fas fa-lock"></i> AI credits not available on {{ plan_display }}
                 </div>
                 {% endif %}
             </div>
         </div>
 
         <!-- Upgrade Section (show for normal users who can benefit from upgrading, but NOT for admin/super users) -->
-        {% if dashboard.user.role == 'normal_user' and dashboard.user.plan_type != 'professional' %}
+        {% if not (is_admin or is_super_user) and plan_type != 'professional' %}
         <div class="upgrade-section">
             <h2><i class="fas fa-rocket"></i> Upgrade Your Plan</h2>
-            {% if dashboard.user.plan_type == 'free' %}
+            {% if plan_type == 'free' %}
             <p>Unlock premium AI models and get higher usage limits with our subscription plans!</p>
             {% else %}
             <p>Get even more features and higher usage limits with our premium plans!</p>
             {% endif %}
             <div class="upgrade-buttons">
-                {% if dashboard.user.plan_type != 'basic' %}
+                {% if plan_type != 'basic' %}
                 <a href="#" class="upgrade-btn" onclick="showUpgradeModal('basic')">
                     <i class="fas fa-arrow-up"></i> Upgrade to Basic Plan - $4.99/month
                 </a>
                 {% endif %}
-                {% if dashboard.user.plan_type != 'professional' %}
+                {% if plan_type != 'professional' %}
                 <a href="#" class="upgrade-btn" onclick="showUpgradeModal('professional')">
                     <i class="fas fa-crown"></i> Upgrade to Professional Plan - $12.99/month
                 </a>
                 {% endif %}
             </div>
-            {% if dashboard.user.plan_type == 'free' %}
+            {% if plan_type == 'free' %}
             <div style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.9;">
                 <p><i class="fas fa-star"></i> Access premium AI models like GPT-4o, Claude, and Gemini</p>
                 <p><i class="fas fa-clock"></i> Higher usage limits for transcription, translation, and TTS</p>
@@ -558,8 +629,8 @@
 
         function showUpgradeModal(planType) {
             // Check if user is admin or super user - they shouldn't see upgrade prompts
-            {% if dashboard.user.role == 'admin' or dashboard.user.role == 'super_user' %}
-                console.log('Upgrade modal bypassed for {{ dashboard.user.role }} role');
+            {% if is_admin or is_super_user %}
+                console.log('Upgrade modal bypassed for admin/super_user role');
                 return;
             {% endif %}
 
@@ -616,3 +687,32 @@
     <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
 </body>
 </html>
+<script>
+  // Direct fix for super users
+  document.addEventListener('DOMContentLoaded', function() {
+    // Check if user is super_user from backend
+    fetch('/api/user/role-info')
+      .then(response => response.json())
+      .then(data => {
+        const isUnlimitedUser = (data.role === 'super_user' || data.role === 'admin');
+        
+        if (isUnlimitedUser) {
+          console.log('Super user detected, applying direct template fixes');
+          
+          // Remove translation not available message
+          const translationMsg = document.querySelector('.alert-danger[data-testid="translation-not-available"]');
+          if (translationMsg) translationMsg.style.display = 'none';
+          
+          // Remove TTS not available message
+          const ttsMsg = document.querySelector('.alert-danger[data-testid="tts-not-available"]');
+          if (ttsMsg) ttsMsg.style.display = 'none';
+          
+          // Update all remaining indicators to show unlimited
+          document.querySelectorAll('[data-testid="remaining-indicator"]').forEach(el => {
+            el.textContent = 'Unlimited';
+          });
+        }
+      })
+      .catch(error => console.error('Error:', error));
+  });
+</script>

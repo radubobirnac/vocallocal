@@ -45,9 +45,8 @@ class UsageEnforcement {
 
     // Check if user should be subject to usage limits
     shouldEnforceUsage() {
-        // Only enforce usage limits for normal users
-        // Admins and super users have unlimited access
-        return this.userRole === 'normal_user';
+        // Skip usage enforcement for admin and super_user roles
+        return !(this.userRole === 'admin' || this.userRole === 'super_user');
     }
 
     setupUsageInterceptors() {
