@@ -1,63 +1,94 @@
 document.addEventListener('DOMContentLoaded', function() {
   console.log('History page loaded');
 
-  // Use the global function to initialize the history dropdown
-  if (typeof window.initializeHistoryDropdown === 'function') {
-    window.initializeHistoryDropdown();
-  } else {
-    console.log('History dropdown initialization function not found, defining it');
-
-    // Define the function if it doesn't exist yet
-    window.initializeHistoryDropdown = function() {
-      const historyButton = document.getElementById('history-button');
-      const historyDropdown = document.getElementById('history-dropdown');
-
-      if (historyButton && historyDropdown && !historyButton._initialized) {
-        console.log('Initializing history dropdown from history.js');
-        // Mark as initialized to prevent duplicate event listeners
-        historyButton._initialized = true;
-
-        historyButton.addEventListener('click', (event) => {
-          event.stopPropagation();
-          const isExpanded = historyButton.getAttribute('aria-expanded') === 'true';
-
-          historyButton.setAttribute('aria-expanded', !isExpanded);
-          historyDropdown.classList.toggle('show');
-
-          // Close user dropdown if open
-          const avatarButton = document.getElementById('avatar-button');
-          const userDropdown = document.getElementById('user-dropdown');
-          if (avatarButton && userDropdown) {
-            avatarButton.setAttribute('aria-expanded', 'false');
-            userDropdown.classList.remove('show');
-          }
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', () => {
-          historyButton.setAttribute('aria-expanded', 'false');
-          historyDropdown.classList.remove('show');
-        });
-
-        // Prevent dropdown from closing when clicking inside it
-        historyDropdown.addEventListener('click', (event) => {
-          event.stopPropagation();
-        });
-      }
-    };
-
-    // Call the function to initialize the dropdown
-    window.initializeHistoryDropdown();
-  }
+  // Get current type from URL or default to 'all'
+  const urlParams = new URLSearchParams(window.location.search);
+  const currentType = urlParams.get('type') || 'all';
 
   // Pagination variables
   const itemsPerPage = 10;
   let currentPage = 1;
   let filteredItems = [];
+  let currentTypeFilter = currentType;
 
   // Get all history items and initialize
   const historyItems = Array.from(document.querySelectorAll('.history-item'));
-  filteredItems = [...historyItems];
+  console.log('Found history items:', historyItems.length);
+
+  // Define type filter functions first
+  function initializeTypeFilters() {
+    const typeFilterButtons = document.querySelectorAll('.type-filter-btn');
+    console.log('Found type filter buttons:', typeFilterButtons.length);
+
+    typeFilterButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        console.log('Type filter clicked:', this.dataset.type);
+
+        // Remove active class from all buttons
+        typeFilterButtons.forEach(btn => btn.classList.remove('active'));
+
+        // Add active class to clicked button
+        this.classList.add('active');
+
+        // Update current type filter
+        currentTypeFilter = this.dataset.type;
+        console.log('Current type filter set to:', currentTypeFilter);
+
+        // Apply the filter
+        applyTypeFilter(currentTypeFilter);
+
+        // Reset search and apply filters
+        const searchInput = document.getElementById('history-search');
+        if (searchInput) {
+          searchInput.value = '';
+        }
+        filterItems();
+      });
+    });
+  }
+
+  function applyTypeFilter(type) {
+    // Apply type filter to all items
+    filteredItems = getTypeFilteredItems();
+  }
+
+  function getTypeFilteredItems() {
+    console.log('Getting type filtered items for:', currentTypeFilter);
+    console.log('Total history items:', historyItems.length);
+
+    // Debug: log the data-type of each item
+    historyItems.forEach((item, index) => {
+      console.log(`Item ${index}: data-type = "${item.dataset.type}"`);
+    });
+
+    let filtered;
+    if (currentTypeFilter === 'all') {
+      filtered = [...historyItems];
+    } else if (currentTypeFilter === 'transcription') {
+      filtered = historyItems.filter(item => item.dataset.type === 'transcription');
+    } else if (currentTypeFilter === 'translation') {
+      filtered = historyItems.filter(item => item.dataset.type === 'translation');
+    } else {
+      filtered = [...historyItems];
+    }
+
+    console.log('Filtered items count:', filtered.length);
+    return filtered;
+  }
+
+  // Initialize type filter buttons
+  initializeTypeFilters();
+
+  // Set active filter button based on current type
+  document.querySelectorAll('.type-filter-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.dataset.type === currentType) {
+      btn.classList.add('active');
+    }
+  });
+
+  // Apply initial type filter
+  applyTypeFilter(currentTypeFilter);
 
   // Sort items by timestamp (newest first by default)
   sortItems('newest');
@@ -173,6 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Helper functions
   function updatePagination() {
+    console.log('updatePagination called with filteredItems.length:', filteredItems.length);
     const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
 
     // Update page info
@@ -182,15 +214,21 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('prev-page').disabled = currentPage === 1;
     document.getElementById('next-page').disabled = currentPage === totalPages || totalPages === 0;
 
-    // Show only items for current page
+    // First, hide ALL history items
+    console.log('Hiding all', historyItems.length, 'history items');
+    historyItems.forEach(item => {
+      item.style.display = 'none';
+    });
+
+    // Then show only the filtered items for the current page
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage - 1;
 
+    console.log('Showing filtered items from index', startIndex, 'to', endIndex);
     filteredItems.forEach((item, index) => {
       if (index >= startIndex && index <= endIndex) {
+        console.log('Showing item', index, 'with data-type:', item.dataset.type);
         item.style.display = 'block';
-      } else {
-        item.style.display = 'none';
       }
     });
 
@@ -208,12 +246,15 @@ document.addEventListener('DOMContentLoaded', function() {
   function filterItems() {
     const searchTerm = searchInput.value.toLowerCase().trim();
 
+    // Start with type-filtered items
+    let typeFilteredItems = getTypeFilteredItems();
+
     if (searchTerm === '') {
-      // If search is empty, show all items
-      filteredItems = [...historyItems];
+      // If search is empty, show type-filtered items
+      filteredItems = [...typeFilteredItems];
     } else {
-      // Filter items based on search term
-      filteredItems = historyItems.filter(item => {
+      // Filter type-filtered items based on search term
+      filteredItems = typeFilteredItems.filter(item => {
         const itemText = item.textContent.toLowerCase();
         return itemText.includes(searchTerm);
       });
@@ -222,6 +263,34 @@ document.addEventListener('DOMContentLoaded', function() {
     // Reset to first page and update
     currentPage = 1;
     sortItems(sortSelect.value);
+    updateStatusText();
+  }
+
+
+
+  function updateStatusText() {
+    const statusText = document.getElementById('status-text');
+    if (statusText) {
+      const transcriptionCount = historyItems.filter(item =>
+        item.dataset.type === 'transcription' &&
+        (currentTypeFilter === 'all' || currentTypeFilter === 'transcription') &&
+        filteredItems.includes(item)
+      ).length;
+
+      const translationCount = historyItems.filter(item =>
+        item.dataset.type === 'translation' &&
+        (currentTypeFilter === 'all' || currentTypeFilter === 'translation') &&
+        filteredItems.includes(item)
+      ).length;
+
+      if (currentTypeFilter === 'all') {
+        statusText.textContent = `${filteredItems.length} total items (${transcriptionCount} transcriptions, ${translationCount} translations)`;
+      } else if (currentTypeFilter === 'transcription') {
+        statusText.textContent = `${transcriptionCount} transcriptions found`;
+      } else if (currentTypeFilter === 'translation') {
+        statusText.textContent = `${translationCount} translations found`;
+      }
+    }
   }
 
   function sortItems(sortOrder) {

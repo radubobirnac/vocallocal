@@ -64,24 +64,7 @@
         </div>
         {% endif %}
 
-        <!-- History Dropdown -->
-        <div class="history-menu">
-          <button id="history-button" class="history-button" aria-expanded="false">
-            <i class="fas fa-history"></i> History
-            <i class="fas fa-chevron-down dropdown-arrow"></i>
-          </button>
-          <div id="history-dropdown" class="history-dropdown">
-            <a href="{{ url_for('main.history', type='all') }}" class="dropdown-item">
-              <i class="fas fa-list"></i> All History
-            </a>
-            <a href="{{ url_for('main.history', type='transcription') }}" class="dropdown-item">
-              <i class="fas fa-microphone"></i> Transcriptions
-            </a>
-            <a href="{{ url_for('main.history', type='translation') }}" class="dropdown-item">
-              <i class="fas fa-language"></i> Translations
-            </a>
-          </div>
-        </div>
+
 
         <!-- Theme Selector -->
         <div class="theme-selector">
@@ -119,57 +102,60 @@
     <!-- History Content -->
     <div class="history-page-content">
       <div class="history-header">
-        <h1 class="history-title">
-          {% if history_type == 'transcription' %}
-            <i class="fas fa-microphone"></i> Transcription History
-          {% elif history_type == 'translation' %}
-            <i class="fas fa-language"></i> Translation History
-          {% else %}
-            <i class="fas fa-history"></i> Activity History
-          {% endif %}
-        </h1>
+        <div class="history-title-section">
+          <h1 class="history-title">
+            <i class="fas fa-history"></i> History
+          </h1>
 
-        <!-- Status and metadata display -->
-        {% if history_metadata %}
-        <div class="history-status" style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 14px;">
-          <div class="status-info">
-            <span class="status-count" style="font-weight: bold; color: #495057;">
-              {% if history_type == 'all' %}
-                {{ history_metadata.total_items }} total items
-                ({{ history_metadata.transcriptions_count }} transcriptions, {{ history_metadata.translations_count }} translations)
-              {% elif history_type == 'transcription' %}
-                {{ history_metadata.transcriptions_count }} transcriptions found
-              {% elif history_type == 'translation' %}
-                {{ history_metadata.translations_count }} translations found
-              {% endif %}
-            </span>
-            {% if history_metadata.total_available and history_metadata.total_available > history_metadata.total_items %}
-            <br><span class="status-note" style="color: #6c757d; font-size: 12px;">Showing {{ history_metadata.total_items }} of {{ history_metadata.total_available }} available</span>
-            {% endif %}
+          <!-- Type Filter Buttons (Top-Left) -->
+          <div class="type-filter-buttons">
+            <button class="type-filter-btn active" data-type="all">All</button>
+            <button class="type-filter-btn" data-type="transcription">Transcriptions only</button>
+            <button class="type-filter-btn" data-type="translation">Translations only</button>
           </div>
         </div>
-        {% endif %}
 
-        <!-- Indexing warning -->
-        {% if indexing_warning %}
-        <div class="alert alert-info" style="margin: 10px 0; padding: 10px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 5px; color: #0c5460;">
-          <i class="fas fa-info-circle"></i>
-          {{ indexing_warning }}
-        </div>
-        {% endif %}
-
-        <div class="history-filters">
-          <div class="search-container">
-            <input type="text" id="history-search" class="search-input" placeholder="Search history...">
-            <button id="search-btn" class="search-button">
-              <i class="fas fa-search"></i>
-            </button>
-          </div>
-
+        <!-- Sort Filter (Top-Right) -->
+        <div class="sort-filter-section">
           <select id="sort-select" class="sort-select">
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
+            <option value="newest" {% if sort_order == 'newest' %}selected{% endif %}>Newest First</option>
+            <option value="oldest" {% if sort_order == 'oldest' %}selected{% endif %}>Oldest First</option>
           </select>
+        </div>
+      </div>
+
+      <!-- Status and metadata display -->
+      {% if history_metadata %}
+      <div class="history-status" style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 14px;">
+        <div class="status-info">
+          <span class="status-count" style="font-weight: bold; color: #495057;">
+            <span id="status-text">
+              {{ history_metadata.total_items }} total items
+              ({{ history_metadata.transcriptions_count }} transcriptions, {{ history_metadata.translations_count }} translations)
+            </span>
+          </span>
+          {% if history_metadata.total_available and history_metadata.total_available > history_metadata.total_items %}
+          <br><span class="status-note" style="color: #6c757d; font-size: 12px;">Showing {{ history_metadata.total_items }} of {{ history_metadata.total_available }} available</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Indexing warning -->
+      {% if indexing_warning %}
+      <div class="alert alert-info" style="margin: 10px 0; padding: 10px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 5px; color: #0c5460;">
+        <i class="fas fa-info-circle"></i>
+        {{ indexing_warning }}
+      </div>
+      {% endif %}
+
+      <!-- Search Section -->
+      <div class="search-section">
+        <div class="search-container">
+          <input type="text" id="history-search" class="search-input" placeholder="Search history...">
+          <button id="search-btn" class="search-button">
+            <i class="fas fa-search"></i>
+          </button>
         </div>
       </div>
 

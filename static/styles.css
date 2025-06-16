@@ -629,11 +629,30 @@ p {
   header {
     padding: 0.25rem 0;
     margin-bottom: 0.5rem !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
   }
 
   header .flex.items-center {
     flex-wrap: wrap;
     gap: 0.5rem !important;
+  }
+
+  /* Mobile header layout adjustments */
+  .header-center {
+    order: 2;
+    justify-content: center;
+    margin: 0.5rem 0;
+  }
+
+  header > div:first-child {
+    order: 1;
+  }
+
+  header > div:last-child {
+    order: 3;
+    justify-content: center;
   }
 
   .bilingual-mode-label {
@@ -900,6 +919,12 @@ header .flex.items-center.gap-6 {
   flex-direction: column;
 }
 
+/* Header center section for bilingual mode */
+.header-center {
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 /* Bilingual mode label styling */
 .bilingual-mode-label {
   white-space: nowrap;
@@ -922,6 +947,37 @@ header .flex.items-center.gap-6 {
 
   header .button.button-outline.button-icon i {
     font-size: 0.8rem;
+  }
+
+  /* Extra compact layout for very small screens */
+  .header-title-container h1 {
+    font-size: 1.1rem;
+  }
+
+  .header-title-container p {
+    font-size: 0.6rem;
+  }
+}
+
+/* Tablet and medium screen adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+  header {
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+
+  .header-center {
+    order: 0;
+    margin: 0;
+  }
+
+  header > div:first-child {
+    order: 0;
+  }
+
+  header > div:last-child {
+    order: 0;
+    justify-content: flex-end;
   }
 }
 

@@ -30,64 +30,29 @@
   <div class="container">
     <!-- Header -->
     <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-1 mb-2 mt-1">
+      <!-- Left Section: Title Only -->
       <div class="header-title-container">
         <h1 class="text-2xl font-bold" style="color: hsl(var(--primary)); font-family: 'Poppins', sans-serif;">Vocal Local</h1>
         <p id="app-subtitle" class="text-sm text-muted">Accurate Multilingual Speech-to-Text Transcription</p>
       </div>
 
-      <div class="flex items-center gap-2 mt-0">
-        <!-- Authentication Links -->
-        {% if current_user.is_authenticated %}
-          <div class="user-avatar-menu">
-            <button id="avatar-button" class="avatar-button" aria-expanded="false">
-              <div class="avatar-circle">{{ current_user.username[0]|upper }}</div>
-              <i class="fas fa-chevron-down dropdown-arrow"></i>
-            </button>
-            <div id="user-dropdown" class="user-dropdown">
-              <a href="{{ url_for('main.dashboard') }}" class="dropdown-item">
-                <i class="fas fa-tachometer-alt"></i> Dashboard
-              </a>
-              <a href="{{ url_for('auth.profile') }}" class="dropdown-item">
-                <i class="fas fa-user"></i> Profile
-              </a>
-              {% if current_user.is_admin %}
-              <div class="dropdown-divider"></div>
-              <a href="{{ url_for('admin.dashboard') }}" class="dropdown-item">
-                <i class="fas fa-chart-line"></i> Admin Dashboard
-              </a>
-              <a href="{{ url_for('admin.users') }}" class="dropdown-item">
-                <i class="fas fa-users"></i> User Management
-              </a>
-              {% endif %}
-              <div class="dropdown-divider"></div>
-              <a href="{{ url_for('auth.logout') }}" class="dropdown-item">
-                <i class="fas fa-sign-out-alt"></i> Logout
-              </a>
-            </div>
-          </div>
+      <!-- Center Section: Bilingual Mode Toggle -->
+      <div class="header-center flex items-center gap-1">
+        <span class="text-sm font-medium bilingual-mode-label">Bilingual Mode</span>
+        <label class="toggle-switch" title="Toggle bilingual mode">
+          <input type="checkbox" id="bilingual-mode">
+          <span class="slider round"></span>
+        </label>
+      </div>
+      <!-- End Bilingual Mode Toggle -->
 
-          <!-- History Dropdown -->
-          <div class="history-menu">
-            <button id="history-button" class="history-button" aria-expanded="false">
-              <i class="fas fa-history"></i> History
-              <i class="fas fa-chevron-down dropdown-arrow"></i>
-            </button>
-            <div id="history-dropdown" class="history-dropdown">
-              <a href="{{ url_for('main.history', type='all') }}" class="dropdown-item">
-                <i class="fas fa-list"></i> All History
-              </a>
-              <a href="{{ url_for('main.history', type='transcription') }}" class="dropdown-item">
-                <i class="fas fa-microphone"></i> Transcriptions
-              </a>
-              <a href="{{ url_for('main.history', type='translation') }}" class="dropdown-item">
-                <i class="fas fa-language"></i> Translations
-              </a>
-            </div>
-          </div>
-        {% else %}
-          <a href="{{ url_for('auth.login') }}" class="button button-outline">Login</a>
-          <a href="{{ url_for('auth.register') }}" class="button button-primary">Register</a>
-        {% endif %}
+      <!-- Right Section: Settings + Theme + History + Profile -->
+      <div class="flex items-center gap-2 mt-0">
+        <!-- Settings Button -->
+        <button id="settings-toggle" class="button button-outline button-icon" title="Settings">
+          <i class="fas fa-cog"></i>
+        </button>
+        <!-- End Settings Button -->
 
         <!-- Theme Selector -->
         <div class="theme-selector">
@@ -108,21 +73,42 @@
         </div>
         <!-- End Theme Selector -->
 
-        <!-- Bilingual Mode Toggle -->
-        <div class="flex items-center gap-1">
-          <span class="text-sm font-medium bilingual-mode-label">Bilingual Mode</span>
-          <label class="toggle-switch" title="Toggle bilingual mode">
-            <input type="checkbox" id="bilingual-mode">
-            <span class="slider round"></span>
-          </label>
-        </div>
-        <!-- End Bilingual Mode Toggle -->
-
-        <!-- Settings Button -->
-        <button id="settings-toggle" class="button button-outline button-icon" title="Settings">
-          <i class="fas fa-cog"></i>
-        </button>
-        <!-- End Settings Button -->
+        <!-- Authentication Links / Profile Section -->
+        {% if current_user.is_authenticated %}
+          <div class="user-avatar-menu">
+            <button id="avatar-button" class="avatar-button" aria-expanded="false">
+              <div class="avatar-circle">{{ current_user.username[0]|upper }}</div>
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </button>
+            <div id="user-dropdown" class="user-dropdown">
+              <a href="{{ url_for('main.dashboard') }}" class="dropdown-item">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+              </a>
+              <a href="{{ url_for('auth.profile') }}" class="dropdown-item">
+                <i class="fas fa-user"></i> Profile
+              </a>
+              <a href="{{ url_for('main.history', type='all') }}" class="dropdown-item">
+                <i class="fas fa-history"></i> History
+              </a>
+              {% if current_user.is_admin %}
+              <div class="dropdown-divider"></div>
+              <a href="{{ url_for('admin.dashboard') }}" class="dropdown-item">
+                <i class="fas fa-chart-line"></i> Admin Dashboard
+              </a>
+              <a href="{{ url_for('admin.users') }}" class="dropdown-item">
+                <i class="fas fa-users"></i> User Management
+              </a>
+              {% endif %}
+              <div class="dropdown-divider"></div>
+              <a href="{{ url_for('auth.logout') }}" class="dropdown-item">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </a>
+            </div>
+          </div>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="button button-outline">Login</a>
+          <a href="{{ url_for('auth.register') }}" class="button button-primary">Register</a>
+        {% endif %}
       </div>
     </header>
 

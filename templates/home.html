@@ -59,8 +59,14 @@
                 <i class="fas fa-chevron-down dropdown-arrow"></i>
               </button>
               <div id="user-dropdown" class="user-dropdown">
+                <a href="{{ url_for('main.dashboard') }}" class="dropdown-item">
+                  <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
                 <a href="{{ url_for('auth.profile') }}" class="dropdown-item">
                   <i class="fas fa-user"></i> Profile
+                </a>
+                <a href="{{ url_for('main.history', type='all') }}" class="dropdown-item">
+                  <i class="fas fa-history"></i> History
                 </a>
                 {% if current_user.is_admin %}
                 <div class="dropdown-divider"></div>
@@ -86,8 +92,6 @@
 
                 const avatarButton = document.getElementById('avatar-button');
                 const userDropdown = document.getElementById('user-dropdown');
-                const historyButton = document.getElementById('history-button');
-                const historyDropdown = document.getElementById('history-dropdown');
 
                 if (!avatarButton || !userDropdown) return;
 
@@ -97,61 +101,7 @@
                 avatarButton.setAttribute('aria-expanded', !isExpanded);
                 userDropdown.classList.toggle('show');
 
-                // Close history dropdown if open
-                if (historyButton && historyDropdown) {
-                  historyButton.setAttribute('aria-expanded', 'false');
-                  historyDropdown.classList.remove('show');
-                }
-
                 console.log('Profile dropdown toggled via inline handler');
-              }
-            </script>
-
-            <!-- History Dropdown -->
-            <div class="history-menu">
-              <button id="history-button" class="history-button" aria-expanded="false" onclick="toggleHistoryDropdown(event)">
-                <i class="fas fa-history"></i> History
-                <i class="fas fa-chevron-down dropdown-arrow"></i>
-              </button>
-              <div id="history-dropdown" class="history-dropdown">
-                <a href="{{ url_for('main.history', type='all') }}" class="dropdown-item">
-                  <i class="fas fa-list"></i> All History
-                </a>
-                <a href="{{ url_for('main.history', type='transcription') }}" class="dropdown-item">
-                  <i class="fas fa-microphone"></i> Transcriptions
-                </a>
-                <a href="{{ url_for('main.history', type='translation') }}" class="dropdown-item">
-                  <i class="fas fa-language"></i> Translations
-                </a>
-              </div>
-            </div>
-
-            <script>
-              // Direct click handler for the history dropdown
-              function toggleHistoryDropdown(event) {
-                event.preventDefault();
-                event.stopPropagation();
-
-                const historyButton = document.getElementById('history-button');
-                const historyDropdown = document.getElementById('history-dropdown');
-                const avatarButton = document.getElementById('avatar-button');
-                const userDropdown = document.getElementById('user-dropdown');
-
-                if (!historyButton || !historyDropdown) return;
-
-                const isExpanded = historyButton.getAttribute('aria-expanded') === 'true';
-
-                // Toggle dropdown visibility
-                historyButton.setAttribute('aria-expanded', !isExpanded);
-                historyDropdown.classList.toggle('show');
-
-                // Close profile dropdown if open
-                if (avatarButton && userDropdown) {
-                  avatarButton.setAttribute('aria-expanded', 'false');
-                  userDropdown.classList.remove('show');
-                }
-
-                console.log('History dropdown toggled via inline handler');
               }
             </script>
           {% else %}
@@ -436,14 +386,6 @@
           window.initializeProfileDropdown();
         } else {
           console.warn('Home page: Global profile dropdown function not available after delay');
-        }
-
-        // Initialize history dropdown
-        if (typeof window.initializeHistoryDropdown === 'function') {
-          console.log('Home page: Calling global history dropdown initialization with delay');
-          window.initializeHistoryDropdown();
-        } else {
-          console.warn('Home page: Global history dropdown function not available after delay');
         }
 
         // Log dropdown elements to console for debugging
