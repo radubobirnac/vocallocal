@@ -70,7 +70,12 @@ class TranscriptionService(BaseService):
 
     def _clean_gemini_transcription(self, text):
         """
-        Clean up Gemini transcription by removing bracketed artifacts at the end.
+        Clean up Gemini transcription by removing timestamps and bracketed artifacts.
+
+        This method removes:
+        - Timestamps in various formats (e.g., [00:00:00], (0:00), 00:00:00, etc.)
+        - Bracketed artifacts at the end
+        - Common timestamp patterns that Gemini models might add
 
         Args:
             text (str): The transcription text from Gemini
@@ -78,15 +83,52 @@ class TranscriptionService(BaseService):
         Returns:
             str: Cleaned transcription text
         """
-        # Pattern to match bracketed text at the end of the string
-        pattern = r'\s*\[[^\]]+\]\s*$'
-        cleaned_text = re.sub(pattern, '', text)
+        original_text = text
+
+        # Remove timestamps in various formats
+        # Pattern 1: [HH:MM:SS] or [MM:SS] or [H:MM:SS]
+        text = re.sub(r'\[\d{1,2}:\d{2}(?::\d{2})?\]', '', text)
+
+        # Pattern 2: (HH:MM:SS) or (MM:SS) or (H:MM:SS)
+        text = re.sub(r'\(\d{1,2}:\d{2}(?::\d{2})?\)', '', text)
+
+        # Pattern 3: HH:MM:SS or MM:SS at the beginning of lines or standalone
+        text = re.sub(r'(?:^|\s)\d{1,2}:\d{2}(?::\d{2})?\s*[-–—]?\s*', ' ', text, flags=re.MULTILINE)
+
+        # Pattern 4: Timestamps with milliseconds [HH:MM:SS.mmm]
+        text = re.sub(r'\[\d{1,2}:\d{2}:\d{2}\.\d{1,3}\]', '', text)
+
+        # Pattern 5: Speaker labels with timestamps like "Speaker 1 [00:00:00]:"
+        text = re.sub(r'Speaker\s+\d+\s*\[\d{1,2}:\d{2}(?::\d{2})?\]\s*:?\s*', '', text, flags=re.IGNORECASE)
+
+        # Pattern 6: Time ranges like [00:00 - 00:30] or [0:00-0:30]
+        text = re.sub(r'\[\d{1,2}:\d{2}(?::\d{2})?\s*[-–—]\s*\d{1,2}:\d{2}(?::\d{2})?\]', '', text)
+
+        # Pattern 7: Standalone timestamps at the beginning of lines
+        text = re.sub(r'^[\s]*\d{1,2}:\d{2}(?::\d{2})?\s*', '', text, flags=re.MULTILINE)
+
+        # Pattern 8: Remove any remaining bracketed content that looks like metadata
+        text = re.sub(r'\[(?:MUSIC|SOUND|NOISE|SILENCE|APPLAUSE|LAUGHTER|INAUDIBLE|CROSSTALK)\]', '', text, flags=re.IGNORECASE)
+
+        # Pattern 9: Remove bracketed artifacts at the end (original functionality)
+        text = re.sub(r'\s*\[[^\]]+\]\s*$', '', text)
+
+        # Clean up extra whitespace
+        text = re.sub(r'\s+', ' ', text)  # Replace multiple spaces with single space
+        text = re.sub(r'\n\s*\n', '\n', text)  # Remove empty lines
+        text = text.strip()  # Remove leading/trailing whitespace
 
         # Log if we removed something
-        if cleaned_text != text:
-            self.logger.info(f"Removed bracketed artifact from end of Gemini transcription")
+        if text != original_text:
+            removed_content = len(original_text) - len(text)
+            self.logger.info(f"Cleaned Gemini transcription: removed {removed_content} characters (timestamps/artifacts)")
 
-        return cleaned_text
+            # Log a sample of what was removed for debugging (first 200 chars)
+            if len(original_text) > 200:
+                self.logger.debug(f"Original text sample: {original_text[:200]}...")
+                self.logger.debug(f"Cleaned text sample: {text[:200]}...")
+
+        return text
 
     def transcribe(self, audio_data: Union[bytes, BinaryIO],
                   language: str = "en",
@@ -277,7 +319,10 @@ class TranscriptionService(BaseService):
             )
 
             # Prepare the prompt
-            prompt = f"Please transcribe the following audio file. The language is {language}."
+            if language and language != "auto":
+                prompt = f"Please transcribe the following audio file to text only. The language is {language}. Do not include timestamps, speaker labels, or any metadata - just provide the spoken text."
+            else:
+                prompt = "Please transcribe the following audio file to text only. Do not include timestamps, speaker labels, or any metadata - just provide the spoken text."
 
             # For Gemini, we need to encode the audio file as base64
             import base64

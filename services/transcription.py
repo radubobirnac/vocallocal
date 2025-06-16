@@ -84,7 +84,12 @@ class TranscriptionService(BaseService):
 
     def _clean_gemini_transcription(self, text):
         """
-        Clean up Gemini transcription by removing bracketed artifacts at the end.
+        Clean up Gemini transcription by removing timestamps and bracketed artifacts.
+
+        This method removes:
+        - Timestamps in various formats (e.g., [00:00:00], (0:00), 00:00:00, etc.)
+        - Bracketed artifacts at the end
+        - Common timestamp patterns that Gemini models might add
 
         Args:
             text (str): The transcription text from Gemini
@@ -92,15 +97,52 @@ class TranscriptionService(BaseService):
         Returns:
             str: Cleaned transcription text
         """
-        # Pattern to match bracketed text at the end of the string
-        pattern = r'\s*\[[^\]]+\]\s*$'
-        cleaned_text = re.sub(pattern, '', text)
+        original_text = text
+
+        # Remove timestamps in various formats
+        # Pattern 1: [HH:MM:SS] or [MM:SS] or [H:MM:SS]
+        text = re.sub(r'\[\d{1,2}:\d{2}(?::\d{2})?\]', '', text)
+
+        # Pattern 2: (HH:MM:SS) or (MM:SS) or (H:MM:SS)
+        text = re.sub(r'\(\d{1,2}:\d{2}(?::\d{2})?\)', '', text)
+
+        # Pattern 3: HH:MM:SS or MM:SS at the beginning of lines or standalone
+        text = re.sub(r'(?:^|\s)\d{1,2}:\d{2}(?::\d{2})?\s*[-–—]?\s*', ' ', text, flags=re.MULTILINE)
+
+        # Pattern 4: Timestamps with milliseconds [HH:MM:SS.mmm]
+        text = re.sub(r'\[\d{1,2}:\d{2}:\d{2}\.\d{1,3}\]', '', text)
+
+        # Pattern 5: Speaker labels with timestamps like "Speaker 1 [00:00:00]:"
+        text = re.sub(r'Speaker\s+\d+\s*\[\d{1,2}:\d{2}(?::\d{2})?\]\s*:?\s*', '', text, flags=re.IGNORECASE)
+
+        # Pattern 6: Time ranges like [00:00 - 00:30] or [0:00-0:30]
+        text = re.sub(r'\[\d{1,2}:\d{2}(?::\d{2})?\s*[-–—]\s*\d{1,2}:\d{2}(?::\d{2})?\]', '', text)
+
+        # Pattern 7: Standalone timestamps at the beginning of lines
+        text = re.sub(r'^[\s]*\d{1,2}:\d{2}(?::\d{2})?\s*', '', text, flags=re.MULTILINE)
+
+        # Pattern 8: Remove any remaining bracketed content that looks like metadata
+        text = re.sub(r'\[(?:MUSIC|SOUND|NOISE|SILENCE|APPLAUSE|LAUGHTER|INAUDIBLE|CROSSTALK)\]', '', text, flags=re.IGNORECASE)
+
+        # Pattern 9: Remove bracketed artifacts at the end (original functionality)
+        text = re.sub(r'\s*\[[^\]]+\]\s*$', '', text)
+
+        # Clean up extra whitespace
+        text = re.sub(r'\s+', ' ', text)  # Replace multiple spaces with single space
+        text = re.sub(r'\n\s*\n', '\n', text)  # Remove empty lines
+        text = text.strip()  # Remove leading/trailing whitespace
 
         # Log if we removed something
-        if cleaned_text != text:
-            self.logger.info(f"Removed bracketed artifact from end of Gemini transcription")
+        if text != original_text:
+            removed_content = len(original_text) - len(text)
+            self.logger.info(f"Cleaned Gemini transcription: removed {removed_content} characters (timestamps/artifacts)")
 
-        return cleaned_text
+            # Log a sample of what was removed for debugging (first 200 chars)
+            if len(original_text) > 200:
+                self.logger.debug(f"Original text sample: {original_text[:200]}...")
+                self.logger.debug(f"Cleaned text sample: {text[:200]}...")
+
+        return text
 
     def _chunk_audio_file(self, audio_bytes, chunk_size_mb=5, format="webm"):
         """
@@ -1069,7 +1111,10 @@ class TranscriptionService(BaseService):
                     time.sleep(base_wait_interval)
 
             # Prepare prompt
-            prompt = f"Please transcribe the following audio. The language is {language}." if language and language != "auto" else "Please transcribe this audio."
+            if language and language != "auto":
+                prompt = f"Please transcribe the following audio to text only. The language is {language}. Do not include timestamps, speaker labels, or any metadata - just provide the spoken text."
+            else:
+                prompt = "Please transcribe this audio to text only. Do not include timestamps, speaker labels, or any metadata - just provide the spoken text."
 
             # Generate content with improved error handling
             self.logger.info("Generating content with Files API")
@@ -1270,9 +1315,12 @@ class TranscriptionService(BaseService):
 
                     # Add language hint if specified
                     if language and language != "auto":
-                        prompt = f"Please transcribe the following audio. The language is {language}."
+                        prompt = f"Please transcribe the following audio to text only. The language is {language}. Do not include timestamps, speaker labels, or any metadata - just provide the spoken text."
                         prompt_parts.append(prompt)
                         self.logger.info(f"Added language hint to prompt: {language}")
+                    else:
+                        prompt = "Please transcribe the following audio to text only. Do not include timestamps, speaker labels, or any metadata - just provide the spoken text."
+                        prompt_parts.append(prompt)
 
                     # Read the audio file
                     with open(temp_file_path, 'rb') as f:
@@ -1359,7 +1407,10 @@ class TranscriptionService(BaseService):
                                     self.logger.warning(f"Proceeding with file in non-ACTIVE state: {file_obj.state}")
 
                                 # Create content with the file
-                                prompt = f"Please transcribe the following audio. The language is {language}." if language and language != "auto" else "Please transcribe this audio."
+                                if language and language != "auto":
+                                    prompt = f"Please transcribe the following audio to text only. The language is {language}. Do not include timestamps, speaker labels, or any metadata - just provide the spoken text."
+                                else:
+                                    prompt = "Please transcribe this audio to text only. Do not include timestamps, speaker labels, or any metadata - just provide the spoken text."
 
                                 # Generate content with the file
                                 self.logger.info("Using Files API method for Gemini transcription")
@@ -1390,7 +1441,10 @@ class TranscriptionService(BaseService):
                                 # Try to use the file anyway as a last resort
                                 try:
                                     self.logger.warning("Attempting to use file despite non-ACTIVE state...")
-                                    prompt = f"Please transcribe the following audio. The language is {language}." if language and language != "auto" else "Please transcribe this audio."
+                                    if language and language != "auto":
+                                        prompt = f"Please transcribe the following audio to text only. The language is {language}. Do not include timestamps, speaker labels, or any metadata - just provide the spoken text."
+                                    else:
+                                        prompt = "Please transcribe this audio to text only. Do not include timestamps, speaker labels, or any metadata - just provide the spoken text."
 
                                     # Generate content with the file
                                     response = model.generate_content([
@@ -1427,7 +1481,9 @@ class TranscriptionService(BaseService):
 
                             # Add language hint if specified
                             if language and language != "auto":
-                                parts.append({"text": f"Please transcribe the following audio. The language is {language}."})
+                                parts.append({"text": f"Please transcribe the following audio to text only. The language is {language}. Do not include timestamps, speaker labels, or any metadata - just provide the spoken text."})
+                            else:
+                                parts.append({"text": "Please transcribe the following audio to text only. Do not include timestamps, speaker labels, or any metadata - just provide the spoken text."})
 
                             # Add the audio data
                             parts.append({
@@ -1525,7 +1581,10 @@ class TranscriptionService(BaseService):
                                         self.logger.warning(f"Proceeding with file in non-ACTIVE state: {file_obj.state}")
 
                                     # Create content with the file
-                                    prompt = f"Please transcribe the following audio. The language is {language}." if language and language != "auto" else "Please transcribe this audio."
+                                    if language and language != "auto":
+                                        prompt = f"Please transcribe the following audio to text only. The language is {language}. Do not include timestamps, speaker labels, or any metadata - just provide the spoken text."
+                                    else:
+                                        prompt = "Please transcribe this audio to text only. Do not include timestamps, speaker labels, or any metadata - just provide the spoken text."
 
                                     # Generate content with the file
                                     self.logger.info("Using Files API method for Gemini transcription")
@@ -1556,7 +1615,10 @@ class TranscriptionService(BaseService):
                                     # Try to use the file anyway as a last resort
                                     try:
                                         self.logger.warning("Attempting to use file despite non-ACTIVE state...")
-                                        prompt = f"Please transcribe the following audio. The language is {language}." if language and language != "auto" else "Please transcribe this audio."
+                                        if language and language != "auto":
+                                            prompt = f"Please transcribe the following audio to text only. The language is {language}. Do not include timestamps, speaker labels, or any metadata - just provide the spoken text."
+                                        else:
+                                            prompt = "Please transcribe this audio to text only. Do not include timestamps, speaker labels, or any metadata - just provide the spoken text."
 
                                         # Generate content with the file
                                         response = model.generate_content([

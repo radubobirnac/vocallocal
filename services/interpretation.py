@@ -53,8 +53,8 @@ class InterpretationService:
     def _create_enhanced_prompt(self, text, tone):
         """Create an enhanced prompt with contextual understanding and rephrasing capabilities"""
 
-        # Minimal base prompt
-        base_prompt = f"Rephrase the following text while maintaining its context: {text}\n\n"
+        # Clean, minimal prompt that explicitly requests direct output
+        base_prompt = f"Rewrite this text to be clearer and more professional. Provide only the rewritten text without any headers, options, or explanations: {text}"
 
         return base_prompt
 
@@ -67,6 +67,9 @@ class InterpretationService:
     def _interpret_with_gemini(self, prompt, model_name):
         """Use Gemini model for enhanced interpretation with optimized parameters"""
         try:
+            # Extract original text from prompt for fallback purposes
+            original_text = self._extract_text_from_prompt(prompt)
+
             # Map model name to actual model ID if needed
             model_id = model_name
             if model_name == "gemini-2.0-flash-lite":
@@ -96,11 +99,50 @@ class InterpretationService:
                 generation_config=generation_config
             )
 
-            # Extract and return the text
-            if response and response.text:
-                return response.text.strip()
-            else:
-                raise Exception("Empty response from Gemini API")
+            # Enhanced error handling for Gemini responses
+            if not response:
+                raise Exception("No response received from Gemini API")
+
+            # Check if response has candidates
+            if not hasattr(response, 'candidates') or not response.candidates:
+                raise Exception("No candidates returned from Gemini API")
+
+            # Check the first candidate
+            candidate = response.candidates[0]
+
+            # Check finish reason for safety filtering
+            if hasattr(candidate, 'finish_reason'):
+                finish_reason = candidate.finish_reason
+                self.logger.info(f"Gemini response finish_reason: {finish_reason}")
+
+                if finish_reason == 2:  # SAFETY
+                    self.logger.warning("Gemini response was filtered due to safety concerns")
+                    # Try with a more neutral prompt
+                    return self._retry_with_neutral_prompt(original_text, model_id, generation_config)
+                elif finish_reason == 3:  # RECITATION
+                    self.logger.warning("Gemini response was filtered due to recitation concerns")
+                    return self._retry_with_neutral_prompt(original_text, model_id, generation_config)
+                elif finish_reason not in [0, 1]:  # 0=UNSPECIFIED, 1=STOP (normal completion)
+                    self.logger.warning(f"Gemini response finished with unexpected reason: {finish_reason}")
+
+            # Check if we have valid parts with text
+            if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts'):
+                for part in candidate.content.parts:
+                    if hasattr(part, 'text') and part.text:
+                        cleaned_text = self._clean_interpretation_response(part.text.strip())
+                        return cleaned_text
+
+            # Fallback: try to access response.text directly
+            try:
+                if response.text:
+                    cleaned_text = self._clean_interpretation_response(response.text.strip())
+                    return cleaned_text
+            except Exception as text_error:
+                self.logger.warning(f"Could not access response.text: {str(text_error)}")
+
+            # If all else fails, try a fallback approach
+            self.logger.warning("Standard response extraction failed, trying fallback")
+            return self._fallback_interpretation(original_text, model_id)
 
         except Exception as e:
             self.logger.error(f"Gemini interpretation error: {str(e)}")
@@ -173,7 +215,7 @@ class InterpretationService:
         Returns:
             str: Rephrased text
         """
-        prompt = f"Rephrase this text by maintaining the context: {text}"
+        prompt = f"Rewrite this text to be clearer and more professional. Provide only the rewritten text without any headers, options, or explanations: {text}"
 
         if "gemini" in model.lower():
             return self._interpret_with_gemini(prompt, model)
@@ -201,3 +243,133 @@ class InterpretationService:
             return self._interpret_with_openai(prompt, model)
         else:
             return self._interpret_with_gemini(prompt, "gemini-1.5-flash")
+
+    def _extract_text_from_prompt(self, prompt):
+        """Extract the original text from the prompt for fallback purposes"""
+        # Handle the new prompt format
+        if "Provide only the rewritten text without any headers, options, or explanations:" in prompt:
+            return prompt.split("Provide only the rewritten text without any headers, options, or explanations:")[1].strip()
+        elif "Rephrase the following text while maintaining its context:" in prompt:
+            return prompt.split("Rephrase the following text while maintaining its context:")[1].strip()
+        elif "Rephrase this text by maintaining the context:" in prompt:
+            return prompt.split("Rephrase this text by maintaining the context:")[1].strip()
+        elif "Analyze the context of this text:" in prompt:
+            return prompt.split("Analyze the context of this text:")[1].strip()
+        elif "Detect the intent of this text:" in prompt:
+            return prompt.split("Detect the intent of this text:")[1].strip()
+        else:
+            # Fallback: return the prompt itself
+            return prompt
+
+    def _retry_with_neutral_prompt(self, text, model_id, _generation_config=None):
+        """Retry with a more neutral prompt to avoid safety filtering"""
+        try:
+            self.logger.info("Retrying with neutral prompt to avoid safety filtering")
+
+            # Create a very simple, neutral prompt
+            neutral_prompt = f"Please rewrite this text in a clear and professional way: {text}"
+
+            # Use more conservative generation settings
+            safe_config = genai.types.GenerationConfig(
+                temperature=0.3,  # Lower temperature for safer responses
+                top_p=0.8,       # More conservative sampling
+                top_k=20,        # Reduced vocabulary diversity
+                max_output_tokens=1024,  # Shorter responses
+                candidate_count=1
+            )
+
+            model = genai.GenerativeModel(model_id)
+            response = model.generate_content(
+                neutral_prompt,
+                generation_config=safe_config
+            )
+
+            # Try to extract text with the same error handling
+            if response and hasattr(response, 'candidates') and response.candidates:
+                candidate = response.candidates[0]
+                if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts'):
+                    for part in candidate.content.parts:
+                        if hasattr(part, 'text') and part.text:
+                            return self._clean_interpretation_response(part.text.strip())
+
+            # If that fails, return a simple fallback
+            return self._simple_fallback(text)
+
+        except Exception as e:
+            self.logger.error(f"Neutral prompt retry failed: {str(e)}")
+            return self._simple_fallback(text)
+
+    def _fallback_interpretation(self, text, model_id):
+        """Fallback interpretation when all else fails"""
+        try:
+            self.logger.info("Using fallback interpretation method")
+
+            # Try with the most basic prompt possible
+            basic_prompt = f"Improve this text: {text}"
+
+            # Use very conservative settings
+            minimal_config = genai.types.GenerationConfig(
+                temperature=0.1,
+                top_p=0.7,
+                top_k=10,
+                max_output_tokens=512,
+                candidate_count=1
+            )
+
+            model = genai.GenerativeModel(model_id)
+            response = model.generate_content(
+                basic_prompt,
+                generation_config=minimal_config
+            )
+
+            if response and response.text:
+                return self._clean_interpretation_response(response.text.strip())
+            else:
+                return self._simple_fallback(text)
+
+        except Exception as e:
+            self.logger.error(f"Fallback interpretation failed: {str(e)}")
+            return self._simple_fallback(text)
+
+    def _simple_fallback(self, text):
+        """Simple fallback that returns the original text with minimal processing"""
+        self.logger.warning("All interpretation methods failed, returning processed original text")
+        # At minimum, clean up the text formatting
+        cleaned = text.strip()
+        # Remove extra whitespace
+        cleaned = ' '.join(cleaned.split())
+        return cleaned
+
+    def _clean_interpretation_response(self, text):
+        """Clean up the interpretation response to remove unwanted formatting"""
+        if not text:
+            return text
+
+        # Remove common structured response patterns
+        # Pattern 1: Remove "**Option X (Description):**" headers
+        text = re.sub(r'\*\*Option\s+\d+\s*\([^)]+\):\*\*\s*', '', text, flags=re.IGNORECASE)
+
+        # Pattern 2: Remove "**Option X:**" headers
+        text = re.sub(r'\*\*Option\s+\d+:\*\*\s*', '', text, flags=re.IGNORECASE)
+
+        # Pattern 3: Remove numbered list patterns like "1. " at the beginning
+        text = re.sub(r'^\d+\.\s+', '', text)
+
+        # Pattern 4: Remove bullet points
+        text = re.sub(r'^[•\-\*]\s+', '', text)
+
+        # Pattern 5: Remove markdown bold formatting
+        text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+
+        # Pattern 6: Remove any remaining structured headers
+        text = re.sub(r'^[A-Z][^:]*:\s*', '', text, flags=re.MULTILINE)
+
+        # Pattern 7: Remove "Here's" or "Here is" introductory phrases
+        text = re.sub(r'^Here\'s\s+', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'^Here\s+is\s+', '', text, flags=re.IGNORECASE)
+
+        # Clean up extra whitespace
+        text = re.sub(r'\s+', ' ', text)
+        text = text.strip()
+
+        return text

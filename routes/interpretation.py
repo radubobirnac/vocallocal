@@ -46,10 +46,19 @@ def interpret_text():
         # Log the error
         error_details = traceback.format_exc()
         logger.error(f"Interpretation error: {str(e)}\n{error_details}")
-        
+
+        # Check for specific error types and provide helpful messages
+        error_message = str(e)
+        if "finish_reason" in error_message.lower() or "safety" in error_message.lower():
+            error_message = "The content was filtered for safety reasons. Please try rephrasing your text."
+        elif "empty response" in error_message.lower():
+            error_message = "The AI service returned an empty response. Please try again."
+        elif "api key" in error_message.lower():
+            error_message = "API configuration error. Please contact support."
+
         # Return error response
         return jsonify({
-            'error': str(e),
+            'error': error_message,
             'errorType': type(e).__name__,
             'details': 'See server logs for more information'
         }), 500
