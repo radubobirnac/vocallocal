@@ -467,27 +467,75 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Handle usage limit errors from server responses
 document.addEventListener('DOMContentLoaded', () => {
-    // Override fetch to intercept usage limit errors
-    const originalFetch = window.fetch;
-    window.fetch = async function(...args) {
-        const response = await originalFetch.apply(this, args);
+    // Use a flag to track if we've already set up interception
+    if (window._usageEnforcementInterceptionApplied) {
+        console.log('[Usage Enforcement] Fetch already intercepted for usage limit detection');
+        return;
+    }
 
-        if (response.status === 429) { // Too Many Requests (usage limit)
-            try {
-                const errorData = await response.clone().json();
-                if (errorData.errorType === 'UsageLimitExceeded') {
-                    // Only show usage limit modal for normal users
-                    if (window.usageEnforcementInstance && window.usageEnforcementInstance.shouldEnforceUsage()) {
-                        window.usageEnforcementInstance.showUsageLimitModal(errorData.details);
-                    } else {
-                        console.log('Usage limit error bypassed for privileged user');
-                    }
-                }
-            } catch (e) {
-                console.error('Error parsing usage limit response:', e);
+    try {
+        // Store original fetch with proper binding - use the safe validator's original if available
+        let originalFetch;
+        try {
+            if (window.fetchFixValidatorSafe && typeof window.fetchFixValidatorSafe.getOriginalFetch === 'function') {
+                originalFetch = window.fetchFixValidatorSafe.getOriginalFetch();
+                console.log('[Usage Enforcement] Using fetch-fix-validator-safe original fetch');
+            } else if (window.fetchFixValidator && typeof window.fetchFixValidator.getOriginalFetch === 'function') {
+                originalFetch = window.fetchFixValidator.getOriginalFetch();
+                console.log('[Usage Enforcement] Using fetch-fix-validator original fetch');
+            } else {
+                // Safely get current fetch without triggering property access issues
+                originalFetch = window.fetch.bind(window);
+                console.log('[Usage Enforcement] Using current window.fetch');
             }
+        } catch (fetchAccessError) {
+            console.warn('[Usage Enforcement] Could not safely access fetch, skipping interception:', fetchAccessError);
+            return;
         }
 
-        return response;
-    };
+        const usageInterceptedFetch = async function(...args) {
+            try {
+                // Call original fetch with proper context
+                const response = await originalFetch(...args);
+
+                if (response.status === 429) { // Too Many Requests (usage limit)
+                    try {
+                        const errorData = await response.clone().json();
+                        if (errorData.errorType === 'UsageLimitExceeded') {
+                            // Only show usage limit modal for normal users
+                            if (window.usageEnforcementInstance && window.usageEnforcementInstance.shouldEnforceUsage()) {
+                                window.usageEnforcementInstance.showUsageLimitModal(errorData.details);
+                            } else {
+                                console.log('Usage limit error bypassed for privileged user');
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error parsing usage limit response:', e);
+                    }
+                }
+
+                return response;
+            } catch (error) {
+                console.error('[Usage Enforcement] Error in fetch override:', error);
+                // Fallback to original fetch if override fails
+                return originalFetch(...args);
+            }
+        };
+
+        // Mark as intercepted globally to avoid property access issues
+        window._usageEnforcementInterceptionApplied = true;
+
+        // Apply the override safely
+        try {
+            window.fetch = usageInterceptedFetch;
+            console.log('[Usage Enforcement] Successfully intercepted fetch for usage limit detection');
+        } catch (assignmentError) {
+            console.error('[Usage Enforcement] Could not assign fetch override:', assignmentError);
+            window._usageEnforcementInterceptionApplied = false;
+        }
+
+    } catch (error) {
+        console.error('[Usage Enforcement] Error setting up fetch interception:', error);
+        // Don't throw - just log the error and continue
+    }
 });

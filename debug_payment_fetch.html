@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Fetch Debug Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .log-container {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        .log-info { background-color: #e3f2fd; }
+        .log-error { background-color: #ffebee; }
+        .log-warning { background-color: #fff8e1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Payment Fetch Debug Tool</h1>
+        <p>This tool helps debug the "Failed to execute 'fetch' on 'Window': Illegal invocation" error in payment processing.</p>
+        
+        <div class="test-section">
+            <h3>🧪 Test Controls</h3>
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="testBasicFetch()">Test Basic Fetch</button>
+            <button onclick="testPaymentFetch()">Test Payment Fetch</button>
+            <button onclick="testWithOverrides()">Test With Overrides</button>
+            <button onclick="clearResults()">Clear Results</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Test Results</h3>
+            <div id="basic-fetch-result"></div>
+            <div id="payment-fetch-result"></div>
+            <div id="override-test-result"></div>
+            <div id="context-test-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 Debug Log</h3>
+            <div id="debug-log" class="log-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // Debug logging
+        const logContainer = document.getElementById('debug-log');
+        
+        function addLog(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="test-result ${type}">${message}</div>`;
+        }
+
+        function clearResults() {
+            ['basic-fetch-result', 'payment-fetch-result', 'override-test-result', 'context-test-result'].forEach(id => {
+                document.getElementById(id).innerHTML = '';
+            });
+            logContainer.innerHTML = '';
+            addLog('Results cleared');
+        }
+
+        // Store original fetch for testing
+        const originalFetch = window.fetch;
+
+        async function testBasicFetch() {
+            addLog('Testing basic fetch functionality...');
+            try {
+                // Test with a simple static file
+                const response = await fetch('/static/js/payment.js', {
+                    method: 'HEAD'
+                });
+                
+                if (response.status === 200 || response.status === 404) {
+                    showResult('basic-fetch-result', '✅ Basic fetch works correctly', 'success');
+                    addLog('Basic fetch test passed');
+                } else {
+                    showResult('basic-fetch-result', `⚠️ Basic fetch returned status ${response.status}`, 'warning');
+                    addLog(`Basic fetch returned status ${response.status}`);
+                }
+            } catch (error) {
+                showResult('basic-fetch-result', `❌ Basic fetch failed: ${error.message}`, 'error');
+                addLog(`Basic fetch failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testPaymentFetch() {
+            addLog('Testing payment fetch calls...');
+            try {
+                // Test the actual payment endpoint that was causing issues
+                const testData = { plan_type: 'basic' };
+                
+                const response = await fetch('/payment/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                // We expect authentication errors, but NOT "Illegal invocation"
+                if (response.status === 401 || response.status === 403 || response.status === 404) {
+                    showResult('payment-fetch-result', '✅ Payment fetch works (auth/endpoint issues expected)', 'success');
+                    addLog('Payment fetch test passed - no illegal invocation error');
+                } else {
+                    showResult('payment-fetch-result', `✅ Payment fetch works (status: ${response.status})`, 'success');
+                    addLog(`Payment fetch returned status: ${response.status}`);
+                }
+                
+            } catch (error) {
+                if (error.message.includes('Illegal invocation')) {
+                    showResult('payment-fetch-result', `❌ ILLEGAL INVOCATION ERROR: ${error.message}`, 'error');
+                    addLog(`ILLEGAL INVOCATION ERROR: ${error.message}`, 'error');
+                } else {
+                    showResult('payment-fetch-result', `✅ Payment fetch works (network error expected): ${error.message}`, 'success');
+                    addLog(`Payment fetch network error (expected): ${error.message}`);
+                }
+            }
+        }
+
+        async function testWithOverrides() {
+            addLog('Testing fetch with simulated overrides...');
+            
+            try {
+                // Simulate the TTS access control override
+                let testPassed = true;
+                
+                // Test 1: Correct override (should work)
+                addLog('Testing correct fetch override...');
+                window.fetch = async (url, options = {}) => {
+                    addLog(`Override called for: ${url}`);
+                    return originalFetch.call(window, url, options); // CORRECT
+                };
+                
+                const response1 = await fetch('/static/js/payment.js', { method: 'HEAD' });
+                addLog('Correct override test passed');
+                
+                // Test 2: Incorrect override (should fail)
+                addLog('Testing incorrect fetch override...');
+                window.fetch = async (url, options = {}) => {
+                    addLog(`Incorrect override called for: ${url}`);
+                    return originalFetch.call(this, url, options); // INCORRECT - uses 'this'
+                };
+                
+                try {
+                    const response2 = await fetch('/static/js/payment.js', { method: 'HEAD' });
+                    addLog('Incorrect override unexpectedly passed');
+                } catch (error) {
+                    if (error.message.includes('Illegal invocation')) {
+                        addLog('Incorrect override correctly failed with illegal invocation', 'warning');
+                    } else {
+                        addLog(`Incorrect override failed with different error: ${error.message}`, 'error');
+                        testPassed = false;
+                    }
+                }
+                
+                // Restore original fetch
+                window.fetch = originalFetch;
+                
+                if (testPassed) {
+                    showResult('override-test-result', '✅ Override tests completed - context binding is critical', 'success');
+                    addLog('Override tests completed successfully');
+                } else {
+                    showResult('override-test-result', '❌ Override tests revealed unexpected behavior', 'error');
+                    addLog('Override tests failed', 'error');
+                }
+                
+            } catch (error) {
+                window.fetch = originalFetch; // Ensure we restore
+                showResult('override-test-result', `❌ Override test failed: ${error.message}`, 'error');
+                addLog(`Override test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testContextBinding() {
+            addLog('Testing context binding scenarios...');
+            
+            try {
+                // Test different ways of calling fetch
+                const tests = [
+                    { name: 'Direct call', fn: () => fetch('/static/js/payment.js', { method: 'HEAD' }) },
+                    { name: 'Window call', fn: () => window.fetch('/static/js/payment.js', { method: 'HEAD' }) },
+                    { name: 'Apply with window', fn: () => originalFetch.apply(window, ['/static/js/payment.js', { method: 'HEAD' }]) },
+                    { name: 'Call with window', fn: () => originalFetch.call(window, '/static/js/payment.js', { method: 'HEAD' }) }
+                ];
+                
+                let allPassed = true;
+                for (const test of tests) {
+                    try {
+                        await test.fn();
+                        addLog(`${test.name}: ✅ Passed`);
+                    } catch (error) {
+                        addLog(`${test.name}: ❌ Failed - ${error.message}`, 'error');
+                        allPassed = false;
+                    }
+                }
+                
+                if (allPassed) {
+                    showResult('context-test-result', '✅ All context binding tests passed', 'success');
+                } else {
+                    showResult('context-test-result', '❌ Some context binding tests failed', 'error');
+                }
+                
+            } catch (error) {
+                showResult('context-test-result', `❌ Context test failed: ${error.message}`, 'error');
+                addLog(`Context test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function runAllTests() {
+            addLog('Running all tests...');
+            clearResults();
+            
+            await testBasicFetch();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            await testPaymentFetch();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            await testWithOverrides();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            await testContextBinding();
+            
+            addLog('All tests completed');
+        }
+
+        // Initialize
+        addLog('Payment Fetch Debug Tool loaded');
+        addLog('Click "Run All Tests" to start debugging');
+    </script>
+</body>
+</html>

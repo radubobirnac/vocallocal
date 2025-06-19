@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Payment Test - VocalLocal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        .test-button:hover { background-color: #0056b3; }
+        .upgrade-button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .upgrade-button:hover { background-color: #218838; }
+        .result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .console-output {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-ok { background-color: #28a745; }
+        .status-error { background-color: #dc3545; }
+        .status-warning { background-color: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Manual Payment Test</h1>
+        <p>This page helps you manually test the payment functionality to ensure the "Illegal invocation" error is fixed.</p>
+        
+        <div id="status-section">
+            <h3>📊 System Status</h3>
+            <div id="fetch-status">
+                <span class="status-indicator status-warning"></span>
+                <span>Fetch API: Checking...</span>
+            </div>
+            <div id="payment-js-status">
+                <span class="status-indicator status-warning"></span>
+                <span>Payment.js: Checking...</span>
+            </div>
+            <div id="overrides-status">
+                <span class="status-indicator status-warning"></span>
+                <span>Fetch Overrides: Checking...</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h3>🔧 Test Controls</h3>
+        <button class="test-button" onclick="testBasicFetch()">Test Basic Fetch</button>
+        <button class="test-button" onclick="testPaymentEndpoints()">Test Payment Endpoints</button>
+        <button class="test-button" onclick="testFetchValidator()">Test Fetch Validator</button>
+        <button class="test-button" onclick="simulateUpgradeClick()">Simulate Upgrade Click</button>
+        <button class="test-button" onclick="checkConsoleErrors()">Check Console Errors</button>
+        <button class="test-button" onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div class="container">
+        <h3>💳 Simulated Payment Buttons</h3>
+        <p>These buttons simulate the actual upgrade buttons in your application:</p>
+        <button class="upgrade-button" data-plan="basic" onclick="handleUpgradeClick('basic')">
+            Upgrade to Basic Plan
+        </button>
+        <button class="upgrade-button" data-plan="professional" onclick="handleUpgradeClick('professional')">
+            Upgrade to Professional Plan
+        </button>
+    </div>
+
+    <div class="container">
+        <h3>📋 Test Results</h3>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="container">
+        <h3>🖥️ Console Output</h3>
+        <div id="console-output" class="console-output"></div>
+    </div>
+
+    <!-- Include the actual payment.js and related scripts -->
+    <script>
+        // Mock Stripe for testing
+        window.Stripe = function(key) {
+            return {
+                redirectToCheckout: function(options) {
+                    console.log('Mock Stripe redirectToCheckout called with:', options);
+                    return Promise.resolve({ error: null });
+                }
+            };
+        };
+        
+        // Set mock Stripe key
+        window.stripePublishableKey = 'pk_test_mock_key_for_testing';
+    </script>
+    
+    <!-- Include fetch fix validator -->
+    <script src="/static/js/fetch-fix-validator.js"></script>
+    
+    <!-- Include payment.js -->
+    <script src="/static/js/payment.js"></script>
+
+    <script>
+        // Console capture
+        const consoleOutput = document.getElementById('console-output');
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+
+        function addToConsole(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = `[${timestamp}] [${type.toUpperCase()}] `;
+            consoleOutput.textContent += prefix + message + '\n';
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            addToConsole(args.join(' '), 'log');
+        };
+
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            addToConsole(args.join(' '), 'error');
+        };
+
+        console.warn = function(...args) {
+            originalConsoleWarn.apply(console, args);
+            addToConsole(args.join(' '), 'warn');
+        };
+
+        // Test functions
+        function showResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+            document.getElementById('console-output').textContent = '';
+        }
+
+        async function testBasicFetch() {
+            console.log('Testing basic fetch functionality...');
+            try {
+                const response = await fetch('/static/js/payment.js', { method: 'HEAD' });
+                if (response.status === 200 || response.status === 404) {
+                    showResult('✅ Basic fetch test passed', 'success');
+                } else {
+                    showResult(`⚠️ Basic fetch returned status ${response.status}`, 'warning');
+                }
+            } catch (error) {
+                if (error.message.includes('Illegal invocation')) {
+                    showResult(`❌ ILLEGAL INVOCATION ERROR: ${error.message}`, 'error');
+                } else {
+                    showResult(`❌ Basic fetch failed: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testPaymentEndpoints() {
+            console.log('Testing payment endpoints...');
+            try {
+                const testData = { plan_type: 'basic' };
+                const response = await fetch('/payment/create-checkout-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testData)
+                });
+
+                // We expect auth errors, but NOT illegal invocation
+                if (response.status === 401 || response.status === 403 || response.status === 404) {
+                    showResult('✅ Payment endpoint test passed (auth error expected)', 'success');
+                } else {
+                    showResult(`✅ Payment endpoint responded with status ${response.status}`, 'success');
+                }
+            } catch (error) {
+                if (error.message.includes('Illegal invocation')) {
+                    showResult(`❌ ILLEGAL INVOCATION ERROR: ${error.message}`, 'error');
+                } else {
+                    showResult(`✅ Payment endpoint test passed (network error expected): ${error.message}`, 'success');
+                }
+            }
+        }
+
+        function testFetchValidator() {
+            console.log('Testing fetch validator functionality...');
+            try {
+                if (window.fetchFixValidator) {
+                    // Test validator functions
+                    const stats = window.fetchFixValidator.getOverrideStats();
+                    console.log('Fetch override stats:', stats);
+
+                    const isValid = window.fetchFixValidator.validateCurrentFetch();
+                    console.log('Current fetch validation:', isValid);
+
+                    showResult(`✅ Fetch validator working - ${stats.count} overrides detected`, 'success');
+                } else {
+                    showResult('⚠️ Fetch validator not found', 'warning');
+                }
+            } catch (error) {
+                if (error.message.includes('Cannot read properties of undefined')) {
+                    showResult(`❌ FETCH VALIDATOR ERROR: ${error.message}`, 'error');
+                } else {
+                    showResult(`❌ Fetch validator test failed: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        function simulateUpgradeClick() {
+            console.log('Simulating upgrade button click...');
+            try {
+                // This simulates what happens when a user clicks an upgrade button
+                if (window.paymentManager) {
+                    window.paymentManager.handleUpgradeClick('basic');
+                    showResult('✅ Upgrade click simulation completed', 'success');
+                } else {
+                    showResult('⚠️ PaymentManager not found', 'warning');
+                }
+            } catch (error) {
+                if (error.message.includes('Illegal invocation')) {
+                    showResult(`❌ ILLEGAL INVOCATION ERROR: ${error.message}`, 'error');
+                } else {
+                    showResult(`❌ Upgrade click simulation failed: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        function handleUpgradeClick(planType) {
+            console.log(`Upgrade button clicked for plan: ${planType}`);
+            try {
+                if (window.paymentManager) {
+                    window.paymentManager.handleUpgradeClick(planType);
+                    showResult(`✅ ${planType} upgrade button clicked successfully`, 'success');
+                } else {
+                    showResult('⚠️ PaymentManager not available', 'warning');
+                }
+            } catch (error) {
+                if (error.message.includes('Illegal invocation')) {
+                    showResult(`❌ ILLEGAL INVOCATION ERROR in ${planType} upgrade: ${error.message}`, 'error');
+                } else {
+                    showResult(`❌ Error in ${planType} upgrade: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        function checkConsoleErrors() {
+            console.log('Checking for console errors...');
+            // This is a manual check - user should look at the console output above
+            showResult('ℹ️ Check the console output above for any "Illegal invocation" errors', 'info');
+        }
+
+        function updateStatus() {
+            // Check fetch API
+            const fetchStatus = document.querySelector('#fetch-status .status-indicator');
+            const fetchText = document.querySelector('#fetch-status span:last-child');
+            
+            try {
+                if (typeof fetch === 'function') {
+                    fetchStatus.className = 'status-indicator status-ok';
+                    fetchText.textContent = 'Fetch API: Available ✅';
+                } else {
+                    fetchStatus.className = 'status-indicator status-error';
+                    fetchText.textContent = 'Fetch API: Not Available ❌';
+                }
+            } catch (e) {
+                fetchStatus.className = 'status-indicator status-error';
+                fetchText.textContent = 'Fetch API: Error ❌';
+            }
+
+            // Check payment.js
+            const paymentStatus = document.querySelector('#payment-js-status .status-indicator');
+            const paymentText = document.querySelector('#payment-js-status span:last-child');
+            
+            if (window.paymentManager) {
+                paymentStatus.className = 'status-indicator status-ok';
+                paymentText.textContent = 'Payment.js: Loaded ✅';
+            } else {
+                paymentStatus.className = 'status-indicator status-warning';
+                paymentText.textContent = 'Payment.js: Not Loaded ⚠️';
+            }
+
+            // Check fetch overrides
+            const overrideStatus = document.querySelector('#overrides-status .status-indicator');
+            const overrideText = document.querySelector('#overrides-status span:last-child');
+            
+            if (window.fetchFixValidator) {
+                const stats = window.fetchFixValidator.getOverrideStats();
+                overrideStatus.className = 'status-indicator status-ok';
+                overrideText.textContent = `Fetch Overrides: ${stats.count} detected ✅`;
+            } else {
+                overrideStatus.className = 'status-indicator status-warning';
+                overrideText.textContent = 'Fetch Overrides: Validator not loaded ⚠️';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Manual Payment Test page loaded');
+            updateStatus();
+            
+            // Update status periodically
+            setInterval(updateStatus, 2000);
+        });
+    </script>
+</body>
+</html>

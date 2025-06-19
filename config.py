@@ -26,6 +26,11 @@ class Config:
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
+    # Stripe payment configuration
+    STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
+    STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+    STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
+
     # Feature flags
     GEMINI_AVAILABLE = True  # Will be updated at runtime
     METRICS_AVAILABLE = True  # Will be updated at runtime

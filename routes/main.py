@@ -1,7 +1,7 @@
 """
 Main routes for VocalLocal
 """
-from flask import Blueprint, render_template, send_from_directory, request, flash, redirect, url_for, jsonify, make_response
+from flask import Blueprint, render_template, send_from_directory, request, flash, redirect, url_for, jsonify, make_response, current_app
 from flask_login import current_user, login_required
 import logging
 from services.user_account_service import UserAccountService
@@ -720,7 +720,8 @@ def dashboard():
             is_admin=is_admin,
             is_super_user=is_super_user,
             unlimited_access=(is_admin or is_super_user),
-            reset_date=reset_date
+            reset_date=reset_date,
+            config=current_app.config
         )
     except Exception as e:
         logger.error(f"Error rendering dashboard: {e}")
@@ -770,3 +771,23 @@ def serve_static(path):
     response.headers['X-Content-Type-Options'] = 'nosniff'
 
     return response
+
+@bp.route('/debug_payment_fetch.html')
+def debug_payment_fetch():
+    """Debug page for testing payment fetch functionality."""
+    return send_from_directory('.', 'debug_payment_fetch.html')
+
+@bp.route('/manual_payment_test.html')
+def manual_payment_test():
+    """Manual test page for payment functionality."""
+    return send_from_directory('.', 'manual_payment_test.html')
+
+@bp.route('/test_fetch_binding_fix.html')
+def test_fetch_binding_fix():
+    """Test page for fetch binding fix."""
+    return send_from_directory('.', 'test_fetch_binding_fix.html')
+
+@bp.route('/simple_payment_test.html')
+def simple_payment_test():
+    """Simple test page for payment functionality without fetch validator."""
+    return send_from_directory('.', 'simple_payment_test.html')

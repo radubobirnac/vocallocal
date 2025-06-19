@@ -189,7 +189,7 @@ class TTSAccessControl {
                     }
 
                     // Call original function if access is allowed
-                    return originalFunctions[funcName].apply(this, args);
+                    return originalFunctions[funcName].apply(window, args);
                 };
             }
         });
@@ -246,7 +246,7 @@ class TTSAccessControl {
                             window.ttsAccessControl.showTTSUpgradeModal();
                             return;
                         }
-                        return originalPlayText.call(this, elementId);
+                        return originalPlayText.call(window, elementId);
                     };
 
                     // Mark as intercepted to avoid double interception
@@ -268,28 +268,69 @@ class TTSAccessControl {
 
     interceptTTSAPIRequests() {
         // Intercept fetch requests to TTS API endpoints
-        if (!window.fetch._ttsIntercepted) {
-            const originalFetch = window.fetch;
+        try {
+            // Use a safer approach to check if already intercepted
+            if (this._ttsInterceptionApplied) {
+                console.log('[TTS Access Control] Fetch already intercepted for TTS API requests');
+                return;
+            }
 
-            window.fetch = async (url, options = {}) => {
-                // Check if this is a TTS API request
-                if (typeof url === 'string' && url.includes('/api/tts')) {
-                    if (!this.hasTTSAccess()) {
-                        console.log('[TTS Access Control] Intercepted TTS API request - showing upgrade modal');
-                        this.showTTSUpgradeModal();
-
-                        // Return a rejected promise to prevent the request
-                        return Promise.reject(new Error('TTS access denied - upgrade required'));
-                    }
+            // Store original fetch with proper binding - use the safe validator's original if available
+            let originalFetch;
+            try {
+                if (window.fetchFixValidatorSafe && typeof window.fetchFixValidatorSafe.getOriginalFetch === 'function') {
+                    originalFetch = window.fetchFixValidatorSafe.getOriginalFetch();
+                    console.log('[TTS Access Control] Using fetch-fix-validator-safe original fetch');
+                } else if (window.fetchFixValidator && typeof window.fetchFixValidator.getOriginalFetch === 'function') {
+                    originalFetch = window.fetchFixValidator.getOriginalFetch();
+                    console.log('[TTS Access Control] Using fetch-fix-validator original fetch');
+                } else {
+                    // Safely get current fetch without triggering property access issues
+                    originalFetch = window.fetch.bind(window);
+                    console.log('[TTS Access Control] Using current window.fetch');
                 }
+            } catch (fetchAccessError) {
+                console.warn('[TTS Access Control] Could not safely access fetch, skipping interception:', fetchAccessError);
+                return;
+            }
 
-                // Call original fetch for allowed requests
-                return originalFetch.call(this, url, options);
+            const ttsInterceptedFetch = async (url, options = {}) => {
+                try {
+                    // Check if this is a TTS API request
+                    if (typeof url === 'string' && url.includes('/api/tts')) {
+                        if (!this.hasTTSAccess()) {
+                            console.log('[TTS Access Control] Intercepted TTS API request - showing upgrade modal');
+                            this.showTTSUpgradeModal();
+
+                            // Return a rejected promise to prevent the request
+                            return Promise.reject(new Error('TTS access denied - upgrade required'));
+                        }
+                    }
+
+                    // Call original fetch for allowed requests - ensure proper context
+                    return originalFetch(url, options);
+                } catch (error) {
+                    console.error('[TTS Access Control] Error in fetch override:', error);
+                    // Fallback to original fetch if override fails
+                    return originalFetch(url, options);
+                }
             };
 
-            // Mark as intercepted
-            window.fetch._ttsIntercepted = true;
-            console.log('[TTS Access Control] Successfully intercepted fetch for TTS API requests');
+            // Mark as intercepted on the instance to avoid property access issues
+            this._ttsInterceptionApplied = true;
+
+            // Apply the override safely
+            try {
+                window.fetch = ttsInterceptedFetch;
+                console.log('[TTS Access Control] Successfully intercepted fetch for TTS API requests');
+            } catch (assignmentError) {
+                console.error('[TTS Access Control] Could not assign fetch override:', assignmentError);
+                this._ttsInterceptionApplied = false;
+            }
+
+        } catch (error) {
+            console.error('[TTS Access Control] Error setting up fetch interception:', error);
+            // Don't throw - just log the error and continue
         }
     }
 

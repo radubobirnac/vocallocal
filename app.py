@@ -91,6 +91,11 @@ app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
 # No MAX_CONTENT_LENGTH set to allow larger files
 # API-specific limits are handled in the service layer
 
+# Configure Stripe settings
+app.config['STRIPE_PUBLISHABLE_KEY'] = Config.STRIPE_PUBLISHABLE_KEY
+app.config['STRIPE_SECRET_KEY'] = Config.STRIPE_SECRET_KEY
+app.config['STRIPE_WEBHOOK_SECRET'] = Config.STRIPE_WEBHOOK_SECRET
+
 # Set up comprehensive error handling
 try:
     from utils.error_handler import register_error_handlers
@@ -177,7 +182,7 @@ def translate():
     return render_template('translate.html')
 
 # Register blueprints
-from routes import main, transcription, translation, tts, admin, interpretation, usage_tracking, user
+from routes import main, transcription, translation, tts, admin, interpretation, usage_tracking, user, payment
 
 app.register_blueprint(main.bp)
 app.register_blueprint(transcription.bp)
@@ -187,6 +192,7 @@ app.register_blueprint(admin.bp)
 app.register_blueprint(interpretation.bp)
 app.register_blueprint(usage_tracking.bp)
 app.register_blueprint(user.bp)
+app.register_blueprint(payment.bp)
 
 # Register auth blueprint without URL prefix to make /login work
 from auth import auth_bp

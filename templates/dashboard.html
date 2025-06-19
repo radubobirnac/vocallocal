@@ -581,12 +581,12 @@
             {% endif %}
             <div class="upgrade-buttons">
                 {% if plan_type != 'basic' %}
-                <a href="#" class="upgrade-btn" onclick="showUpgradeModal('basic')">
+                <a href="#" class="upgrade-btn" data-plan="basic">
                     <i class="fas fa-arrow-up"></i> Upgrade to Basic Plan - $4.99/month
                 </a>
                 {% endif %}
                 {% if plan_type != 'professional' %}
-                <a href="#" class="upgrade-btn" onclick="showUpgradeModal('professional')">
+                <a href="#" class="upgrade-btn" data-plan="professional">
                     <i class="fas fa-crown"></i> Upgrade to Professional Plan - $12.99/month
                 </a>
                 {% endif %}
@@ -633,47 +633,7 @@
             });
         }
 
-        function showUpgradeModal(planType) {
-            // Check if user is admin or super user - they shouldn't see upgrade prompts
-            {% if is_admin or is_super_user %}
-                console.log('Upgrade modal bypassed for admin/super_user role');
-                return;
-            {% endif %}
-
-            // Plan details for better user experience
-            const planDetails = {
-                'basic': {
-                    name: 'Basic Plan',
-                    price: '$4.99/month',
-                    features: [
-                        '280 transcription minutes per month',
-                        '50,000 translation words per month',
-                        '60 TTS minutes per month',
-                        '50 AI credits per month',
-                        'Access to premium AI models (GPT-4o, Claude, Gemini)',
-                        'Email support'
-                    ]
-                },
-                'professional': {
-                    name: 'Professional Plan',
-                    price: '$12.99/month',
-                    features: [
-                        '800 transcription minutes per month',
-                        '160,000 translation words per month',
-                        '200 TTS minutes per month',
-                        '150 AI credits per month',
-                        'Access to all premium AI models',
-                        'Priority support',
-                        'Advanced features'
-                    ]
-                }
-            };
-
-            const plan = planDetails[planType];
-            const featuresList = plan.features.map(feature => `• ${feature}`).join('\\n');
-
-            alert(`${plan.name} (${plan.price})\\n\\nFeatures included:\\n${featuresList}\\n\\nUpgrade functionality will be available when payment processing is implemented.`);
-        }
+        // Upgrade functionality is now handled by payment.js PaymentManager
 
         // Auto-refresh dashboard every 30 seconds to show real-time usage
         setInterval(function() {
@@ -724,3 +684,14 @@
       .catch(error => console.error('Error:', error));
   });
 </script>
+
+<!-- Fetch Fix Validator Safe - Load early to prevent fetch binding issues -->
+<script src="{{ url_for('static', filename='js/fetch-fix-validator-safe.js') }}"></script>
+
+<!-- Stripe Integration -->
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    // Set Stripe publishable key for payment.js
+    window.stripePublishableKey = '{{ config.STRIPE_PUBLISHABLE_KEY or "" }}';
+</script>
+<script src="{{ url_for('static', filename='js/payment.js') }}"></script>
