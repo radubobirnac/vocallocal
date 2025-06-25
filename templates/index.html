@@ -439,129 +439,7 @@
       <input type="file" id="file-input-2" accept="audio/*" class="visually-hidden">
     </div>
 
-    <!-- About Section -->
-    <div class="card mt-6 mb-6">
-      <div class="card-header">
-        <button id="about-toggle" class="w-full flex justify-between items-center text-left" aria-expanded="false" aria-controls="about-content">
-          <h2 class="card-title">About Vocal Local</h2>
-          <i class="fas fa-chevron-down transition-transform"></i>
-        </button>
-      </div>
-      <div id="about-content" class="card-content" style="display: none;">
-        <p class="mb-6">
-          Vocal Local is a comprehensive multilingual speech-to-text platform designed to provide accurate
-          transcriptions, translations, and AI interpretations in 50+ languages. Using state-of-the-art AI models
-          from Gemini and OpenAI, it converts spoken language from audio recordings or microphone input into
-          written text, offers contextual interpretations, and facilitates bilingual conversations with
-          real-time translation.
-        </p>
-
-        <div class="grid md:grid-cols-2 gap-6">
-          <div>
-            <h3 class="text-lg font-medium mb-3">Features</h3>
-            <ul class="space-y-2">
-              <li class="flex items-start gap-2">
-                <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                <span>Real-time transcription - Record directly from your microphone</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                <span>File upload support - Process pre-recorded audio and video files (MP4) up to 200MB with Gemini models</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                <span>Multilingual capabilities - Support for 50+ languages</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                <span>AI interpretation - Get context-aware interpretations of your transcripts</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                <span>Customizable interpretation tones - Professional, simplified, academic, or AI prompts</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                <span>Easy copying - One-click copying of transcription results</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                <span>Bilingual mode - Facilitate conversations between speakers of different languages</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                <span>Text-to-speech playback - Listen to transcriptions and translations</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                <span>Multiple AI models - Choose between Gemini and OpenAI models for optimal results</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                <span>Model selection - Choose from Gemini 2.0 Flash Lite, Gemini 2.5 Flash Preview, Gemini 2.5 Flash TTS, OpenAI GPT-4o Mini, OpenAI GPT-4o, and OpenAI TTS-1</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                <span>Editable transcripts - Edit and correct transcriptions before translation</span>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 class="text-lg font-medium mb-3">Limitations</h3>
-            <ul class="space-y-2">
-              <li class="flex items-start gap-2">
-                <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
-                <span>Audio quality significantly affects transcription accuracy</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
-                <span>Background noise may impact results</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
-                <span>OpenAI models: Maximum file size of 25MB per upload (larger files automatically switch to Gemini)</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
-                <span>Gemini models: Maximum file size of 200MB per upload (files over 100MB may take longer to process)</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
-                <span>OpenAI GPT-4o transcription may truncate longer recordings</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
-                <span>Some rare languages or dialects may have lower accuracy</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
-                <span>Speaking in multiple languages at once may result in mixed results</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
-                <span>AI interpretation requires clear, well-structured transcripts for best results</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <i class="fas fa-exclamation-circle text-amber-600 mt-1"></i>
-                <span>Gemini 2.5 Flash Preview may have limited availability during peak usage times</span>
-              </li>
-            </ul>
-            <p class="text-sm text-muted mt-4">
-              For more information on speech recognition accuracy measurements, see
-              <a href="https://openai.com/index/introducing-our-next-generation-audio-models/" target="_blank"
-                 style="color: hsl(var(--primary)); text-decoration: underline;">
-                OpenAI's research on word error rates
-              </a> and
-              <a href="https://ai.google.dev/gemini-api/docs/audio" target="_blank"
-                 style="color: hsl(var(--primary)); text-decoration: underline;">
-                Google's Gemini audio capabilities
-              </a>.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- About section moved to dedicated /about page for better UX -->
   </div>
 
   <!-- Scripts -->
@@ -624,23 +502,39 @@
   {% endwith %}
   <!-- Set user role for model access control -->
   {% if current_user.is_authenticated %}
+  <!-- User data injection for authenticated users -->
+  <script type="application/json" id="user-data">{{ {
+    'email': current_user.email,
+    'username': current_user.username,
+    'role': current_user.role|default('normal_user'),
+    'is_admin': current_user.is_admin
+  }|tojson }}</script>
+  <script type="application/json" id="user-role">{{ (current_user.role|default('normal_user'))|tojson }}</script>
+  {% endif %}
+
   <script>
     // Set current user information for model access control
-    window.currentUser = {
-      email: '{{ current_user.email }}',
-      username: '{{ current_user.username }}',
-      role: '{{ current_user.role|default("normal_user") }}',
-      is_admin: {{ 'true' if current_user.is_admin else 'false' }}
-    };
-    window.currentUserRole = '{{ current_user.role|default("normal_user") }}';
+    (function() {
+      var userDataElement = document.getElementById('user-data');
+      var userRoleElement = document.getElementById('user-role');
+
+      if (userDataElement && userRoleElement) {
+        // Authenticated user
+        try {
+          window.currentUser = JSON.parse(userDataElement.textContent);
+          window.currentUserRole = JSON.parse(userRoleElement.textContent);
+        } catch (e) {
+          console.error('Failed to parse user data:', e);
+          window.currentUser = null;
+          window.currentUserRole = 'normal_user';
+        }
+      } else {
+        // Non-authenticated user
+        window.currentUser = null;
+        window.currentUserRole = 'normal_user';
+      }
+    })();
   </script>
-  {% else %}
-  <script>
-    // Set default for non-authenticated users
-    window.currentUser = null;
-    window.currentUserRole = 'normal_user';
-  </script>
-  {% endif %}
 
   <!-- RBAC Model Access Control -->
   <script src="{{ versioned_url_for('static', filename='js/rbac-access-control.js') }}"></script>
