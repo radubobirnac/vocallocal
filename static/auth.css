@@ -439,52 +439,7 @@ html[data-theme='dark'] .alert-danger {
   }
 }
 
-/* History Menu Styles */
-.history-menu {
-  position: relative;
-}
-
-.history-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: transparent;
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  color: hsl(var(--foreground));
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.history-button:hover {
-  background-color: hsl(var(--accent));
-  color: hsl(var(--accent-foreground));
-}
-
-.history-button[aria-expanded="true"] .dropdown-arrow {
-  transform: rotate(180deg);
-}
-
-.history-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  width: 200px;
-  background-color: hsl(var(--popover));
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 50;
-  overflow: hidden;
-  display: none;
-}
-
-.history-dropdown.show {
-  display: block;
-}
+/* History dropdown styles removed - History is now consolidated under Profile dropdown */
 
 /* Activity Summary Styles */
 .activity-summary {

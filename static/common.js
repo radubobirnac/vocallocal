@@ -6,8 +6,7 @@
 window.initializeProfileDropdown = function() {
   const avatarButton = document.getElementById('avatar-button');
   const userDropdown = document.getElementById('user-dropdown');
-  const historyButton = document.getElementById('history-button');
-  const historyDropdown = document.getElementById('history-dropdown');
+
 
   if (avatarButton && userDropdown && !avatarButton._initialized) {
     console.log('Initializing profile dropdown from common.js');
@@ -31,11 +30,7 @@ window.initializeProfileDropdown = function() {
       newAvatarButton.setAttribute('aria-expanded', !isExpanded);
       userDropdown.classList.toggle('show');
 
-      // Close history dropdown if open
-      if (historyButton && historyDropdown) {
-        historyButton.setAttribute('aria-expanded', 'false');
-        historyDropdown.classList.remove('show');
-      }
+
     });
 
     // Ensure dropdown is visible when shown

@@ -41,6 +41,9 @@
             <a href="{{ url_for('auth.profile') }}" class="dropdown-item">
               <i class="fas fa-user"></i> Profile
             </a>
+            <a href="{{ url_for('main.history', type='all') }}" class="dropdown-item">
+              <i class="fas fa-history"></i> History
+            </a>
             {% if current_user.is_admin %}
             <div class="dropdown-divider"></div>
             <a href="{{ url_for('admin.dashboard') }}" class="dropdown-item">
@@ -57,24 +60,7 @@
           </div>
         </div>
 
-        <!-- History Dropdown -->
-        <div class="history-menu">
-          <button id="history-button" class="history-button" aria-expanded="false">
-            <i class="fas fa-history"></i> History
-            <i class="fas fa-chevron-down dropdown-arrow"></i>
-          </button>
-          <div id="history-dropdown" class="history-dropdown">
-            <a href="{{ url_for('main.history', type='all') }}" class="dropdown-item">
-              <i class="fas fa-list"></i> All History
-            </a>
-            <a href="{{ url_for('main.history', type='transcription') }}" class="dropdown-item">
-              <i class="fas fa-microphone"></i> Transcriptions
-            </a>
-            <a href="{{ url_for('main.history', type='translation') }}" class="dropdown-item">
-              <i class="fas fa-language"></i> Translations
-            </a>
-          </div>
-        </div>
+
         {% endif %}
 
         <!-- Theme Selector -->

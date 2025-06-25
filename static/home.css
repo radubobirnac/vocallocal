@@ -221,62 +221,7 @@
   margin: 0.5rem 0;
 }
 
-/* History Menu */
-.history-menu {
-  position: relative;
-  z-index: 1000; /* Ensure it's above other elements */
-  cursor: pointer; /* Show pointer cursor to indicate it's clickable */
-}
-
-.history-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: none;
-  border: none;
-  cursor: pointer !important;
-  padding: 0.5rem;
-  border-radius: var(--radius);
-  color: hsl(var(--foreground));
-  font-weight: 500;
-  transition: background-color 0.2s ease;
-  z-index: 1000 !important; /* Ensure it's above other elements */
-  pointer-events: auto !important; /* Ensure clicks are captured */
-  position: relative; /* Ensure proper stacking context */
-}
-
-.history-button:hover {
-  background-color: hsla(var(--muted), 0.1);
-}
-
-.history-button[aria-expanded="true"] .dropdown-arrow {
-  transform: rotate(180deg);
-}
-
-.history-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  width: 200px;
-  background-color: hsl(var(--background));
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 0.5rem;
-  margin-top: 0.5rem;
-  z-index: 9999 !important; /* Very high z-index to ensure it's above all other elements */
-  display: none;
-  pointer-events: auto !important; /* Ensure clicks are captured */
-  opacity: 1 !important; /* Ensure it's fully visible */
-  visibility: visible !important; /* Ensure it's not hidden */
-}
-
-.history-dropdown.show {
-  display: block !important; /* Use !important to override any other display settings */
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-}
+/* History dropdown styles removed - History is now consolidated under Profile dropdown */
 
 /* Ensure the theme toggle button is properly aligned */
 #theme-toggle-btn {

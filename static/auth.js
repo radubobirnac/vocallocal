@@ -41,8 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.initializeProfileDropdown = function() {
       const avatarButton = document.getElementById('avatar-button');
       const userDropdown = document.getElementById('user-dropdown');
-      const historyButton = document.getElementById('history-button');
-      const historyDropdown = document.getElementById('history-dropdown');
+
 
       if (avatarButton && userDropdown && !avatarButton._initialized) {
         console.log('Initializing profile dropdown from auth.js');
@@ -87,54 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.initializeProfileDropdown();
   }
 
-  // Define the global history dropdown initialization function if it doesn't exist yet
-  if (typeof window.initializeHistoryDropdown !== 'function') {
-    console.log('Auth.js: Defining global history dropdown initialization function');
-    window.initializeHistoryDropdown = function() {
-      const historyButton = document.getElementById('history-button');
-      const historyDropdown = document.getElementById('history-dropdown');
-      const avatarButton = document.getElementById('avatar-button');
-      const userDropdown = document.getElementById('user-dropdown');
-
-      if (historyButton && historyDropdown && !historyButton._initialized) {
-        console.log('Initializing history dropdown from auth.js');
-        // Mark as initialized to prevent duplicate event listeners
-        historyButton._initialized = true;
-
-        // Remove any existing event listeners by cloning and replacing the button
-        const newHistoryButton = historyButton.cloneNode(true);
-        historyButton.parentNode.replaceChild(newHistoryButton, historyButton);
-
-        newHistoryButton.addEventListener('click', (event) => {
-          console.log('History button clicked from auth.js');
-          event.preventDefault();
-          event.stopPropagation();
-
-          const isExpanded = newHistoryButton.getAttribute('aria-expanded') === 'true';
-
-          newHistoryButton.setAttribute('aria-expanded', !isExpanded);
-          historyDropdown.classList.toggle('show');
-
-          // Close user dropdown if open
-          if (avatarButton && userDropdown) {
-            avatarButton.setAttribute('aria-expanded', 'false');
-            userDropdown.classList.remove('show');
-          }
-        });
-
-        // Ensure dropdown is visible when shown
-        historyDropdown.style.zIndex = '1000';
-
-        // Prevent dropdown from closing when clicking inside it
-        historyDropdown.addEventListener('click', (event) => {
-          event.stopPropagation();
-        });
-      }
-    };
-  }
-
-  // Call the global function to initialize the history dropdown
-  window.initializeHistoryDropdown();
+  // History is now consolidated under Profile dropdown, no separate History dropdown needed
 
   // Password visibility toggle - add event listeners
   const passwordToggleBtns = document.querySelectorAll('.password-toggle-btn');

@@ -80,12 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.warn('Home.js: Global profile dropdown initialization function not found');
   }
 
-  if (typeof window.initializeHistoryDropdown === 'function') {
-    console.log('Home.js: Calling global history dropdown initialization');
-    window.initializeHistoryDropdown();
-  } else {
-    console.warn('Home.js: Global history dropdown initialization function not found');
-  }
+  // History is now consolidated under Profile dropdown, no separate History dropdown needed
 
   // Handle theme dropdown separately
   const themeToggleBtn = document.getElementById('theme-toggle-btn');
