@@ -243,11 +243,12 @@
   <!-- Payment Status Handling for Pricing Page -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Check URL parameters for payment status
+      // Check URL parameters for payment status and plan highlighting
       const urlParams = new URLSearchParams(window.location.search);
       const paymentStatus = urlParams.get('payment');
       const planType = urlParams.get('plan');
 
+      // Handle payment status notifications
       if (paymentStatus === 'success' && planType) {
         // Show success message
         showPaymentNotification('success', `Successfully upgraded to ${planType} plan! Your new features are now available.`);
@@ -269,7 +270,84 @@
         const cleanUrl = window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
       }
+
+      // Handle plan highlighting
+      if (planType && (planType === 'basic' || planType === 'professional')) {
+        highlightPlan(planType);
+
+        // Scroll to the highlighted plan
+        setTimeout(() => {
+          scrollToPlan(planType);
+        }, 100);
+
+        // Clean up URL after highlighting (but preserve other parameters)
+        const newUrl = new URL(window.location);
+        newUrl.searchParams.delete('plan');
+        window.history.replaceState({}, document.title, newUrl.toString());
+      }
     });
+
+    function highlightPlan(planType) {
+      // Remove any existing highlights
+      document.querySelectorAll('.pricing-card').forEach(card => {
+        card.classList.remove('plan-highlighted');
+        card.style.transform = '';
+        card.style.boxShadow = '';
+        card.style.border = '';
+      });
+
+      // Find and highlight the specified plan
+      const planCards = document.querySelectorAll('.pricing-card');
+      planCards.forEach(card => {
+        const planHeader = card.querySelector('.plan-header h3');
+        if (planHeader) {
+          const cardPlanType = planHeader.textContent.toLowerCase().includes('basic') ? 'basic' :
+                              planHeader.textContent.toLowerCase().includes('professional') ? 'professional' : 'free';
+
+          if (cardPlanType === planType) {
+            card.classList.add('plan-highlighted');
+            card.style.transform = 'scale(1.05)';
+            card.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.3)';
+            card.style.border = '3px solid #667eea';
+            card.style.transition = 'all 0.3s ease';
+
+            // Add a temporary glow effect
+            card.style.animation = 'planGlow 2s ease-in-out';
+          }
+        }
+      });
+
+      // Add glow animation styles if not already present
+      if (!document.getElementById('plan-highlight-styles')) {
+        const style = document.createElement('style');
+        style.id = 'plan-highlight-styles';
+        style.textContent = `
+          @keyframes planGlow {
+            0%, 100% { box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3); }
+            50% { box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5); }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
+
+    function scrollToPlan(planType) {
+      const planCards = document.querySelectorAll('.pricing-card');
+      planCards.forEach(card => {
+        const planHeader = card.querySelector('.plan-header h3');
+        if (planHeader) {
+          const cardPlanType = planHeader.textContent.toLowerCase().includes('basic') ? 'basic' :
+                              planHeader.textContent.toLowerCase().includes('professional') ? 'professional' : 'free';
+
+          if (cardPlanType === planType) {
+            card.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center'
+            });
+          }
+        }
+      });
+    }
 
     function showPaymentNotification(type, message) {
       // Create notification element

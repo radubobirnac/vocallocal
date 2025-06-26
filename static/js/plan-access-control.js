@@ -11,7 +11,7 @@ class PlanAccessControl {
             'free': {
                 'transcription': ['gemini-2.0-flash-lite', 'gemini'],
                 'translation': ['gemini-2.0-flash-lite'],
-                'tts': ['gemini-2.5-flash-tts'],
+                'tts': [], // No free TTS models - all require upgrade
                 'interpretation': ['gemini-2.0-flash-lite']
             },
             'basic': {
@@ -36,10 +36,12 @@ class PlanAccessControl {
             },
             'professional': {
                 'transcription': [
+                    // Include all basic models
                     'gemini-2.0-flash-lite', 'gemini',
                     'gpt-4o-mini-transcribe',
-                    'gpt-4o-transcribe',
-                    'gemini-2.5-flash-preview-04-17'
+                    'gemini-2.5-flash-preview-04-17',
+                    // Professional-only models
+                    'gpt-4o-transcribe'
                 ],
                 'translation': [
                     'gemini-2.0-flash-lite',
@@ -64,7 +66,7 @@ class PlanAccessControl {
             'gpt-4o-transcribe': { name: 'OpenAI GPT-4o', tier: 'professional' },
             'gemini-2.5-flash-preview-04-17': { name: 'Gemini 2.5 Flash Preview', tier: 'basic' },
             'gemini-2.5-flash': { name: 'Gemini 2.5 Flash Preview', tier: 'basic' },
-            'gemini-2.5-flash-tts': { name: 'Gemini 2.5 Flash TTS', tier: 'free' },
+            'gemini-2.5-flash-tts': { name: 'Gemini 2.5 Flash TTS', tier: 'basic' },
             'gpt4o-mini': { name: 'GPT-4o Mini TTS', tier: 'basic' },
             'openai': { name: 'OpenAI TTS-1', tier: 'professional' }
         };
@@ -287,9 +289,14 @@ class PlanAccessControl {
 
         const requiredPlan = this.getRequiredPlan(model, serviceType);
         const modelName = this.modelInfo[model]?.name || model;
-        const planName = this.planNames[requiredPlan] || 'Higher Plan';
 
-        // Create modal HTML
+        console.log(`Model ${model} requires ${requiredPlan} plan`);
+
+        // Determine which buttons to show based on required plan and current user plan
+        const showBasicButton = requiredPlan === 'basic' || (requiredPlan === 'professional' && this.userPlan === 'free');
+        const showProfessionalButton = requiredPlan === 'professional' || (requiredPlan === 'basic' && this.userPlan === 'free');
+
+        // Create dual-plan modal HTML (consistent with RBAC modal)
         const modalHtml = `
             <div id="upgrade-modal" class="modal-overlay" style="
                 position: fixed;
@@ -310,42 +317,107 @@ class PlanAccessControl {
                     max-width: 500px;
                     margin: 1rem;
                     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                    position: relative;
                 ">
+                    <button id="modal-close-x" style="
+                        position: absolute;
+                        top: 1rem;
+                        right: 1rem;
+                        background: none;
+                        border: none;
+                        font-size: 1.5rem;
+                        cursor: pointer;
+                        color: #999;
+                        width: 30px;
+                        height: 30px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: 50%;
+                        transition: all 0.2s ease;
+                    " onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">×</button>
+
                     <div style="text-align: center;">
                         <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
                         <h2 style="margin: 0 0 1rem 0; color: #333;">Premium Model Access Required</h2>
-                        <p style="margin-bottom: 1.5rem; color: #666;">
-                            <strong>${modelName}</strong> requires <strong>${planName}</strong> to access.
+                        <p style="margin-bottom: 1rem; color: #666;">
+                            <strong>${modelName}</strong> requires ${requiredPlan === 'basic' ? 'Basic Plan' : 'Professional Plan'} or higher.
                         </p>
                         <p style="margin-bottom: 2rem; color: #666;">
-                            Upgrade your subscription to unlock this premium AI model with enhanced accuracy and advanced features.
+                            ${requiredPlan === 'basic' ?
+                                'Upgrade to Basic Plan to access this model and unlock premium AI features.' :
+                                'This premium model requires Professional Plan for access to advanced AI capabilities.'
+                            }
                         </p>
-                        <div style="display: flex; gap: 1rem; justify-content: center;">
-                            <button id="upgrade-btn" class="button button-primary" style="
+
+                        <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 1.5rem;">
+                            ${showBasicButton ? `
+                            <button id="upgrade-basic-btn" data-plan="basic" style="
+                                background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+                                color: white;
+                                border: none;
+                                padding: 1rem 1.5rem;
+                                border-radius: 10px;
+                                font-weight: 600;
+                                cursor: pointer;
+                                transition: all 0.2s ease;
+                                text-align: center;
+                                min-width: 140px;
+                                ${!showProfessionalButton ? 'min-width: 200px;' : ''}
+                            ">
+                                <div style="font-size: 0.9rem; margin-bottom: 0.25rem;">Basic Plan</div>
+                                <div style="font-size: 1.1rem; font-weight: 700;">$4.99/month</div>
+                                ${requiredPlan === 'basic' ? '<div style="font-size: 0.8rem; margin-top: 0.25rem; opacity: 0.9;">Required for this model</div>' : ''}
+                            </button>
+                            ` : ''}
+
+                            ${showProfessionalButton ? `
+                            <button id="upgrade-professional-btn" data-plan="professional" style="
                                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                                 color: white;
                                 border: none;
-                                padding: 0.75rem 1.5rem;
+                                padding: 1rem 1.5rem;
                                 border-radius: 10px;
                                 font-weight: 600;
                                 cursor: pointer;
                                 transition: all 0.2s ease;
+                                text-align: center;
+                                min-width: 140px;
+                                position: relative;
+                                ${!showBasicButton ? 'min-width: 200px;' : ''}
                             ">
-                                Upgrade to ${planName}
+                                ${requiredPlan === 'professional' || !showBasicButton ? `
+                                <div style="
+                                    position: absolute;
+                                    top: -8px;
+                                    right: -8px;
+                                    background: #ff4757;
+                                    color: white;
+                                    padding: 0.2rem 0.5rem;
+                                    border-radius: 8px;
+                                    font-size: 0.7rem;
+                                    font-weight: 700;
+                                ">${requiredPlan === 'professional' ? 'REQUIRED' : 'POPULAR'}</div>
+                                ` : ''}
+                                <div style="font-size: 0.9rem; margin-bottom: 0.25rem;">Professional Plan</div>
+                                <div style="font-size: 1.1rem; font-weight: 700;">$12.99/month</div>
+                                ${requiredPlan === 'professional' ? '<div style="font-size: 0.8rem; margin-top: 0.25rem; opacity: 0.9;">Required for this model</div>' : ''}
                             </button>
-                            <button id="close-modal-btn" class="button button-outline" style="
-                                background: transparent;
-                                color: #667eea;
-                                border: 2px solid #667eea;
-                                padding: 0.75rem 1.5rem;
-                                border-radius: 10px;
-                                font-weight: 600;
-                                cursor: pointer;
-                                transition: all 0.2s ease;
-                            ">
-                                Maybe Later
-                            </button>
+                            ` : ''}
                         </div>
+
+                        <button id="close-modal-btn" style="
+                            background: transparent;
+                            color: #667eea;
+                            border: 2px solid #667eea;
+                            padding: 0.75rem 1.5rem;
+                            border-radius: 10px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.2s ease;
+                        ">
+                            Maybe Later
+                        </button>
                     </div>
                 </div>
             </div>
@@ -359,9 +431,12 @@ class PlanAccessControl {
             this.closeUpgradeModal();
         });
 
-        document.getElementById('upgrade-btn').addEventListener('click', () => {
-            this.redirectToUpgrade(requiredPlan);
+        document.getElementById('modal-close-x').addEventListener('click', () => {
+            this.closeUpgradeModal();
         });
+
+        // Note: upgrade buttons with data-plan attributes are handled by payment.js automatically
+        // The payment.js listens for clicks on elements with [data-plan] attribute
 
         // Close on overlay click
         document.getElementById('upgrade-modal').addEventListener('click', (e) => {
@@ -369,20 +444,39 @@ class PlanAccessControl {
                 this.closeUpgradeModal();
             }
         });
+
+        // Close on Escape key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                this.closeUpgradeModal();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+
+        // Prevent body scroll when modal is open
+        document.body.style.overflow = 'hidden';
     }
 
     closeUpgradeModal() {
         const modal = document.getElementById('upgrade-modal');
         if (modal) {
-            modal.remove();
+            // Add fade out animation
+            modal.style.opacity = '0';
+            modal.style.transform = 'scale(0.9)';
+            modal.style.transition = 'all 0.2s ease-out';
+
+            setTimeout(() => {
+                modal.remove();
+            }, 200);
         }
+
+        // Restore body scroll
+        document.body.style.overflow = '';
     }
 
-    redirectToUpgrade(plan) {
-        // For now, redirect to dashboard with upgrade info
-        // Later this will integrate with Stripe
-        window.location.href = `/dashboard?upgrade=${plan}`;
-    }
+    // Note: Upgrade functionality is now handled by payment.js
+    // The payment.js automatically handles Stripe checkout for buttons with data-plan attributes
 
     // Public method to validate model access before API calls
     validateModelAccess(model, serviceType) {

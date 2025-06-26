@@ -329,12 +329,12 @@ class RBACAccessControl {
                         </p>
 
                         <div class="modal-upgrade-buttons">
-                            <button id="rbac-upgrade-basic-btn" class="upgrade-btn upgrade-btn-basic">
+                            <button id="rbac-upgrade-basic-btn" class="upgrade-btn upgrade-btn-basic" data-plan="basic">
                                 <div class="plan-name">Basic Plan</div>
                                 <div class="plan-price">$4.99/month</div>
                             </button>
 
-                            <button id="rbac-upgrade-professional-btn" class="upgrade-btn upgrade-btn-professional">
+                            <button id="rbac-upgrade-professional-btn" class="upgrade-btn upgrade-btn-professional" data-plan="professional">
                                 <div class="plan-name">Professional Plan</div>
                                 <div class="plan-price">$12.99/month</div>
                                 <div class="popular-badge">POPULAR</div>
@@ -375,18 +375,8 @@ class RBACAccessControl {
             this.closeUpgradeModal();
         });
 
-        // Upgrade button event listeners
-        setupEventListener('rbac-upgrade-basic-btn', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.handleUpgradeClick('basic');
-        });
-
-        setupEventListener('rbac-upgrade-professional-btn', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.handleUpgradeClick('professional');
-        });
+        // Note: upgrade buttons with data-plan attributes are handled by payment.js automatically
+        // The payment.js listens for clicks on elements with [data-plan] attribute
 
         // Close on overlay click (but not on modal content)
         const modal = document.getElementById('rbac-upgrade-modal');
@@ -431,50 +421,7 @@ class RBACAccessControl {
         document.removeEventListener('keydown', this.handleEscape);
     }
 
-    handleUpgradeClick(planType) {
-        console.log(`Upgrade to ${planType} plan clicked`);
 
-        // Close the modal first
-        this.closeUpgradeModal();
-
-        // Show upgrade information (placeholder for future payment integration)
-        const planDetails = {
-            'basic': {
-                name: 'Basic Plan',
-                price: '$4.99/month',
-                features: [
-                    '280 transcription minutes per month',
-                    '50,000 translation words per month',
-                    '60 TTS minutes per month',
-                    '50 AI credits per month',
-                    'Access to premium AI models',
-                    'Email support'
-                ]
-            },
-            'professional': {
-                name: 'Professional Plan',
-                price: '$12.99/month',
-                features: [
-                    '800 transcription minutes per month',
-                    '160,000 translation words per month',
-                    '200 TTS minutes per month',
-                    '150 AI credits per month',
-                    'Access to all premium AI models',
-                    'Priority support',
-                    'Advanced features'
-                ]
-            }
-        };
-
-        const plan = planDetails[planType];
-        if (plan) {
-            const featuresList = plan.features.map(feature => `• ${feature}`).join('\n');
-
-            // For now, show an alert with plan details
-            // This will be replaced with actual payment processing
-            alert(`${plan.name} (${plan.price})\n\nFeatures included:\n${featuresList}\n\nUpgrade functionality will be available when payment processing is implemented.`);
-        }
-    }
 
     // Public method to validate model access before API calls
     validateModelAccess(model) {

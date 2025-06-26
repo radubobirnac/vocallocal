@@ -34,12 +34,17 @@ class PaymentManager {
     setupEventListeners() {
         // Handle upgrade button clicks
         document.addEventListener('click', (e) => {
-            if (e.target.matches('[data-plan]')) {
+            // Check if the clicked element or its parent has data-plan attribute
+            const planButton = e.target.closest('[data-plan]');
+            if (planButton) {
                 e.preventDefault();
-                const planType = e.target.getAttribute('data-plan');
+                e.stopPropagation();
+                const planType = planButton.getAttribute('data-plan');
+                console.log(`Payment button clicked: ${planType}`);
                 this.handleUpgradeClick(planType);
+                return;
             }
-            
+
             // Handle customer portal button
             if (e.target.matches('.customer-portal-btn')) {
                 e.preventDefault();
@@ -76,16 +81,21 @@ class PaymentManager {
     }
 
     async handleUpgradeClick(planType) {
+        console.log(`🚀 handleUpgradeClick called with plan: ${planType}`);
+
         if (this.isProcessing) {
             console.log('Payment already in progress');
             return;
         }
-        
+
         if (!this.stripe) {
+            console.error('❌ Stripe not initialized');
             this.showError('Payment system not initialized. Please refresh the page.');
             return;
         }
-        
+
+        console.log('✅ Starting payment process for plan:', planType);
+
         try {
             this.isProcessing = true;
             sessionStorage.setItem('paymentProcessing', 'true');
@@ -101,11 +111,19 @@ class PaymentManager {
                     plan_type: planType
                 })
             });
-            
+
+            // Check if user needs to login first
+            if (response.status === 401 || response.status === 403) {
+                console.log('User not authenticated, redirecting to login');
+                window.location.href = `/auth/login?next=${encodeURIComponent('/pricing?plan=' + planType)}`;
+                return;
+            }
+
             const data = await response.json();
-            
+
             if (!response.ok) {
-                throw new Error(data.error || 'Failed to create checkout session');
+                console.error('Payment API error:', response.status, data);
+                throw new Error(data.error || `Failed to create checkout session (${response.status})`);
             }
             
             if (!data.success) {

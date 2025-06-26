@@ -156,9 +156,9 @@
           <div class="form-group">
             <label for="tts-model-select" class="form-label">Text-to-Speech Model:</label>
             <select id="tts-model-select" class="form-select mt-2">
-              <option value="gemini-2.5-flash-tts" selected>Gemini 2.5 Flash TTS</option>
-              <option value="gpt4o-mini">GPT-4o Mini TTS</option>
-              <option value="openai">OpenAI TTS-1</option>
+              <option value="gemini-2.5-flash-tts" selected>🔒 Gemini 2.5 Flash TTS</option>
+              <option value="gpt4o-mini">🔒 GPT-4o Mini TTS</option>
+              <option value="openai">🔒 OpenAI TTS-1</option>
             </select>
           </div>
           <!-- End TTS Model Selector -->
@@ -699,5 +699,13 @@
       window.paymentFlowManager.init();
     });
   </script>
+
+  <!-- Stripe Integration for Payment Processing -->
+  <script src="https://js.stripe.com/v3/"></script>
+  <script>
+      // Set Stripe publishable key for payment.js
+      window.stripePublishableKey = '{{ config.STRIPE_PUBLISHABLE_KEY or "" }}';
+  </script>
+  <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
 </body>
 </html>

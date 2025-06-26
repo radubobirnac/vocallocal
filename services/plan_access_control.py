@@ -16,7 +16,7 @@ class PlanAccessControl:
         'free': {
             'transcription': ['gemini-2.0-flash-lite'],
             'translation': ['gemini-2.0-flash-lite'],
-            'tts': ['gemini-2.5-flash-tts'],
+            'tts': [],  # No free TTS models - all require upgrade
             'interpretation': ['gemini-2.0-flash-lite']
         },
         'basic': {
@@ -98,7 +98,7 @@ class PlanAccessControl:
         'gemini-2.5-flash-tts': {
             'name': 'Gemini 2.5 Flash TTS',
             'description': 'High-quality text-to-speech',
-            'tier': 'free'
+            'tier': 'basic'
         },
         'gpt4o-mini': {
             'name': 'GPT-4o Mini TTS',

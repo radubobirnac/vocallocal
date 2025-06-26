@@ -2731,16 +2731,20 @@ function updateModelDropdown(selectElement, models, modelType) {
   // Initialize TTS model selector
   const ttsModelSelect = document.getElementById('tts-model-select');
   if (ttsModelSelect) {
-    // Set default to free model
+    // Set default to first TTS model (all are now premium)
     ttsModelSelect.value = 'gemini-2.5-flash-tts';
 
-    // Save selection to localStorage when changed
+    // Note: TTS model selection access control is handled by plan-access-control.js
+    // This handler only manages localStorage and status display for successful selections
     ttsModelSelect.addEventListener('change', function() {
-      localStorage.setItem('tts-model', this.value);
+      const selectedModel = this.value;
+
+      // Save the selection (plan-access-control.js will handle access validation)
+      localStorage.setItem('tts-model', selectedModel);
 
       // Get the display name from the selected option
       const selectedOption = this.options[this.selectedIndex];
-      const displayName = selectedOption ? selectedOption.textContent : this.value;
+      const displayName = selectedOption ? selectedOption.textContent : selectedModel;
       showStatus(`TTS model set to ${displayName}`, 'success');
     });
 
