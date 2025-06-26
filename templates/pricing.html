@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pricing Plans - Vocal Local</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+
+  <!-- Cache Control Meta Tags -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/upgrade-modal.css') }}">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-1 mb-2 mt-1">
+      <!-- Left Section: Title Only -->
+      <div class="header-title-container">
+        <h1 class="text-2xl font-bold" style="color: hsl(var(--primary)); font-family: 'Poppins', sans-serif;">
+          <a href="{{ url_for('main.index') }}" style="text-decoration: none; color: inherit;">Vocal Local</a>
+        </h1>
+        <p id="app-subtitle" class="text-sm text-muted">Accurate Multilingual Speech-to-Text Transcription</p>
+      </div>
+
+      <!-- Right Section: Navigation -->
+      <div class="flex items-center gap-2 mt-0">
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('main.dashboard') }}" class="button button-outline">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+          </a>
+          <a href="{{ url_for('main.index') }}" class="button button-primary">
+            <i class="fas fa-microphone"></i> Start Transcribing
+          </a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="button button-outline">Login</a>
+          <a href="{{ url_for('auth.register') }}" class="button button-primary">Register</a>
+        {% endif %}
+      </div>
+    </header>
+
+    <!-- Pricing Content -->
+    <div class="pricing-container">
+      <!-- Hero Section -->
+      <div class="pricing-hero" style="text-align: center; margin-bottom: 3rem;">
+        <h1 style="font-size: 2.5rem; margin-bottom: 1rem; color: hsl(var(--primary));">Choose Your Plan</h1>
+        <p style="font-size: 1.2rem; color: hsl(var(--muted-foreground)); max-width: 600px; margin: 0 auto;">
+          Unlock premium AI models, higher usage limits, and advanced features with our flexible subscription plans.
+        </p>
+      </div>
+
+      <!-- Pricing Cards -->
+      <div class="pricing-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; max-width: 1000px; margin: 0 auto;">
+        
+        <!-- Free Plan -->
+        <div class="pricing-card" style="border: 2px solid hsl(var(--border)); border-radius: 15px; padding: 2rem; background: hsl(var(--card)); position: relative;">
+          <div class="plan-header" style="text-align: center; margin-bottom: 2rem;">
+            <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: hsl(var(--foreground));">Free Plan</h3>
+            <div style="font-size: 2.5rem; font-weight: 700; color: hsl(var(--primary)); margin-bottom: 0.5rem;">$0</div>
+            <div style="color: hsl(var(--muted-foreground));">per month</div>
+          </div>
+          
+          <ul style="list-style: none; padding: 0; margin-bottom: 2rem;">
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              60 transcription minutes per month
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              1,000 translation words per month
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              5 TTS minutes per month
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              5 AI credits per month
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              Basic AI models
+            </li>
+          </ul>
+          
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('main.index') }}" class="button button-outline w-full" style="width: 100%; justify-content: center;">
+              Current Plan
+            </a>
+          {% else %}
+            <a href="{{ url_for('auth.register') }}" class="button button-outline w-full" style="width: 100%; justify-content: center;">
+              Get Started Free
+            </a>
+          {% endif %}
+        </div>
+
+        <!-- Basic Plan -->
+        <div class="pricing-card" style="border: 2px solid #4CAF50; border-radius: 15px; padding: 2rem; background: hsl(var(--card)); position: relative;">
+          <div class="plan-header" style="text-align: center; margin-bottom: 2rem;">
+            <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: hsl(var(--foreground));">Basic Plan</h3>
+            <div style="font-size: 2.5rem; font-weight: 700; color: #4CAF50; margin-bottom: 0.5rem;">$4.99</div>
+            <div style="color: hsl(var(--muted-foreground));">per month</div>
+          </div>
+          
+          <ul style="list-style: none; padding: 0; margin-bottom: 2rem;">
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              280 transcription minutes per month
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              50,000 translation words per month
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              60 TTS minutes per month
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              50 AI credits per month
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              Access to premium AI models
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              Email support
+            </li>
+          </ul>
+          
+          {% if current_user.is_authenticated %}
+            <button class="button button-primary w-full upgrade-btn" data-plan="basic" style="width: 100%; justify-content: center;">
+              Upgrade to Basic
+            </button>
+          {% else %}
+            <a href="{{ url_for('auth.login', next='/pricing') }}" class="button button-primary w-full" style="width: 100%; justify-content: center;">
+              Choose Basic Plan
+            </a>
+          {% endif %}
+        </div>
+
+        <!-- Professional Plan -->
+        <div class="pricing-card" style="border: 2px solid #667eea; border-radius: 15px; padding: 2rem; background: hsl(var(--card)); position: relative;">
+          <div style="position: absolute; top: -10px; right: 20px; background: #ff4757; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">
+            POPULAR
+          </div>
+          
+          <div class="plan-header" style="text-align: center; margin-bottom: 2rem;">
+            <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: hsl(var(--foreground));">Professional Plan</h3>
+            <div style="font-size: 2.5rem; font-weight: 700; color: #667eea; margin-bottom: 0.5rem;">$12.99</div>
+            <div style="color: hsl(var(--muted-foreground));">per month</div>
+          </div>
+          
+          <ul style="list-style: none; padding: 0; margin-bottom: 2rem;">
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              800 transcription minutes per month
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              160,000 translation words per month
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              200 TTS minutes per month
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              150 AI credits per month
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              Access to all premium AI models
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              Priority email support
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              Advanced features
+            </li>
+          </ul>
+          
+          {% if current_user.is_authenticated %}
+            <button class="button button-primary w-full upgrade-btn" data-plan="professional" style="width: 100%; justify-content: center; background: #667eea;">
+              Upgrade to Professional
+            </button>
+          {% else %}
+            <a href="{{ url_for('auth.login', next='/pricing') }}" class="button button-primary w-full" style="width: 100%; justify-content: center; background: #667eea;">
+              Choose Professional Plan
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- FAQ Section -->
+      <div class="faq-section" style="margin-top: 4rem; max-width: 800px; margin-left: auto; margin-right: auto;">
+        <h2 style="text-align: center; margin-bottom: 2rem; color: hsl(var(--primary));">Frequently Asked Questions</h2>
+        
+        <div class="faq-item" style="margin-bottom: 1.5rem; padding: 1.5rem; border: 1px solid hsl(var(--border)); border-radius: 10px;">
+          <h3 style="margin-bottom: 0.5rem; color: hsl(var(--foreground));">Can I change my plan anytime?</h3>
+          <p style="color: hsl(var(--muted-foreground)); margin: 0;">Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately, and billing is prorated.</p>
+        </div>
+        
+        <div class="faq-item" style="margin-bottom: 1.5rem; padding: 1.5rem; border: 1px solid hsl(var(--border)); border-radius: 10px;">
+          <h3 style="margin-bottom: 0.5rem; color: hsl(var(--foreground));">What happens if I exceed my limits?</h3>
+          <p style="color: hsl(var(--muted-foreground)); margin: 0;">When you reach your plan limits, you can use AI credits as a fallback. You can purchase additional credits or upgrade your plan for higher limits.</p>
+        </div>
+        
+        <div class="faq-item" style="margin-bottom: 1.5rem; padding: 1.5rem; border: 1px solid hsl(var(--border)); border-radius: 10px;">
+          <h3 style="margin-bottom: 0.5rem; color: hsl(var(--foreground));">Is there a free trial?</h3>
+          <p style="color: hsl(var(--muted-foreground)); margin: 0;">Yes! Our Free Plan gives you access to basic features with generous limits to try out the platform before upgrading.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stripe Integration for Payment Processing -->
+  <script src="https://js.stripe.com/v3/"></script>
+  <script>
+      // Set Stripe publishable key for payment.js
+      window.stripePublishableKey = '{{ config.STRIPE_PUBLISHABLE_KEY or "" }}';
+  </script>
+  <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
+
+  <!-- Payment Status Handling for Pricing Page -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check URL parameters for payment status
+      const urlParams = new URLSearchParams(window.location.search);
+      const paymentStatus = urlParams.get('payment');
+      const planType = urlParams.get('plan');
+
+      if (paymentStatus === 'success' && planType) {
+        // Show success message
+        showPaymentNotification('success', `Successfully upgraded to ${planType} plan! Your new features are now available.`);
+
+        // Clean up URL
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+
+        // Redirect to dashboard after showing success message
+        setTimeout(() => {
+          window.location.href = '{{ url_for("main.dashboard") }}';
+        }, 3000);
+
+      } else if (paymentStatus === 'cancelled') {
+        // Show cancellation message
+        showPaymentNotification('info', 'Payment was cancelled. You can try again anytime.');
+
+        // Clean up URL
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    });
+
+    function showPaymentNotification(type, message) {
+      // Create notification element
+      const notification = document.createElement('div');
+      notification.className = `payment-notification payment-notification-${type}`;
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        max-width: 400px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideInRight 0.3s ease-out;
+      `;
+
+      // Set background color based on type
+      if (type === 'success') {
+        notification.style.backgroundColor = '#4CAF50';
+      } else if (type === 'info') {
+        notification.style.backgroundColor = '#2196F3';
+      } else {
+        notification.style.backgroundColor = '#f44336';
+      }
+
+      notification.textContent = message;
+
+      // Add animation styles
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes slideInRight {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+      `;
+      document.head.appendChild(style);
+
+      document.body.appendChild(notification);
+
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.remove();
+        }
+      }, 5000);
+    }
+  </script>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script src="{{ url_for('static', filename='common.js') }}"></script>
+  <script src="{{ url_for('static', filename='auth.js') }}"></script>
+</body>
+</html>

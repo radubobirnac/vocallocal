@@ -73,6 +73,13 @@
         </div>
         <!-- End Theme Selector -->
 
+        <!-- Upgrade Button -->
+        <button id="upgrade-button" class="button button-outline button-icon upgrade-header-btn" title="Upgrade Plan">
+          <i class="fas fa-crown"></i>
+          <span class="upgrade-text">Upgrade</span>
+        </button>
+        <!-- End Upgrade Button -->
+
         <!-- Authentication Links / Profile Section -->
         {% if current_user.is_authenticated %}
           <div class="user-avatar-menu">
@@ -503,12 +510,14 @@
   <!-- Set user role for model access control -->
   {% if current_user.is_authenticated %}
   <!-- User data injection for authenticated users -->
-  <script type="application/json" id="user-data">{{ {
-    'email': current_user.email,
-    'username': current_user.username,
-    'role': current_user.role|default('normal_user'),
-    'is_admin': current_user.is_admin
-  }|tojson }}</script>
+  <script type="application/json" id="user-data">
+    {{ {
+      'email': current_user.email,
+      'username': current_user.username,
+      'role': current_user.role|default('normal_user'),
+      'is_admin': current_user.is_admin
+    }|tojson }}
+  </script>
   <script type="application/json" id="user-role">{{ (current_user.role|default('normal_user'))|tojson }}</script>
   {% endif %}
 
@@ -544,9 +553,151 @@
 
   <script src="{{ versioned_url_for('static', filename='background-processing.js') }}"></script>
   <script src="{{ versioned_url_for('static', filename='common.js') }}"></script>
-  <script src="{{ versioned_url_for('static', filename='auth.js') }}"></script>
   {% if current_user.is_authenticated %}
   <script src="{{ versioned_url_for('static', filename='js/usage-enforcement.js') }}"></script>
   {% endif %}
+
+  <!-- Upgrade Button Logic -->
+  <script>
+    // Set authentication status and URLs for JavaScript
+    window.upgradeConfig = {
+    isAuthenticated: {{ current_user.is_authenticated()|lower }},
+    pricingUrl: '{{ url_for("pricing") }}',
+    loginUrl: '{{ url_for("auth.login", next="/pricing") }}'
+  };
+
+    // Payment flow state management
+    window.paymentFlowManager = {
+      isProcessing: false,
+      upgradeButton: null,
+
+      init: function() {
+        this.upgradeButton = document.getElementById('upgrade-button');
+        this.setupEventListeners();
+        this.checkForReturnFromPayment();
+      },
+
+      setupEventListeners: function() {
+        if (!this.upgradeButton) return;
+
+        // Handle upgrade button click
+        this.upgradeButton.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.handleUpgradeClick();
+        });
+
+        // Handle page visibility changes (detect return from external sites)
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) {
+            this.handlePageVisible();
+          }
+        });
+
+        // Handle beforeunload to set processing state
+        window.addEventListener('beforeunload', () => {
+          if (this.isProcessing) {
+            sessionStorage.setItem('upgradeProcessing', 'true');
+          }
+        });
+      },
+
+      handleUpgradeClick: function() {
+        if (this.isProcessing) {
+          console.log('Upgrade already in progress');
+          return;
+        }
+
+        this.setProcessingState(true);
+
+        // Check if user is authenticated
+        if (window.upgradeConfig.isAuthenticated) {
+          console.log('Authenticated user clicking upgrade - redirecting to pricing');
+          window.location.href = window.upgradeConfig.pricingUrl;
+        } else {
+          console.log('Unauthenticated user clicking upgrade - redirecting to login');
+          window.location.href = window.upgradeConfig.loginUrl;
+        }
+      },
+
+      handlePageVisible: function() {
+        // Clear processing state when user returns to page
+        if (this.isProcessing || sessionStorage.getItem('upgradeProcessing')) {
+          console.log('User returned to page, clearing processing state');
+          this.setProcessingState(false);
+          sessionStorage.removeItem('upgradeProcessing');
+        }
+      },
+
+      checkForReturnFromPayment: function() {
+        // Check if user is returning from a payment flow
+        const wasProcessing = sessionStorage.getItem('upgradeProcessing');
+        if (wasProcessing) {
+          console.log('Detected return from payment flow, clearing state');
+          this.setProcessingState(false);
+          sessionStorage.removeItem('upgradeProcessing');
+        }
+
+        // Check URL parameters for payment status
+        const urlParams = new URLSearchParams(window.location.search);
+        const paymentStatus = urlParams.get('payment');
+
+        if (paymentStatus === 'cancelled') {
+          this.showPaymentCancelledMessage();
+          // Clean up URL
+          const cleanUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+      },
+
+      setProcessingState: function(processing) {
+        this.isProcessing = processing;
+
+        if (!this.upgradeButton) return;
+
+        if (processing) {
+          this.upgradeButton.classList.add('loading');
+          this.upgradeButton.disabled = true;
+          this.upgradeButton.title = 'Processing upgrade...';
+        } else {
+          this.upgradeButton.classList.remove('loading');
+          this.upgradeButton.disabled = false;
+          this.upgradeButton.title = 'Upgrade Plan';
+        }
+      },
+
+      showPaymentCancelledMessage: function() {
+        // Show a brief notification that payment was cancelled
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #f8d7da;
+          color: #721c24;
+          padding: 12px 20px;
+          border-radius: 8px;
+          border: 1px solid #f5c6cb;
+          z-index: 1000;
+          font-size: 14px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        `;
+        notification.textContent = 'Payment cancelled. You can try again anytime.';
+
+        document.body.appendChild(notification);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.remove();
+          }
+        }, 5000);
+      }
+    };
+
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      window.paymentFlowManager.init();
+    });
+  </script>
 </body>
 </html>

@@ -43,8 +43,8 @@ def create_checkout_session():
         user_email = current_user.email
         
         # Create success and cancel URLs
-        success_url = request.url_root + 'dashboard?payment=success&plan=' + plan_type
-        cancel_url = request.url_root + 'dashboard?payment=cancelled'
+        success_url = request.url_root + 'pricing?payment=success&plan=' + plan_type
+        cancel_url = request.url_root + 'pricing?payment=cancelled'
         
         # Create checkout session
         result = payment_service.create_checkout_session(
@@ -116,7 +116,7 @@ def customer_portal():
             return jsonify({'error': 'No subscription found'}), 404
         
         # Create return URL
-        return_url = request.url_root + 'dashboard'
+        return_url = request.url_root + 'pricing'
         
         # Create customer portal session
         result = payment_service.create_customer_portal_session(

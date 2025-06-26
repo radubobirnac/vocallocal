@@ -20,12 +20,15 @@ class PaymentManager {
         } else {
             console.warn('Stripe publishable key not found');
         }
-        
+
         // Set up event listeners
         this.setupEventListeners();
-        
+
         // Check for payment status in URL
         this.checkPaymentStatus();
+
+        // Handle page visibility changes (detect return from Stripe)
+        this.setupVisibilityHandlers();
     }
     
     setupEventListeners() {
@@ -44,7 +47,34 @@ class PaymentManager {
             }
         });
     }
-    
+
+    setupVisibilityHandlers() {
+        // Handle page visibility changes to detect return from external sites
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                this.handlePageVisible();
+            }
+        });
+
+        // Handle beforeunload to track processing state
+        window.addEventListener('beforeunload', () => {
+            if (this.isProcessing) {
+                sessionStorage.setItem('paymentProcessing', 'true');
+            }
+        });
+    }
+
+    handlePageVisible() {
+        // Clear processing state when user returns to page
+        const wasProcessing = sessionStorage.getItem('paymentProcessing');
+        if (wasProcessing || this.isProcessing) {
+            console.log('User returned to page, clearing payment processing state');
+            this.isProcessing = false;
+            this.hideLoading();
+            sessionStorage.removeItem('paymentProcessing');
+        }
+    }
+
     async handleUpgradeClick(planType) {
         if (this.isProcessing) {
             console.log('Payment already in progress');
@@ -58,8 +88,9 @@ class PaymentManager {
         
         try {
             this.isProcessing = true;
+            sessionStorage.setItem('paymentProcessing', 'true');
             this.showLoading(`Preparing ${planType} plan checkout...`);
-            
+
             // Create checkout session
             const response = await fetch('/payment/create-checkout-session', {
                 method: 'POST',
@@ -98,6 +129,8 @@ class PaymentManager {
         } finally {
             this.isProcessing = false;
             this.hideLoading();
+            // Clear any processing state from session storage
+            sessionStorage.removeItem('paymentProcessing');
         }
     }
     
