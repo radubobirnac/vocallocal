@@ -81,6 +81,39 @@ html[data-theme='dark'] {
   .record-button.recording {
     background-color: hsl(var(--destructive)); /* Ensure recording button uses dark destructive */
   }
+
+  /* Dark mode box shadow adjustments for better visibility */
+  .card {
+    box-shadow: 0 1px 3px 0 rgba(255, 255, 255, 0.05), 0 1px 2px 0 rgba(255, 255, 255, 0.03);
+  }
+
+  .record-button {
+    box-shadow: 0 4px 6px rgba(255, 255, 255, 0.05);
+  }
+
+  .header-record-button {
+    box-shadow: 0 2px 4px rgba(255, 255, 255, 0.05);
+  }
+
+  .record-button:hover, .header-record-button:hover {
+    box-shadow: 0 6px 8px rgba(255, 255, 255, 0.08);
+  }
+
+  .theme-options-dropdown {
+    box-shadow: 0 4px 6px rgba(255, 255, 255, 0.05);
+  }
+
+  .upgrade-header-btn:hover {
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.6);
+  }
+
+  .settings-content {
+    box-shadow: 0 2px 10px rgba(255, 255, 255, 0.05);
+  }
+
+  .notification {
+    box-shadow: 0 4px 6px rgba(255, 255, 255, 0.05);
+  }
 }
 
 * {
@@ -791,7 +824,7 @@ p {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
+  background-color: hsl(var(--muted));
   transition: .4s;
 }
 
@@ -829,16 +862,16 @@ input:checked + .slider:before {
 
 /* Translation Model Toggle specific styles */
 #translation-model-toggle + .slider {
-  background-color: #f0f0f0;
-  border: 2px solid #ddd;
+  background-color: hsl(var(--muted));
+  border: 2px solid hsl(var(--border));
 }
 
 #translation-model-toggle:checked + .slider {
-  background-color: #4CAF50;
+  background-color: hsl(var(--primary));
 }
 
 #translation-model-description {
-  color: #666;
+  color: hsl(var(--muted-foreground));
   font-style: italic;
   margin-top: 0.5rem;
   font-size: 0.875rem;

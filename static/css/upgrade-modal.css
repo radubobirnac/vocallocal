@@ -20,7 +20,8 @@
 }
 
 .modal-content {
-    background: white !important;
+    background: hsl(var(--card)) !important;
+    color: hsl(var(--card-foreground)) !important;
     padding: 2.5rem !important;
     border-radius: 20px !important;
     max-width: 600px !important;
@@ -28,6 +29,7 @@
     max-height: 90vh !important;
     overflow-y: auto !important;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid hsl(var(--border)) !important;
     position: relative !important;
     animation: modalSlideIn 0.3s ease-out;
 }
@@ -62,7 +64,7 @@
     border: none !important;
     font-size: 1.5rem !important;
     cursor: pointer !important;
-    color: #999 !important;
+    color: hsl(var(--muted-foreground)) !important;
     width: 30px !important;
     height: 30px !important;
     display: flex !important;
@@ -73,8 +75,8 @@
 }
 
 .modal-close-x:hover {
-    background: #f0f0f0 !important;
-    color: #666 !important;
+    background: hsl(var(--accent)) !important;
+    color: hsl(var(--accent-foreground)) !important;
 }
 
 /* Lock icon gradient */
@@ -90,7 +92,7 @@
 /* Modal title */
 .modal-title {
     margin: 0 0 1rem 0 !important;
-    color: #333 !important;
+    color: hsl(var(--foreground)) !important;
     font-size: 1.8rem !important;
     font-weight: 700 !important;
 }
@@ -98,14 +100,14 @@
 /* Modal description */
 .modal-description {
     margin-bottom: 1.5rem !important;
-    color: #666 !important;
+    color: hsl(var(--muted-foreground)) !important;
     font-size: 1.1rem !important;
     line-height: 1.5 !important;
 }
 
 .modal-subtitle {
     margin-bottom: 2.5rem !important;
-    color: #888 !important;
+    color: hsl(var(--muted-foreground)) !important;
     font-size: 0.95rem !important;
 }
 
@@ -179,8 +181,8 @@
 /* Close/Cancel button */
 .modal-close-btn {
     background: transparent !important;
-    color: #999 !important;
-    border: 1px solid #ddd !important;
+    color: hsl(var(--muted-foreground)) !important;
+    border: 1px solid hsl(var(--border)) !important;
     padding: 0.75rem 1.5rem !important;
     border-radius: 8px !important;
     font-weight: 500 !important;
@@ -190,8 +192,9 @@
 }
 
 .modal-close-btn:hover {
-    border-color: #999 !important;
-    color: #666 !important;
+    border-color: hsl(var(--foreground)) !important;
+    color: hsl(var(--foreground)) !important;
+    background: hsl(var(--accent)) !important;
 }
 
 /* Responsive design */
@@ -257,7 +260,7 @@ body.modal-open {
 .upgrade-btn:focus,
 .modal-close-btn:focus,
 .modal-close-x:focus {
-    outline: 2px solid #667eea !important;
+    outline: 2px solid hsl(var(--ring)) !important;
     outline-offset: 2px !important;
 }
 
@@ -283,4 +286,13 @@ body.modal-open {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* Dark mode specific adjustments */
+html[data-theme='dark'] .modal-overlay {
+    background: rgba(0, 0, 0, 0.8) !important;
+}
+
+html[data-theme='dark'] .modal-content {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
 }
