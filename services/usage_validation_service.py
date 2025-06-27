@@ -17,8 +17,8 @@ class UsageValidationService:
     # Default plan limits (fallback if Firebase data is unavailable)
     DEFAULT_PLAN_LIMITS = {
         'free': {
-            'transcriptionMinutes': 60,  # 60 minutes total for transcription/translation combined
-            'translationWords': 0,       # No translation words for free users
+            'transcriptionMinutes': 60,  # 60 minutes for transcription
+            'translationWords': 10000,   # 10,000 words for translation (shared quota concept)
             'ttsMinutes': 0,             # No TTS access for free users
             'aiCredits': 0               # No AI credits for free users
         },

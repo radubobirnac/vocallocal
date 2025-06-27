@@ -74,9 +74,9 @@ class UserAccountService(FirebaseModel):
                 "payAsYouGo": {
                     "unitsRemaining": {
                         "transcriptionMinutes": 10,  # Free trial minutes
-                        "translationWords": 1000,    # Free trial words
-                        "ttsMinutes": 5,            # Free trial TTS minutes
-                        "aiCredits": 5              # Free trial AI credits
+                        "translationWords": 1000,    # Free trial translation words
+                        "ttsMinutes": 0,             # No TTS for free users
+                        "aiCredits": 0               # No AI credits for free users
                     },
                     "purchaseHistory": []
                 }

@@ -21,9 +21,9 @@ The system includes four subscription plans with exact specifications:
 #### 1. Free Plan
 - **Price**: $0.00
 - **Transcription**: 60 minutes
-- **Translation**: 0 words
-- **TTS**: 0 minutes
-- **AI Credits**: 0
+- **Translation**: 10,000 words
+- **TTS**: Not available
+- **AI Credits**: Not available
 - **Model**: gemini-2.0-flash-lite
 
 #### 2. Basic Plan

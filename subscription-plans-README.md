@@ -14,8 +14,8 @@ Service plans provide users with a set of features and usage limits:
 
 1. **Free Plan**
    - 60 minutes of AI transcription (gemini-2.0-flash-lite model)
-   - 5,000 words of translation
-   - No text-to-speech minutes
+   - 10,000 words of translation
+   - No text-to-speech access
    - No AI credits
    - Price: Free
 
