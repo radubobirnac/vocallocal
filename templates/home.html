@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='styles.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='auth.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='home.css') }}">
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/upgrade-modal.css') }}">
 </head>
 <body>
   <div class="home-container">
@@ -276,53 +277,73 @@
         <!-- Free Plan -->
         <div class="pricing-card">
           <div class="pricing-header">
-            <h3 class="pricing-title">Free</h3>
+            <h3 class="pricing-title">Free Plan</h3>
             <p class="pricing-price">$0<span>/month</span></p>
           </div>
           <div class="pricing-features">
             <ul>
-              <li>60 mins AI transcription (basic model)</li>
-              <li>Translation included (shared with transcription)</li>
-              <li>Uses Gemini 2.0 flash lite</li>
-              <li class="feature-disabled">No text-to-speech</li>
-              <li class="feature-disabled">No AI credits</li>
+              <li>60 transcription minutes per month</li>
+              <li>1,000 translation words per month</li>
+              <li>5 TTS minutes per month</li>
+              <li>5 AI credits per month</li>
+              <li>Basic AI models</li>
             </ul>
           </div>
-          <a href="{{ url_for('auth.register') }}" class="button button-outline pricing-button">Get Started</a>
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('main.index') }}" class="button button-outline pricing-button">Current Plan</a>
+          {% else %}
+            <a href="{{ url_for('auth.register') }}" class="button button-outline pricing-button">Get Started Free</a>
+          {% endif %}
         </div>
 
         <!-- Basic Plan -->
         <div class="pricing-card pricing-card-highlighted">
           <div class="pricing-header">
-            <h3 class="pricing-title">Basic</h3>
+            <h3 class="pricing-title">Basic Plan</h3>
             <p class="pricing-price">$4.99<span>/month</span></p>
           </div>
           <div class="pricing-features">
             <ul>
-              <li>280 mins AI transcription (premium model)</li>
-              <li>50k words translation (premium model)</li>
-              <li>60 mins text-to-speech</li>
-              <li>50 AI credits</li>
+              <li>280 transcription minutes per month</li>
+              <li>50,000 translation words per month</li>
+              <li>60 TTS minutes per month</li>
+              <li>50 AI credits per month</li>
+              <li>Access to premium AI models</li>
+              <li>Email support</li>
             </ul>
           </div>
-          <a href="{{ url_for('auth.register') }}?plan=basic" class="button button-primary pricing-button">Subscribe</a>
+          {% if current_user.is_authenticated %}
+            <button class="button button-primary pricing-button upgrade-btn" data-plan="basic">Upgrade to Basic</button>
+          {% else %}
+            <a href="{{ url_for('auth.login', next='/pricing') }}" class="button button-primary pricing-button">Choose Basic Plan</a>
+          {% endif %}
         </div>
 
         <!-- Professional Plan -->
-        <div class="pricing-card">
+        <div class="pricing-card" style="position: relative;">
+          <div style="position: absolute; top: -10px; right: 20px; background: #ff4757; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">
+            POPULAR
+          </div>
           <div class="pricing-header">
-            <h3 class="pricing-title">Professional</h3>
+            <h3 class="pricing-title">Professional Plan</h3>
             <p class="pricing-price">$12.99<span>/month</span></p>
           </div>
           <div class="pricing-features">
             <ul>
-              <li>800 mins AI transcription (premium model)</li>
-              <li>160k words translation</li>
-              <li>200 mins text-to-speech</li>
-              <li>150 AI credits</li>
+              <li>800 transcription minutes per month</li>
+              <li>160,000 translation words per month</li>
+              <li>200 TTS minutes per month</li>
+              <li>150 AI credits per month</li>
+              <li>Access to all premium AI models</li>
+              <li>Priority email support</li>
+              <li>Advanced features</li>
             </ul>
           </div>
-          <a href="{{ url_for('auth.register') }}?plan=professional" class="button button-outline pricing-button">Subscribe</a>
+          {% if current_user.is_authenticated %}
+            <button class="button button-primary pricing-button upgrade-btn" data-plan="professional">Upgrade to Professional</button>
+          {% else %}
+            <a href="{{ url_for('auth.login', next='/pricing') }}" class="button button-primary pricing-button">Choose Professional Plan</a>
+          {% endif %}
         </div>
       </div>
 
@@ -412,5 +433,13 @@
       }, 500); // 500ms delay to ensure all scripts are loaded
     });
   </script>
+
+  <!-- Stripe Integration for Payment Processing -->
+  <script src="https://js.stripe.com/v3/"></script>
+  <script>
+      // Set Stripe publishable key for payment.js
+      window.stripePublishableKey = '{{ config.STRIPE_PUBLISHABLE_KEY or "" }}';
+  </script>
+  <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
 </body>
 </html>

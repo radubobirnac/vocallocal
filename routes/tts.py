@@ -199,22 +199,44 @@ def text_to_speech():
         # Use the TTS service to generate speech
         output_file_path = tts_service.synthesize(text, language, tts_model)
 
-        # Track usage after successful TTS generation
+        # Track AI credits usage after successful TTS generation
         try:
-            # Estimate TTS duration (same calculation as before)
-            word_count = len(text.split())
-            estimated_minutes = max(0.1, word_count / 150.0)
+            # Get actual audio duration
+            from services.audio_utils import get_audio_duration, calculate_tts_credits, estimate_duration_from_text
 
-            from services.user_account_service import UserAccountService
-            UserAccountService.track_usage(
+            # Try to get actual audio duration
+            actual_duration_seconds, detection_method = get_audio_duration(output_file_path)
+
+            if actual_duration_seconds is not None:
+                actual_minutes = actual_duration_seconds / 60.0
+                print(f"Actual TTS duration detected: {actual_minutes:.2f} minutes using {detection_method}")
+            else:
+                # Fallback to text-based estimation
+                actual_minutes = estimate_duration_from_text(text)
+                print(f"Using estimated TTS duration: {actual_minutes:.2f} minutes (audio detection failed)")
+
+            # Get user's plan to calculate credits
+            from services.usage_validation_service import UsageValidationService
+            usage_data = UsageValidationService.get_user_usage_data(current_user.email)
+            user_plan = usage_data['plan_type']
+
+            # Calculate AI credits needed
+            credits_used = calculate_tts_credits(user_plan, actual_minutes)
+
+            # Deduct AI credits instead of TTS minutes
+            from services.usage_tracking_service import UsageTrackingService
+            result = UsageTrackingService.deduct_ai_credits(
                 user_id=current_user.email.replace('.', ','),
-                service_type='ttsMinutes',
-                amount=estimated_minutes
+                credits_used=credits_used
             )
-            print(f"Usage tracked: {estimated_minutes} TTS minutes for {current_user.email}")
+
+            if result['success']:
+                print(f"AI credits deducted: {credits_used:.2f} credits for {actual_minutes:.2f} minutes TTS (plan: {user_plan})")
+            else:
+                print(f"Warning: Failed to deduct AI credits: {result.get('error', 'Unknown error')}")
 
         except Exception as usage_error:
-            print(f"Error tracking TTS usage: {str(usage_error)}")
+            print(f"Error tracking TTS AI credits usage: {str(usage_error)}")
             # Don't fail the request if usage tracking fails
 
         print(f"Sending audio file: {output_file_path}")

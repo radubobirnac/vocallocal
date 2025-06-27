@@ -251,7 +251,7 @@ class UsageValidationService:
     @staticmethod
     def validate_tts_usage(user_email, minutes_requested):
         """
-        Validate if user can perform TTS for the requested minutes.
+        Validate if user can perform TTS for the requested minutes using AI credits.
 
         Args:
             user_email (str): User's email address
@@ -277,38 +277,45 @@ class UsageValidationService:
                 }
 
             usage_data = UsageValidationService.get_user_usage_data(user_email)
-
-            limit = usage_data['limits']['ttsMinutes']
-            used = usage_data['used']['ttsMinutes']
-            remaining = max(0, limit - used)
-
-            allowed = remaining >= minutes_requested
+            plan_type = usage_data['plan_type']
 
             # For free users, TTS is completely blocked
-            if usage_data['plan_type'] == 'free':
+            if plan_type == 'free':
                 return {
                     'allowed': False,
                     'service': 'tts',
                     'requested': minutes_requested,
                     'limit': 0,
-                    'used': used,
+                    'used': 0,
                     'remaining': 0,
                     'plan_type': 'free',
                     'upgrade_required': True,
                     'message': 'Text-to-Speech is not available on the Free Plan. Please upgrade to access TTS features.'
                 }
 
+            # Calculate credits needed based on user's plan
+            from services.audio_utils import calculate_tts_credits
+            credits_needed = calculate_tts_credits(plan_type, minutes_requested)
+
+            # Check AI credits availability
+            ai_credits_limit = usage_data['limits']['aiCredits']
+            ai_credits_used = usage_data['used']['aiCredits']
+            ai_credits_remaining = max(0, ai_credits_limit - ai_credits_used)
+
+            allowed = ai_credits_remaining >= credits_needed
+
             return {
                 'allowed': allowed,
                 'service': 'tts',
                 'requested': minutes_requested,
-                'limit': limit,
-                'used': used,
-                'remaining': remaining,
-                'plan_type': usage_data['plan_type'],
-                'upgrade_required': not allowed and limit > 0,
-                'message': UsageValidationService._get_validation_message(
-                    'tts', allowed, remaining, minutes_requested, usage_data['plan_type']
+                'credits_needed': credits_needed,
+                'limit': ai_credits_limit,
+                'used': ai_credits_used,
+                'remaining': ai_credits_remaining,
+                'plan_type': plan_type,
+                'upgrade_required': not allowed and ai_credits_limit > 0,
+                'message': UsageValidationService._get_tts_validation_message(
+                    allowed, ai_credits_remaining, credits_needed, minutes_requested, plan_type
                 )
             }
 
@@ -469,6 +476,33 @@ class UsageValidationService:
                 return f"❌ You've reached your monthly {service_name} limit. Usage will reset next month or upgrade for more."
 
         return f"❌ Insufficient {service_name}. You have {remaining:.1f} remaining but requested {requested:.1f}."
+
+    @staticmethod
+    def _get_tts_validation_message(allowed, credits_remaining, credits_needed, minutes_requested, plan_type):
+        """
+        Generate TTS-specific validation message based on AI credits.
+
+        Args:
+            allowed (bool): Whether the request is allowed
+            credits_remaining (float): Remaining AI credits
+            credits_needed (float): Credits needed for this request
+            minutes_requested (float): Minutes of TTS requested
+            plan_type (str): User's plan type
+
+        Returns:
+            str: Human-readable validation message
+        """
+        if allowed:
+            credits_after = credits_remaining - credits_needed
+            return f"✓ TTS request approved. {credits_needed:.1f} AI credits will be used for {minutes_requested:.1f} minutes. {credits_after:.1f} credits remaining."
+
+        if credits_remaining <= 0:
+            if plan_type == 'free':
+                return f"❌ TTS requires AI credits. Upgrade to Basic (50 credits) or Professional (150 credits) for TTS access."
+            else:
+                return f"❌ You've used all your AI credits. Usage will reset next month or upgrade for more credits."
+
+        return f"❌ Insufficient AI credits for TTS. You have {credits_remaining:.1f} credits but need {credits_needed:.1f} for {minutes_requested:.1f} minutes."
 
     @staticmethod
     def _get_user_role(user_email):
