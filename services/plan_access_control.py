@@ -32,7 +32,8 @@ class PlanAccessControl:
             ],
             'tts': [
                 'gemini-2.5-flash-tts',
-                'gpt4o-mini'
+                'gpt4o-mini',
+                'openai'
             ],
             'interpretation': [
                 'gemini-2.0-flash-lite',
@@ -119,10 +120,21 @@ class PlanAccessControl:
             return 'free'
 
         try:
-            # Get user plan from Firebase or session
-            # This should be implemented based on your user model
-            user_plan = getattr(current_user, 'plan_type', 'free')
-            return user_plan if user_plan in cls.PLAN_MODEL_ACCESS else 'free'
+            # Get user plan from Firebase - same logic as dashboard and other components
+            from services.user_account_service import UserAccountService
+            user_id = current_user.email.replace('.', ',')
+            user_account = UserAccountService.get_user_account(user_id)
+
+            if user_account and 'subscription' in user_account:
+                subscription = user_account['subscription']
+                plan_type = subscription.get('planType', 'free')
+                status = subscription.get('status', 'inactive')
+
+                # Only return paid plan if subscription is active
+                if status == 'active' and plan_type in cls.PLAN_MODEL_ACCESS:
+                    return plan_type
+
+            return 'free'
         except Exception as e:
             logger.error(f"Error getting user plan: {e}")
             return 'free'

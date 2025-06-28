@@ -27,7 +27,8 @@ class PlanAccessControl {
                 ],
                 'tts': [
                     'gemini-2.5-flash-tts',
-                    'gpt4o-mini'
+                    'gpt4o-mini',
+                    'openai'
                 ],
                 'interpretation': [
                     'gemini-2.0-flash-lite',
@@ -96,7 +97,7 @@ class PlanAccessControl {
                 const response = await fetch('/api/user/plan');
                 if (response.ok) {
                     const data = await response.json();
-                    this.userPlan = data.plan_type || 'free';
+                    this.userPlan = data.plan?.plan_type || 'free';
                 }
             }
             console.log(`User plan loaded: ${this.userPlan}`);

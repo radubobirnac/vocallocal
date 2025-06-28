@@ -561,9 +561,9 @@
   <script>
     // Set authentication status and URLs for JavaScript
     window.upgradeConfig = {
-    isAuthenticated: {{ current_user.is_authenticated()|lower }},
-    pricingUrl: '{{ url_for("pricing") }}',
-    loginUrl: '{{ url_for("auth.login", next="/pricing") }}'
+    isAuthenticated: {{ 'true' if current_user.is_authenticated() else 'false' }},
+    pricingUrl: "{{ url_for('pricing') }}",
+    loginUrl: "{{ url_for('auth.login', next='/pricing') }}"
   };
 
     // Payment flow state management
@@ -571,7 +571,7 @@
       isProcessing: false,
       upgradeButton: null,
 
-      init: function() {
+      init: function() {c
         this.upgradeButton = document.getElementById('upgrade-button');
         this.setupEventListeners();
         this.checkForReturnFromPayment();
