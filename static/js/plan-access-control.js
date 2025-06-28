@@ -241,11 +241,11 @@ class PlanAccessControl {
     handleModelSelection(selector) {
         const model = selector.value;
         const serviceType = this.getServiceTypeFromSelector(selector.id);
-        const selectedOption = selector.options[selector.selectedIndex];
 
-        // Check if this is a premium model selection by a normal user
-        if (this.userRole === 'normal_user' && selectedOption && selectedOption.getAttribute('data-premium') === 'true') {
-            // Show upgrade modal for normal users selecting premium models
+        // Check if the selected model is accessible to the user based on their plan
+        if (!this.isModelAccessible(model, serviceType)) {
+            // Model is not accessible - show upgrade modal and revert selection
+            console.log(`Model ${model} not accessible for ${this.userRole} with ${this.userPlan} plan`);
             this.showUpgradeModal(model, serviceType);
 
             // Revert to first accessible model
@@ -255,18 +255,14 @@ class PlanAccessControl {
             if (accessibleOption) {
                 selector.value = accessibleOption.value;
                 console.log(`Reverted selection to accessible model: ${accessibleOption.value}`);
+            } else {
+                // Fallback to empty selection if no accessible models found
+                selector.value = '';
+                console.warn(`No accessible models found for ${serviceType} service`);
             }
-        } else if (!this.isModelAccessible(model, serviceType)) {
-            // Fallback for other cases (shouldn't happen with new logic)
-            console.warn(`Unexpected inaccessible model selection: ${model} by ${this.userRole}`);
-
-            // Revert to accessible model
-            const accessibleOption = Array.from(selector.options).find(option =>
-                this.isModelAccessible(option.value, serviceType)
-            );
-            if (accessibleOption) {
-                selector.value = accessibleOption.value;
-            }
+        } else {
+            // Model is accessible - allow the selection
+            console.log(`Model ${model} accessible for ${this.userRole} with ${this.userPlan} plan`);
         }
     }
 
@@ -505,8 +501,13 @@ class PlanAccessControl {
                 }
             };
         }
-
-        return { allowed: true };
+        
+        // Model is accessible to the user
+        return {
+            allowed: true,
+            model: model,
+            plan: this.userPlan
+        };
     }
 }
 

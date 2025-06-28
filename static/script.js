@@ -30,17 +30,26 @@ async function loadUserAvailableModels() {
     // Store user role info for later use
     window.userRoleInfo = {
       role: data.user_role,
+      plan: data.user_plan,
       hasPremiumAccess: data.has_premium_access,
       restrictions: data.restrictions
     };
 
-    // Show role-based status message
+    // Show role and plan-based status message
     if (data.user_role === 'super_user') {
       showStatus('Super User access: All models available', 'success');
     } else if (data.user_role === 'admin') {
       showStatus('Admin access: Full system access', 'success');
     } else if (data.user_role === 'normal_user') {
-      showStatus('Free models available. Upgrade for premium models.', 'info');
+      // Check plan type for appropriate messaging
+      if (data.user_plan === 'professional') {
+        showStatus('Professional plan active: Full access to all models', 'success');
+      } else if (data.user_plan === 'basic') {
+        showStatus('Basic plan active: Access to premium models included', 'success');
+      } else {
+        // Free plan users
+        showStatus('Free models available. Upgrade for premium models.', 'info');
+      }
     }
 
   } catch (error) {

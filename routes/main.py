@@ -521,11 +521,28 @@ def get_user_available_models():
                 locked_model['locked'] = True
                 translation_models.append(locked_model)
 
+        # Get user plan type for proper messaging
+        user_plan = 'free'  # Default
+        try:
+            from services.user_account_service import UserAccountService
+            user_id = current_user.email.replace('.', ',')
+            user_account = UserAccountService.get_user_account(user_id)
+            if user_account and 'subscription' in user_account:
+                subscription = user_account['subscription']
+                plan_type = subscription.get('planType', 'free')
+                status = subscription.get('status', 'inactive')
+                # Only return paid plan if subscription is active
+                if status == 'active' and plan_type in ['basic', 'professional']:
+                    user_plan = plan_type
+        except Exception as e:
+            print(f"Could not get user plan: {e}")
+
         return jsonify({
             'transcription_models': transcription_models,
             'translation_models': translation_models,
             'user_role': user_role,
-            'has_premium_access': user_role in ['admin', 'super_user'],
+            'user_plan': user_plan,
+            'has_premium_access': user_role in ['admin', 'super_user'] or user_plan in ['basic', 'professional'],
             'restrictions': available_models.get('restrictions', {})
         })
 

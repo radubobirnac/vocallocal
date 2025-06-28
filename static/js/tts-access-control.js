@@ -39,19 +39,35 @@ class TTSAccessControl {
         }
     }
 
-    hasTTSAccess() {
+    // Check if user has access to TTS based on their plan
+    hasAccessToTTS() {
         // Admin and Super Users always have access
         if (this.userRole === 'admin' || this.userRole === 'super_user') {
             return true;
         }
-
-        // Free users have no TTS access
-        if (this.userPlan === 'free') {
+        
+        // Basic and Professional plans have access to TTS
+        if (this.userPlan === 'basic' || this.userPlan === 'professional') {
+            return true;
+        }
+        
+        // Free plan users don't have access to TTS
+        return false;
+    }
+    
+    // Check if specific TTS model is accessible
+    canAccessTTSModel(model) {
+        // First check if user has any TTS access
+        if (!this.hasAccessToTTS()) {
             return false;
         }
-
-        // All other plans have TTS access
-        return true;
+        
+        // Then check if the specific model is accessible based on plan
+        if (window.planAccessControl) {
+            return window.planAccessControl.isModelAccessible(model, 'tts');
+        }
+        
+        return false;
     }
 
     setupTTSControls() {
