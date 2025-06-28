@@ -198,6 +198,46 @@ def test_webhook():
         'note': 'Actual webhooks should use POST method'
     }), 200
 
+@bp.route('/manual-upgrade', methods=['POST'])
+@login_required
+def manual_upgrade():
+    """
+    Manual endpoint to upgrade user subscription
+    This is a temporary solution for when webhooks fail
+    """
+    try:
+        data = request.get_json()
+        user_email = data.get('user_email') or current_user.email
+        plan_type = data.get('plan_type', 'basic')
+
+        if not user_email:
+            return jsonify({'error': 'User email required'}), 400
+
+        # Update user subscription
+        user_id = user_email.replace('.', ',')
+
+        from services.user_account_service import UserAccountService
+        UserAccountService.update_subscription(
+            user_id=user_id,
+            plan_type=plan_type,
+            status='active',
+            billing_cycle='monthly',
+            payment_method='stripe'
+        )
+
+        logger.info(f"Manually upgraded {user_email} to {plan_type} plan")
+
+        return jsonify({
+            'success': True,
+            'message': f'User {user_email} upgraded to {plan_type} plan',
+            'user_email': user_email,
+            'plan_type': plan_type
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error in manual upgrade: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @bp.route('/health', methods=['GET'])
 def payment_health():
     """

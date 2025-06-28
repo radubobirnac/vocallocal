@@ -169,28 +169,35 @@ class PaymentService:
         try:
             user_email = session.get('metadata', {}).get('user_email')
             plan_type = session.get('metadata', {}).get('plan_type')
-            
+
             if not user_email or not plan_type:
                 logger.error("Missing user_email or plan_type in checkout session metadata")
                 return {'error': 'Missing required metadata'}
-            
+
             # Update user subscription in Firebase
             user_id = user_email.replace('.', ',')
-            subscription_data = {
-                'planType': plan_type,
-                'status': 'active',
-                'startDate': int(datetime.now().timestamp() * 1000),
-                'paymentMethod': 'stripe',
-                'billingCycle': 'monthly',
+
+            # Call UserAccountService.update_subscription with correct parameters
+            UserAccountService.update_subscription(
+                user_id=user_id,
+                plan_type=plan_type,
+                status='active',
+                billing_cycle='monthly',
+                payment_method='stripe'
+            )
+
+            # Also update additional Stripe-specific fields
+            additional_data = {
                 'stripeCustomerId': session.get('customer'),
                 'stripeSubscriptionId': session.get('subscription')
             }
-            
-            UserAccountService.update_subscription(user_id, subscription_data)
-            
+
+            # Update additional Stripe fields directly
+            UserAccountService.get_ref(f'users/{user_id}/subscription').update(additional_data)
+
             logger.info(f"Updated subscription for {user_email} to {plan_type}")
             return {'success': True, 'message': 'Subscription activated'}
-            
+
         except Exception as e:
             logger.error(f"Error handling checkout completion: {str(e)}")
             return {'error': str(e)}
