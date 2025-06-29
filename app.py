@@ -96,6 +96,9 @@ app.config['STRIPE_PUBLISHABLE_KEY'] = Config.STRIPE_PUBLISHABLE_KEY
 app.config['STRIPE_SECRET_KEY'] = Config.STRIPE_SECRET_KEY
 app.config['STRIPE_WEBHOOK_SECRET'] = Config.STRIPE_WEBHOOK_SECRET
 
+# Configure Flask-Login to use session for next parameter
+app.config['USE_SESSION_FOR_NEXT'] = True
+
 # Set up comprehensive error handling
 try:
     from utils.error_handler import register_error_handlers

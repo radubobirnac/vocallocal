@@ -397,6 +397,10 @@ def register():
         )
 
         flash('Registration successful! You can now log in.', 'success')
+        # Preserve next parameter when redirecting to login
+        next_page = request.args.get('next')
+        if next_page:
+            return redirect(url_for('auth.login', next=next_page))
         return redirect(url_for('auth.login'))
 
     return render_template('register.html')
@@ -413,6 +417,11 @@ def logout():
 def google_login():
     """Google OAuth login route."""
     try:
+        # Store the next parameter in session before redirecting to Google
+        next_page = request.args.get('next')
+        if next_page:
+            session['next'] = next_page
+
         # Make sure Google OAuth is configured
         if not google:
             flash("Google OAuth is not configured properly. Please contact the administrator.", "danger")
@@ -540,7 +549,14 @@ def google_callback():
         # Log user activity
         UserActivity.log(email, 'login', {'method': 'google'})
 
-        # Redirect to home page
+        # Check for next parameter in session or URL args for redirect after login
+        next_page = session.get('next') or request.args.get('next')
+        if next_page:
+            # Clear the next parameter from session
+            session.pop('next', None)
+            return redirect(next_page)
+
+        # Default redirect to home page
         return redirect(url_for('index'))
     except Exception as e:
         flash(f"Error during Google authentication: {str(e)}", "danger")
@@ -637,7 +653,14 @@ def _handle_google_callback():
         # Log user activity
         UserActivity.log(email, 'login', {'method': 'google'})
 
-        # Redirect to home page
+        # Check for next parameter in session or URL args for redirect after login
+        next_page = session.get('next') or request.args.get('next')
+        if next_page:
+            # Clear the next parameter from session
+            session.pop('next', None)
+            return redirect(next_page)
+
+        # Default redirect to home page
         return redirect(url_for('index'))
     except Exception as e:
         flash(f"Error during Google authentication: {str(e)}", "danger")
