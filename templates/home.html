@@ -313,16 +313,16 @@
             </ul>
           </div>
           {% if current_user.is_authenticated %}
-            <button class="button button-primary pricing-button upgrade-btn" data-plan="basic">Upgrade to Basic</button>
+            <button class="button button-primary pricing-button-compact upgrade-btn" data-plan="basic">Upgrade to Basic</button>
           {% else %}
-            <a href="{{ url_for('auth.login', next='/pricing') }}" class="button button-primary pricing-button">Choose Basic Plan</a>
+            <a href="{{ url_for('auth.login', next='/pricing') }}" class="button button-primary pricing-button-compact">Choose Basic Plan</a>
           {% endif %}
         </div>
 
         <!-- Professional Plan -->
-        <div class="pricing-card" style="position: relative;">
-          <div style="position: absolute; top: -10px; right: 20px; background: #ff4757; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">
-            POPULAR
+        <div class="pricing-card pricing-card-highlighted">
+          <div class="popular-badge">
+            MOST POPULAR
           </div>
           <div class="pricing-header">
             <h3 class="pricing-title">Professional Plan</h3>
@@ -340,9 +340,9 @@
             </ul>
           </div>
           {% if current_user.is_authenticated %}
-            <button class="button button-primary pricing-button upgrade-btn" data-plan="professional">Upgrade to Professional</button>
+            <button class="button button-primary pricing-button-compact upgrade-btn" data-plan="professional">Upgrade to Professional</button>
           {% else %}
-            <a href="{{ url_for('auth.login', next='/pricing') }}" class="button button-primary pricing-button">Choose Professional Plan</a>
+            <a href="{{ url_for('auth.login', next='/pricing') }}" class="button button-primary pricing-button-compact">Choose Professional Plan</a>
           {% endif %}
         </div>
       </div>

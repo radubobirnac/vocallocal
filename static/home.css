@@ -455,27 +455,37 @@
   border-radius: var(--radius);
   padding: 2rem;
   text-align: center;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.pricing-card-highlighted {
-  border-color: hsl(var(--primary));
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
   position: relative;
 }
 
-.pricing-card-highlighted::before {
-  content: 'Most Popular';
+.pricing-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.pricing-card-highlighted {
+  border: 2px solid hsl(var(--primary));
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+  position: relative;
+  transform: scale(1.02);
+  background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--accent)) 100%);
+}
+
+.popular-badge {
   position: absolute;
   top: -12px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  padding: 0.25rem 1rem;
-  border-radius: 1rem;
-  font-size: 0.8rem;
-  font-weight: 600;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.4rem 1.2rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .pricing-header {
@@ -529,6 +539,16 @@
   width: 100%;
 }
 
+.pricing-button-compact {
+  width: auto;
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  margin: 0 auto;
+  display: block;
+  min-width: 120px;
+  border-radius: 6px;
+}
+
 .pay-as-you-go {
   background-color: hsl(var(--secondary));
   border-radius: var(--radius);
@@ -547,14 +567,30 @@
   color: hsl(var(--muted-foreground));
 }
 
+/* Dark mode adjustments */
+[data-theme="dark"] .pricing-card-highlighted {
+  background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--muted)) 100%);
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.15);
+}
+
+[data-theme="dark"] .popular-badge {
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
 /* Responsive adjustments for pricing section */
 @media (max-width: 768px) {
   .pricing-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .pricing-card-highlighted {
     order: -1;
+    transform: scale(1.0);
+  }
+
+  .pricing-button-compact {
+    width: 100%;
+    min-width: auto;
   }
 }
 
