@@ -1,10 +1,10 @@
 // Authentication-related JavaScript
 
-// Function to toggle password visibility
+// Enhanced function to toggle password visibility
 function togglePasswordVisibility(button) {
   try {
     // Find the password input that is a sibling of this button
-    const passwordInput = button.parentElement.querySelector('input');
+    const passwordInput = button.parentElement.querySelector('input[type="password"], input[type="text"]');
     const icon = button.querySelector('i');
 
     if (!passwordInput || !icon) {
@@ -13,15 +13,28 @@ function togglePasswordVisibility(button) {
     }
 
     // Toggle password visibility
-    if (passwordInput.type === 'password') {
-      passwordInput.type = 'text';
-      icon.classList.remove('fa-eye');
-      icon.classList.add('fa-eye-slash');
-    } else {
+    const isPasswordVisible = passwordInput.type === 'text';
+
+    if (isPasswordVisible) {
+      // Hide password
       passwordInput.type = 'password';
       icon.classList.remove('fa-eye-slash');
       icon.classList.add('fa-eye');
+      button.setAttribute('aria-label', 'Show password');
+    } else {
+      // Show password
+      passwordInput.type = 'text';
+      icon.classList.remove('fa-eye');
+      icon.classList.add('fa-eye-slash');
+      button.setAttribute('aria-label', 'Hide password');
     }
+
+    // Add visual feedback
+    button.style.transform = 'translateY(-50%) scale(0.9)';
+    setTimeout(() => {
+      button.style.transform = 'translateY(-50%) scale(1)';
+    }, 150);
+
   } catch (error) {
     console.error('Error toggling password visibility:', error);
   }
@@ -88,49 +101,176 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // History is now consolidated under Profile dropdown, no separate History dropdown needed
 
-  // Password visibility toggle - add event listeners
-  const passwordToggleBtns = document.querySelectorAll('.password-toggle-btn');
+  // Enhanced password visibility toggle
+  initializePasswordToggles();
 
-  if (passwordToggleBtns.length > 0) {
-    // Remove any inline onclick attributes to prevent conflicts
-    passwordToggleBtns.forEach(btn => {
-      // Remove the inline onclick attribute if it exists
-      if (btn.hasAttribute('onclick')) {
-        btn.removeAttribute('onclick');
-      }
+  function initializePasswordToggles() {
+    const passwordToggleBtns = document.querySelectorAll('.password-toggle-btn');
 
-      // Add the event listener
-      btn.addEventListener('click', function(e) {
-        e.preventDefault(); // Prevent form submission if inside a form
-        e.stopPropagation(); // Stop event from bubbling up
-        togglePasswordVisibility(this);
+    if (passwordToggleBtns.length > 0) {
+      console.log(`Found ${passwordToggleBtns.length} password toggle buttons`);
+
+      passwordToggleBtns.forEach((btn, index) => {
+        // Remove any existing event listeners to prevent duplicates
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+
+        // Remove any inline onclick attributes to prevent conflicts
+        if (newBtn.hasAttribute('onclick')) {
+          newBtn.removeAttribute('onclick');
+        }
+
+        // Ensure proper initial state
+        const icon = newBtn.querySelector('i');
+        if (icon) {
+          icon.classList.remove('fa-eye-slash');
+          icon.classList.add('fa-eye');
+        }
+        newBtn.setAttribute('aria-label', 'Show password');
+
+        // Add the event listener
+        newBtn.addEventListener('click', function(e) {
+          e.preventDefault(); // Prevent form submission if inside a form
+          e.stopPropagation(); // Stop event from bubbling up
+          togglePasswordVisibility(this);
+        });
+
+        // Add keyboard support
+        newBtn.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            togglePasswordVisibility(this);
+          }
+        });
+
+        console.log(`Initialized password toggle button ${index + 1}`);
       });
-    });
-  } else {
-    console.warn('No password toggle buttons found on this page');
+    } else {
+      console.warn('No password toggle buttons found on this page');
+    }
   }
 
-  // Password validation for registration
+  // Enhanced form handling with loading states
+  initializeFormHandling();
+
+  function initializeFormHandling() {
+    // Handle all auth forms (login, register)
+    const authForms = document.querySelectorAll('form[action*="login"], form[action*="register"]');
+
+    authForms.forEach(form => {
+      const submitButton = form.querySelector('button[type="submit"]');
+
+      if (submitButton) {
+        form.addEventListener('submit', function(event) {
+          // Add loading state
+          submitButton.classList.add('loading');
+          submitButton.disabled = true;
+
+          // Store original text
+          if (!submitButton.dataset.originalText) {
+            submitButton.dataset.originalText = submitButton.textContent;
+          }
+          submitButton.textContent = 'Please wait...';
+
+          // Remove loading state after a delay if form submission fails
+          setTimeout(() => {
+            if (submitButton.classList.contains('loading')) {
+              submitButton.classList.remove('loading');
+              submitButton.disabled = false;
+              submitButton.textContent = submitButton.dataset.originalText;
+            }
+          }, 10000); // 10 second timeout
+        });
+      }
+    });
+  }
+
+  // Enhanced password validation for registration
   const registerForm = document.querySelector('form[action*="register"]');
   if (registerForm) {
     const password = registerForm.querySelector('input[name="password"]');
     const confirmPassword = registerForm.querySelector('input[name="confirm_password"]');
+    const submitButton = registerForm.querySelector('button[type="submit"]');
+
+    // Real-time password validation
+    function validatePasswords() {
+      const passwordValue = password.value;
+      const confirmPasswordValue = confirmPassword.value;
+
+      // Clear previous validation states
+      password.classList.remove('error', 'success');
+      confirmPassword.classList.remove('error', 'success');
+
+      let isValid = true;
+
+      // Password length validation
+      if (passwordValue.length > 0 && passwordValue.length < 8) {
+        password.classList.add('error');
+        isValid = false;
+      } else if (passwordValue.length >= 8) {
+        password.classList.add('success');
+      }
+
+      // Password match validation
+      if (confirmPasswordValue.length > 0) {
+        if (passwordValue !== confirmPasswordValue) {
+          confirmPassword.classList.add('error');
+          isValid = false;
+        } else if (passwordValue === confirmPasswordValue && passwordValue.length >= 8) {
+          confirmPassword.classList.add('success');
+        }
+      }
+
+      return isValid;
+    }
+
+    if (password && confirmPassword) {
+      password.addEventListener('input', validatePasswords);
+      confirmPassword.addEventListener('input', validatePasswords);
+    }
 
     registerForm.addEventListener('submit', (event) => {
       if (password.value !== confirmPassword.value) {
         event.preventDefault();
-        alert('Passwords do not match!');
+        showFormError('Passwords do not match!');
         return false;
       }
 
       if (password.value.length < 8) {
         event.preventDefault();
-        alert('Password must be at least 8 characters long!');
+        showFormError('Password must be at least 8 characters long!');
         return false;
       }
 
       return true;
     });
+  }
+
+  function showFormError(message) {
+    // Remove existing error alerts
+    const existingAlerts = document.querySelectorAll('.alert-danger');
+    existingAlerts.forEach(alert => alert.remove());
+
+    // Create new error alert
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger';
+    alert.textContent = message;
+
+    // Insert at the top of the form
+    const form = document.querySelector('form[action*="register"], form[action*="login"]');
+    if (form) {
+      const cardContent = form.closest('.card-content');
+      if (cardContent) {
+        cardContent.insertBefore(alert, cardContent.firstChild);
+      }
+    }
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      if (alert.parentNode) {
+        alert.remove();
+      }
+    }, 5000);
   }
 
   // Password validation for change password form
