@@ -54,9 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Constants
   const MAX_RECORDING_DURATION = 180; // 3 minutes in seconds
-  const CHUNK_INTERVAL = 60; // Process every 60 seconds
-  const SAMPLE_RATE = 44100;
-  const CHANNELS = 1;
+  // Removed chunking - now using single file approach like authenticated dashboard
 
   // Variables
   let mediaRecorder = null;
@@ -65,10 +63,6 @@ document.addEventListener('DOMContentLoaded', function() {
   let recordingInterval = null;
   let isRecording = false;
   let circleProgress = null;
-  let lastChunkTime = 0;
-  let partialTranscriptions = {}; // Store partial transcriptions by speaker
-  let isProcessingChunk = false; // Flag to prevent multiple chunk processing
-  let lastProcessedChunkIndex = 0; // Track which audio chunks have been processed
 
   // Initialize circular progress indicator
   function initializeCircularProgress() {
@@ -119,19 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
       circleProgress.animate(progress);
     }
 
-    // Check if it's time to process a chunk (every CHUNK_INTERVAL seconds)
-    if (isRecording && !isProcessingChunk && elapsedTime >= CHUNK_INTERVAL && elapsedTime - lastChunkTime >= CHUNK_INTERVAL) {
-      console.log(`🎯 CHUNK TIME! Processing chunk at ${elapsedTime}s for speaker ${speakerNum}`);
-      console.log(`📊 Chunk timing: elapsedTime=${elapsedTime}, lastChunkTime=${lastChunkTime}, isProcessingChunk=${isProcessingChunk}`);
-      isProcessingChunk = true; // Set flag to prevent multiple processing
-      processPartialRecording(speakerNum);
-      lastChunkTime = elapsedTime;
-    }
-
-    // Debug: Log every 10 seconds to see if we're approaching chunk time
-    if (isRecording && Math.floor(elapsedTime) % 10 === 0 && Math.floor(elapsedTime) !== Math.floor((elapsedTime - 0.1))) {
-      console.log(`⏰ Recording progress: ${elapsedTime.toFixed(1)}s, next chunk at: ${lastChunkTime + CHUNK_INTERVAL}s, isProcessingChunk: ${isProcessingChunk}`);
-    }
+    // Removed chunking logic - now processing complete recording at the end
 
     // Auto-stop recording if max duration reached
     if (elapsedTime >= MAX_RECORDING_DURATION) {
@@ -139,371 +121,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Process partial recording
-  function processPartialRecording(speakerNum = null) {
-    // Get only the new audio chunks since the last processing
-    const newChunks = audioChunks.slice(lastProcessedChunkIndex);
+  // Removed processPartialRecording - now using single file processing
 
-    console.log(`🔍 DEBUG: Total audioChunks: ${audioChunks.length}, lastProcessedChunkIndex: ${lastProcessedChunkIndex}, newChunks: ${newChunks.length}`);
+  // Removed showPartialProcessingIndicator - now using single file processing
 
-    // Check if we have new chunks to process
-    if (newChunks.length === 0) {
-      console.log(`⚠️ No new audio chunks to process. Skipping.`);
-      isProcessingChunk = false;
-      return;
-    }
+  // Removed processPartialAudio - now using single file processing
 
-    // Update the last processed chunk index
-    lastProcessedChunkIndex = audioChunks.length;
+  // Removed processFinalChunk - now using single file processing
 
-    // Create a blob from only the new chunks
-    const audioBlob = new Blob(newChunks, { type: 'audio/webm' });
-
-    console.log(`🎵 Processing new audio chunk: ${newChunks.length} chunks, ${audioBlob.size} bytes`);
-
-    // Check if the blob is too small (might be empty or corrupted)
-    if (audioBlob.size < 1000) { // Less than 1KB
-      console.log(`⚠️ Audio blob too small (${audioBlob.size} bytes). Skipping transcription.`);
-      isProcessingChunk = false;
-      return;
-    }
-
-    // Show a "processing" indicator
-    showPartialProcessingIndicator(speakerNum);
-
-    // Process this chunk
-    processPartialAudio(audioBlob, speakerNum);
-  }
-
-  // Show partial processing indicator
-  function showPartialProcessingIndicator(speakerNum = null) {
-    let transcriptionTextToUse;
-
-    if (speakerNum === 1) {
-      transcriptionTextToUse = transcriptionText1;
-    } else if (speakerNum === 2) {
-      transcriptionTextToUse = transcriptionText2;
-    } else {
-      transcriptionTextToUse = transcriptionText;
-    }
-
-    // Add a processing indicator to the transcription area
-    if (transcriptionTextToUse) {
-      // Only add the indicator if there's no content yet
-      if (!partialTranscriptions[speakerNum] || partialTranscriptions[speakerNum].length === 0) {
-        transcriptionTextToUse.innerHTML = '<p class="transcribing-indicator">Transcribing... Please wait.</p>';
-      } else {
-        // If we already have partial transcriptions, append the indicator
-        const currentContent = transcriptionTextToUse.innerHTML;
-        if (!currentContent.includes('transcribing-indicator')) {
-          transcriptionTextToUse.innerHTML = currentContent + '<p class="transcribing-indicator">Transcribing more... Please wait.</p>';
-        }
-      }
-    }
-  }
-
-  // Process partial audio
-  function processPartialAudio(audioBlob, speakerNum = null) {
-    console.log(`🔄 Processing partial audio for speaker ${speakerNum}, blob size: ${audioBlob.size} bytes`);
-
-    // Create FormData for API request
-    const formData = new FormData();
-    formData.append('audio', audioBlob, 'partial_recording.webm');
-
-    // Determine which language to use
-    let selectedLanguage;
-    if (speakerNum === 1 && language1Select) {
-      selectedLanguage = language1Select.value;
-    } else if (speakerNum === 2 && language2Select) {
-      selectedLanguage = language2Select.value;
-    } else if (languageSelect) {
-      selectedLanguage = languageSelect.value;
-    } else {
-      selectedLanguage = 'en'; // Default to English
-    }
-
-    formData.append('language', selectedLanguage);
-
-    // Get selected transcription model or use default
-    const selectedModel = transcriptionModelSelect ?
-      transcriptionModelSelect.value :
-      localStorage.getItem('free-trial-transcription-model') || 'gemini-2.0-flash-lite';
-
-    formData.append('model', selectedModel);
-
-    // Add chunk number and element ID
-    const chunkNumber = partialTranscriptions[speakerNum] ? partialTranscriptions[speakerNum].length : 0;
-    formData.append('chunk_number', chunkNumber.toString());
-
-    // Determine element ID based on speaker
-    let elementId;
-    if (speakerNum === 1) {
-      elementId = 'transcription-text-1';
-    } else if (speakerNum === 2) {
-      elementId = 'transcription-text-2';
-    } else {
-      elementId = 'transcription-text';
-    }
-    formData.append('element_id', elementId);
-
-    // Send to new chunk API endpoint
-    console.log(`📡 Sending chunk to /api/transcribe_chunk with data:`, {
-      language: selectedLanguage,
-      model: selectedModel,
-      chunkNumber: chunkNumber,
-      elementId: elementId
-    });
-
-
-
-    // Create an AbortController for timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
-
-    fetch('/api/transcribe_chunk', {
-      method: 'POST',
-      body: formData,
-      signal: controller.signal
-    })
-    .then(response => {
-      clearTimeout(timeoutId); // Clear timeout on successful response
-      console.log(`📥 Received response:`, response.status, response.statusText);
-      if (!response.ok) {
-        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
-      }
-      return response.json();
-    })
-    .then(data => {
-      console.log(`✅ Chunk transcription result:`, data);
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      // Display partial transcription
-      displayPartialTranscription(data.text || data, speakerNum);
-    })
-    .catch(error => {
-      clearTimeout(timeoutId); // Clear timeout on error
-      if (error.name === 'AbortError') {
-        console.error('❌ Chunk transcription timed out after 60 seconds');
-        console.error('This usually means the server is overloaded or there\'s an issue with the transcription service');
-      } else {
-        console.error('❌ Error transcribing partial audio:', error);
-      }
-      console.error('Error details:', {
-        speakerNum: speakerNum,
-        blobSize: audioBlob.size,
-        selectedLanguage: selectedLanguage,
-        selectedModel: selectedModel
-      });
-      // Handle error but don't disrupt recording
-    })
-    .finally(() => {
-      // Reset the processing flag
-      isProcessingChunk = false;
-      console.log(`🔓 Chunk processing complete, flag reset`);
-    });
-  }
-
-  // Process the final chunk of audio
-  function processFinalChunk(audioBlob, speakerNum = null) {
-    // Create FormData for API request
-    const formData = new FormData();
-    formData.append('file', audioBlob, 'final_chunk.webm');
-
-    // Determine which language to use
-    let selectedLanguage;
-    if (speakerNum === 1 && language1Select) {
-      selectedLanguage = language1Select.value;
-    } else if (speakerNum === 2 && language2Select) {
-      selectedLanguage = language2Select.value;
-    } else if (languageSelect) {
-      selectedLanguage = languageSelect.value;
-    } else {
-      selectedLanguage = 'en'; // Default to English
-    }
-
-    formData.append('language', selectedLanguage);
-
-    // Get selected transcription model or use default
-    const selectedModel = transcriptionModelSelect ?
-      transcriptionModelSelect.value :
-      localStorage.getItem('free-trial-transcription-model') || 'gemini-2.0-flash-lite';
-
-    formData.append('model', selectedModel);
-
-    // Add a flag to indicate this is the final chunk
-    formData.append('is_final_chunk', 'true');
-
-    // Determine which progress container to use
-    let progressContainerToUse, progressTextToUse, progressBarToUse;
-
-    if (speakerNum === 1 || speakerNum === 2) {
-      // Bilingual mode - use shared progress container
-      progressContainerToUse = bilingualProgressContainer;
-      progressTextToUse = bilingualProgressText;
-      progressBarToUse = bilingualProgressBar;
-    } else {
-      // Basic mode
-      progressContainerToUse = progressContainer;
-      progressTextToUse = progressText;
-      progressBarToUse = progressBar;
-    }
-
-    // Show progress container
-    if (progressContainerToUse) {
-      progressContainerToUse.style.display = 'block';
-      progressTextToUse.textContent = 'Processing final audio segment...';
-    }
-
-    // Send to API
-    fetch('/api/transcribe', {
-      method: 'POST',
-      body: formData
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
-      }
-      return response.json();
-    })
-    .then(data => {
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      // Add this final chunk to the partial transcriptions
-      if (!partialTranscriptions[speakerNum]) {
-        partialTranscriptions[speakerNum] = [];
-      }
-
-      partialTranscriptions[speakerNum].push(data.text || data);
-
-      // Display the complete transcription
-      displayCompleteTranscription(speakerNum);
-
-      // Hide progress container
-      if (progressContainerToUse) {
-        progressContainerToUse.style.display = 'none';
-      }
-    })
-    .catch(error => {
-      console.error('Error transcribing final chunk:', error);
-
-      // Hide progress container
-      if (progressContainerToUse) {
-        progressContainerToUse.style.display = 'none';
-      }
-
-      // Show error message
-      if (progressTextToUse) {
-        progressTextToUse.textContent = `Error: ${error.message}`;
-      }
-    });
-  }
-
-  // Display the complete transcription from all chunks
-  function displayCompleteTranscription(speakerNum = null) {
-    // Determine which transcription element to update
-    let transcriptionTextToUse, copyButtonToUse, translateButtonToUse;
-
-    if (speakerNum === 1) {
-      transcriptionTextToUse = transcriptionText1;
-      copyButtonToUse = copyButton1;
-      translateButtonToUse = translateButton1;
-    } else if (speakerNum === 2) {
-      transcriptionTextToUse = transcriptionText2;
-      copyButtonToUse = copyButton2;
-      translateButtonToUse = translateButton2;
-    } else {
-      transcriptionTextToUse = transcriptionText;
-      copyButtonToUse = copyButton;
-      translateButtonToUse = null; // No translation in basic mode
-    }
-
-    // Combine all partial transcriptions
-    const combinedText = partialTranscriptions[speakerNum].join(' ');
-
-    // Update transcription text
-    if (transcriptionTextToUse) {
-      transcriptionTextToUse.innerHTML = `<p>${combinedText}</p>`;
-    }
-
-    // Enable copy button
-    if (copyButtonToUse) {
-      copyButtonToUse.disabled = false;
-    }
-
-    // Enable translate button in bilingual mode
-    if (translateButtonToUse) {
-      translateButtonToUse.disabled = false;
-    }
-
-    // Automatically translate in bilingual mode
-    if (bilingualModeToggle && bilingualModeToggle.checked && (speakerNum === 1 || speakerNum === 2)) {
-      // Short delay to allow UI to update first
-      setTimeout(() => {
-        // Get target language based on speaker
-        const targetLang = speakerNum === 1 ?
-          (language2Select ? language2Select.value : 'es') :
-          (language1Select ? language1Select.value : 'en');
-
-        // Translate the text
-        translateText(combinedText, targetLang, speakerNum);
-      }, 500);
-    }
-  }
-
-  // Display partial transcription
-  function displayPartialTranscription(text, speakerNum = null) {
-    // Determine which transcription element to update
-    let transcriptionTextToUse;
-
-    if (speakerNum === 1) {
-      transcriptionTextToUse = transcriptionText1;
-    } else if (speakerNum === 2) {
-      transcriptionTextToUse = transcriptionText2;
-    } else {
-      transcriptionTextToUse = transcriptionText;
-    }
-
-    // Initialize the array for this speaker if it doesn't exist
-    if (!partialTranscriptions[speakerNum]) {
-      partialTranscriptions[speakerNum] = [];
-    }
-
-    // Store this partial transcription
-    partialTranscriptions[speakerNum].push(text);
-
-    // Now that we're sending only new audio chunks, we can accumulate the transcriptions
-    if (transcriptionTextToUse) {
-      // Combine all partial transcriptions to show progressive results
-      const combinedText = partialTranscriptions[speakerNum].join(' ');
-      transcriptionTextToUse.innerHTML = `<p>${combinedText}</p>`;
-
-      // Add a small indicator showing this is a partial result
-      const chunkNumber = partialTranscriptions[speakerNum].length;
-      const indicator = document.createElement('div');
-      indicator.className = 'chunk-indicator';
-      indicator.style.cssText = 'font-size: 0.8em; color: #666; margin-top: 5px; font-style: italic;';
-      indicator.textContent = `Partial transcription (${chunkNumber} chunks) - Recording in progress...`;
-      transcriptionTextToUse.appendChild(indicator);
-
-      // Enable copy button
-      let copyButtonToUse;
-      if (speakerNum === 1) {
-        copyButtonToUse = copyButton1;
-      } else if (speakerNum === 2) {
-        copyButtonToUse = copyButton2;
-      } else {
-        copyButtonToUse = copyButton;
-      }
-
-      if (copyButtonToUse) {
-        copyButtonToUse.disabled = false;
-      }
-    }
-  }
+  // Removed displayCompleteTranscription and displayPartialTranscription - now using single file processing
 
   // Start recording
   async function startRecording(speakerNum = null) {
@@ -526,19 +152,9 @@ document.addEventListener('DOMContentLoaded', function() {
       };
 
       mediaRecorder.onstop = () => {
-        // Check if we have partial transcriptions already
-        if (partialTranscriptions[speakerNum] && partialTranscriptions[speakerNum].length > 0) {
-          // Only process the final chunk that hasn't been transcribed yet
-          // This is the audio recorded since the last chunk was processed
-          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-
-          // Process the final chunk
-          processFinalChunk(audioBlob, speakerNum);
-        } else {
-          // No partial transcriptions yet, process the entire recording
-          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-          processAudio(audioBlob, speakerNum);
-        }
+        // Process the entire recording as a single file
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        processAudio(audioBlob, speakerNum);
 
         // Stop all tracks in the stream
         stream.getTracks().forEach(track => track.stop());
@@ -548,14 +164,6 @@ document.addEventListener('DOMContentLoaded', function() {
       audioChunks = [];
       mediaRecorder.start(100);
       isRecording = true;
-      lastChunkTime = 0;
-      isProcessingChunk = false; // Reset chunk processing flag
-      lastProcessedChunkIndex = 0; // Reset chunk tracking
-
-      // Reset partial transcriptions for this speaker
-      if (partialTranscriptions[speakerNum]) {
-        partialTranscriptions[speakerNum] = [];
-      }
 
       // Update UI based on mode
       if (speakerNum === 1) {

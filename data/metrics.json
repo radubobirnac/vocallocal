@@ -87,10 +87,10 @@
       "failures": 0
     },
     "en": {
-      "calls": 38,
-      "tokens": 13397,
-      "chars": 40211,
-      "time": 219.21314191818237,
+      "calls": 41,
+      "tokens": 15260,
+      "chars": 45803,
+      "time": 241.89218926429749,
       "failures": 0
     },
     "te": {
@@ -215,6 +215,11 @@
       "transcription": {
         "en": 534,
         "hi": 9
+      }
+    },
+    "2025-07-02": {
+      "transcription": {
+        "en": 1863
       }
     }
   },
@@ -470,6 +475,16 @@
       "transcription": {
         "hi": 9,
         "en": 333
+      }
+    },
+    "2025-07-02-12": {
+      "transcription": {
+        "en": 93
+      }
+    },
+    "2025-07-02-14": {
+      "transcription": {
+        "en": 1770
       }
     }
   },

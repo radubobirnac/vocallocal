@@ -553,12 +553,18 @@ def transcribe_chunk():
 
                 current_app.logger.info(f"WebM chunk validation: hasEBMLHeader={has_ebml_header}, first4bytes={[hex(b) for b in ebml_signature]}")
 
-                if not has_ebml_header:
-                    current_app.logger.warning(f"Chunk {chunk_number} appears to be corrupted WebM (no EBML header)")
-                    return jsonify({'error': 'Corrupted WebM chunk detected'}), 400
+                # For progressive recording, only the first chunk typically has EBML header
+                # Subsequent chunks are media data and don't need EBML header
+                if chunk_number == 1 and not has_ebml_header:
+                    current_app.logger.warning(f"First chunk missing EBML header - may be corrupted")
+                    # Still allow processing but log the warning
+                elif not has_ebml_header:
+                    current_app.logger.info(f"Chunk {chunk_number} has no EBML header (normal for progressive recording)")
             else:
-                current_app.logger.warning(f"Chunk {chunk_number} too small for WebM validation")
-                return jsonify({'error': 'WebM chunk too small'}), 400
+                # Check minimum size - chunks should be at least 100 bytes to be meaningful
+                if len(audio_data) < 100:
+                    current_app.logger.warning(f"Chunk {chunk_number} too small for meaningful processing: {len(audio_data)} bytes")
+                    return jsonify({'error': 'WebM chunk too small'}), 400
 
         # Get user email for RBAC (if available)
         user_email = None
