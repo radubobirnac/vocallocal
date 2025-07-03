@@ -34,7 +34,7 @@ Replace your current password with the app password:
 
 ```bash
 # Current (will fail):
-MAIL_PASSWORD="Virinchi#19@March"
+MAIL_PASSWORD=""
 
 # Replace with (example format):
 MAIL_PASSWORD="abcd efgh ijkl mnop"

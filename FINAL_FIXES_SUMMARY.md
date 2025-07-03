@@ -40,7 +40,7 @@
 ## 🔧 Required Action: Gmail App Password Setup
 
 ### Why This Is Needed
-Gmail's security requires **App Passwords** for SMTP authentication. Your regular password `Virinchi#19@March` won't work for SMTP connections.
+Gmail's security requires **App Passwords** for SMTP authentication. Your regular password `` won't work for SMTP connections.
 
 ### Quick Setup Steps
 

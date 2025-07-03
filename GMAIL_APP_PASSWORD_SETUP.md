@@ -34,7 +34,7 @@ Replace the placeholder in your `.env` file:
 
 ```bash
 # Before (current - will fail)
-MAIL_PASSWORD=Virinchi#19@March
+MAIL_PASSWORD=
 
 # After (use your generated app password)
 MAIL_PASSWORD=abcd efgh ijkl mnop
