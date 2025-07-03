@@ -1,44 +1,6 @@
 // Authentication-related JavaScript
 
-// Enhanced function to toggle password visibility
-function togglePasswordVisibility(button) {
-  try {
-    // Find the password input that is a sibling of this button
-    const passwordInput = button.parentElement.querySelector('input[type="password"], input[type="text"]');
-    const icon = button.querySelector('i');
-
-    if (!passwordInput || !icon) {
-      console.error('Password input or icon not found');
-      return;
-    }
-
-    // Toggle password visibility
-    const isPasswordVisible = passwordInput.type === 'text';
-
-    if (isPasswordVisible) {
-      // Hide password
-      passwordInput.type = 'password';
-      icon.classList.remove('fa-eye-slash');
-      icon.classList.add('fa-eye');
-      button.setAttribute('aria-label', 'Show password');
-    } else {
-      // Show password
-      passwordInput.type = 'text';
-      icon.classList.remove('fa-eye');
-      icon.classList.add('fa-eye-slash');
-      button.setAttribute('aria-label', 'Hide password');
-    }
-
-    // Add visual feedback
-    button.style.transform = 'translateY(-50%) scale(0.9)';
-    setTimeout(() => {
-      button.style.transform = 'translateY(-50%) scale(1)';
-    }, 150);
-
-  } catch (error) {
-    console.error('Error toggling password visibility:', error);
-  }
-}
+// Password toggle functionality removed - passwords now always remain hidden for security
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Auth.js loaded - DOM Content Loaded');
@@ -101,54 +63,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // History is now consolidated under Profile dropdown, no separate History dropdown needed
 
-  // Enhanced password visibility toggle
-  initializePasswordToggles();
-
-  function initializePasswordToggles() {
-    const passwordToggleBtns = document.querySelectorAll('.password-toggle-btn');
-
-    if (passwordToggleBtns.length > 0) {
-      console.log(`Found ${passwordToggleBtns.length} password toggle buttons`);
-
-      passwordToggleBtns.forEach((btn, index) => {
-        // Remove any existing event listeners to prevent duplicates
-        const newBtn = btn.cloneNode(true);
-        btn.parentNode.replaceChild(newBtn, btn);
-
-        // Remove any inline onclick attributes to prevent conflicts
-        if (newBtn.hasAttribute('onclick')) {
-          newBtn.removeAttribute('onclick');
-        }
-
-        // Ensure proper initial state
-        const icon = newBtn.querySelector('i');
-        if (icon) {
-          icon.classList.remove('fa-eye-slash');
-          icon.classList.add('fa-eye');
-        }
-        newBtn.setAttribute('aria-label', 'Show password');
-
-        // Add the event listener
-        newBtn.addEventListener('click', function(e) {
-          e.preventDefault(); // Prevent form submission if inside a form
-          e.stopPropagation(); // Stop event from bubbling up
-          togglePasswordVisibility(this);
-        });
-
-        // Add keyboard support
-        newBtn.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            togglePasswordVisibility(this);
-          }
-        });
-
-        console.log(`Initialized password toggle button ${index + 1}`);
-      });
-    } else {
-      console.warn('No password toggle buttons found on this page');
-    }
-  }
+  // Password toggle functionality removed - passwords now always remain hidden
+  console.log('Password fields configured to always remain hidden for security');
 
   // Enhanced form handling with loading states
   initializeFormHandling();
@@ -229,7 +145,8 @@ document.addEventListener('DOMContentLoaded', () => {
       confirmPassword.addEventListener('input', validatePasswords);
     }
 
-    registerForm.addEventListener('submit', (event) => {
+    registerForm.addEventListener('submit', async (event) => {
+      // Check password validation first
       if (password.value !== confirmPassword.value) {
         event.preventDefault();
         showFormError('Passwords do not match!');
@@ -240,6 +157,33 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         showFormError('Password must be at least 8 characters long!');
         return false;
+      }
+
+      // Check email validation if email validator is available
+      const emailInput = registerForm.querySelector('input[type="email"]');
+      if (emailInput && window.emailValidator) {
+        // Check if email has validation errors
+        if (emailInput.classList.contains('invalid')) {
+          event.preventDefault();
+          showFormError('Please enter a valid email address.');
+          return false;
+        }
+
+        // If email hasn't been validated yet, validate it now
+        if (!emailInput.classList.contains('valid') && emailInput.value.trim()) {
+          event.preventDefault();
+
+          try {
+            const validation = await window.emailValidator.validateEmail(emailInput.value.trim());
+            if (!validation.valid) {
+              showFormError(validation.errors ? validation.errors[0] : 'Please enter a valid email address.');
+              return false;
+            }
+          } catch (error) {
+            console.error('Email validation error:', error);
+            // Continue with form submission if validation service fails
+          }
+        }
       }
 
       return true;

@@ -17,6 +17,14 @@ except ImportError:
         def validate_model_request(model_name, user_email=None):
             return {'valid': True, 'message': 'Model access granted', 'suggested_model': model_name}
 
+# Import email verification middleware
+try:
+    from services.email_verification_middleware import requires_verified_email
+except ImportError:
+    # Fallback if middleware not available
+    def requires_verified_email(f):
+        return f
+
 # Create a blueprint for the TTS routes
 bp = Blueprint('tts', __name__, url_prefix='/api')
 
@@ -25,6 +33,7 @@ tts_service = TTSService()
 
 @bp.route('/tts', methods=['POST'])
 @login_required
+@requires_verified_email
 def text_to_speech():
     """
     Endpoint for converting text to speech using TTS services.

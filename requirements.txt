@@ -56,6 +56,9 @@ authlib>=1.2.0
 email-validator>=2.0.0
 bcrypt>=4.0.1
 
+# Email functionality
+dnspython>=2.3.0
+
 # Firebase integration
 firebase-admin>=6.2.0
 pyrebase4>=4.7.1

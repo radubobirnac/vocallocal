@@ -42,7 +42,9 @@ class User(FirebaseModel):
             'role': user_role,
             'created_at': datetime.now().isoformat(),
             'oauth_provider': oauth_provider,
-            'oauth_id': oauth_id
+            'oauth_id': oauth_id,
+            'email_verified': oauth_provider is not None,  # OAuth users are pre-verified
+            'email_verified_at': datetime.now().isoformat() if oauth_provider else None
         }
 
         # Use email as unique ID (replace dots with commas for Firebase path)
@@ -147,6 +149,49 @@ class User(FirebaseModel):
         """Check if user has premium access (admin or super user)."""
         role = User.get_user_role(email)
         return role in [User.ROLE_ADMIN, User.ROLE_SUPER_USER]
+
+    @staticmethod
+    def is_email_verified(email):
+        """Check if user's email is verified."""
+        user_data = User.get_by_email(email)
+        if not user_data:
+            return False
+
+        # OAuth users are automatically verified
+        if user_data.get('oauth_provider'):
+            return True
+
+        return user_data.get('email_verified', False)
+
+    @staticmethod
+    def mark_email_verified(email):
+        """Mark user's email as verified."""
+        if not email:
+            return False
+
+        user_id = email.replace('.', ',')
+        try:
+            User.get_ref('users').child(user_id).update({
+                'email_verified': True,
+                'email_verified_at': datetime.now().isoformat()
+            })
+            return True
+        except Exception:
+            return False
+
+    @staticmethod
+    def requires_email_verification(email):
+        """Check if user requires email verification to access features."""
+        user_data = User.get_by_email(email)
+        if not user_data:
+            return True  # New users need verification
+
+        # OAuth users don't need verification
+        if user_data.get('oauth_provider'):
+            return False
+
+        # Manual registration users need verification
+        return not user_data.get('email_verified', False)
 
     @staticmethod
     def get_or_create(email, name=None, picture=None):

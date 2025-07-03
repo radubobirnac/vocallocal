@@ -1,12 +1,16 @@
 """Authentication module for VocalLocal."""
 import os
 import json
+import logging
 from functools import wraps
-from flask import Blueprint, redirect, url_for, session, request, flash, render_template, jsonify
+from flask import Blueprint, redirect, url_for, session, request, flash, render_template, jsonify, current_app
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
 from authlib.integrations.flask_client import OAuth
 from firebase_models import User, UserActivity
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # Initialize login manager
 login_manager = LoginManager()
@@ -364,7 +368,7 @@ def login():
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    """Register route."""
+    """Register route with email validation and welcome email."""
     if current_user.is_authenticated:
         return redirect(url_for('index'))
 
@@ -383,27 +387,95 @@ def register():
             flash('Passwords do not match', 'danger')
             return render_template('register.html')
 
+        # Enhanced email validation
+        try:
+            from services.email_service import email_service
+            email_validation = email_service.validate_email(email)
+
+            if not email_validation['valid']:
+                error_msg = 'Invalid email address'
+                if email_validation.get('errors'):
+                    error_msg = email_validation['errors'][0]
+                flash(error_msg, 'danger')
+                return render_template('register.html')
+        except Exception as e:
+            logger.warning(f'Email validation failed: {str(e)}')
+            # Continue with basic validation if service fails
+            if '@' not in email or '.' not in email.split('@')[1]:
+                flash('Please enter a valid email address', 'danger')
+                return render_template('register.html')
+
         # Check if email already exists
         if User.get_by_email(email):
             flash('Email already exists', 'danger')
             return render_template('register.html')
 
-        # Create new user
-        password_hash = generate_password_hash(password)
-        User.create(
-            username=username,
-            email=email,
-            password_hash=password_hash
-        )
+        try:
+            # Create new user
+            password_hash = generate_password_hash(password)
+            User.create(
+                username=username,
+                email=email,
+                password_hash=password_hash
+            )
 
-        flash('Registration successful! You can now log in.', 'success')
-        # Preserve next parameter when redirecting to login
-        next_page = request.args.get('next')
-        if next_page:
-            return redirect(url_for('auth.login', next=next_page))
-        return redirect(url_for('auth.login'))
+            # Send verification code instead of welcome email
+            try:
+                from services.email_verification_service import email_verification_service
+                verification_result = email_verification_service.send_verification_code(email, username)
+
+                if verification_result['success']:
+                    logger.info(f'Verification email sent successfully to {email}')
+
+                    # Store registration data in session for verification process
+                    session['pending_verification'] = {
+                        'email': email,
+                        'username': username,
+                        'next': request.args.get('next')
+                    }
+
+                    # Redirect to verification page
+                    return redirect(url_for('auth.verify_email'))
+                else:
+                    logger.error(f'Failed to send verification email to {email}: {verification_result["message"]}')
+                    flash('Registration successful, but failed to send verification email. Please contact support.', 'warning')
+
+                    # Preserve next parameter when redirecting to login
+                    next_page = request.args.get('next')
+                    if next_page:
+                        return redirect(url_for('auth.login', next=next_page))
+                    return redirect(url_for('auth.login'))
+
+            except Exception as e:
+                logger.error(f'Error sending verification email to {email}: {str(e)}')
+                flash('Registration successful, but verification email failed. Please contact support.', 'warning')
+
+                # Preserve next parameter when redirecting to login
+                next_page = request.args.get('next')
+                if next_page:
+                    return redirect(url_for('auth.login', next=next_page))
+                return redirect(url_for('auth.login'))
+
+        except Exception as e:
+            logger.error(f'User creation failed: {str(e)}')
+            flash('Registration failed. Please try again.', 'danger')
+            return render_template('register.html')
 
     return render_template('register.html')
+
+@auth_bp.route('/verify-email')
+def verify_email():
+    """Email verification page."""
+    # Check if there's pending verification data
+    pending_data = session.get('pending_verification')
+
+    if not pending_data:
+        flash('No pending email verification found.', 'warning')
+        return redirect(url_for('auth.login'))
+
+    return render_template('verify_email.html',
+                         email=pending_data.get('email'),
+                         username=pending_data.get('username'))
 
 @auth_bp.route('/logout')
 @login_required

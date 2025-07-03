@@ -21,6 +21,14 @@ except ImportError:
         def validate_model_request(model_name, user_email=None):
             return {'valid': True, 'message': 'Model access granted', 'suggested_model': model_name}
 
+# Import email verification middleware
+try:
+    from services.email_verification_middleware import requires_verified_email, VerificationAwareAccessControl
+except ImportError:
+    # Fallback if middleware not available
+    def requires_verified_email(f):
+        return f
+
 # Create a blueprint for the transcription routes
 bp = Blueprint('transcription', __name__, url_prefix='/api')
 
@@ -83,6 +91,8 @@ def safe_remove_file(filepath, max_retries=3, retry_delay=0.5):
                 return False
 
 @bp.route('/transcribe', methods=['POST'])
+@login_required
+@requires_verified_email
 def transcribe_audio():
     """Endpoint for transcribing audio files"""
     if 'file' not in request.files:
@@ -509,6 +519,8 @@ def test_transcribe_chunk():
         }), 500
 
 @bp.route('/transcribe_chunk', methods=['POST'])
+@login_required
+@requires_verified_email
 def transcribe_chunk():
     """Process a single audio chunk for progressive transcription"""
     try:

@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='styles.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='auth.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/upgrade-modal.css') }}">
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/email-verification-modal.css') }}">
 </head>
 <body>
   <div class="container">
@@ -704,5 +705,6 @@
       window.stripePublishableKey = '{{ config.STRIPE_PUBLISHABLE_KEY or "" }}';
   </script>
   <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/email-verification-modal.js') }}"></script>
 </body>
 </html>

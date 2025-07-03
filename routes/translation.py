@@ -17,6 +17,14 @@ except ImportError:
         def validate_model_request(model_name, user_email=None):
             return {'valid': True, 'message': 'Model access granted', 'suggested_model': model_name}
 
+# Import email verification middleware
+try:
+    from services.email_verification_middleware import requires_verified_email
+except ImportError:
+    # Fallback if middleware not available
+    def requires_verified_email(f):
+        return f
+
 # Create a blueprint for the translation routes
 bp = Blueprint('translation', __name__, url_prefix='/api')
 
@@ -24,6 +32,7 @@ bp = Blueprint('translation', __name__, url_prefix='/api')
 translation_service = TranslationService()
 
 @bp.route('/translate', methods=['POST'])
+@requires_verified_email
 def translate_text():
     """
     Endpoint for translating text from one language to another.
