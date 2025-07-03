@@ -1,0 +1,84 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Verify Your Email - VocalLocal</title>
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .email-card { background: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; }
+                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 30px; text-align: center; }
+                .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+                .header p { margin: 10px 0 0 0; opacity: 0.9; font-size: 16px; }
+                .content { padding: 40px 30px; text-align: center; }
+                .verification-code { background: #f8f9fa; border: 2px dashed #667eea; border-radius: 8px; padding: 20px; margin: 30px 0; }
+                .code { font-size: 36px; font-weight: bold; color: #667eea; letter-spacing: 8px; font-family: 'Courier New', monospace; }
+                .instructions { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin: 20px 0; text-align: left; }
+                .warning { background: #fff3e0; border-left: 4px solid #ff9800; padding: 15px; margin: 20px 0; text-align: left; }
+                .footer { background: #f8f9fa; padding: 20px 30px; text-align: center; color: #666; font-size: 14px; }
+                .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 500; }
+                @media only screen and (max-width: 600px) {
+                    .container { padding: 10px; }
+                    .header, .content, .footer { padding: 20px; }
+                    .code { font-size: 28px; letter-spacing: 4px; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="email-card">
+                    <div class="header">
+                        <h1>🔐 Email Verification</h1>
+                        <p>Secure your VocalLocal account</p>
+                    </div>
+                    <div class="content">
+                        <h2>Hello testuser!</h2>
+                        <p>To complete your VocalLocal registration and secure your account, please verify your email address using the code below:</p>
+
+                        <div class="verification-code">
+                            <div class="code">123456</div>
+                            <p style="margin: 10px 0 0 0; color: #666; font-size: 14px;">Enter this code in the verification popup</p>
+                        </div>
+
+                        
+                        <div style="margin: 30px 0; text-align: center;">
+                            <a href="http://localhost:5000/auth/verify-email?email=test@example.com&token=abcd1234567890efgh1234567890ijkl&code=123456" class="button" style="background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; display: inline-block;">
+                                🔗 Verify Email Instantly
+                            </a>
+                            <p style="margin: 15px 0 0 0; color: #666; font-size: 14px;">
+                                Click the button above to verify your email automatically, or use the code below
+                            </p>
+                        </div>
+                        
+
+                        <div class="instructions">
+                            <h4 style="margin-top: 0;">📋 Two Ways to Verify:</h4>
+                            <ol style="margin: 0; padding-left: 20px;">
+                                <li><strong>Quick Option:</strong> Click the "Verify Email Instantly" button above</li>
+                                <li><strong>Manual Option:</strong> Return to VocalLocal and enter the 6-digit code</li>
+                            </ol>
+                        </div>
+
+                        <div class="warning">
+                            <h4 style="margin-top: 0;">⏰ Important:</h4>
+                            <ul style="margin: 0; padding-left: 20px;">
+                                <li>This code expires in <strong>10 minutes</strong></li>
+                                <li>You have <strong>3 attempts</strong> to enter the correct code</li>
+                                <li>If you didn't request this verification, please ignore this email</li>
+                            </ul>
+                        </div>
+
+                        <p style="margin-top: 30px;">Need help? Contact our support team at <a href="mailto:support@vocallocal.com">support@vocallocal.com</a></p>
+                    </div>
+                    <div class="footer">
+                        <p><strong>VocalLocal</strong> - AI-Powered Multilingual Transcription</p>
+                        <p>This verification email was sent to {email}</p>
+                        <p>© 2024 VocalLocal. All rights reserved.</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        

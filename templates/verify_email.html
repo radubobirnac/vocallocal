@@ -309,7 +309,102 @@
         document.addEventListener('DOMContentLoaded', function() {
             const email = '{{ email }}';
             const username = '{{ username }}';
-            
+            const autoVerify = {{ 'true' if auto_verify else 'false' }};
+            const verificationCode = '{{ verification_code if verification_code else "" }}';
+
+            // Auto-verification for direct links
+            if (autoVerify && verificationCode) {
+                console.log('Auto-verification triggered for direct link');
+
+                // Show loading state
+                const container = document.querySelector('.verification-container');
+                container.innerHTML = `
+                    <div class="verification-header">
+                        <div class="verification-icon">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                        <h1 class="verification-title">Verifying Your Email...</h1>
+                        <p class="verification-subtitle">Please wait while we verify your email address automatically.</p>
+                    </div>
+                `;
+
+                // Perform auto-verification
+                setTimeout(async () => {
+                    try {
+                        const response = await fetch('/api/verify-email-code', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                email: email,
+                                code: verificationCode
+                            })
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            // Success - show success message and redirect
+                            container.innerHTML = `
+                                <div class="verification-header">
+                                    <div class="verification-icon" style="background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);">
+                                        <i class="fas fa-check"></i>
+                                    </div>
+                                    <h1 class="verification-title">Email Verified Successfully!</h1>
+                                    <p class="verification-subtitle">Your account has been activated. Redirecting to login...</p>
+                                </div>
+                            `;
+
+                            // Redirect after 2 seconds
+                            setTimeout(() => {
+                                window.location.href = '{{ url_for("auth.login") }}';
+                            }, 2000);
+                        } else {
+                            // Failed - show error and fallback to manual verification
+                            container.innerHTML = `
+                                <div class="verification-header">
+                                    <div class="verification-icon" style="background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <h1 class="verification-title">Auto-Verification Failed</h1>
+                                    <p class="verification-subtitle">Please verify manually using the code sent to your email.</p>
+                                    <button id="manualVerifyBtn" class="btn btn-primary" style="margin-top: 20px;">
+                                        <i class="fas fa-keyboard"></i> Enter Code Manually
+                                    </button>
+                                </div>
+                            `;
+
+                            // Add manual verification option
+                            document.getElementById('manualVerifyBtn').addEventListener('click', function() {
+                                location.reload(); // Reload page for manual verification
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Auto-verification error:', error);
+                        // Show error and fallback to manual verification
+                        container.innerHTML = `
+                            <div class="verification-header">
+                                <div class="verification-icon" style="background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <h1 class="verification-title">Verification Error</h1>
+                                <p class="verification-subtitle">Please verify manually using the code sent to your email.</p>
+                                <button id="manualVerifyBtn" class="btn btn-primary" style="margin-top: 20px;">
+                                    <i class="fas fa-keyboard"></i> Enter Code Manually
+                                </button>
+                            </div>
+                        `;
+
+                        document.getElementById('manualVerifyBtn').addEventListener('click', function() {
+                            location.reload();
+                        });
+                    }
+                }, 1500); // Small delay for better UX
+
+                return; // Skip manual verification setup
+            }
+
             // Open verification modal
             document.getElementById('openVerificationModal').addEventListener('click', function() {
                 window.emailVerificationModal.show({

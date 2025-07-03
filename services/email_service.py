@@ -363,14 +363,15 @@ class EmailService:
         
         return msg
 
-    def create_verification_email(self, email: str, code: str, username: str = None) -> MimeMultipart:
+    def create_verification_email(self, email: str, code: str, username: str = None, verification_token: str = None) -> MimeMultipart:
         """
-        Create email verification code email.
+        Create email verification code email with optional verification link.
 
         Args:
             email (str): User's email address
             code (str): 6-digit verification code
             username (str): User's username (optional)
+            verification_token (str): Secure token for verification link (optional)
 
         Returns:
             MimeMultipart: Email message object
@@ -381,6 +382,13 @@ class EmailService:
         msg['To'] = email
 
         display_name = username if username else email.split('@')[0]
+
+        # Create verification link if token is provided
+        verification_link = None
+        if verification_token:
+            # You can customize this base URL based on your deployment
+            base_url = "http://localhost:5000"  # Change this to your actual domain
+            verification_link = f"{base_url}/auth/verify-email?email={email}&token={verification_token}&code={code}"
 
         # HTML email content
         html_content = f"""
@@ -427,13 +435,28 @@ class EmailService:
                             <p style="margin: 10px 0 0 0; color: #666; font-size: 14px;">Enter this code in the verification popup</p>
                         </div>
 
+                        """ + (f'''
+                        <div style="margin: 30px 0; text-align: center;">
+                            <a href="{verification_link}" class="button" style="background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; display: inline-block;">
+                                🔗 Verify Email Instantly
+                            </a>
+                            <p style="margin: 15px 0 0 0; color: #666; font-size: 14px;">
+                                Click the button above to verify your email automatically, or use the code below
+                            </p>
+                        </div>
+                        ''' if verification_link else '') + """
+
                         <div class="instructions">
-                            <h4 style="margin-top: 0;">📋 Instructions:</h4>
+                            """ + (f'''<h4 style="margin-top: 0;">📋 Two Ways to Verify:</h4>
+                            <ol style="margin: 0; padding-left: 20px;">
+                                <li><strong>Quick Option:</strong> Click the "Verify Email Instantly" button above</li>
+                                <li><strong>Manual Option:</strong> Return to VocalLocal and enter the 6-digit code</li>
+                            </ol>''' if verification_link else '''<h4 style="margin-top: 0;">📋 Instructions:</h4>
                             <ol style="margin: 0; padding-left: 20px;">
                                 <li>Return to the VocalLocal registration page</li>
                                 <li>Enter the 6-digit code above in the verification popup</li>
                                 <li>Click "Verify Email" to activate your account</li>
-                            </ol>
+                            </ol>''') + """
                         </div>
 
                         <div class="warning">
@@ -459,19 +482,21 @@ class EmailService:
         """
 
         # Plain text version
+        verification_link_text = f"\n\nQuick Verification Link:\n{verification_link}\n\nClick the link above to verify instantly, or use the code below." if verification_link else ""
+
         text_content = f"""
         VocalLocal Email Verification
 
         Hello {display_name}!
 
         To complete your VocalLocal registration, please verify your email address.
+        {verification_link_text}
 
         Your verification code is: {code}
 
-        Instructions:
-        1. Return to the VocalLocal registration page
-        2. Enter the 6-digit code above in the verification popup
-        3. Click "Verify Email" to activate your account
+        Two Ways to Verify:
+        1. Quick Option: Click the verification link above (if available)
+        2. Manual Option: Return to VocalLocal and enter the 6-digit code
 
         Important:
         - This code expires in 10 minutes

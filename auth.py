@@ -459,7 +459,47 @@ def register():
 
 @auth_bp.route('/verify-email')
 def verify_email():
-    """Email verification page."""
+    """Email verification page with support for direct links."""
+    # Check for direct link parameters
+    email_param = request.args.get('email')
+    token_param = request.args.get('token')
+    code_param = request.args.get('code')
+
+    # If direct link parameters are provided, handle token verification
+    if email_param and token_param and code_param:
+        logger.info(f"Direct verification link accessed for email: {email_param}")
+
+        try:
+            from services.email_verification_service import email_verification_service
+
+            # Verify the token
+            if email_verification_service.verify_token(email_param, token_param, code_param):
+                logger.info(f"Valid verification token for {email_param}")
+
+                # Set up session data for this verification
+                session['pending_verification'] = {
+                    'email': email_param,
+                    'username': email_param.split('@')[0],  # Default username
+                    'auto_verify': True,
+                    'code': code_param
+                }
+                session.permanent = True
+
+                # Render verification page with pre-filled data and auto-verification option
+                return render_template('verify_email.html',
+                                     email=email_param,
+                                     username=email_param.split('@')[0],
+                                     auto_verify=True,
+                                     verification_code=code_param)
+            else:
+                logger.warning(f"Invalid verification token for {email_param}")
+                flash('Invalid or expired verification link. Please try again.', 'danger')
+                return redirect(url_for('auth.register'))
+
+        except Exception as e:
+            logger.error(f"Error processing verification link: {str(e)}")
+            flash('Error processing verification link. Please try manual verification.', 'warning')
+
     # Check if there's pending verification data (check both possible keys)
     pending_data = session.get('pending_registration') or session.get('pending_verification')
 
@@ -476,7 +516,9 @@ def verify_email():
 
     return render_template('verify_email.html',
                          email=pending_data.get('email'),
-                         username=pending_data.get('username'))
+                         username=pending_data.get('username'),
+                         auto_verify=pending_data.get('auto_verify', False),
+                         verification_code=pending_data.get('code'))
 
 @auth_bp.route('/logout')
 @login_required

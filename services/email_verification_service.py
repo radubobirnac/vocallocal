@@ -5,6 +5,9 @@ Handles verification code generation, storage, and validation.
 import random
 import string
 import logging
+import secrets
+import hashlib
+import time
 from datetime import datetime, timedelta
 from typing import Dict, Optional, Tuple
 from firebase_config import initialize_firebase
@@ -26,12 +29,81 @@ class EmailVerificationService:
     def generate_verification_code(self) -> str:
         """
         Generate a 6-digit verification code.
-        
+
         Returns:
             str: 6-digit numeric code
         """
         return ''.join(random.choices(string.digits, k=self.code_length))
-    
+
+    def generate_verification_token(self, email: str, code: str) -> str:
+        """
+        Generate a secure verification token for email links.
+
+        Args:
+            email (str): User's email address
+            code (str): The verification code
+
+        Returns:
+            str: Secure token for verification links
+        """
+        # Create a deterministic but secure token using email, code, and a secret
+        # This allows the same email+code combination to generate the same token
+        secret_key = "vocallocal_verification_secret_2024"  # In production, use environment variable
+
+        # Combine data for hashing
+        token_data = f"{email}:{code}:{secret_key}"
+
+        # Create secure hash
+        token_hash = hashlib.sha256(token_data.encode()).hexdigest()
+
+        # Return first 32 characters for a manageable URL length
+        return token_hash[:32]
+
+    def verify_token(self, email: str, token: str, code: str) -> bool:
+        """
+        Verify if a token is valid for the given email and code.
+
+        Args:
+            email (str): User's email address
+            token (str): Token to verify
+            code (str): The verification code
+
+        Returns:
+            bool: True if token is valid, False otherwise
+        """
+        try:
+            # Get stored verification data
+            verification_data = self.get_verification_data(email)
+            if not verification_data:
+                logger.warning(f"No verification data found for {email}")
+                return False
+
+            stored_code = verification_data.get('code')
+            if not stored_code:
+                logger.warning(f"No stored code found for {email}")
+                return False
+
+            if stored_code != code:
+                logger.warning(f"Code mismatch for {email}: provided={code}, stored={stored_code}")
+                return False
+
+            # Regenerate token with the provided code and check if it matches
+            regenerated_token = self.generate_verification_token(email, code)
+
+            # Use secrets.compare_digest for secure comparison
+            is_valid = secrets.compare_digest(token, regenerated_token)
+
+            if is_valid:
+                logger.info(f"Token verification successful for {email}")
+            else:
+                logger.warning(f"Token mismatch for {email}")
+
+            return is_valid
+
+        except Exception as e:
+            logger.error(f"Error verifying token for {email}: {str(e)}")
+            return False
+
     def store_verification_code(self, email: str, code: str) -> Dict[str, any]:
         """
         Store verification code in Firebase with expiration.
@@ -172,21 +244,24 @@ class EmailVerificationService:
             
             # Generate new code
             code = self.generate_verification_code()
-            
+
+            # Generate verification token for the link
+            verification_token = self.generate_verification_token(email, code)
+
             # Store code
             store_result = self.store_verification_code(email, code)
             if not store_result['success']:
                 return store_result
-            
+
             # Update resend count
             verification_data = self.get_verification_data(email)
             if verification_data:
                 resend_count = verification_data.get('resend_count', 0) + 1
                 email_key = email.lower().strip().replace('.', '_').replace('@', '_at_')
                 self.db_ref.child('email_verifications').child(email_key).child('resend_count').set(resend_count)
-            
-            # Send email
-            email_result = self.send_verification_email(email, code, username)
+
+            # Send email with both code and verification link
+            email_result = self.send_verification_email(email, code, username, verification_token)
             
             if email_result['success']:
                 return {
@@ -311,27 +386,28 @@ class EmailVerificationService:
             return verification_data.get('verified', False)
         return False
     
-    def send_verification_email(self, email: str, code: str, username: str = None) -> Dict[str, any]:
+    def send_verification_email(self, email: str, code: str, username: str = None, verification_token: str = None) -> Dict[str, any]:
         """
-        Send verification code email.
-        
+        Send verification code email with optional verification link.
+
         Args:
             email (str): Email address
             code (str): Verification code
             username (str): Username for personalization
-            
+            verification_token (str): Secure token for verification link
+
         Returns:
             Dict containing send result
         """
         try:
-            # Create verification email
-            msg = email_service.create_verification_email(email, code, username)
-            
+            # Create verification email with both code and link
+            msg = email_service.create_verification_email(email, code, username, verification_token)
+
             # Send email
             result = email_service.send_email(msg)
-            
+
             return result
-            
+
         except Exception as e:
             logger.error(f'Failed to send verification email to {email}: {str(e)}')
             return {
