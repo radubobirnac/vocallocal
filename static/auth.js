@@ -162,28 +162,24 @@ document.addEventListener('DOMContentLoaded', () => {
       // Check email validation if email validator is available
       const emailInput = registerForm.querySelector('input[type="email"]');
       if (emailInput && window.emailValidator) {
-        // Check if email has validation errors
+        // Only prevent submission if email is explicitly marked as invalid
         if (emailInput.classList.contains('invalid')) {
           event.preventDefault();
           showFormError('Please enter a valid email address.');
           return false;
         }
 
-        // If email hasn't been validated yet, validate it now
-        if (!emailInput.classList.contains('valid') && emailInput.value.trim()) {
+        // Basic format validation as fallback
+        const email = emailInput.value.trim();
+        if (email && !window.emailValidator.validateFormat(email)) {
           event.preventDefault();
-
-          try {
-            const validation = await window.emailValidator.validateEmail(emailInput.value.trim());
-            if (!validation.valid) {
-              showFormError(validation.errors ? validation.errors[0] : 'Please enter a valid email address.');
-              return false;
-            }
-          } catch (error) {
-            console.error('Email validation error:', error);
-            // Continue with form submission if validation service fails
-          }
+          showFormError('Please enter a valid email format.');
+          return false;
         }
+
+        // If email is not validated yet but looks valid, allow submission
+        // The backend will handle final validation and OTP verification
+        console.log('Email validation passed, allowing form submission');
       }
 
       return true;

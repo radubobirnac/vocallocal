@@ -53,9 +53,9 @@ class EmailService:
         self.password = Config.MAIL_PASSWORD
         self.default_sender = Config.MAIL_DEFAULT_SENDER
         
-        # Email validation regex (RFC 5322 compliant)
+        # Email validation regex (RFC 5322 compliant with TLD requirement)
         self.email_regex = re.compile(
-            r'^[a-zA-Z0-9.!#$%&\'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'
+            r'^[a-zA-Z0-9.!#$%&\'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$'
         )
     
     def validate_email_format(self, email: str) -> bool:
@@ -167,11 +167,13 @@ class EmailService:
 
     def validate_email(self, email: str, smtp_verify: bool = False) -> Dict[str, any]:
         """
-        Comprehensive email validation.
+        Simplified email validation focusing on format only.
+        Domain validation removed to be more inclusive of educational and international domains.
+        Security is maintained through OTP verification.
 
         Args:
             email (str): Email address to validate
-            smtp_verify (bool): Whether to perform SMTP verification (slower, more thorough)
+            smtp_verify (bool): Whether to perform SMTP verification (disabled for inclusivity)
 
         Returns:
             Dict containing validation results with additional metadata
@@ -181,36 +183,23 @@ class EmailService:
             'email': email.strip().lower() if email else '',
             'errors': [],
             'warnings': [],
-            'validation_level': 'format_and_domain'
+            'validation_level': 'format_only'
         }
 
-        # Format validation
+        # Format validation only - more inclusive approach
         if not self.validate_email_format(email):
             result['errors'].append('Please enter a valid email format (e.g., user@domain.com)')
             return result
 
-        # Domain validation
-        domain_valid, domain_error = self.validate_email_domain(email)
-        if not domain_valid:
-            result['errors'].append(domain_error)
-            return result
+        # Skip domain validation to be more inclusive of educational and international domains
+        # Security is maintained through OTP verification process
 
         # Add informational message about validation level
-        result['warnings'].append('Email format and domain are valid. Note: This does not verify if the specific email address exists.')
+        result['warnings'].append('Email format is valid. Verification will be done via OTP code.')
 
-        # Optional SMTP verification
+        # SMTP verification disabled for inclusivity - OTP verification provides security
         if smtp_verify:
-            result['validation_level'] = 'format_domain_and_smtp'
-            smtp_valid, smtp_message = self.verify_email_smtp(email)
-
-            if not smtp_valid:
-                result['errors'].append(f"Email verification failed: {smtp_message}")
-                result['warnings'].append('The email format and domain are valid, but the specific address may not exist.')
-                # Still mark as valid for domain-level validation
-                result['valid'] = True
-                return result
-            else:
-                result['warnings'] = [smtp_message]
+            result['warnings'].append('SMTP verification skipped for inclusivity. OTP verification provides security.')
 
         result['valid'] = True
         return result

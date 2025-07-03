@@ -411,15 +411,11 @@ def register():
             return render_template('register.html')
 
         try:
-            # Create new user
+            # DO NOT create user yet - only create after email verification
+            # Store registration data in session for verification process
             password_hash = generate_password_hash(password)
-            User.create(
-                username=username,
-                email=email,
-                password_hash=password_hash
-            )
 
-            # Send verification code instead of welcome email
+            # Send verification code first
             try:
                 from services.email_verification_service import email_verification_service
                 verification_result = email_verification_service.send_verification_code(email, username)
@@ -428,33 +424,31 @@ def register():
                     logger.info(f'Verification email sent successfully to {email}')
 
                     # Store registration data in session for verification process
-                    session['pending_verification'] = {
+                    session['pending_registration'] = {
                         'email': email,
                         'username': username,
+                        'password_hash': password_hash,
                         'next': request.args.get('next')
                     }
+
+                    # Ensure session is saved
+                    session.permanent = True
+
+                    # Debug logging
+                    logger.info(f'Registration data stored in session for {email}')
+                    logger.info(f'Session keys after storage: {list(session.keys())}')
 
                     # Redirect to verification page
                     return redirect(url_for('auth.verify_email'))
                 else:
                     logger.error(f'Failed to send verification email to {email}: {verification_result["message"]}')
-                    flash('Registration successful, but failed to send verification email. Please contact support.', 'warning')
-
-                    # Preserve next parameter when redirecting to login
-                    next_page = request.args.get('next')
-                    if next_page:
-                        return redirect(url_for('auth.login', next=next_page))
-                    return redirect(url_for('auth.login'))
+                    flash('Failed to send verification email. Please try again or contact support.', 'danger')
+                    return render_template('register.html')
 
             except Exception as e:
                 logger.error(f'Error sending verification email to {email}: {str(e)}')
-                flash('Registration successful, but verification email failed. Please contact support.', 'warning')
-
-                # Preserve next parameter when redirecting to login
-                next_page = request.args.get('next')
-                if next_page:
-                    return redirect(url_for('auth.login', next=next_page))
-                return redirect(url_for('auth.login'))
+                flash('Failed to send verification email. Please try again or contact support.', 'danger')
+                return render_template('register.html')
 
         except Exception as e:
             logger.error(f'User creation failed: {str(e)}')
@@ -466,12 +460,19 @@ def register():
 @auth_bp.route('/verify-email')
 def verify_email():
     """Email verification page."""
-    # Check if there's pending verification data
-    pending_data = session.get('pending_verification')
+    # Check if there's pending verification data (check both possible keys)
+    pending_data = session.get('pending_registration') or session.get('pending_verification')
+
+    # Debug logging
+    logger.info(f"Verify email page accessed. Session keys: {list(session.keys())}")
+    if pending_data:
+        logger.info(f"Found pending data for email: {pending_data.get('email')}")
+    else:
+        logger.warning("No pending verification data found in session")
 
     if not pending_data:
-        flash('No pending email verification found.', 'warning')
-        return redirect(url_for('auth.login'))
+        flash('No pending email verification found. Please register again.', 'warning')
+        return redirect(url_for('auth.register'))
 
     return render_template('verify_email.html',
                          email=pending_data.get('email'),

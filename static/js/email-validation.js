@@ -79,17 +79,21 @@ class EmailValidator {
             feedbackDiv.className += ' valid';
 
             // Show appropriate message based on validation level
-            let message = '<i class="fas fa-check-circle"></i> Email format and domain are valid';
+            let message = '<i class="fas fa-check-circle"></i> Email format is valid';
 
             if (validation.validation_level === 'format_domain_and_smtp') {
                 message = '<i class="fas fa-check-circle"></i> Email address verified';
+            } else if (validation.validation_level === 'format_only') {
+                message = '<i class="fas fa-check-circle"></i> Email format is valid';
             }
 
-            // Add warning if present
+            // Add informational note about OTP verification
             if (validation.warnings && validation.warnings.length > 0) {
                 const warning = validation.warnings[0];
-                if (warning.includes('does not verify')) {
-                    message += ' <span class="validation-note">(format & domain only)</span>';
+                if (warning.includes('OTP')) {
+                    message += ' <span class="validation-note">(verification via OTP)</span>';
+                } else if (warning.includes('does not verify')) {
+                    message += ' <span class="validation-note">(format only)</span>';
                 }
             }
 

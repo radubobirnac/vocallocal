@@ -40,8 +40,25 @@ def send_verification_code():
                 'error_type': 'missing_email'
             }), 400
         
-        # Basic email validation
-        if '@' not in email or '.' not in email.split('@')[1]:
+        # Basic email format validation - simplified for inclusivity
+        if '@' not in email or len(email.split('@')) != 2:
+            return jsonify({
+                'success': False,
+                'message': 'Please enter a valid email address',
+                'error_type': 'invalid_email'
+            }), 400
+
+        # Check that domain part exists and has at least one dot (for TLD)
+        domain_part = email.split('@')[1]
+        if not domain_part or '.' not in domain_part:
+            return jsonify({
+                'success': False,
+                'message': 'Please enter a valid email address',
+                'error_type': 'invalid_email'
+            }), 400
+
+        # Ensure there's content after the last dot (TLD requirement)
+        if domain_part.endswith('.') or len(domain_part.split('.')[-1]) < 2:
             return jsonify({
                 'success': False,
                 'message': 'Please enter a valid email address',
@@ -115,17 +132,44 @@ def verify_email_code():
         
         # Verify the code
         result = email_verification_service.verify_code(email, code)
-        
+
         if result['success']:
-            # Mark user's email as verified in Firebase
-            User.mark_email_verified(email)
-            
+            # Check if this is a new registration (user doesn't exist yet)
+            existing_user = User.get_by_email(email)
+
+            if not existing_user and 'pending_registration' in session:
+                # Create the user account now that email is verified
+                registration_data = session['pending_registration']
+                if registration_data['email'] == email:
+                    try:
+                        User.create(
+                            username=registration_data['username'],
+                            email=registration_data['email'],
+                            password_hash=registration_data['password_hash']
+                        )
+                        logger.info(f'User account created for {email} after email verification')
+
+                        # Clear registration session data
+                        session.pop('pending_registration', None)
+
+                    except Exception as e:
+                        logger.error(f'Failed to create user account for {email}: {str(e)}')
+                        return jsonify({
+                            'success': False,
+                            'message': 'Email verified but failed to create account. Please contact support.',
+                            'error_type': 'account_creation_failed'
+                        }), 500
+
+            # Mark user's email as verified in Firebase (for existing users)
+            if existing_user:
+                User.mark_email_verified(email)
+
             # Clear verification session data
             session.pop('verification_email', None)
             session.pop('verification_username', None)
-            
+
             logger.info(f'Email verification completed for {email}')
-            
+
             return jsonify({
                 'success': True,
                 'message': 'Email verified successfully!',

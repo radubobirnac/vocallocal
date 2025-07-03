@@ -31,7 +31,7 @@ def validate_email():
         
         email = data['email']
         
-        # Validate email using email service
+        # Validate email using simplified format-only validation
         validation_result = email_service.validate_email(email)
         
         # Log validation attempt (without sensitive data)
