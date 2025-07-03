@@ -59,7 +59,7 @@ def test_email_service_validation():
         from services.email_service import email_service
         
         test_emails = [
-            "virinchiaddanki@gmail.com",  # Configured sender (should exist)
+            "",  # Configured sender (should exist)
             "virinchi@gmail.com",         # Non-existent but valid domain
             "test@gmail.com",             # Non-existent but valid domain
             "invalid@nonexistentdomain12345.com",  # Invalid domain

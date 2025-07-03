@@ -30,9 +30,9 @@ MAIL_SERVER=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USE_TLS=True
 MAIL_USE_SSL=False
-MAIL_USERNAME=virinchiaddanki@gmail.com
+MAIL_USERNAME=
 MAIL_PASSWORD=your_gmail_app_password_here
-MAIL_DEFAULT_SENDER=virinchiaddanki@gmail.com
+MAIL_DEFAULT_SENDER=
 ```
 
 ## Gmail App Password Setup Steps

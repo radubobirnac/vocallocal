@@ -22,7 +22,7 @@ def test_improved_validation():
         
         test_cases = [
             {
-                'email': 'virinchiaddanki@gmail.com',
+                'email': '',
                 'description': 'Configured sender email (should be valid)',
                 'expected_valid': True
             },
@@ -94,7 +94,7 @@ def test_improved_validation():
         print("Note: SMTP verification is more thorough but slower and potentially intrusive")
         
         # Test SMTP verification on a few emails (if enabled)
-        smtp_test_emails = ['test@gmail.com', 'virinchiaddanki@gmail.com']
+        smtp_test_emails = ['test@gmail.com', '']
         
         for email in smtp_test_emails:
             print(f"\nTesting SMTP verification for: {email}")
