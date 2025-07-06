@@ -38,12 +38,43 @@ def create_checkout_session():
         
         if plan_type not in ['basic', 'professional']:
             return jsonify({'error': 'Invalid plan type'}), 400
-        
+
         # Get user email
         user_email = current_user.email
+
+        # Check for existing active subscriptions
+        subscription_check = payment_service.check_existing_subscription(user_email, plan_type)
+
+        if subscription_check.get('error'):
+            return jsonify({'error': subscription_check['error']}), 500
+
+        if subscription_check.get('has_subscription'):
+            current_plan = subscription_check.get('current_plan', subscription_check.get('plan_type'))
+
+            if current_plan == plan_type:
+                # User already has the exact same plan
+                return jsonify({
+                    'error': f'You already have an active {plan_type.title()} Plan subscription. Please manage your existing subscription instead.',
+                    'subscription_exists': True,
+                    'current_plan': current_plan
+                }), 400
+            else:
+                # User has a different plan - this could be an upgrade/downgrade
+                plan_hierarchy = {'basic': 1, 'professional': 2}
+                current_level = plan_hierarchy.get(current_plan, 0)
+                requested_level = plan_hierarchy.get(plan_type, 0)
+
+                if requested_level <= current_level:
+                    # Trying to downgrade or get same level plan
+                    return jsonify({
+                        'error': f'You already have an active {current_plan.title()} Plan subscription. To change plans, please manage your subscription through the customer portal.',
+                        'subscription_exists': True,
+                        'current_plan': current_plan,
+                        'requested_plan': plan_type
+                    }), 400
         
         # Create success and cancel URLs
-        success_url = request.url_root + 'pricing?payment=success&plan=' + plan_type
+        success_url = request.url_root + '?payment=success&plan=' + plan_type
         cancel_url = request.url_root + 'pricing?payment=cancelled'
         
         # Create checkout session

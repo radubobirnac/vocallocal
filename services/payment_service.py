@@ -56,7 +56,7 @@ class PaymentService:
             # Create or retrieve customer
             customer = self._get_or_create_customer(user_email)
             
-            # Create checkout session with enhanced invoice configuration
+            # Create checkout session (invoices are automatically created for subscription mode)
             session = stripe.checkout.Session.create(
                 customer=customer.id,
                 payment_method_types=['card'],
@@ -75,29 +75,6 @@ class PaymentService:
                     'metadata': {
                         'user_email': user_email,
                         'plan_type': plan_type
-                    }
-                },
-                # Enhanced invoice configuration
-                invoice_creation={
-                    'enabled': True,
-                    'invoice_data': {
-                        'description': f'VocalLocal {plan_type.title()} Plan Subscription',
-                        'metadata': {
-                            'user_email': user_email,
-                            'plan_type': plan_type,
-                            'service': 'vocallocal_subscription'
-                        },
-                        'custom_fields': [
-                            {
-                                'name': 'Service',
-                                'value': 'VocalLocal AI Transcription Platform'
-                            },
-                            {
-                                'name': 'Plan Type',
-                                'value': f'{plan_type.title()} Plan'
-                            }
-                        ],
-                        'footer': 'Thank you for choosing VocalLocal! For support, contact support@vocallocal.com'
                     }
                 },
                 # Automatic tax calculation (if configured)
@@ -180,7 +157,10 @@ class PaymentService:
             
             elif event['type'] == 'invoice.payment_failed':
                 return self._handle_payment_failed(event['data']['object'])
-            
+
+            elif event['type'] == 'invoice.created':
+                return self._handle_invoice_created(event['data']['object'])
+
             else:
                 logger.info(f"Unhandled webhook event type: {event['type']}")
                 return {'success': True, 'message': 'Event type not handled'}
@@ -336,6 +316,10 @@ class PaymentService:
                     plan_name = self._get_plan_name_from_price(price)
                     billing_cycle = price.get('recurring', {}).get('interval', 'monthly')
 
+                # Fallback: if plan_name is still unknown, use plan_type from metadata
+                if plan_name == 'Unknown Plan' and plan_type != 'unknown':
+                    plan_name = self._get_plan_name_from_type(plan_type)
+
             # Store billing history in Firebase
             self._store_billing_history(user_email, {
                 'invoiceId': invoice_id,
@@ -392,6 +376,55 @@ class PaymentService:
         except Exception as e:
             logger.error(f"Error handling payment failure: {str(e)}")
             return {'error': str(e)}
+
+    def _handle_invoice_created(self, invoice):
+        """Handle invoice creation and customize it with VocalLocal branding"""
+        try:
+            logger.info(f"Invoice created: {invoice['id']}")
+
+            # Get subscription info to determine plan type
+            subscription_id = invoice.get('subscription')
+            if not subscription_id:
+                logger.info(f"No subscription found for invoice {invoice['id']}")
+                return {'success': True}
+
+            # Retrieve subscription to get plan type
+            subscription = stripe.Subscription.retrieve(subscription_id)
+            plan_type = subscription.get('metadata', {}).get('plan_type', 'unknown')
+
+            # Update invoice with custom fields and description
+            try:
+                stripe.Invoice.modify(
+                    invoice['id'],
+                    description=f'VocalLocal {plan_type.title()} Plan Subscription',
+                    metadata={
+                        'service': 'vocallocal_subscription',
+                        'plan_type': plan_type
+                    },
+                    custom_fields=[
+                        {
+                            'name': 'Service',
+                            'value': 'VocalLocal AI Transcription Platform'
+                        },
+                        {
+                            'name': 'Plan Type',
+                            'value': f'{plan_type.title()} Plan'
+                        }
+                    ],
+                    footer='Thank you for choosing VocalLocal! For support, contact support@vocallocal.com'
+                )
+
+                logger.info(f"Invoice {invoice['id']} customized successfully")
+
+            except stripe.error.StripeError as e:
+                logger.warning(f"Could not customize invoice {invoice['id']}: {str(e)}")
+                # Don't fail the webhook if customization fails
+
+            return {'success': True, 'message': 'Invoice created and customized'}
+
+        except Exception as e:
+            logger.error(f"Error handling invoice creation for {invoice.get('id', 'unknown')}: {str(e)}")
+            return {'error': str(e)}
     
     def create_customer_portal_session(self, customer_id, return_url):
         """
@@ -425,21 +458,69 @@ class PaymentService:
             # Map price IDs to plan names
             price_id = price.get('id')
 
-            if price_id == os.getenv('STRIPE_BASIC_PRICE_ID'):
+            # Get environment price IDs
+            basic_price_id = os.getenv('STRIPE_BASIC_PRICE_ID')
+            professional_price_id = os.getenv('STRIPE_PROFESSIONAL_PRICE_ID')
+
+            if price_id == basic_price_id:
                 return 'Basic Plan'
-            elif price_id == os.getenv('STRIPE_PROFESSIONAL_PRICE_ID'):
+            elif price_id == professional_price_id:
                 return 'Professional Plan'
 
-            # Fallback to price nickname or amount
-            if price.get('nickname'):
-                return price['nickname']
+            # Check if price has a product with a name
+            if price.get('product'):
+                try:
+                    product = stripe.Product.retrieve(price['product'])
+                    if product.get('name'):
+                        product_name = product['name']
+                        # Extract plan name from product name
+                        if 'Basic' in product_name:
+                            return 'Basic Plan'
+                        elif 'Professional' in product_name or 'Premium' in product_name:
+                            return 'Professional Plan'
+                        return product_name
+                except Exception:
+                    pass
 
+            # Fallback to price nickname
+            if price.get('nickname'):
+                nickname = price['nickname']
+                if 'Basic' in nickname:
+                    return 'Basic Plan'
+                elif 'Professional' in nickname or 'Premium' in nickname:
+                    return 'Professional Plan'
+                return nickname
+
+            # Final fallback to amount-based name
             amount = price.get('unit_amount', 0) / 100
             currency = price.get('currency', 'usd').upper()
+
+            # Try to map common amounts to plan names
+            if amount == 4.99:
+                return 'Basic Plan'
+            elif amount == 12.99:
+                return 'Professional Plan'
+
             return f"{currency} {amount:.2f} Plan"
 
         except Exception as e:
             logger.error(f"Error getting plan name from price: {str(e)}")
+            return 'Unknown Plan'
+
+    def _get_plan_name_from_type(self, plan_type):
+        """Get human-readable plan name from plan type string"""
+        try:
+            plan_names = {
+                'basic': 'Basic Plan',
+                'professional': 'Professional Plan',
+                'premium': 'Professional Plan',  # Legacy support
+                'enterprise': 'Enterprise Plan'
+            }
+
+            return plan_names.get(plan_type.lower(), f'{plan_type.title()} Plan')
+
+        except Exception as e:
+            logger.error(f"Error getting plan name from type: {str(e)}")
             return 'Unknown Plan'
 
     def _store_billing_history(self, user_email, billing_data):
@@ -507,3 +588,163 @@ class PaymentService:
         except stripe.error.StripeError as e:
             logger.error(f"Error retrieving customer: {str(e)}")
             return None
+
+    def check_existing_subscription(self, user_email, plan_type):
+        """
+        Check if user already has an active subscription for the requested plan type.
+        This method checks both Stripe and Firebase to ensure accurate subscription status.
+        """
+        try:
+            logger.info(f"Checking subscription for {user_email}, requested plan: {plan_type}")
+
+            # First check Firebase for subscription data (faster and more reliable for app logic)
+            firebase_subscription = self._check_firebase_subscription(user_email, plan_type)
+            logger.info(f"Firebase subscription check result: {firebase_subscription}")
+
+            # Then check Stripe for billing subscription status
+            stripe_subscription = self._check_stripe_subscription(user_email, plan_type)
+            logger.info(f"Stripe subscription check result: {stripe_subscription}")
+
+            # Determine final result based on both sources
+            return self._reconcile_subscription_status(firebase_subscription, stripe_subscription, user_email, plan_type)
+
+        except Exception as e:
+            logger.error(f"Error checking subscription for {user_email}: {str(e)}")
+            return {'error': f'Error checking subscription: {str(e)}'}
+
+    def _check_firebase_subscription(self, user_email, plan_type):
+        """Check Firebase for user subscription data"""
+        try:
+            from services.user_account_service import UserAccountService
+
+            user_id = user_email.replace('.', ',')
+            user_account = UserAccountService.get_user_account(user_id)
+
+            if not user_account or 'subscription' not in user_account:
+                return {'has_subscription': False, 'source': 'firebase', 'message': 'No Firebase subscription data'}
+
+            subscription = user_account['subscription']
+            current_plan = subscription.get('planType', 'free')
+            status = subscription.get('status', 'inactive')
+
+            # Check if user has an active subscription
+            if status == 'active' and current_plan in ['basic', 'professional']:
+                if current_plan == plan_type:
+                    return {
+                        'has_subscription': True,
+                        'source': 'firebase',
+                        'plan_type': current_plan,
+                        'status': status,
+                        'message': f'User has active {current_plan} subscription in Firebase'
+                    }
+                else:
+                    return {
+                        'has_subscription': True,
+                        'source': 'firebase',
+                        'plan_type': current_plan,
+                        'current_plan': current_plan,
+                        'requested_plan': plan_type,
+                        'status': status,
+                        'message': f'User has active {current_plan} subscription, requesting {plan_type}'
+                    }
+
+            return {
+                'has_subscription': False,
+                'source': 'firebase',
+                'plan_type': current_plan,
+                'status': status,
+                'message': f'Firebase shows {current_plan} plan with {status} status'
+            }
+
+        except Exception as e:
+            logger.error(f"Error checking Firebase subscription: {str(e)}")
+            return {'has_subscription': False, 'source': 'firebase', 'error': str(e)}
+
+    def _check_stripe_subscription(self, user_email, plan_type):
+        """Check Stripe for active billing subscriptions"""
+        try:
+            # Get customer from Stripe
+            customer = self.get_customer_by_email(user_email)
+            if not customer:
+                return {'has_subscription': False, 'source': 'stripe', 'message': 'No Stripe customer found'}
+
+            # Get all active subscriptions for this customer
+            subscriptions = stripe.Subscription.list(
+                customer=customer.id,
+                status='active',
+                limit=10
+            )
+
+            if not subscriptions.data:
+                return {'has_subscription': False, 'source': 'stripe', 'message': 'No active Stripe subscriptions'}
+
+            for subscription in subscriptions.data:
+                # Check subscription metadata for plan type
+                sub_plan_type = subscription.get('metadata', {}).get('plan_type')
+
+                if sub_plan_type == plan_type:
+                    return {
+                        'has_subscription': True,
+                        'source': 'stripe',
+                        'subscription_id': subscription.id,
+                        'plan_type': sub_plan_type,
+                        'message': f'User has active {plan_type} subscription in Stripe'
+                    }
+
+                # Check if user has any active subscription (for upgrade logic)
+                if sub_plan_type in ['basic', 'professional']:
+                    return {
+                        'has_subscription': True,
+                        'source': 'stripe',
+                        'subscription_id': subscription.id,
+                        'plan_type': sub_plan_type,
+                        'current_plan': sub_plan_type,
+                        'requested_plan': plan_type,
+                        'message': f'User has active {sub_plan_type} subscription in Stripe, requesting {plan_type}'
+                    }
+
+            return {'has_subscription': False, 'source': 'stripe', 'message': 'No matching active subscriptions in Stripe'}
+
+        except stripe.error.StripeError as e:
+            logger.error(f"Stripe error checking subscription for {user_email}: {str(e)}")
+            return {'has_subscription': False, 'source': 'stripe', 'error': f'Stripe error: {str(e)}'}
+
+    def _reconcile_subscription_status(self, firebase_result, stripe_result, user_email, plan_type):
+        """
+        Reconcile subscription status between Firebase and Stripe.
+        Priority: Stripe (billing truth) > Firebase (app state)
+        """
+        try:
+            # If both have errors, return error
+            if firebase_result.get('error') and stripe_result.get('error'):
+                return {'error': 'Unable to check subscription status in both Firebase and Stripe'}
+
+            # If Stripe has an active subscription, it's the source of truth for billing
+            if stripe_result.get('has_subscription'):
+                logger.info(f"Stripe shows active subscription for {user_email}")
+                return stripe_result
+
+            # If Firebase shows active subscription but Stripe doesn't, there might be a sync issue
+            if firebase_result.get('has_subscription') and firebase_result.get('status') == 'active':
+                logger.warning(f"Firebase shows active subscription for {user_email} but Stripe doesn't - possible sync issue")
+
+                # For safety, we'll trust Firebase if it shows a paid plan but warn about the discrepancy
+                if firebase_result.get('plan_type') in ['basic', 'professional']:
+                    # Add a warning to the result
+                    result = firebase_result.copy()
+                    result['warning'] = 'Subscription found in Firebase but not in Stripe - please verify billing status'
+                    result['sync_issue'] = True
+                    return result
+
+            # If neither has active subscription, user is free
+            logger.info(f"No active subscription found for {user_email} in either Firebase or Stripe")
+            return {
+                'has_subscription': False,
+                'message': 'No active subscription found',
+                'firebase_status': firebase_result.get('message', 'Unknown'),
+                'stripe_status': stripe_result.get('message', 'Unknown')
+            }
+
+        except Exception as e:
+            logger.error(f"Error reconciling subscription status: {str(e)}")
+            return {'error': f'Error reconciling subscription status: {str(e)}'}

@@ -130,8 +130,59 @@ def index():
     """Main index route - handles both authenticated and non-authenticated users."""
     from flask_login import current_user
     if current_user.is_authenticated:
-        # User is logged in, show the main application
-        return render_template('index.html')
+        # User is logged in, get their plan and usage info for upgrade prompts
+        try:
+            from routes.main import should_show_upgrade_prompts
+            from services.user_account_service import UserAccountService
+
+            # Get user plan information
+            user_id = current_user.email.replace('.', ',')
+            user_data = UserAccountService.get_user_account(user_id)
+
+            # Determine plan type
+            plan_type = 'free'  # Default
+            if user_data and user_data.get('subscription', {}).get('status') == 'active':
+                plan_type = user_data.get('subscription', {}).get('planType', 'free')
+
+            # Check admin/super user status
+            is_admin = user_data.get('role') == 'admin' if user_data else False
+            is_super_user = user_data.get('role') == 'super_user' if user_data else False
+
+            # Get usage data (simplified for index page)
+            usage_data = user_data.get('usage', {}).get('currentPeriod', {}) if user_data else {}
+
+            # Format usage data for upgrade prompt logic
+            formatted_usage = {
+                'transcription': {
+                    'used': usage_data.get('transcriptionMinutes', 0),
+                    'limit': 60 if plan_type == 'free' else (280 if plan_type == 'basic' else 800)
+                },
+                'translation': {
+                    'used': usage_data.get('translationWords', 0),
+                    'limit': 0 if plan_type == 'free' else (50000 if plan_type == 'basic' else 160000)
+                },
+                'tts': {
+                    'used': usage_data.get('ttsMinutes', 0),
+                    'limit': 0 if plan_type == 'free' else (60 if plan_type == 'basic' else 200)
+                },
+                'ai_credits': {
+                    'used': usage_data.get('aiCredits', 0),
+                    'limit': 0 if plan_type == 'free' else (50 if plan_type == 'basic' else 150)
+                }
+            }
+
+            # Determine if upgrade prompts should be shown
+            show_upgrade_prompts = should_show_upgrade_prompts(plan_type, formatted_usage, is_admin, is_super_user)
+
+            return render_template('index.html',
+                                 plan_type=plan_type,
+                                 show_upgrade_prompts=show_upgrade_prompts)
+        except Exception as e:
+            print(f"Error getting user plan info: {e}")
+            # Fallback: show the main application without upgrade prompt logic
+            return render_template('index.html',
+                                 plan_type='free',
+                                 show_upgrade_prompts=True)
     else:
         # User is not logged in, show the home page
         return render_template('home.html')

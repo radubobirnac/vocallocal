@@ -202,23 +202,81 @@ def test_stripe_checkout_configuration():
             mock_create.assert_called_once()
             call_args = mock_create.call_args[1]
             
-            # Check invoice creation configuration
-            assert 'invoice_creation' in call_args, "Should have invoice creation config"
-            assert call_args['invoice_creation']['enabled'] == True
-            
-            invoice_data = call_args['invoice_creation']['invoice_data']
-            assert 'Basic Plan' in invoice_data['description']
-            assert len(invoice_data['custom_fields']) == 2
-            assert invoice_data['footer'] == 'Thank you for choosing VocalLocal! For support, contact support@vocallocal.com'
+            # Check that invoice creation is NOT manually configured (Stripe handles it automatically for subscriptions)
+            assert 'invoice_creation' not in call_args, "Invoice creation should not be manually configured for subscription mode"
+
+            # Check that subscription metadata is properly set
+            subscription_data = call_args['subscription_data']
+            assert subscription_data['metadata']['user_email'] == 'checkout.test@example.com'
+            assert subscription_data['metadata']['plan_type'] == 'basic'
             
             print("✅ Stripe checkout configuration working correctly")
             print(f"   Session ID: {result['session_id']}")
-            print(f"   Invoice creation enabled: {call_args['invoice_creation']['enabled']}")
-            print(f"   Custom fields: {len(invoice_data['custom_fields'])}")
+            print(f"   Subscription mode: Invoices created automatically by Stripe")
+            print(f"   Metadata configured: {len(subscription_data['metadata'])} fields")
             return True
             
     except Exception as e:
         print(f"❌ Stripe checkout configuration test failed: {e}")
+        return False
+
+def test_invoice_creation_handler():
+    """Test invoice creation webhook handler"""
+    print("🔍 Testing Invoice Creation Handler...")
+    try:
+        from services.payment_service import PaymentService
+
+        payment_service = PaymentService()
+
+        # Mock invoice data
+        mock_invoice = {
+            'id': 'in_test_creation_123',
+            'subscription': 'sub_test_creation'
+        }
+
+        # Mock subscription
+        mock_subscription = Mock()
+        mock_subscription.get.return_value = {'plan_type': 'professional'}
+
+        with patch('stripe.Subscription.retrieve', return_value=mock_subscription), \
+             patch('stripe.Invoice.modify') as mock_modify:
+
+            # Test the handler
+            result = payment_service._handle_invoice_created(mock_invoice)
+
+            # Validate results
+            assert result['success'] == True, "Invoice creation handler should succeed"
+            assert 'Invoice created and customized' in result['message']
+
+            # Verify invoice was modified with custom fields
+            mock_modify.assert_called_once_with(
+                'in_test_creation_123',
+                description='VocalLocal Professional Plan Subscription',
+                metadata={
+                    'service': 'vocallocal_subscription',
+                    'plan_type': 'professional'
+                },
+                custom_fields=[
+                    {
+                        'name': 'Service',
+                        'value': 'VocalLocal AI Transcription Platform'
+                    },
+                    {
+                        'name': 'Plan Type',
+                        'value': 'Professional Plan'
+                    }
+                ],
+                footer='Thank you for choosing VocalLocal! For support, contact support@vocallocal.com'
+            )
+
+            print("✅ Invoice creation handler working correctly")
+            print(f"   Invoice ID: in_test_creation_123")
+            print(f"   Plan type: Professional")
+            print(f"   Custom fields added: 2")
+            return True
+
+    except Exception as e:
+        print(f"❌ Invoice creation handler test failed: {e}")
         return False
 
 def run_complete_tests():
@@ -229,7 +287,8 @@ def run_complete_tests():
     tests = [
         test_complete_payment_flow,
         test_billing_history_retrieval,
-        test_stripe_checkout_configuration
+        test_stripe_checkout_configuration,
+        test_invoice_creation_handler
     ]
     
     passed = 0

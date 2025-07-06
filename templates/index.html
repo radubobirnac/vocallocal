@@ -26,6 +26,31 @@
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='auth.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/upgrade-modal.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/email-verification-modal.css') }}">
+
+  <!-- Payment Success Animation Styles -->
+  <style>
+    @keyframes slideInRight {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideOutRight {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -561,7 +586,9 @@
     window.upgradeConfig = {
     isAuthenticated: {{ 'true' if current_user.is_authenticated() else 'false' }},
     pricingUrl: "{{ url_for('pricing') }}",
-    loginUrl: "{{ url_for('auth.login', next='/pricing') }}"
+    loginUrl: "{{ url_for('auth.login', next='/pricing') }}",
+    showUpgradePrompts: {{ 'true' if show_upgrade_prompts else 'false' }},
+    planType: "{{ plan_type or 'free' }}"
   };
 
     // Payment flow state management
@@ -569,18 +596,24 @@
       isProcessing: false,
       upgradeButton: null,
 
-      init: function() {c
+      init: function() {
         this.upgradeButton = document.getElementById('upgrade-button');
         this.setupEventListeners();
         this.checkForReturnFromPayment();
       },
 
       setupEventListeners: function() {
-        if (!this.upgradeButton) return;
+        if (!this.upgradeButton) {
+          console.warn('Upgrade button not found on page');
+          return;
+        }
+
+        console.log('Setting up upgrade button event listener');
 
         // Handle upgrade button click
         this.upgradeButton.addEventListener('click', (e) => {
           e.preventDefault();
+          console.log('Upgrade button clicked');
           this.handleUpgradeClick();
         });
 
@@ -600,20 +633,37 @@
       },
 
       handleUpgradeClick: function() {
+        console.log('handleUpgradeClick called');
+
         if (this.isProcessing) {
           console.log('Upgrade already in progress');
           return;
         }
 
+        // Check if upgrade config is available
+        if (!window.upgradeConfig) {
+          console.error('Upgrade configuration not found');
+          alert('Upgrade configuration error. Please refresh the page and try again.');
+          return;
+        }
+
         this.setProcessingState(true);
 
-        // Check if user is authenticated
-        if (window.upgradeConfig.isAuthenticated) {
-          console.log('Authenticated user clicking upgrade - redirecting to pricing');
-          window.location.href = window.upgradeConfig.pricingUrl;
-        } else {
-          console.log('Unauthenticated user clicking upgrade - redirecting to login');
-          window.location.href = window.upgradeConfig.loginUrl;
+        try {
+          // Check if user is authenticated
+          if (window.upgradeConfig.isAuthenticated) {
+            console.log('Authenticated user clicking upgrade - redirecting to pricing');
+            console.log('Pricing URL:', window.upgradeConfig.pricingUrl);
+            window.location.href = window.upgradeConfig.pricingUrl;
+          } else {
+            console.log('Unauthenticated user clicking upgrade - redirecting to login');
+            console.log('Login URL:', window.upgradeConfig.loginUrl);
+            window.location.href = window.upgradeConfig.loginUrl;
+          }
+        } catch (error) {
+          console.error('Error in handleUpgradeClick:', error);
+          this.setProcessingState(false);
+          alert('An error occurred. Please try again.');
         }
       },
 
@@ -692,9 +742,66 @@
       }
     };
 
+    // Check for payment success on page load
+    window.paymentFlowManager.checkPaymentSuccess = function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paymentStatus = urlParams.get('payment');
+      const planType = urlParams.get('plan');
+
+      if (paymentStatus === 'success' && planType) {
+        // Show success notification
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+          color: white;
+          padding: 20px 25px;
+          border-radius: 10px;
+          font-weight: 500;
+          z-index: 10000;
+          max-width: 400px;
+          box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+          animation: slideInRight 0.5s ease-out;
+        `;
+
+        const planName = planType === 'basic' ? 'Basic Plan' : 'Professional Plan';
+        notification.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-check-circle" style="font-size: 24px;"></i>
+            <div>
+              <div style="font-weight: 600; margin-bottom: 5px;">Payment Successful! 🎉</div>
+              <div style="font-size: 14px; opacity: 0.9;">Welcome to VocalLocal ${planName}!</div>
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Auto-remove after 8 seconds
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.style.animation = 'slideOutRight 0.5s ease-in';
+            setTimeout(() => notification.remove(), 500);
+          }
+        }, 8000);
+
+        // Clean up URL parameters
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+
+        // Refresh page after a short delay to update user's plan status
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+      }
+    };
+
     // Initialize when DOM is ready
     document.addEventListener('DOMContentLoaded', function() {
       window.paymentFlowManager.init();
+      window.paymentFlowManager.checkPaymentSuccess();
     });
   </script>
 

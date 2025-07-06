@@ -108,6 +108,131 @@ class TranslationFallback:
 Transcription = TranscriptionFallback
 Translation = TranslationFallback
 
+def get_user_current_plan(user_email):
+    """
+    Get user's current plan with enhanced accuracy by checking both Firebase and Stripe.
+
+    Args:
+        user_email (str): User's email address
+
+    Returns:
+        tuple: (plan_type, plan_display)
+    """
+    try:
+        # Import payment service for subscription checking
+        from services.payment_service import PaymentService
+
+        payment_service = PaymentService()
+
+        # Check subscription status for basic plan (we just need to know if they have any active subscription)
+        subscription_check = payment_service.check_existing_subscription(user_email, 'basic')
+
+        if subscription_check.get('error'):
+            logger.warning(f"Error checking subscription for {user_email}: {subscription_check['error']}")
+            # Fallback to Firebase only
+            return get_user_plan_from_firebase(user_email)
+
+        if subscription_check.get('has_subscription'):
+            current_plan = subscription_check.get('plan_type') or subscription_check.get('current_plan')
+
+            if current_plan == 'professional':
+                return 'professional', 'Professional Plan'
+            elif current_plan == 'basic':
+                return 'basic', 'Basic Plan'
+
+        # If no active subscription found, check if there's a sync issue warning
+        if subscription_check.get('sync_issue'):
+            logger.warning(f"Subscription sync issue detected for {user_email}")
+            # Still return the Firebase plan but log the issue
+            firebase_plan = subscription_check.get('plan_type', 'free')
+            if firebase_plan == 'professional':
+                return 'professional', 'Professional Plan (Verify Billing)'
+            elif firebase_plan == 'basic':
+                return 'basic', 'Basic Plan (Verify Billing)'
+
+        # Default to free plan
+        return 'free', 'Free Plan'
+
+    except Exception as e:
+        logger.error(f"Error getting current plan for {user_email}: {str(e)}")
+        # Fallback to Firebase only
+        return get_user_plan_from_firebase(user_email)
+
+def get_user_plan_from_firebase(user_email):
+    """
+    Fallback method to get user plan from Firebase only.
+
+    Args:
+        user_email (str): User's email address
+
+    Returns:
+        tuple: (plan_type, plan_display)
+    """
+    try:
+        user_id = user_email.replace('.', ',')
+        user_account = UserAccountService.get_user_account(user_id)
+
+        if user_account and 'subscription' in user_account:
+            plan_type = user_account['subscription'].get('planType', 'free')
+            status = user_account['subscription'].get('status', 'inactive')
+
+            # Only return paid plans if status is active
+            if status == 'active':
+                if plan_type == 'professional':
+                    return 'professional', 'Professional Plan'
+                elif plan_type == 'basic':
+                    return 'basic', 'Basic Plan'
+
+        return 'free', 'Free Plan'
+
+    except Exception as e:
+        logger.error(f"Error getting Firebase plan for {user_email}: {str(e)}")
+        return 'free', 'Free Plan'
+
+def should_show_upgrade_prompts(plan_type, usage_data, is_admin, is_super_user):
+    """
+    Determine if user should see upgrade prompts based on their plan and usage.
+
+    Args:
+        plan_type (str): User's current plan type
+        usage_data (dict): User's usage data
+        is_admin (bool): Whether user is admin
+        is_super_user (bool): Whether user is super user
+
+    Returns:
+        bool: True if upgrade prompts should be shown
+    """
+    # Never show upgrade prompts for admin or super users
+    if is_admin or is_super_user:
+        return False
+
+    # Always show upgrade prompts for free users
+    if plan_type == 'free':
+        return True
+
+    # For paid users, only show upgrade prompts if they've used 80% of any service
+    if plan_type in ['basic', 'professional']:
+        services = ['transcription', 'translation', 'tts', 'ai_credits']
+
+        for service in services:
+            service_data = usage_data.get(service, {})
+            used = service_data.get('used', 0)
+            limit = service_data.get('limit', 0)
+
+            # Skip services with unlimited or zero limits
+            if limit == 0 or limit == float('inf'):
+                continue
+
+            # Calculate usage percentage
+            usage_percentage = (used / limit) * 100 if limit > 0 else 0
+
+            # If any service is at 80% or higher usage, show upgrade prompts
+            if usage_percentage >= 80:
+                return True
+
+    # Default: don't show upgrade prompts for paid users with low usage
+    return False
+
 def import_firebase_models():
     """Import Firebase models with comprehensive error handling."""
     global Transcription, Translation
@@ -666,26 +791,9 @@ def dashboard():
             plan_type = 'professional'
             plan_display = 'Professional Plan'
         else:
-            # Get plan from user account
-            try:
-                user_id = current_user.email.replace('.', ',')
-                user_account = UserAccountService.get_user_account(user_id)
-                if user_account and 'subscription' in user_account:
-                    plan_type = user_account['subscription'].get('planType', 'free')
-                else:
-                    plan_type = 'free'
-                
-                # Set display name
-                if plan_type == 'professional':
-                    plan_display = 'Professional Plan'
-                elif plan_type == 'basic':
-                    plan_display = 'Basic Plan'
-                else:
-                    plan_display = 'Free Plan'
-            except Exception as e:
-                logger.error(f"Error getting user plan: {e}")
-                plan_type = 'free'
-                plan_display = 'Free Plan'
+            # Get accurate plan information using enhanced subscription checking
+            plan_type, plan_display = get_user_current_plan(current_user.email)
+            logger.info(f"User {current_user.email} current plan: {plan_type} ({plan_display})")
         
         # Get usage data
         logger.info("Getting user usage data...")
@@ -720,6 +828,9 @@ def dashboard():
         else:
             reset_date = datetime(today.year, today.month + 1, 1)
 
+        # Calculate if user should see upgrade prompts
+        show_upgrade_prompts = should_show_upgrade_prompts(plan_type, usage_data, is_admin, is_super_user)
+
         logger.info("Rendering dashboard template with variables:")
         logger.info(f"  - usage: {type(usage_data)}")
         logger.info(f"  - plan_type: {plan_type}")
@@ -728,6 +839,7 @@ def dashboard():
         logger.info(f"  - is_super_user: {is_super_user}")
         logger.info(f"  - unlimited_access: {is_admin or is_super_user}")
         logger.info(f"  - reset_date: {reset_date}")
+        logger.info(f"  - show_upgrade_prompts: {show_upgrade_prompts}")
 
         return render_template(
             'dashboard.html',
@@ -738,6 +850,7 @@ def dashboard():
             is_super_user=is_super_user,
             unlimited_access=(is_admin or is_super_user),
             reset_date=reset_date,
+            show_upgrade_prompts=show_upgrade_prompts,
             config=current_app.config
         )
     except Exception as e:
