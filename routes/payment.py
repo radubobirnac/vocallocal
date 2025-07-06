@@ -267,6 +267,87 @@ def payment_health():
             'error': str(e)
         }), 500
 
+@bp.route('/billing-history', methods=['GET'])
+@login_required
+def billing_history():
+    """
+    Get billing history for the current user
+    """
+    try:
+        from services.user_account_service import UserAccountService
+
+        user_email = current_user.email
+        user_id = user_email.replace('.', ',')
+
+        # Get billing history from Firebase
+        billing_ref = UserAccountService.get_ref(f'users/{user_id}/billing/invoices')
+        billing_data = billing_ref.get()
+
+        invoices = []
+        if billing_data:
+            # Convert Firebase data to list format
+            for invoice_key, invoice_data in billing_data.items():
+                invoices.append({
+                    'id': invoice_key,
+                    'invoiceId': invoice_data.get('invoiceId'),
+                    'amount': invoice_data.get('amount', 0),
+                    'currency': invoice_data.get('currency', 'USD'),
+                    'paymentDate': invoice_data.get('paymentDate'),
+                    'planName': invoice_data.get('planName', 'Unknown Plan'),
+                    'planType': invoice_data.get('planType'),
+                    'status': invoice_data.get('status', 'paid')
+                })
+
+            # Sort by payment date (newest first)
+            invoices.sort(key=lambda x: x.get('paymentDate', 0), reverse=True)
+
+        return jsonify({
+            'success': True,
+            'invoices': invoices
+        })
+
+    except Exception as e:
+        logger.error(f"Error retrieving billing history for {current_user.email}: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Unable to retrieve billing history'
+        }), 500
+
+@bp.route('/download-invoice/<invoice_id>', methods=['GET'])
+@login_required
+def download_invoice(invoice_id):
+    """
+    Download invoice from Stripe
+    """
+    try:
+        import stripe
+
+        # Verify the invoice belongs to the current user
+        user_email = current_user.email
+        customer = payment_service.get_customer_by_email(user_email)
+
+        if not customer:
+            return jsonify({'error': 'No customer found'}), 404
+
+        # Retrieve invoice from Stripe
+        invoice = stripe.Invoice.retrieve(invoice_id)
+
+        # Verify the invoice belongs to this customer
+        if invoice.customer != customer.id:
+            return jsonify({'error': 'Invoice not found'}), 404
+
+        # Redirect to Stripe's hosted invoice page
+        if invoice.hosted_invoice_url:
+            return redirect(invoice.hosted_invoice_url)
+        else:
+            return jsonify({'error': 'Invoice not available for download'}), 404
+
+    except stripe.error.InvalidRequestError:
+        return jsonify({'error': 'Invoice not found'}), 404
+    except Exception as e:
+        logger.error(f"Error downloading invoice {invoice_id}: {str(e)}")
+        return jsonify({'error': 'Unable to download invoice'}), 500
+
 # Error handlers for payment blueprint
 @bp.errorhandler(404)
 def payment_not_found(error):

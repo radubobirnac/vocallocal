@@ -629,5 +629,269 @@ class EmailService:
                 'error': str(e)
             }
 
+    def create_payment_confirmation_email(self, username: str, email: str, invoice_id: str,
+                                        amount: float, currency: str, payment_date,
+                                        plan_type: str, plan_name: str, billing_cycle: str) -> MimeMultipart:
+        """
+        Create payment confirmation email with invoice details.
+
+        Args:
+            username (str): User's username
+            email (str): User's email address
+            invoice_id (str): Stripe invoice ID
+            amount (float): Payment amount
+            currency (str): Payment currency
+            payment_date (datetime): Payment date
+            plan_type (str): Plan type (basic/professional)
+            plan_name (str): Human-readable plan name
+            billing_cycle (str): Billing cycle (monthly/annual)
+
+        Returns:
+            MimeMultipart: Email message object
+        """
+        msg = MimeMultipart('alternative')
+        msg['Subject'] = f'Payment Confirmation - VocalLocal {plan_name}'
+        msg['From'] = self.default_sender
+        msg['To'] = email
+
+        # Format payment date
+        formatted_date = payment_date.strftime('%B %d, %Y at %I:%M %p UTC')
+
+        # Define plan-specific features and limits
+        plan_details = {
+            'basic': {
+                'monthly_limits': '280 minutes transcription, 50,000 words translation, 60 minutes TTS, 50 AI credits',
+                'features': [
+                    '✓ Premium AI models access',
+                    '✓ Text-to-speech functionality',
+                    '✓ Advanced translation features',
+                    '✓ Priority support',
+                    '✓ Multiple language support'
+                ],
+                'price': '$4.99'
+            },
+            'professional': {
+                'monthly_limits': '800 minutes transcription, 160,000 words translation, 200 minutes TTS, 150 AI credits',
+                'features': [
+                    '✓ All Basic features',
+                    '✓ Highest usage limits',
+                    '✓ Premium model priority',
+                    '✓ Advanced AI features',
+                    '✓ Priority customer support',
+                    '✓ Enhanced processing speed'
+                ],
+                'price': '$12.99'
+            }
+        }
+
+        current_plan = plan_details.get(plan_type, plan_details['basic'])
+        features_list = '\n                        '.join(current_plan['features'])
+
+        # HTML email content
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Payment Confirmation - VocalLocal</title>
+            <style>
+                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                .content {{ background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                .invoice-details {{ background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745; }}
+                .plan-features {{ background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0; }}
+                .amount {{ font-size: 24px; font-weight: bold; color: #28a745; }}
+                .cta-button {{ display: inline-block; background: #28a745; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+                .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 14px; }}
+                .success-icon {{ font-size: 48px; color: #28a745; margin-bottom: 10px; }}
+                @media only screen and (max-width: 600px) {{
+                    .container {{ padding: 10px; }}
+                    .header, .content {{ padding: 20px; }}
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <div class="success-icon">✓</div>
+                    <h1>Payment Confirmed!</h1>
+                    <p>Thank you for your VocalLocal subscription</p>
+                </div>
+                <div class="content">
+                    <h2>Hello {username}!</h2>
+                    <p>Your payment has been successfully processed. Welcome to VocalLocal {plan_name}!</p>
+
+                    <div class="invoice-details">
+                        <h3>📄 Invoice Details</h3>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 8px 0; border-bottom: 1px solid #dee2e6;"><strong>Invoice ID:</strong></td>
+                                <td style="padding: 8px 0; border-bottom: 1px solid #dee2e6; text-align: right;">{invoice_id}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; border-bottom: 1px solid #dee2e6;"><strong>Plan:</strong></td>
+                                <td style="padding: 8px 0; border-bottom: 1px solid #dee2e6; text-align: right;">{plan_name}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; border-bottom: 1px solid #dee2e6;"><strong>Billing Cycle:</strong></td>
+                                <td style="padding: 8px 0; border-bottom: 1px solid #dee2e6; text-align: right;">{billing_cycle.title()}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; border-bottom: 1px solid #dee2e6;"><strong>Payment Date:</strong></td>
+                                <td style="padding: 8px 0; border-bottom: 1px solid #dee2e6; text-align: right;">{formatted_date}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px 0; font-size: 18px;"><strong>Amount Paid:</strong></td>
+                                <td style="padding: 12px 0; text-align: right;" class="amount">{currency} {amount:.2f}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="plan-features">
+                        <h3>🚀 Your {plan_name} Includes:</h3>
+                        <p><strong>Monthly Limits:</strong> {current_plan['monthly_limits']}</p>
+                        <div style="margin-top: 15px;">
+                            {features_list}
+                        </div>
+                    </div>
+
+                    <h3>🎯 What's Next?</h3>
+                    <ol>
+                        <li><strong>Access Premium Features:</strong> All premium AI models are now available</li>
+                        <li><strong>Start Transcribing:</strong> Upload audio files or record directly</li>
+                        <li><strong>Explore TTS:</strong> Convert text to natural-sounding speech</li>
+                        <li><strong>Advanced Translation:</strong> Use premium translation models</li>
+                    </ol>
+
+                    <div style="text-align: center;">
+                        <a href="https://vocallocal.com/dashboard" class="cta-button">Access Your Dashboard</a>
+                    </div>
+
+                    <h3>📞 Need Help?</h3>
+                    <p>Our support team is here to help:</p>
+                    <ul>
+                        <li>📧 Email: support@vocallocal.com</li>
+                        <li>💬 Live Chat: Available in your dashboard</li>
+                        <li>📚 Documentation: <a href="https://vocallocal.com/docs">vocallocal.com/docs</a></li>
+                    </ul>
+
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107; margin: 20px 0;">
+                        <p><strong>📋 Keep This Email:</strong> This serves as your receipt and contains important billing information.</p>
+                    </div>
+                </div>
+                <div class="footer">
+                    <p>© 2024 VocalLocal. All rights reserved.</p>
+                    <p>This email was sent to {email}. Questions? Contact support@vocallocal.com</p>
+                    <p>Invoice ID: {invoice_id} | Next billing: {billing_cycle}</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        # Plain text version
+        text_content = f"""
+        VocalLocal Payment Confirmation
+
+        Hello {username}!
+
+        Your payment has been successfully processed. Welcome to VocalLocal {plan_name}!
+
+        INVOICE DETAILS
+        ===============
+        Invoice ID: {invoice_id}
+        Plan: {plan_name}
+        Billing Cycle: {billing_cycle.title()}
+        Payment Date: {formatted_date}
+        Amount Paid: {currency} {amount:.2f}
+
+        YOUR {plan_name.upper()} INCLUDES
+        ================================
+        Monthly Limits: {current_plan['monthly_limits']}
+
+        Features:
+        {chr(10).join([f'  {feature}' for feature in current_plan['features']])}
+
+        WHAT'S NEXT?
+        ============
+        1. Access Premium Features: All premium AI models are now available
+        2. Start Transcribing: Upload audio files or record directly
+        3. Explore TTS: Convert text to natural-sounding speech
+        4. Advanced Translation: Use premium translation models
+
+        Access your dashboard: https://vocallocal.com/dashboard
+
+        NEED HELP?
+        ==========
+        Email: support@vocallocal.com
+        Live Chat: Available in your dashboard
+        Documentation: https://vocallocal.com/docs
+
+        IMPORTANT: Keep this email as your receipt and billing record.
+
+        © 2024 VocalLocal. All rights reserved.
+        This email was sent to {email}
+        Invoice ID: {invoice_id} | Next billing: {billing_cycle}
+        """
+
+        # Attach both HTML and plain text versions
+        msg.attach(MimeText(text_content, 'plain'))
+        msg.attach(MimeText(html_content, 'html'))
+
+        return msg
+
+    def send_payment_confirmation_email(self, username: str, email: str, invoice_id: str,
+                                      amount: float, currency: str, payment_date,
+                                      plan_type: str, plan_name: str, billing_cycle: str) -> Dict[str, any]:
+        """
+        Send payment confirmation email with invoice details.
+
+        Args:
+            username (str): User's username
+            email (str): User's email address
+            invoice_id (str): Stripe invoice ID
+            amount (float): Payment amount
+            currency (str): Payment currency
+            payment_date (datetime): Payment date
+            plan_type (str): Plan type (basic/professional)
+            plan_name (str): Human-readable plan name
+            billing_cycle (str): Billing cycle (monthly/annual)
+
+        Returns:
+            Dict containing send results
+        """
+        try:
+            # Validate email first
+            validation = self.validate_email(email)
+            if not validation['valid']:
+                return {
+                    'success': False,
+                    'message': f'Invalid email address: {", ".join(validation["errors"])}',
+                    'validation_errors': validation['errors']
+                }
+
+            # Create and send payment confirmation email
+            msg = self.create_payment_confirmation_email(
+                username, email, invoice_id, amount, currency,
+                payment_date, plan_type, plan_name, billing_cycle
+            )
+            result = self.send_email(msg)
+
+            # Log the attempt
+            logger.info(f'Payment confirmation email attempt for {email}, invoice {invoice_id}: {result["message"]}')
+
+            return result
+
+        except Exception as e:
+            error_msg = f'Failed to send payment confirmation email to {email}: {str(e)}'
+            logger.error(error_msg)
+            return {
+                'success': False,
+                'message': error_msg,
+                'error': str(e)
+            }
+
 # Global email service instance
 email_service = EmailService()

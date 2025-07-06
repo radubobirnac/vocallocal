@@ -9,6 +9,7 @@ import logging
 from datetime import datetime, timedelta
 from flask import current_app
 from services.user_account_service import UserAccountService
+from services.email_service import email_service
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +56,7 @@ class PaymentService:
             # Create or retrieve customer
             customer = self._get_or_create_customer(user_email)
             
-            # Create checkout session
+            # Create checkout session with enhanced invoice configuration
             session = stripe.checkout.Session.create(
                 customer=customer.id,
                 payment_method_types=['card'],
@@ -75,7 +76,34 @@ class PaymentService:
                         'user_email': user_email,
                         'plan_type': plan_type
                     }
-                }
+                },
+                # Enhanced invoice configuration
+                invoice_creation={
+                    'enabled': True,
+                    'invoice_data': {
+                        'description': f'VocalLocal {plan_type.title()} Plan Subscription',
+                        'metadata': {
+                            'user_email': user_email,
+                            'plan_type': plan_type,
+                            'service': 'vocallocal_subscription'
+                        },
+                        'custom_fields': [
+                            {
+                                'name': 'Service',
+                                'value': 'VocalLocal AI Transcription Platform'
+                            },
+                            {
+                                'name': 'Plan Type',
+                                'value': f'{plan_type.title()} Plan'
+                            }
+                        ],
+                        'footer': 'Thank you for choosing VocalLocal! For support, contact support@vocallocal.com'
+                    }
+                },
+                # Automatic tax calculation (if configured)
+                automatic_tax={'enabled': False},  # Set to True if tax calculation is needed
+                # Customer email collection
+                customer_email=user_email if not customer.email else None
             )
             
             logger.info(f"Created checkout session for {user_email}, plan: {plan_type}")
@@ -267,10 +295,84 @@ class PaymentService:
             return {'error': str(e)}
     
     def _handle_payment_succeeded(self, invoice):
-        """Handle successful payment"""
-        logger.info(f"Payment succeeded for invoice: {invoice['id']}")
-        # Payment success is usually handled by subscription events
-        return {'success': True}
+        """Handle successful payment and send invoice/receipt email"""
+        try:
+            logger.info(f"Payment succeeded for invoice: {invoice['id']}")
+
+            # Extract invoice details
+            invoice_id = invoice['id']
+            amount_paid = invoice['amount_paid'] / 100  # Convert from cents to dollars
+            currency = invoice['currency'].upper()
+            payment_date = datetime.fromtimestamp(invoice['created'])
+
+            # Get customer and subscription information
+            customer_id = invoice.get('customer')
+            subscription_id = invoice.get('subscription')
+
+            if not customer_id:
+                logger.warning(f"No customer ID found for invoice {invoice_id}")
+                return {'success': True, 'message': 'No customer ID found'}
+
+            # Retrieve customer details from Stripe
+            customer = stripe.Customer.retrieve(customer_id)
+            user_email = customer.email
+
+            if not user_email:
+                logger.warning(f"No email found for customer {customer_id}")
+                return {'success': True, 'message': 'No customer email found'}
+
+            # Get subscription details if available
+            plan_type = 'unknown'
+            plan_name = 'Unknown Plan'
+            billing_cycle = 'monthly'
+
+            if subscription_id:
+                subscription = stripe.Subscription.retrieve(subscription_id)
+                plan_type = subscription.get('metadata', {}).get('plan_type', 'unknown')
+
+                # Get plan details from subscription items
+                if subscription.get('items') and subscription['items']['data']:
+                    price = subscription['items']['data'][0]['price']
+                    plan_name = self._get_plan_name_from_price(price)
+                    billing_cycle = price.get('recurring', {}).get('interval', 'monthly')
+
+            # Store billing history in Firebase
+            self._store_billing_history(user_email, {
+                'invoiceId': invoice_id,
+                'amount': amount_paid,
+                'currency': currency,
+                'paymentDate': int(payment_date.timestamp() * 1000),
+                'planType': plan_type,
+                'planName': plan_name,
+                'billingCycle': billing_cycle,
+                'status': 'paid',
+                'stripeInvoiceId': invoice_id,
+                'stripeCustomerId': customer_id,
+                'stripeSubscriptionId': subscription_id
+            })
+
+            # Send payment confirmation email
+            email_result = self._send_payment_confirmation_email(
+                user_email=user_email,
+                invoice_id=invoice_id,
+                amount=amount_paid,
+                currency=currency,
+                payment_date=payment_date,
+                plan_type=plan_type,
+                plan_name=plan_name,
+                billing_cycle=billing_cycle
+            )
+
+            if email_result.get('success'):
+                logger.info(f"Payment confirmation email sent successfully to {user_email}")
+            else:
+                logger.error(f"Failed to send payment confirmation email to {user_email}: {email_result.get('message')}")
+
+            return {'success': True, 'message': 'Payment processed and email sent'}
+
+        except Exception as e:
+            logger.error(f"Error handling payment success for invoice {invoice.get('id', 'unknown')}: {str(e)}")
+            return {'error': str(e)}
     
     def _handle_payment_failed(self, invoice):
         """Handle failed payment"""
@@ -316,6 +418,86 @@ class PaymentService:
         except stripe.error.StripeError as e:
             logger.error(f"Error creating customer portal session: {str(e)}")
             return {'error': str(e)}
+
+    def _get_plan_name_from_price(self, price):
+        """Get human-readable plan name from Stripe price object"""
+        try:
+            # Map price IDs to plan names
+            price_id = price.get('id')
+
+            if price_id == os.getenv('STRIPE_BASIC_PRICE_ID'):
+                return 'Basic Plan'
+            elif price_id == os.getenv('STRIPE_PROFESSIONAL_PRICE_ID'):
+                return 'Professional Plan'
+
+            # Fallback to price nickname or amount
+            if price.get('nickname'):
+                return price['nickname']
+
+            amount = price.get('unit_amount', 0) / 100
+            currency = price.get('currency', 'usd').upper()
+            return f"{currency} {amount:.2f} Plan"
+
+        except Exception as e:
+            logger.error(f"Error getting plan name from price: {str(e)}")
+            return 'Unknown Plan'
+
+    def _store_billing_history(self, user_email, billing_data):
+        """Store billing history in Firebase"""
+        try:
+            user_id = user_email.replace('.', ',')
+
+            # Add to billing history
+            billing_ref = UserAccountService.get_ref(f'users/{user_id}/billing/invoices')
+            billing_ref.push(billing_data)
+
+            logger.info(f"Stored billing history for {user_email}, invoice: {billing_data['invoiceId']}")
+
+        except Exception as e:
+            logger.error(f"Error storing billing history for {user_email}: {str(e)}")
+            raise
+
+    def _send_payment_confirmation_email(self, user_email, invoice_id, amount, currency,
+                                       payment_date, plan_type, plan_name, billing_cycle):
+        """Send payment confirmation email with invoice details"""
+        try:
+            # Get user's display name (fallback to email prefix)
+            display_name = user_email.split('@')[0]
+
+            # Try to get actual display name from Firebase
+            try:
+                user_id = user_email.replace('.', ',')
+                user_data = UserAccountService.get_user_account(user_id)
+                if user_data and user_data.get('profile', {}).get('displayName'):
+                    display_name = user_data['profile']['displayName']
+            except Exception:
+                pass  # Use fallback display name
+
+            # Send the payment confirmation email
+            return email_service.send_payment_confirmation_email(
+                username=display_name,
+                email=user_email,
+                invoice_id=invoice_id,
+                amount=amount,
+                currency=currency,
+                payment_date=payment_date,
+                plan_type=plan_type,
+                plan_name=plan_name,
+                billing_cycle=billing_cycle
+            )
+
+        except Exception as e:
+            logger.error(f"Error sending payment confirmation email to {user_email}: {str(e)}")
+            return {'success': False, 'message': str(e)}
+
+    def get_customer_by_email(self, email):
+        """Get Stripe customer by email address"""
+        try:
+            customers = stripe.Customer.list(email=email, limit=1)
+            return customers.data[0] if customers.data else None
+        except stripe.error.StripeError as e:
+            logger.error(f"Error retrieving customer by email {email}: {str(e)}")
+            return None
     
     def get_customer_by_email(self, email):
         """Get Stripe customer by email"""

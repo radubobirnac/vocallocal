@@ -189,6 +189,135 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
+        /* Billing Section Styles */
+        .billing-section {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .billing-section h2 {
+            color: #333;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .billing-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .billing-card {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .billing-card h3 {
+            color: #495057;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .billing-history {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .invoice-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            border: 1px solid #dee2e6;
+        }
+
+        .invoice-info {
+            flex: 1;
+        }
+
+        .invoice-date {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .invoice-plan {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .invoice-amount {
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .invoice-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-small {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .btn-download {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-download:hover {
+            background: #0056b3;
+            color: white;
+            text-decoration: none;
+        }
+
+        .subscription-info p {
+            margin-bottom: 0.5rem;
+        }
+
+        .status-active {
+            color: #28a745;
+            font-weight: 500;
+        }
+
+        .billing-actions {
+            margin-top: 1rem;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 1rem;
+            color: #dc3545;
+            background: #f8d7da;
+            border-radius: 4px;
+        }
+
         .limit-reached {
             background: #fed7d7;
             border: 1px solid #feb2b2;
@@ -587,6 +716,41 @@
         </div>
         {% endif %}
 
+        <!-- Billing History Section (for paid plans) -->
+        {% if plan_type != 'free' %}
+        <div class="billing-section">
+            <h2><i class="fas fa-credit-card"></i> Billing & Subscription</h2>
+            <div class="billing-cards">
+                <div class="billing-card">
+                    <h3><i class="fas fa-receipt"></i> Recent Invoices</h3>
+                    <div id="billing-history" class="billing-history">
+                        <div class="loading-spinner" id="billing-loading">
+                            <i class="fas fa-spinner fa-spin"></i> Loading billing history...
+                        </div>
+                        <div id="billing-content" style="display: none;">
+                            <!-- Billing history will be loaded here -->
+                        </div>
+                        <div id="billing-error" style="display: none;" class="error-message">
+                            <i class="fas fa-exclamation-triangle"></i> Unable to load billing history
+                        </div>
+                    </div>
+                </div>
+                <div class="billing-card">
+                    <h3><i class="fas fa-cog"></i> Subscription Management</h3>
+                    <div class="subscription-info">
+                        <p><strong>Current Plan:</strong> {{ plan_display }}</p>
+                        <p><strong>Status:</strong> <span class="status-active">Active</span></p>
+                        <div class="billing-actions">
+                            <button id="manage-subscription-btn" class="button button-outline">
+                                <i class="fas fa-external-link-alt"></i> Manage Subscription
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Navigation Buttons -->
         <div class="navigation-buttons">
             <a href="{{ url_for('main.index') }}" class="nav-btn">
@@ -598,6 +762,11 @@
             <a href="{{ url_for('auth.profile') }}" class="nav-btn">
                 <i class="fas fa-user"></i> Profile Settings
             </a>
+            {% if plan_type != 'free' %}
+            <a href="#" id="billing-history-btn" class="nav-btn">
+                <i class="fas fa-file-invoice-dollar"></i> Billing History
+            </a>
+            {% endif %}
         </div>
         </div>
     </div>
@@ -639,6 +808,110 @@
     <script src="{{ url_for('static', filename='js/tts-access-control.js') }}"></script>
     <script src="{{ url_for('static', filename='js/rbac-access-control.js') }}"></script>
     <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+
+    <!-- Billing History JavaScript -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load billing history for paid plans
+        {% if plan_type != 'free' %}
+        loadBillingHistory();
+
+        // Handle manage subscription button
+        const manageSubBtn = document.getElementById('manage-subscription-btn');
+        if (manageSubBtn) {
+            manageSubBtn.addEventListener('click', function() {
+                openCustomerPortal();
+            });
+        }
+
+        // Handle billing history button
+        const billingHistoryBtn = document.getElementById('billing-history-btn');
+        if (billingHistoryBtn) {
+            billingHistoryBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                scrollToBillingSection();
+            });
+        }
+        {% endif %}
+    });
+
+    function loadBillingHistory() {
+        const loadingEl = document.getElementById('billing-loading');
+        const contentEl = document.getElementById('billing-content');
+        const errorEl = document.getElementById('billing-error');
+
+        fetch('/payment/billing-history')
+            .then(response => response.json())
+            .then(data => {
+                loadingEl.style.display = 'none';
+
+                if (data.success && data.invoices && data.invoices.length > 0) {
+                    displayBillingHistory(data.invoices);
+                    contentEl.style.display = 'block';
+                } else {
+                    contentEl.innerHTML = '<p class="text-muted">No billing history available.</p>';
+                    contentEl.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading billing history:', error);
+                loadingEl.style.display = 'none';
+                errorEl.style.display = 'block';
+            });
+    }
+
+    function displayBillingHistory(invoices) {
+        const contentEl = document.getElementById('billing-content');
+
+        const invoiceHtml = invoices.map(invoice => {
+            const date = new Date(invoice.paymentDate).toLocaleDateString();
+            return `
+                <div class="invoice-item">
+                    <div class="invoice-info">
+                        <div class="invoice-date">${date}</div>
+                        <div class="invoice-plan">${invoice.planName}</div>
+                    </div>
+                    <div class="invoice-amount">${invoice.currency} ${invoice.amount.toFixed(2)}</div>
+                    <div class="invoice-actions">
+                        <a href="/payment/download-invoice/${invoice.invoiceId}" class="btn-small btn-download" target="_blank">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        contentEl.innerHTML = invoiceHtml;
+    }
+
+    function openCustomerPortal() {
+        fetch('/payment/customer-portal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.portal_url) {
+                window.open(data.portal_url, '_blank');
+            } else {
+                alert('Unable to open customer portal. Please try again later.');
+            }
+        })
+        .catch(error => {
+            console.error('Error opening customer portal:', error);
+            alert('Unable to open customer portal. Please try again later.');
+        });
+    }
+
+    function scrollToBillingSection() {
+        const billingSection = document.querySelector('.billing-section');
+        if (billingSection) {
+            billingSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+    </script>
 </body>
 </html>
 <script>
