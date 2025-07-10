@@ -64,3 +64,6 @@ firebase-admin>=6.2.0
 pyrebase4>=4.7.1
 urllib3<2.0.0
 stripe>=7.0.0
+
+# PDF generation
+reportlab>=4.0.0

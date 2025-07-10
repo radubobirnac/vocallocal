@@ -307,18 +307,44 @@ class PaymentService:
             billing_cycle = 'monthly'
 
             if subscription_id:
+                logger.info(f"Retrieving subscription details for: {subscription_id}")
                 subscription = stripe.Subscription.retrieve(subscription_id)
                 plan_type = subscription.get('metadata', {}).get('plan_type', 'unknown')
+                logger.info(f"Plan type from subscription metadata: {plan_type}")
 
                 # Get plan details from subscription items
                 if subscription.get('items') and subscription['items']['data']:
                     price = subscription['items']['data'][0]['price']
+                    logger.info(f"Getting plan name from subscription price")
                     plan_name = self._get_plan_name_from_price(price)
                     billing_cycle = price.get('recurring', {}).get('interval', 'monthly')
+                    logger.info(f"Plan name from price: {plan_name}, billing cycle: {billing_cycle}")
 
                 # Fallback: if plan_name is still unknown, use plan_type from metadata
                 if plan_name == 'Unknown Plan' and plan_type != 'unknown':
+                    logger.info(f"Using fallback plan name from type: {plan_type}")
                     plan_name = self._get_plan_name_from_type(plan_type)
+            else:
+                # If no subscription, try to get plan info from invoice line items
+                logger.info("No subscription ID, checking invoice line items")
+                if invoice.get('lines') and invoice['lines']['data']:
+                    for line_item in invoice['lines']['data']:
+                        if line_item.get('price'):
+                            price = line_item['price']
+                            logger.info(f"Getting plan name from invoice line item price")
+                            plan_name = self._get_plan_name_from_price(price)
+                            billing_cycle = price.get('recurring', {}).get('interval', 'monthly')
+
+                            # Try to determine plan type from the plan name
+                            if 'Basic' in plan_name:
+                                plan_type = 'basic'
+                            elif 'Professional' in plan_name:
+                                plan_type = 'professional'
+
+                            logger.info(f"Plan from invoice line item - Name: {plan_name}, Type: {plan_type}")
+                            break
+
+            logger.info(f"Final plan details - Type: {plan_type}, Name: {plan_name}, Billing: {billing_cycle}")
 
             # Store billing history in Firebase
             self._store_billing_history(user_email, {
@@ -335,8 +361,8 @@ class PaymentService:
                 'stripeSubscriptionId': subscription_id
             })
 
-            # Send payment confirmation email
-            email_result = self._send_payment_confirmation_email(
+            # Generate PDF invoice
+            pdf_invoice = self._generate_pdf_invoice(
                 user_email=user_email,
                 invoice_id=invoice_id,
                 amount=amount_paid,
@@ -345,6 +371,19 @@ class PaymentService:
                 plan_type=plan_type,
                 plan_name=plan_name,
                 billing_cycle=billing_cycle
+            )
+
+            # Send payment confirmation email with PDF attachment
+            email_result = self._send_payment_confirmation_email(
+                user_email=user_email,
+                invoice_id=invoice_id,
+                amount=amount_paid,
+                currency=currency,
+                payment_date=payment_date,
+                plan_type=plan_type,
+                plan_name=plan_name,
+                billing_cycle=billing_cycle,
+                pdf_attachment=pdf_invoice
             )
 
             if email_result.get('success'):
@@ -455,16 +494,24 @@ class PaymentService:
     def _get_plan_name_from_price(self, price):
         """Get human-readable plan name from Stripe price object"""
         try:
+            logger.info(f"Getting plan name from price object: {price}")
+
             # Map price IDs to plan names
             price_id = price.get('id')
+            logger.info(f"Price ID: {price_id}")
 
             # Get environment price IDs
             basic_price_id = os.getenv('STRIPE_BASIC_PRICE_ID')
             professional_price_id = os.getenv('STRIPE_PROFESSIONAL_PRICE_ID')
 
+            logger.info(f"Basic Price ID from env: {basic_price_id}")
+            logger.info(f"Professional Price ID from env: {professional_price_id}")
+
             if price_id == basic_price_id:
+                logger.info("Matched Basic Plan by price ID")
                 return 'Basic Plan'
             elif price_id == professional_price_id:
+                logger.info("Matched Professional Plan by price ID")
                 return 'Professional Plan'
 
             # Check if price has a product with a name
@@ -473,34 +520,44 @@ class PaymentService:
                     product = stripe.Product.retrieve(price['product'])
                     if product.get('name'):
                         product_name = product['name']
+                        logger.info(f"Product name: {product_name}")
                         # Extract plan name from product name
                         if 'Basic' in product_name:
+                            logger.info("Matched Basic Plan by product name")
                             return 'Basic Plan'
                         elif 'Professional' in product_name or 'Premium' in product_name:
+                            logger.info("Matched Professional Plan by product name")
                             return 'Professional Plan'
                         return product_name
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Error retrieving product: {str(e)}")
 
             # Fallback to price nickname
             if price.get('nickname'):
                 nickname = price['nickname']
+                logger.info(f"Price nickname: {nickname}")
                 if 'Basic' in nickname:
+                    logger.info("Matched Basic Plan by nickname")
                     return 'Basic Plan'
                 elif 'Professional' in nickname or 'Premium' in nickname:
+                    logger.info("Matched Professional Plan by nickname")
                     return 'Professional Plan'
                 return nickname
 
             # Final fallback to amount-based name
             amount = price.get('unit_amount', 0) / 100
             currency = price.get('currency', 'usd').upper()
+            logger.info(f"Price amount: {amount} {currency}")
 
             # Try to map common amounts to plan names
             if amount == 4.99:
+                logger.info("Matched Basic Plan by amount ($4.99)")
                 return 'Basic Plan'
             elif amount == 12.99:
+                logger.info("Matched Professional Plan by amount ($12.99)")
                 return 'Professional Plan'
 
+            logger.warning(f"No plan match found, using fallback: {currency} {amount:.2f} Plan")
             return f"{currency} {amount:.2f} Plan"
 
         except Exception as e:
@@ -538,9 +595,58 @@ class PaymentService:
             logger.error(f"Error storing billing history for {user_email}: {str(e)}")
             raise
 
+    def _generate_pdf_invoice(self, user_email, invoice_id, amount, currency,
+                            payment_date, plan_type, plan_name, billing_cycle):
+        """Generate PDF invoice for the payment"""
+        try:
+            from services.pdf_invoice_service import PDFInvoiceService
+
+            # Get user's display name (fallback to email prefix)
+            display_name = user_email.split('@')[0]
+
+            # Try to get actual display name from Firebase
+            try:
+                user_id = user_email.replace('.', ',')
+                user_data = UserAccountService.get_user_account(user_id)
+                if user_data and user_data.get('profile', {}).get('displayName'):
+                    display_name = user_data['profile']['displayName']
+            except Exception:
+                pass  # Use fallback display name
+
+            # Prepare invoice data
+            invoice_data = {
+                'invoice_id': invoice_id,
+                'customer_name': display_name,
+                'customer_email': user_email,
+                'amount': amount,
+                'currency': currency,
+                'payment_date': payment_date,
+                'plan_name': plan_name,
+                'plan_type': plan_type,
+                'billing_cycle': billing_cycle,
+                'payment_method': 'Credit Card',
+                'transaction_id': invoice_id  # Use invoice ID as transaction reference
+            }
+
+            # Generate PDF
+            pdf_service = PDFInvoiceService()
+            pdf_content = pdf_service.generate_invoice_pdf(invoice_data)
+
+            if pdf_content:
+                logger.info(f"Generated PDF invoice for {user_email}, size: {len(pdf_content)} bytes")
+            else:
+                logger.warning(f"Failed to generate PDF invoice for {user_email}")
+
+            return pdf_content
+
+        except Exception as e:
+            logger.error(f"Error generating PDF invoice for {user_email}: {str(e)}")
+            return None
+
     def _send_payment_confirmation_email(self, user_email, invoice_id, amount, currency,
-                                       payment_date, plan_type, plan_name, billing_cycle):
-        """Send payment confirmation email with invoice details"""
+                                       payment_date, plan_type, plan_name, billing_cycle,
+                                       pdf_attachment=None):
+        """Send payment confirmation email with invoice details and PDF attachment"""
         try:
             # Get user's display name (fallback to email prefix)
             display_name = user_email.split('@')[0]
@@ -564,7 +670,8 @@ class PaymentService:
                 payment_date=payment_date,
                 plan_type=plan_type,
                 plan_name=plan_name,
-                billing_cycle=billing_cycle
+                billing_cycle=billing_cycle,
+                pdf_attachment=pdf_attachment
             )
 
         except Exception as e:

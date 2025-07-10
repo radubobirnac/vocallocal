@@ -631,7 +631,8 @@ class EmailService:
 
     def create_payment_confirmation_email(self, username: str, email: str, invoice_id: str,
                                         amount: float, currency: str, payment_date,
-                                        plan_type: str, plan_name: str, billing_cycle: str) -> MimeMultipart:
+                                        plan_type: str, plan_name: str, billing_cycle: str,
+                                        pdf_attachment: bytes = None) -> MimeMultipart:
         """
         Create payment confirmation email with invoice details.
 
@@ -840,11 +841,26 @@ class EmailService:
         msg.attach(MimeText(text_content, 'plain'))
         msg.attach(MimeText(html_content, 'html'))
 
+        # Attach PDF invoice if provided
+        if pdf_attachment:
+            try:
+                from email.mime.application import MIMEApplication
+
+                pdf_part = MIMEApplication(pdf_attachment, _subtype='pdf')
+                pdf_filename = f"VocalLocal_Invoice_{invoice_id}.pdf"
+                pdf_part.add_header('Content-Disposition', 'attachment', filename=pdf_filename)
+                msg.attach(pdf_part)
+
+                logger.info(f"Attached PDF invoice {pdf_filename} to email")
+            except Exception as e:
+                logger.error(f"Error attaching PDF to email: {str(e)}")
+
         return msg
 
     def send_payment_confirmation_email(self, username: str, email: str, invoice_id: str,
                                       amount: float, currency: str, payment_date,
-                                      plan_type: str, plan_name: str, billing_cycle: str) -> Dict[str, any]:
+                                      plan_type: str, plan_name: str, billing_cycle: str,
+                                      pdf_attachment: bytes = None) -> Dict[str, any]:
         """
         Send payment confirmation email with invoice details.
 
@@ -875,7 +891,7 @@ class EmailService:
             # Create and send payment confirmation email
             msg = self.create_payment_confirmation_email(
                 username, email, invoice_id, amount, currency,
-                payment_date, plan_type, plan_name, billing_cycle
+                payment_date, plan_type, plan_name, billing_cycle, pdf_attachment
             )
             result = self.send_email(msg)
 
