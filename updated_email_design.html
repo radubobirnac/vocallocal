@@ -1,0 +1,244 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Your receipt from VocalLocal</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                    line-height: 1.5;
+                    color: #1a1a1a;
+                    background-color: #f8f9fa;
+                    margin: 0;
+                    padding: 0;
+                }
+                .email-container {
+                    max-width: 600px;
+                    margin: 40px auto;
+                    background: #ffffff;
+                    border-radius: 12px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+                }
+                .header {
+                    background: hsl(262, 83%, 67%);
+                    color: #ffffff;
+                    padding: 32px 40px;
+                    text-align: left;
+                }
+                .header h1 {
+                    font-size: 24px;
+                    font-weight: 600;
+                    margin-bottom: 8px;
+                    letter-spacing: -0.5px;
+                }
+                .header p {
+                    font-size: 16px;
+                    opacity: 0.8;
+                    margin: 0;
+                }
+                .content {
+                    padding: 40px;
+                }
+                .receipt-header {
+                    margin-bottom: 32px;
+                }
+                .receipt-title {
+                    font-size: 14px;
+                    color: #6b7280;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 8px;
+                }
+                .receipt-amount {
+                    font-size: 48px;
+                    font-weight: 700;
+                    color: #1a1a1a;
+                    margin-bottom: 4px;
+                    letter-spacing: -1px;
+                }
+                .receipt-date {
+                    font-size: 14px;
+                    color: #6b7280;
+                    margin-bottom: 24px;
+                }
+
+                .details-section {
+                    background: #f9fafb;
+                    border-radius: 12px;
+                    padding: 24px;
+                    margin-bottom: 32px;
+                }
+                .details-row {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 12px 0;
+                    border-bottom: 1px solid #e5e7eb;
+                }
+                .details-row:last-child {
+                    border-bottom: none;
+                }
+                .details-label {
+                    font-size: 14px;
+                    color: #6b7280;
+                    font-weight: 500;
+                }
+                .details-value {
+                    font-size: 14px;
+                    color: #1a1a1a;
+                    font-weight: 500;
+                    text-align: right;
+                }
+                .invoice-section {
+                    background: hsl(262, 83%, 67%);
+                    color: #ffffff;
+                    border-radius: 12px;
+                    padding: 24px;
+                    margin-bottom: 32px;
+                }
+                .invoice-header {
+                    font-size: 18px;
+                    font-weight: 600;
+                    margin-bottom: 16px;
+                }
+                .invoice-item {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 12px 0;
+                    border-bottom: 1px solid #374151;
+                }
+                .invoice-item:last-child {
+                    border-bottom: none;
+                    padding-top: 16px;
+                    margin-top: 8px;
+                    border-top: 1px solid #374151;
+                }
+                .invoice-item-name {
+                    font-size: 14px;
+                    color: #ffffff;
+                }
+                .invoice-item-qty {
+                    font-size: 12px;
+                    color: #9ca3af;
+                    margin-top: 2px;
+                }
+                .invoice-item-price {
+                    font-size: 14px;
+                    color: #ffffff;
+                    font-weight: 600;
+                }
+                .total-row {
+                    font-size: 16px;
+                    font-weight: 700;
+                }
+                .cta-section {
+                    text-align: center;
+                    margin: 32px 0;
+                }
+                .cta-button {
+                    display: inline-block;
+                    background: hsl(262, 83%, 67%);
+                    color: #ffffff;
+                    padding: 16px 32px;
+                    text-decoration: none;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    font-size: 16px;
+                    transition: background-color 0.2s;
+                }
+                .cta-button:hover {
+                    background: hsl(262, 83%, 60%);
+                }
+                .footer {
+                    text-align: center;
+                    padding: 32px 40px;
+                    background: #f9fafb;
+                    border-top: 1px solid #e5e7eb;
+                }
+                .footer p {
+                    font-size: 12px;
+                    color: #6b7280;
+                    margin: 4px 0;
+                }
+                @media only screen and (max-width: 600px) {
+                    .email-container { margin: 20px; }
+                    .header, .content, .footer { padding: 24px; }
+                    .receipt-amount { font-size: 36px; }
+                    .details-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+                    .details-value { text-align: left; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="email-container">
+                <div class="header">
+                    <h1>VocalLocal</h1>
+                    <p>AI-Powered Transcription & Translation Platform</p>
+                </div>
+
+                <div class="content">
+                    <div class="receipt-header">
+                        <div class="receipt-title">Receipt from VocalLocal</div>
+                        <div class="receipt-amount">$12.99</div>
+                        <div class="receipt-date">Paid July 11, 2025 at 02:59 PM UTC</div>
+
+
+                    </div>
+
+                    <div class="details-section">
+                        <div class="details-row">
+                            <span class="details-label">Receipt number</span>
+                            <span class="details-value">in_updated_design_test</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="details-label">Invoice number</span>
+                            <span class="details-value">in_updated_design_test</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="details-label">Payment method</span>
+                            <span class="details-value">💳 Card</span>
+                        </div>
+                    </div>
+
+                    <div class="invoice-section">
+                        <div class="invoice-header">Receipt #in_updated_design_test</div>
+
+                        <div class="invoice-item">
+                            <div>
+                                <div class="invoice-item-name">Professional Plan</div>
+                                <div class="invoice-item-qty">Qty 1</div>
+                            </div>
+                            <div class="invoice-item-price">$12.99</div>
+                        </div>
+
+                        <div class="invoice-item total-row">
+                            <div class="invoice-item-name">Total</div>
+                            <div class="invoice-item-price">$12.99</div>
+                        </div>
+                    </div>
+
+                    <div class="cta-section">
+                        <a href="https://vocallocal.com/dashboard" class="cta-button">Access Your Dashboard</a>
+                    </div>
+
+                    <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin-top: 32px;">
+                        Hello Jane Smith! Your payment has been successfully processed. Welcome to VocalLocal Professional Plan!
+                        You now have access to all premium features including 800 minutes transcription, 160,000 words translation, 200 minutes TTS, 150 AI credits.
+                        Start using your enhanced AI capabilities right away.
+                    </p>
+                </div>
+
+                <div class="footer">
+                    <p>© 2024 VocalLocal. All rights reserved.</p>
+                    <p>This email was sent to jane.smith@example.com</p>
+                    <p>Questions? Contact support@vocallocal.com</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        

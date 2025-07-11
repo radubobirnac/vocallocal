@@ -1,0 +1,36 @@
+
+        Your receipt from VocalLocal
+        ============================
+
+        Receipt from VocalLocal
+        $12.99
+        Paid July 11, 2025 at 02:59 PM UTC
+
+        RECEIPT DETAILS
+        ===============
+        Receipt number: in_updated_design_test
+        Invoice number: in_updated_design_test
+        Payment method: Card
+
+        RECEIPT #in_updated_design_test
+        ====================
+        Professional Plan                                    $12.99
+        Qty 1
+
+        Total                                          $12.99
+
+        Hello Jane Smith!
+
+        Your payment has been successfully processed. Welcome to VocalLocal Professional Plan!
+        You now have access to all premium features including 800 minutes transcription, 160,000 words translation, 200 minutes TTS, 150 AI credits.
+        Start using your enhanced AI capabilities right away.
+
+        Access your dashboard: https://vocallocal.com/dashboard
+
+        SUPPORT
+        =======
+        Questions? Contact support@vocallocal.com
+
+        © 2024 VocalLocal. All rights reserved.
+        This email was sent to jane.smith@example.com
+        

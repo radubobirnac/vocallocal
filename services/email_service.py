@@ -651,7 +651,7 @@ class EmailService:
             MimeMultipart: Email message object
         """
         msg = MimeMultipart('alternative')
-        msg['Subject'] = f'Payment Confirmation - VocalLocal {plan_name}'
+        msg['Subject'] = f'Your receipt from VocalLocal, Receipt #{invoice_id[-8:]}'
         msg['From'] = self.default_sender
         msg['To'] = email
 
@@ -688,104 +688,246 @@ class EmailService:
         current_plan = plan_details.get(plan_type, plan_details['basic'])
         features_list = '\n                        '.join(current_plan['features'])
 
-        # HTML email content
+        # HTML email content with modern, clean design inspired by Anthropic receipt
         html_content = f"""
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Payment Confirmation - VocalLocal</title>
+            <title>Your receipt from VocalLocal</title>
             <style>
-                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }}
-                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                .header {{ background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
-                .content {{ background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
-                .invoice-details {{ background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745; }}
-                .plan-features {{ background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0; }}
-                .amount {{ font-size: 24px; font-weight: bold; color: #28a745; }}
-                .cta-button {{ display: inline-block; background: #28a745; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
-                .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 14px; }}
-                .success-icon {{ font-size: 48px; color: #28a745; margin-bottom: 10px; }}
+                * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                    line-height: 1.5;
+                    color: #1a1a1a;
+                    background-color: #f8f9fa;
+                    margin: 0;
+                    padding: 0;
+                }}
+                .email-container {{
+                    max-width: 600px;
+                    margin: 40px auto;
+                    background: #ffffff;
+                    border-radius: 12px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+                }}
+                .header {{
+                    background: hsl(262, 83%, 67%);
+                    color: #ffffff;
+                    padding: 32px 40px;
+                    text-align: left;
+                }}
+                .header h1 {{
+                    font-size: 24px;
+                    font-weight: 600;
+                    margin-bottom: 8px;
+                    letter-spacing: -0.5px;
+                }}
+                .header p {{
+                    font-size: 16px;
+                    opacity: 0.8;
+                    margin: 0;
+                }}
+                .content {{
+                    padding: 40px;
+                }}
+                .receipt-header {{
+                    margin-bottom: 32px;
+                }}
+                .receipt-title {{
+                    font-size: 14px;
+                    color: #6b7280;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 8px;
+                }}
+                .receipt-amount {{
+                    font-size: 48px;
+                    font-weight: 700;
+                    color: #1a1a1a;
+                    margin-bottom: 4px;
+                    letter-spacing: -1px;
+                }}
+                .receipt-date {{
+                    font-size: 14px;
+                    color: #6b7280;
+                    margin-bottom: 24px;
+                }}
+
+                .details-section {{
+                    background: #f9fafb;
+                    border-radius: 12px;
+                    padding: 24px;
+                    margin-bottom: 32px;
+                }}
+                .details-row {{
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 12px 0;
+                    border-bottom: 1px solid #e5e7eb;
+                }}
+                .details-row:last-child {{
+                    border-bottom: none;
+                }}
+                .details-label {{
+                    font-size: 14px;
+                    color: #6b7280;
+                    font-weight: 500;
+                }}
+                .details-value {{
+                    font-size: 14px;
+                    color: #1a1a1a;
+                    font-weight: 500;
+                    text-align: right;
+                }}
+                .invoice-section {{
+                    background: hsl(262, 83%, 67%);
+                    color: #ffffff;
+                    border-radius: 12px;
+                    padding: 24px;
+                    margin-bottom: 32px;
+                }}
+                .invoice-header {{
+                    font-size: 18px;
+                    font-weight: 600;
+                    margin-bottom: 16px;
+                }}
+                .invoice-item {{
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 12px 0;
+                    border-bottom: 1px solid #374151;
+                }}
+                .invoice-item:last-child {{
+                    border-bottom: none;
+                    padding-top: 16px;
+                    margin-top: 8px;
+                    border-top: 1px solid #374151;
+                }}
+                .invoice-item-name {{
+                    font-size: 14px;
+                    color: #ffffff;
+                }}
+                .invoice-item-qty {{
+                    font-size: 12px;
+                    color: #9ca3af;
+                    margin-top: 2px;
+                }}
+                .invoice-item-price {{
+                    font-size: 14px;
+                    color: #ffffff;
+                    font-weight: 600;
+                }}
+                .total-row {{
+                    font-size: 16px;
+                    font-weight: 700;
+                }}
+                .cta-section {{
+                    text-align: center;
+                    margin: 32px 0;
+                }}
+                .cta-button {{
+                    display: inline-block;
+                    background: hsl(262, 83%, 67%);
+                    color: #ffffff;
+                    padding: 16px 32px;
+                    text-decoration: none;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    font-size: 16px;
+                    transition: background-color 0.2s;
+                }}
+                .cta-button:hover {{
+                    background: hsl(262, 83%, 60%);
+                }}
+                .footer {{
+                    text-align: center;
+                    padding: 32px 40px;
+                    background: #f9fafb;
+                    border-top: 1px solid #e5e7eb;
+                }}
+                .footer p {{
+                    font-size: 12px;
+                    color: #6b7280;
+                    margin: 4px 0;
+                }}
                 @media only screen and (max-width: 600px) {{
-                    .container {{ padding: 10px; }}
-                    .header, .content {{ padding: 20px; }}
+                    .email-container {{ margin: 20px; }}
+                    .header, .content, .footer {{ padding: 24px; }}
+                    .receipt-amount {{ font-size: 36px; }}
+                    .details-row {{ flex-direction: column; align-items: flex-start; gap: 4px; }}
+                    .details-value {{ text-align: left; }}
                 }}
             </style>
         </head>
         <body>
-            <div class="container">
+            <div class="email-container">
                 <div class="header">
-                    <div class="success-icon">✓</div>
-                    <h1>Payment Confirmed!</h1>
-                    <p>Thank you for your VocalLocal subscription</p>
+                    <h1>VocalLocal</h1>
+                    <p>AI-Powered Transcription & Translation Platform</p>
                 </div>
-                <div class="content">
-                    <h2>Hello {username}!</h2>
-                    <p>Your payment has been successfully processed. Welcome to VocalLocal {plan_name}!</p>
 
-                    <div class="invoice-details">
-                        <h3>📄 Invoice Details</h3>
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr>
-                                <td style="padding: 8px 0; border-bottom: 1px solid #dee2e6;"><strong>Invoice ID:</strong></td>
-                                <td style="padding: 8px 0; border-bottom: 1px solid #dee2e6; text-align: right;">{invoice_id}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 8px 0; border-bottom: 1px solid #dee2e6;"><strong>Plan:</strong></td>
-                                <td style="padding: 8px 0; border-bottom: 1px solid #dee2e6; text-align: right;">{plan_name}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 8px 0; border-bottom: 1px solid #dee2e6;"><strong>Billing Cycle:</strong></td>
-                                <td style="padding: 8px 0; border-bottom: 1px solid #dee2e6; text-align: right;">{billing_cycle.title()}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 8px 0; border-bottom: 1px solid #dee2e6;"><strong>Payment Date:</strong></td>
-                                <td style="padding: 8px 0; border-bottom: 1px solid #dee2e6; text-align: right;">{formatted_date}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 12px 0; font-size: 18px;"><strong>Amount Paid:</strong></td>
-                                <td style="padding: 12px 0; text-align: right;" class="amount">{currency} {amount:.2f}</td>
-                            </tr>
-                        </table>
+                <div class="content">
+                    <div class="receipt-header">
+                        <div class="receipt-title">Receipt from VocalLocal</div>
+                        <div class="receipt-amount">${amount:.2f}</div>
+                        <div class="receipt-date">Paid {formatted_date}</div>
+
+
                     </div>
 
-                    <div class="plan-features">
-                        <h3>🚀 Your {plan_name} Includes:</h3>
-                        <p><strong>Monthly Limits:</strong> {current_plan['monthly_limits']}</p>
-                        <div style="margin-top: 15px;">
-                            {features_list}
+                    <div class="details-section">
+                        <div class="details-row">
+                            <span class="details-label">Receipt number</span>
+                            <span class="details-value">{invoice_id}</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="details-label">Invoice number</span>
+                            <span class="details-value">{invoice_id}</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="details-label">Payment method</span>
+                            <span class="details-value">💳 Card</span>
                         </div>
                     </div>
 
-                    <h3>🎯 What's Next?</h3>
-                    <ol>
-                        <li><strong>Access Premium Features:</strong> All premium AI models are now available</li>
-                        <li><strong>Start Transcribing:</strong> Upload audio files or record directly</li>
-                        <li><strong>Explore TTS:</strong> Convert text to natural-sounding speech</li>
-                        <li><strong>Advanced Translation:</strong> Use premium translation models</li>
-                    </ol>
+                    <div class="invoice-section">
+                        <div class="invoice-header">Receipt #{invoice_id}</div>
 
-                    <div style="text-align: center;">
+                        <div class="invoice-item">
+                            <div>
+                                <div class="invoice-item-name">{plan_name}</div>
+                                <div class="invoice-item-qty">Qty 1</div>
+                            </div>
+                            <div class="invoice-item-price">${amount:.2f}</div>
+                        </div>
+
+                        <div class="invoice-item total-row">
+                            <div class="invoice-item-name">Total</div>
+                            <div class="invoice-item-price">${amount:.2f}</div>
+                        </div>
+                    </div>
+
+                    <div class="cta-section">
                         <a href="https://vocallocal.com/dashboard" class="cta-button">Access Your Dashboard</a>
                     </div>
 
-                    <h3>📞 Need Help?</h3>
-                    <p>Our support team is here to help:</p>
-                    <ul>
-                        <li>📧 Email: support@vocallocal.com</li>
-                        <li>💬 Live Chat: Available in your dashboard</li>
-                        <li>📚 Documentation: <a href="https://vocallocal.com/docs">vocallocal.com/docs</a></li>
-                    </ul>
-
-                    <div style="background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107; margin: 20px 0;">
-                        <p><strong>📋 Keep This Email:</strong> This serves as your receipt and contains important billing information.</p>
-                    </div>
+                    <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin-top: 32px;">
+                        Hello {username}! Your payment has been successfully processed. Welcome to VocalLocal {plan_name}!
+                        You now have access to all premium features including {current_plan['monthly_limits']}.
+                        Start using your enhanced AI capabilities right away.
+                    </p>
                 </div>
+
                 <div class="footer">
                     <p>© 2024 VocalLocal. All rights reserved.</p>
-                    <p>This email was sent to {email}. Questions? Contact support@vocallocal.com</p>
-                    <p>Invoice ID: {invoice_id} | Next billing: {billing_cycle}</p>
+                    <p>This email was sent to {email}</p>
+                    <p>Questions? Contact support@vocallocal.com</p>
                 </div>
             </div>
         </body>
@@ -794,47 +936,40 @@ class EmailService:
 
         # Plain text version
         text_content = f"""
-        VocalLocal Payment Confirmation
+        Your receipt from VocalLocal
+        ============================
+
+        Receipt from VocalLocal
+        ${amount:.2f}
+        Paid {formatted_date}
+
+        RECEIPT DETAILS
+        ===============
+        Receipt number: {invoice_id}
+        Invoice number: {invoice_id}
+        Payment method: Card
+
+        RECEIPT #{invoice_id}
+        ====================
+        {plan_name}                                    ${amount:.2f}
+        Qty 1
+
+        Total                                          ${amount:.2f}
 
         Hello {username}!
 
         Your payment has been successfully processed. Welcome to VocalLocal {plan_name}!
-
-        INVOICE DETAILS
-        ===============
-        Invoice ID: {invoice_id}
-        Plan: {plan_name}
-        Billing Cycle: {billing_cycle.title()}
-        Payment Date: {formatted_date}
-        Amount Paid: {currency} {amount:.2f}
-
-        YOUR {plan_name.upper()} INCLUDES
-        ================================
-        Monthly Limits: {current_plan['monthly_limits']}
-
-        Features:
-        {chr(10).join([f'  {feature}' for feature in current_plan['features']])}
-
-        WHAT'S NEXT?
-        ============
-        1. Access Premium Features: All premium AI models are now available
-        2. Start Transcribing: Upload audio files or record directly
-        3. Explore TTS: Convert text to natural-sounding speech
-        4. Advanced Translation: Use premium translation models
+        You now have access to all premium features including {current_plan['monthly_limits']}.
+        Start using your enhanced AI capabilities right away.
 
         Access your dashboard: https://vocallocal.com/dashboard
 
-        NEED HELP?
-        ==========
-        Email: support@vocallocal.com
-        Live Chat: Available in your dashboard
-        Documentation: https://vocallocal.com/docs
-
-        IMPORTANT: Keep this email as your receipt and billing record.
+        SUPPORT
+        =======
+        Questions? Contact support@vocallocal.com
 
         © 2024 VocalLocal. All rights reserved.
         This email was sent to {email}
-        Invoice ID: {invoice_id} | Next billing: {billing_cycle}
         """
 
         # Attach both HTML and plain text versions
