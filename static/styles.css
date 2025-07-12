@@ -1022,20 +1022,43 @@ header .flex.items-center.gap-6 {
   color: inherit; /* Inherit color from card-header/card */
 }
 
-/* Upgrade Button Styles */
+/* Upgrade Button Styles - Cross-browser compatible */
 .upgrade-header-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  /* Fallback for older browsers */
+  background: #667eea !important;
   color: white !important;
   border: none !important;
   position: relative;
   overflow: hidden;
+  /* Cross-browser transition support */
+  -webkit-transition: all 0.2s ease;
+  -moz-transition: all 0.2s ease;
+  -ms-transition: all 0.2s ease;
+  -o-transition: all 0.2s ease;
   transition: all 0.2s ease;
+  /* Ensure consistent rendering */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  /* Force hardware acceleration */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 .upgrade-header-btn:hover {
-  transform: scale(1.05);
+  /* Cross-browser transform support */
+  -webkit-transform: scale(1.05) translateZ(0);
+  -moz-transform: scale(1.05) translateZ(0);
+  -ms-transform: scale(1.05) translateZ(0);
+  -o-transform: scale(1.05) translateZ(0);
+  transform: scale(1.05) translateZ(0);
+  /* Cross-browser box-shadow */
+  -webkit-box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  -moz-box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
   background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
+  /* Fallback for older browsers */
+  background: #5a6fd8 !important;
 }
 
 .upgrade-header-btn .upgrade-text {
@@ -1053,9 +1076,32 @@ header .flex.items-center.gap-6 {
 
 .upgrade-header-btn.loading .upgrade-text::after {
   content: "...";
+  /* Cross-browser animation support */
+  -webkit-animation: dots 1.5s infinite;
+  -moz-animation: dots 1.5s infinite;
+  -ms-animation: dots 1.5s infinite;
   animation: dots 1.5s infinite;
 }
 
+/* Cross-browser dots animation */
+@-webkit-keyframes dots {
+  0%, 20% { content: "..."; }
+  40% { content: "...."; }
+  60% { content: "....."; }
+  80%, 100% { content: "..."; }
+}
+@-moz-keyframes dots {
+  0%, 20% { content: "..."; }
+  40% { content: "...."; }
+  60% { content: "....."; }
+  80%, 100% { content: "..."; }
+}
+@-ms-keyframes dots {
+  0%, 20% { content: "..."; }
+  40% { content: "...."; }
+  60% { content: "....."; }
+  80%, 100% { content: "..."; }
+}
 @keyframes dots {
   0%, 20% { content: "..."; }
   40% { content: "...."; }

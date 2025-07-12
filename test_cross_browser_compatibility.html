@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VocalLocal Cross-Browser Compatibility Test</title>
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="static/css/upgrade-modal.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 2rem;
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+        }
+        .test-section {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            border: 1px solid hsl(var(--border));
+            border-radius: 8px;
+            background: hsl(var(--card));
+        }
+        .test-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: hsl(var(--primary));
+        }
+        .browser-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        .test-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+        .compatibility-check {
+            background: #e8f5e8;
+            border: 1px solid #4CAF50;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+        .compatibility-check.warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+        .compatibility-check.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 VocalLocal Cross-Browser Compatibility Test</h1>
+    <p>This page tests upgrade button functionality across different browsers (Chrome, Edge, Firefox, Safari)</p>
+
+    <div class="browser-info" id="browser-info">
+        <strong>Browser Detection:</strong><br>
+        <span id="browser-details">Loading...</span>
+    </div>
+
+    <div class="compatibility-check" id="compatibility-status">
+        <strong>Compatibility Status:</strong> <span id="status-text">Checking...</span>
+    </div>
+
+    <!-- Test Section 1: Header Upgrade Button -->
+    <div class="test-section">
+        <div class="test-title">1. Header Upgrade Button Test</div>
+        <p>Tests the main upgrade button that appears in the header navigation.</p>
+        
+        <div class="test-buttons">
+            <button id="upgrade-button" class="button button-outline button-icon upgrade-header-btn" title="Upgrade Plan">
+                <i class="fas fa-crown"></i>
+                <span class="upgrade-text">Upgrade</span>
+            </button>
+            
+            <button id="upgrade-button-loading" class="button button-outline button-icon upgrade-header-btn loading" title="Loading State">
+                <i class="fas fa-crown"></i>
+                <span class="upgrade-text">Upgrade</span>
+            </button>
+        </div>
+        
+        <p><strong>Expected behavior:</strong> Hover effects, smooth scaling, gradient backgrounds, loading animation</p>
+    </div>
+
+    <!-- Test Section 2: Modal Upgrade Buttons -->
+    <div class="test-section">
+        <div class="test-title">2. Modal Upgrade Buttons Test</div>
+        <p>Tests the upgrade buttons that appear in modal dialogs.</p>
+        
+        <div class="test-buttons">
+            <button class="upgrade-btn upgrade-btn-basic">
+                <i class="fas fa-arrow-up"></i> Basic Plan - $4.99/month
+            </button>
+            
+            <button class="upgrade-btn upgrade-btn-professional">
+                <i class="fas fa-rocket"></i> Professional Plan - $12.99/month
+            </button>
+            
+            <button class="upgrade-btn upgrade-btn-professional loading">
+                <i class="fas fa-spinner"></i> Processing...
+            </button>
+        </div>
+        
+        <p><strong>Expected behavior:</strong> Hover lift effects, gradient backgrounds, loading spinner</p>
+    </div>
+
+    <!-- Test Section 3: Modal Overlay Test -->
+    <div class="test-section">
+        <div class="test-title">3. Modal Overlay Test</div>
+        <p>Tests modal overlay rendering and animations.</p>
+        
+        <button onclick="showTestModal()" class="upgrade-btn upgrade-btn-professional">
+            Show Test Modal
+        </button>
+        
+        <p><strong>Expected behavior:</strong> Smooth fade-in, backdrop blur, centered content</p>
+    </div>
+
+    <!-- Test Section 4: CSS Feature Detection -->
+    <div class="test-section">
+        <div class="test-title">4. CSS Feature Detection</div>
+        <div id="css-features">
+            <p>Checking CSS feature support...</p>
+        </div>
+    </div>
+
+    <!-- Test Modal -->
+    <div id="test-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div style="text-align: center;">
+                <div class="modal-lock-icon">🔒</div>
+                <h2 class="modal-title">Test Modal</h2>
+                <p class="modal-description">This is a test modal to verify cross-browser compatibility.</p>
+                
+                <div class="modal-upgrade-buttons">
+                    <button class="upgrade-btn upgrade-btn-basic">Basic Plan</button>
+                    <button class="upgrade-btn upgrade-btn-professional">Professional Plan</button>
+                </div>
+                
+                <button onclick="hideTestModal()" class="modal-close-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Browser detection
+        function detectBrowser() {
+            const userAgent = navigator.userAgent;
+            let browserName = 'Unknown';
+            let browserVersion = 'Unknown';
+
+            if (userAgent.indexOf('Chrome') > -1 && userAgent.indexOf('Edg') === -1) {
+                browserName = 'Google Chrome';
+                browserVersion = userAgent.match(/Chrome\/([0-9.]+)/)?.[1] || 'Unknown';
+            } else if (userAgent.indexOf('Edg') > -1) {
+                browserName = 'Microsoft Edge';
+                browserVersion = userAgent.match(/Edg\/([0-9.]+)/)?.[1] || 'Unknown';
+            } else if (userAgent.indexOf('Firefox') > -1) {
+                browserName = 'Mozilla Firefox';
+                browserVersion = userAgent.match(/Firefox\/([0-9.]+)/)?.[1] || 'Unknown';
+            } else if (userAgent.indexOf('Safari') > -1 && userAgent.indexOf('Chrome') === -1) {
+                browserName = 'Safari';
+                browserVersion = userAgent.match(/Version\/([0-9.]+)/)?.[1] || 'Unknown';
+            }
+
+            return { name: browserName, version: browserVersion, userAgent };
+        }
+
+        // CSS feature detection
+        function checkCSSFeatures() {
+            const features = {
+                'CSS Transforms': CSS.supports('transform', 'scale(1)'),
+                'CSS Transitions': CSS.supports('transition', 'all 0.3s'),
+                'CSS Gradients': CSS.supports('background', 'linear-gradient(45deg, red, blue)'),
+                'CSS Flexbox': CSS.supports('display', 'flex'),
+                'CSS Animations': CSS.supports('animation', 'spin 1s linear'),
+                'CSS Box Shadow': CSS.supports('box-shadow', '0 4px 8px rgba(0,0,0,0.1)'),
+                'CSS Backdrop Filter': CSS.supports('backdrop-filter', 'blur(5px)'),
+                'CSS Custom Properties': CSS.supports('color', 'var(--primary)')
+            };
+
+            return features;
+        }
+
+        // Compatibility assessment
+        function assessCompatibility(browser, features) {
+            const criticalFeatures = ['CSS Transforms', 'CSS Transitions', 'CSS Gradients', 'CSS Flexbox'];
+            const unsupportedCritical = criticalFeatures.filter(feature => !features[feature]);
+            
+            if (unsupportedCritical.length === 0) {
+                return { status: 'excellent', message: 'Excellent compatibility - all features supported' };
+            } else if (unsupportedCritical.length <= 2) {
+                return { status: 'good', message: `Good compatibility - ${unsupportedCritical.length} minor issues` };
+            } else {
+                return { status: 'poor', message: `Poor compatibility - ${unsupportedCritical.length} critical features unsupported` };
+            }
+        }
+
+        // Modal functions
+        function showTestModal() {
+            document.getElementById('test-modal').style.display = 'flex';
+            document.body.classList.add('modal-open');
+        }
+
+        function hideTestModal() {
+            document.getElementById('test-modal').style.display = 'none';
+            document.body.classList.remove('modal-open');
+        }
+
+        // Initialize tests
+        document.addEventListener('DOMContentLoaded', function() {
+            // Display browser info
+            const browser = detectBrowser();
+            document.getElementById('browser-details').innerHTML = `
+                <strong>Browser:</strong> ${browser.name} ${browser.version}<br>
+                <strong>User Agent:</strong> ${browser.userAgent}
+            `;
+
+            // Check CSS features
+            const features = checkCSSFeatures();
+            const compatibility = assessCompatibility(browser, features);
+            
+            let featuresHTML = '<ul>';
+            for (const [feature, supported] of Object.entries(features)) {
+                const icon = supported ? '✅' : '❌';
+                featuresHTML += `<li>${icon} ${feature}: ${supported ? 'Supported' : 'Not Supported'}</li>`;
+            }
+            featuresHTML += '</ul>';
+            
+            document.getElementById('css-features').innerHTML = featuresHTML;
+
+            // Update compatibility status
+            const statusElement = document.getElementById('compatibility-status');
+            const statusText = document.getElementById('status-text');
+            
+            statusText.textContent = compatibility.message;
+            
+            if (compatibility.status === 'excellent') {
+                statusElement.className = 'compatibility-check';
+            } else if (compatibility.status === 'good') {
+                statusElement.className = 'compatibility-check warning';
+            } else {
+                statusElement.className = 'compatibility-check error';
+            }
+
+            // Add click handlers for testing
+            document.getElementById('upgrade-button').addEventListener('click', function() {
+                alert('Header upgrade button clicked! ✅');
+            });
+
+            // Test modal backdrop click
+            document.getElementById('test-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    hideTestModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
