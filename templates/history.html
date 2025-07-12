@@ -44,6 +44,9 @@
             <i class="fas fa-chevron-down dropdown-arrow"></i>
           </button>
           <div id="user-dropdown" class="user-dropdown">
+            <a href="{{ url_for('main.dashboard') }}" class="dropdown-item">
+              <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
             <a href="{{ url_for('auth.profile') }}" class="dropdown-item">
               <i class="fas fa-user"></i> Profile
             </a>
@@ -86,9 +89,28 @@
         <!-- End Theme Selector -->
 
         <!-- Navigation Links -->
-        <a href="{{ url_for('index') }}" class="button button-outline">Home</a>
+        <a href="{{ url_for('main.index') }}" class="button button-outline">Home</a>
       </div>
     </header>
+
+    <!-- Breadcrumb Navigation -->
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+          <a href="{{ url_for('main.dashboard') }}" class="breadcrumb-link">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="breadcrumb-separator">
+          <i class="fas fa-chevron-right"></i>
+        </li>
+        <li class="breadcrumb-item breadcrumb-current" aria-current="page">
+          <i class="fas fa-history"></i>
+          <span>History</span>
+        </li>
+      </ol>
+    </nav>
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -103,9 +125,15 @@
     <div class="history-page-content">
       <div class="history-header">
         <div class="history-title-section">
-          <h1 class="history-title">
-            <i class="fas fa-history"></i> History
-          </h1>
+          <div class="history-title-row">
+            <h1 class="history-title">
+              <i class="fas fa-history"></i> History
+            </h1>
+            <a href="{{ url_for('main.dashboard') }}" class="back-to-dashboard-btn">
+              <i class="fas fa-arrow-left"></i>
+              <span>Back to Dashboard</span>
+            </a>
+          </div>
 
           <!-- Type Filter Buttons (Top-Left) -->
           <div class="type-filter-buttons">
