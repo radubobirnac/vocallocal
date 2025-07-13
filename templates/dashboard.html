@@ -411,6 +411,190 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Pay-As-You-Go Section Styles */
+        .payg-section {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: hsl(var(--card));
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid hsl(var(--border));
+        }
+
+        .payg-section h2 {
+            color: hsl(var(--foreground));
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .payg-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .payg-card {
+            background: hsl(var(--muted));
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid hsl(var(--border));
+        }
+
+        .payg-card h3 {
+            color: hsl(var(--foreground));
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .payg-eligible {
+            color: #22c55e;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .payg-not-eligible {
+            color: hsl(var(--muted-foreground));
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .overage-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: hsl(var(--card));
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .overage-service {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+
+        .overage-details {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .overage-cost {
+            font-weight: 600;
+            color: #ef4444;
+        }
+
+        .no-overages, .no-charges {
+            color: #22c55e;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+            justify-content: center;
+        }
+
+        .outstanding-charges {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .charges-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .charges-header h3 {
+            color: #92400e;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .charges-amount {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #92400e;
+        }
+
+        .charges-description {
+            color: #92400e;
+            margin: 0;
+        }
+
+        .payg-actions {
+            display: flex;
+            gap: 1rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .pricing-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: hsl(var(--card));
+            border-radius: 6px;
+            border: 1px solid hsl(var(--border));
+        }
+
+        .pricing-service {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pricing-rate {
+            font-weight: 600;
+            color: hsl(var(--primary));
+        }
+
+        /* Dark mode adjustments for PAYG */
+        html[data-theme='dark'] .outstanding-charges {
+            background: rgba(251, 191, 36, 0.1);
+            border-color: rgba(251, 191, 36, 0.3);
+        }
+
+        html[data-theme='dark'] .charges-header h3,
+        html[data-theme='dark'] .charges-amount,
+        html[data-theme='dark'] .charges-description {
+            color: #fbbf24;
+        }
+
+        @media (max-width: 768px) {
+            .payg-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .payg-actions {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body>
@@ -716,6 +900,51 @@
         </div>
         {% endif %}
 
+        <!-- Pay-As-You-Go Section (only for users who have enabled it) -->
+        {% if plan_type in ['basic', 'professional'] %}
+        <div class="payg-section" id="payg-section" style="display: none;">
+            <h2><i class="fas fa-calculator"></i> Pay-As-You-Go Usage</h2>
+            <div class="payg-cards">
+                <div class="payg-card">
+                    <h3><i class="fas fa-info-circle"></i> Status</h3>
+                    <div id="payg-eligibility-status">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i> Loading status...
+                        </div>
+                    </div>
+                </div>
+                <div class="payg-card">
+                    <h3><i class="fas fa-chart-line"></i> Usage Overages</h3>
+                    <div id="payg-overage-details">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i> Loading overages...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="payg-outstanding-charges" class="payg-charges-section">
+                <!-- Outstanding charges will be loaded here -->
+            </div>
+
+            <div class="payg-actions">
+                <button id="pay-outstanding-btn" class="button button-primary" style="display: none;">
+                    <i class="fas fa-credit-card"></i> Pay Outstanding Charges
+                </button>
+                <button id="refresh-payg-status" class="button button-outline">
+                    <i class="fas fa-sync-alt"></i> Refresh Status
+                </button>
+                <button id="show-payg-pricing" class="button button-outline">
+                    <i class="fas fa-tag"></i> View Pricing
+                </button>
+            </div>
+
+            <div id="payg-pricing-summary" class="payg-pricing-section">
+                <!-- Pricing summary will be loaded here -->
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Billing History Section (for paid plans) -->
         {% if plan_type != 'free' %}
         <div class="billing-section">
@@ -954,3 +1183,6 @@
     window.stripePublishableKey = '{{ config.STRIPE_PUBLISHABLE_KEY or "" }}';
 </script>
 <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
+<script src="{{ url_for('static', filename='js/payg-dashboard.js') }}"></script>
+</body>
+</html>

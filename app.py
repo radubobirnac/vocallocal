@@ -236,7 +236,7 @@ def translate():
     return render_template('translate.html')
 
 # Register blueprints
-from routes import main, transcription, translation, tts, admin, interpretation, usage_tracking, user, payment
+from routes import main, transcription, translation, tts, admin, interpretation, usage_tracking, user, payment, payg
 from routes.email_routes import email_bp
 from routes.email_verification import email_verification_bp
 
@@ -249,6 +249,7 @@ app.register_blueprint(interpretation.bp)
 app.register_blueprint(usage_tracking.bp)
 app.register_blueprint(user.bp)
 app.register_blueprint(payment.bp)
+app.register_blueprint(payg.bp)
 app.register_blueprint(email_bp)
 app.register_blueprint(email_verification_bp)
 

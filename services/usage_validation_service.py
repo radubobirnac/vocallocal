@@ -134,6 +134,7 @@ class UsageValidationService:
     def validate_transcription_usage(user_email, minutes_requested):
         """
         Validate if user can perform transcription for the requested minutes.
+        Now supports pay-as-you-go overage for Basic/Professional users.
 
         Args:
             user_email (str): User's email address
@@ -163,21 +164,83 @@ class UsageValidationService:
             limit = usage_data['limits']['transcriptionMinutes']
             used = usage_data['used']['transcriptionMinutes']
             remaining = max(0, limit - used)
+            plan_type = usage_data['plan_type']
 
-            allowed = remaining >= minutes_requested
+            # Check if within subscription limits
+            if remaining >= minutes_requested:
+                return {
+                    'allowed': True,
+                    'service': 'transcription',
+                    'requested': minutes_requested,
+                    'limit': limit,
+                    'used': used,
+                    'remaining': remaining,
+                    'plan_type': plan_type,
+                    'upgrade_required': False,
+                    'message': f'✓ {minutes_requested:.1f} minutes approved from subscription allowance'
+                }
 
+            # Check if user is eligible for pay-as-you-go overage AND has enabled it
+            if plan_type in ['basic', 'professional']:
+                from services.payg_service import PayAsYouGoService
+                from services.overage_tracking_service import OverageTrackingService
+
+                # Check if PAYG is enabled
+                payg_status = PayAsYouGoService.get_user_payg_status(user_email)
+
+                if payg_status.get('enabled'):
+                    overage_amount = minutes_requested - remaining
+                    overage_cost = overage_amount * OverageTrackingService.PAYG_PRICING['transcription']
+
+                    # Record the overage usage immediately for real-time billing
+                    try:
+                        OverageTrackingService.record_overage_usage(user_email, 'transcription', overage_amount)
+                        logger.info(f"Recorded transcription overage: {overage_amount} minutes for {user_email}")
+                    except Exception as e:
+                        logger.error(f"Failed to record transcription overage: {str(e)}")
+
+                    return {
+                        'allowed': True,
+                        'service': 'transcription',
+                        'requested': minutes_requested,
+                        'limit': limit,
+                        'used': used,
+                        'remaining': remaining,
+                        'plan_type': plan_type,
+                        'upgrade_required': False,
+                        'overage': {
+                            'amount': overage_amount,
+                            'cost': overage_cost,
+                            'rate': OverageTrackingService.PAYG_PRICING['transcription']
+                        },
+                        'message': f'✓ {remaining:.1f} min from subscription + {overage_amount:.1f} min pay-as-you-go (${overage_cost:.2f})'
+                    }
+                else:
+                    # PAYG not enabled, show enable prompt
+                    return {
+                        'allowed': False,
+                        'service': 'transcription',
+                        'requested': minutes_requested,
+                        'limit': limit,
+                        'used': used,
+                        'remaining': remaining,
+                        'plan_type': plan_type,
+                        'upgrade_required': False,
+                        'payg_available': True,
+                        'message': f'✗ Insufficient minutes. Need {minutes_requested:.1f}, have {remaining:.1f}. Enable Pay-As-You-Go on the pricing page to continue.'
+                    }
+
+            # Free users cannot exceed limits
             return {
-                'allowed': allowed,
+                'allowed': False,
                 'service': 'transcription',
                 'requested': minutes_requested,
                 'limit': limit,
                 'used': used,
                 'remaining': remaining,
-                'plan_type': usage_data['plan_type'],
-                'upgrade_required': not allowed and limit > 0,
-                'message': UsageValidationService._get_validation_message(
-                    'transcription', allowed, remaining, minutes_requested, usage_data['plan_type']
-                )
+                'plan_type': plan_type,
+                'upgrade_required': True,
+                'message': f'✗ Insufficient minutes. Need {minutes_requested:.1f}, have {remaining:.1f}. Upgrade to Basic/Professional for pay-as-you-go.'
             }
 
         except Exception as e:
@@ -222,21 +285,83 @@ class UsageValidationService:
             limit = usage_data['limits']['translationWords']
             used = usage_data['used']['translationWords']
             remaining = max(0, limit - used)
+            plan_type = usage_data['plan_type']
 
-            allowed = remaining >= words_requested
+            # Check if within subscription limits
+            if remaining >= words_requested:
+                return {
+                    'allowed': True,
+                    'service': 'translation',
+                    'requested': words_requested,
+                    'limit': limit,
+                    'used': used,
+                    'remaining': remaining,
+                    'plan_type': plan_type,
+                    'upgrade_required': False,
+                    'message': f'✓ {words_requested} words approved from subscription allowance'
+                }
 
+            # Check if user is eligible for pay-as-you-go overage AND has enabled it
+            if plan_type in ['basic', 'professional']:
+                from services.payg_service import PayAsYouGoService
+                from services.overage_tracking_service import OverageTrackingService
+
+                # Check if PAYG is enabled
+                payg_status = PayAsYouGoService.get_user_payg_status(user_email)
+
+                if payg_status.get('enabled'):
+                    overage_amount = words_requested - remaining
+                    overage_cost = overage_amount * OverageTrackingService.PAYG_PRICING['translation']
+
+                    # Record the overage usage immediately for real-time billing
+                    try:
+                        OverageTrackingService.record_overage_usage(user_email, 'translation', overage_amount)
+                        logger.info(f"Recorded translation overage: {overage_amount} words for {user_email}")
+                    except Exception as e:
+                        logger.error(f"Failed to record translation overage: {str(e)}")
+
+                    return {
+                        'allowed': True,
+                        'service': 'translation',
+                        'requested': words_requested,
+                        'limit': limit,
+                        'used': used,
+                        'remaining': remaining,
+                        'plan_type': plan_type,
+                        'upgrade_required': False,
+                        'overage': {
+                            'amount': overage_amount,
+                            'cost': overage_cost,
+                            'rate': OverageTrackingService.PAYG_PRICING['translation']
+                        },
+                        'message': f'✓ {remaining} words from subscription + {overage_amount} words pay-as-you-go (${overage_cost:.3f})'
+                    }
+                else:
+                    # PAYG not enabled, show enable prompt
+                    return {
+                        'allowed': False,
+                        'service': 'translation',
+                        'requested': words_requested,
+                        'limit': limit,
+                        'used': used,
+                        'remaining': remaining,
+                        'plan_type': plan_type,
+                        'upgrade_required': False,
+                        'payg_available': True,
+                        'message': f'✗ Insufficient words. Need {words_requested}, have {remaining}. Enable Pay-As-You-Go on the pricing page to continue.'
+                    }
+
+            # Free users cannot exceed limits
             return {
-                'allowed': allowed,
+                'allowed': False,
                 'service': 'translation',
                 'requested': words_requested,
                 'limit': limit,
                 'used': used,
                 'remaining': remaining,
-                'plan_type': usage_data['plan_type'],
-                'upgrade_required': not allowed and limit > 0,
-                'message': UsageValidationService._get_validation_message(
-                    'translation', allowed, remaining, words_requested, usage_data['plan_type']
-                )
+                'plan_type': plan_type,
+                'upgrade_required': True,
+                'message': f'✗ Insufficient words. Need {words_requested}, have {remaining}. Upgrade to Basic/Professional for pay-as-you-go.'
             }
 
         except Exception as e:

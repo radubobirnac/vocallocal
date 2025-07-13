@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/upgrade-modal.css') }}">
 </head>
-<body>
+<body {% if current_user.is_authenticated %}class="authenticated" data-user-authenticated="true"{% endif %}>
   <div class="container">
     <!-- Header -->
     <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-1 mb-2 mt-1">
@@ -65,8 +65,8 @@
       </div>
 
       <!-- Pricing Cards -->
-      <div class="pricing-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; max-width: 1000px; margin: 0 auto;">
-        
+      <div class="pricing-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; max-width: 1400px; margin: 0 auto;">
+
         <!-- Free Plan -->
         <div class="pricing-card" style="border: 2px solid hsl(var(--border)); border-radius: 15px; padding: 2rem; background: hsl(var(--card)); position: relative;">
           <div class="plan-header" style="text-align: center; margin-bottom: 2rem;">
@@ -74,7 +74,7 @@
             <div style="font-size: 2.5rem; font-weight: 700; color: hsl(var(--primary)); margin-bottom: 0.5rem;">$0</div>
             <div style="color: hsl(var(--muted-foreground));">per month</div>
           </div>
-          
+
           <ul style="list-style: none; padding: 0; margin-bottom: 2rem;">
             <li style="padding: 0.5rem 0; display: flex; align-items: center;">
               <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
@@ -97,7 +97,7 @@
               Basic AI models
             </li>
           </ul>
-          
+
           {% if current_user.is_authenticated %}
             <a href="{{ url_for('main.index') }}" class="button button-outline w-full" style="width: 100%; justify-content: center;">
               Current Plan
@@ -208,7 +208,51 @@
             </a>
           {% endif %}
         </div>
+
+        <!-- Pay-As-You-Go Plan -->
+        <div class="pricing-card" style="border: 2px solid hsl(var(--border)); border-radius: 15px; padding: 2rem; background: hsl(var(--card)); position: relative;">
+          <div class="plan-header" style="text-align: center; margin-bottom: 2rem;">
+            <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: hsl(var(--foreground));">Pay-As-You-Go</h3>
+            <div style="font-size: 2.5rem; font-weight: 700; color: hsl(var(--primary)); margin-bottom: 0.5rem;">300</div>
+            <div style="color: hsl(var(--muted-foreground));">credits included</div>
+          </div>
+
+          <ul style="list-style: none; padding: 0; margin-bottom: 2rem;">
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              $0.15/min TTS overage
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              $0.10/min transcription overage
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              $0.001/word translation overage
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              Only pay for usage beyond limits
+            </li>
+            <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+              <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+              Requires Basic or Professional plan
+            </li>
+          </ul>
+
+          {% if current_user.is_authenticated %}
+            <button id="enable-payg-static-btn" class="button button-primary w-full" style="width: 100%; justify-content: center;">
+              Enable Pay-As-You-Go
+            </button>
+          {% else %}
+            <a href="{{ url_for('auth.login', next='/pricing') }}" class="button button-primary w-full" style="width: 100%; justify-content: center;">
+              Sign In to Enable
+            </a>
+          {% endif %}
+        </div>
       </div>
+
+
 
       <!-- FAQ Section -->
       <div class="faq-section" style="margin-top: 4rem; max-width: 800px; margin-left: auto; margin-right: auto;">
@@ -221,12 +265,17 @@
         
         <div class="faq-item" style="margin-bottom: 1.5rem; padding: 1.5rem; border: 1px solid hsl(var(--border)); border-radius: 10px;">
           <h3 style="margin-bottom: 0.5rem; color: hsl(var(--foreground));">What happens if I exceed my limits?</h3>
-          <p style="color: hsl(var(--muted-foreground)); margin: 0;">When you reach your plan limits, you can use AI credits as a fallback. You can purchase additional credits or upgrade your plan for higher limits.</p>
+          <p style="color: hsl(var(--muted-foreground)); margin: 0;">Basic and Professional users can enable Pay-As-You-Go to continue using services beyond their monthly limits. You'll only be charged for the additional usage at transparent per-unit rates. Free users need to upgrade to access this feature.</p>
         </div>
         
         <div class="faq-item" style="margin-bottom: 1.5rem; padding: 1.5rem; border: 1px solid hsl(var(--border)); border-radius: 10px;">
           <h3 style="margin-bottom: 0.5rem; color: hsl(var(--foreground));">Is there a free trial?</h3>
           <p style="color: hsl(var(--muted-foreground)); margin: 0;">Yes! Our Free Plan gives you access to basic features with generous limits to try out the platform before upgrading.</p>
+        </div>
+
+        <div class="faq-item" style="margin-bottom: 1.5rem; padding: 1.5rem; border: 1px solid hsl(var(--border)); border-radius: 10px;">
+          <h3 style="margin-bottom: 0.5rem; color: hsl(var(--foreground));">How does Pay-As-You-Go work?</h3>
+          <p style="color: hsl(var(--muted-foreground)); margin: 0;">Pay-As-You-Go is available for Basic and Professional subscribers. When you exceed your monthly plan limits, you can continue using services with transparent per-unit billing. Each service is tracked independently, so you only pay for the specific services you use beyond your plan allowances.</p>
         </div>
       </div>
     </div>
@@ -239,6 +288,47 @@
       window.stripePublishableKey = '{{ config.STRIPE_PUBLISHABLE_KEY or "" }}';
   </script>
   <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/pricing-payg.js') }}"></script>
+
+  <!-- Pricing Card Styles -->
+  <style>
+
+    /* Responsive grid adjustments for 4 cards */
+    @media (min-width: 1400px) {
+      .pricing-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+        max-width: 1400px !important;
+      }
+    }
+
+    @media (max-width: 1399px) and (min-width: 1025px) {
+      .pricing-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        max-width: 800px !important;
+      }
+    }
+
+    @media (max-width: 1024px) and (min-width: 769px) {
+      .pricing-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        max-width: 700px !important;
+        gap: 1.5rem !important;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .pricing-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.5rem !important;
+        max-width: 400px !important;
+      }
+
+      .pricing-card {
+        margin: 0 auto !important;
+        max-width: 400px !important;
+      }
+    }
+  </style>
 
   <!-- Payment Status Handling for Pricing Page -->
   <script>
@@ -302,7 +392,9 @@
         const planHeader = card.querySelector('.plan-header h3');
         if (planHeader) {
           const cardPlanType = planHeader.textContent.toLowerCase().includes('basic') ? 'basic' :
-                              planHeader.textContent.toLowerCase().includes('professional') ? 'professional' : 'free';
+                              planHeader.textContent.toLowerCase().includes('professional') ? 'professional' :
+                              planHeader.textContent.toLowerCase().includes('pay-as-you-go') ? 'payg' :
+                              planHeader.textContent.toLowerCase().includes('free') ? 'free' : null;
 
           if (cardPlanType === planType) {
             card.classList.add('plan-highlighted');
@@ -337,7 +429,9 @@
         const planHeader = card.querySelector('.plan-header h3');
         if (planHeader) {
           const cardPlanType = planHeader.textContent.toLowerCase().includes('basic') ? 'basic' :
-                              planHeader.textContent.toLowerCase().includes('professional') ? 'professional' : 'free';
+                              planHeader.textContent.toLowerCase().includes('professional') ? 'professional' :
+                              planHeader.textContent.toLowerCase().includes('pay-as-you-go') ? 'payg' :
+                              planHeader.textContent.toLowerCase().includes('free') ? 'free' : null;
 
           if (cardPlanType === planType) {
             card.scrollIntoView({

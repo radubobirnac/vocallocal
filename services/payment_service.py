@@ -161,6 +161,9 @@ class PaymentService:
             elif event['type'] == 'invoice.created':
                 return self._handle_invoice_created(event['data']['object'])
 
+            elif event['type'] == 'payment_intent.succeeded':
+                return self._handle_payment_intent_succeeded(event['data']['object'])
+
             else:
                 logger.info(f"Unhandled webhook event type: {event['type']}")
                 return {'success': True, 'message': 'Event type not handled'}
@@ -594,6 +597,45 @@ class PaymentService:
         except Exception as e:
             logger.error(f"Error storing billing history for {user_email}: {str(e)}")
             raise
+
+    def _handle_payment_intent_succeeded(self, payment_intent):
+        """Handle successful payment intent (for PAYG overage payments)"""
+        try:
+            # Check if this is a PAYG overage payment
+            metadata = payment_intent.get('metadata', {})
+            payment_type = metadata.get('type')
+
+            if payment_type == 'payg_overage':
+                user_email = metadata.get('user_email')
+
+                if not user_email:
+                    logger.error("Missing user_email in payment intent metadata")
+                    return {'error': 'Missing required metadata for PAYG payment'}
+
+                # Import here to avoid circular imports
+                from services.overage_tracking_service import OverageTrackingService
+
+                # Clear outstanding charges
+                amount_paid = payment_intent.get('amount_received', 0) / 100  # Convert from cents
+                result = OverageTrackingService.clear_outstanding_charges(
+                    user_email=user_email,
+                    payment_intent_id=payment_intent['id']
+                )
+
+                if result.get('success'):
+                    logger.info(f"Successfully cleared PAYG charges for {user_email}: ${amount_paid:.2f}")
+                    return {'success': True, 'message': 'PAYG charges cleared'}
+                else:
+                    logger.error(f"Failed to clear PAYG charges: {result.get('error')}")
+                    return {'error': f"Failed to clear charges: {result.get('error')}"}
+
+            # Not a PAYG payment, handle as regular payment
+            logger.info(f"Payment intent succeeded (non-PAYG): {payment_intent['id']}")
+            return {'success': True, 'message': 'Payment intent processed'}
+
+        except Exception as e:
+            logger.error(f"Error handling payment intent: {str(e)}")
+            return {'error': str(e)}
 
     def _generate_pdf_invoice(self, user_email, invoice_id, amount, currency,
                             payment_date, plan_type, plan_name, billing_cycle):
