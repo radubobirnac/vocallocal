@@ -611,7 +611,8 @@ def get_user_available_models():
                 {'value': 'gemini-2.0-flash-lite', 'label': 'Gemini 2.0 Flash Lite', 'free': True},
                 {'value': 'gpt-4o-mini-transcribe', 'label': 'OpenAI GPT-4o Mini', 'free': False},
                 {'value': 'gpt-4o-transcribe', 'label': 'OpenAI GPT-4o', 'free': False},
-                {'value': 'gemini-2.5-flash-preview-04-17', 'label': 'Gemini 2.5 Flash Preview', 'free': False}
+                {'value': 'gemini-2.5-flash-preview-04-17', 'label': 'Gemini 2.5 Flash Preview', 'free': False},  # UI compatibility
+                {'value': 'gemini-2.5-flash-preview-05-20', 'label': 'Gemini 2.5 Flash Preview 05-20', 'free': False}  # Working model
             ],
             'translation': [
                 {'value': 'gemini-2.0-flash-lite', 'label': 'Gemini 2.0 Flash Lite', 'free': True},

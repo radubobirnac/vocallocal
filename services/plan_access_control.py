@@ -23,7 +23,8 @@ class PlanAccessControl:
             'transcription': [
                 'gemini-2.0-flash-lite',
                 'gpt-4o-mini-transcribe',
-                'gemini-2.5-flash-preview-04-17'
+                'gemini-2.5-flash-preview-04-17',  # Kept for UI compatibility (maps to 05-20)
+                'gemini-2.5-flash-preview-05-20'   # Working model
             ],
             'translation': [
                 'gemini-2.0-flash-lite',
@@ -83,7 +84,12 @@ class PlanAccessControl:
         },
         'gemini-2.5-flash-preview-04-17': {
             'name': 'Gemini 2.5 Flash Preview',
-            'description': 'Latest Gemini model with enhanced capabilities',
+            'description': 'Latest Gemini model with enhanced capabilities (deprecated, uses 05-20)',
+            'tier': 'basic'
+        },
+        'gemini-2.5-flash-preview-05-20': {
+            'name': 'Gemini 2.5 Flash Preview 05-20',
+            'description': 'Latest working Gemini 2.5 Flash model with enhanced capabilities',
             'tier': 'basic'
         },
         'gemini-2.5-flash': {

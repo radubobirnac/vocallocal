@@ -116,9 +116,12 @@ def translate_text():
     translation_model = data.get('translation_model', 'gemini-2.0-flash-lite')  # Default to Gemini
 
     # Fix model routing - ensure proper mapping between frontend and backend
+    # Note: 04-17 model is deprecated, mapping to 05-20 for translation service
     model_mapping = {
         'gemini-2.0-flash-lite': 'gemini-2.0-flash-lite',
-        'gemini-2.5-flash': 'gemini-2.5-flash-preview-04-17',
+        'gemini-2.5-flash': 'gemini-2.5-flash-preview-05-20',  # Updated to use working 05-20 model
+        'gemini-2.5-flash-preview-04-17': 'gemini-2.5-flash-preview-05-20',  # Explicit 04-17 to 05-20 mapping
+        'gemini-2.5-flash-preview-05-20': 'gemini-2.5-flash-preview-05-20',  # Direct 05-20 support
         'gpt-4.1-mini': 'gpt-4.1-mini'
     }
 

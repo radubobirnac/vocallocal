@@ -65,7 +65,8 @@ class PlanAccessControl {
             'gemini-2.0-flash-lite': { name: 'Gemini 2.0 Flash Lite', tier: 'free' },
             'gpt-4o-mini-transcribe': { name: 'OpenAI GPT-4o Mini', tier: 'basic' },
             'gpt-4o-transcribe': { name: 'OpenAI GPT-4o', tier: 'professional' },
-            'gemini-2.5-flash-preview-04-17': { name: 'Gemini 2.5 Flash Preview', tier: 'basic' },
+            'gemini-2.5-flash-preview-04-17': { name: 'Gemini 2.5 Flash Preview', tier: 'basic' },  // UI compatibility
+            'gemini-2.5-flash-preview-05-20': { name: 'Gemini 2.5 Flash Preview 05-20', tier: 'basic' },  // Working model
             'gemini-2.5-flash': { name: 'Gemini 2.5 Flash Preview', tier: 'basic' },
             'gemini-2.5-flash-tts': { name: 'Gemini 2.5 Flash TTS', tier: 'basic' },
             'gpt4o-mini': { name: 'GPT-4o Mini TTS', tier: 'basic' },

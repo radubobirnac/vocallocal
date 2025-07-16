@@ -259,11 +259,16 @@ class TranslationService(BaseService):
             model_name = self.default_gemini_model
             
         # Handle model name formatting
+        # Note: 04-17 model is deprecated, automatically mapping to working 05-20 model
         if model_name == 'gemini-2.5-flash-preview-04-17':
-            # This is the exact model ID used in the UI for "Gemini 2.5 Flash Preview"
-            model_name = "models/gemini-2.5-flash-preview-04-17"
+            # 04-17 model is deprecated - automatically use 05-20 instead
+            model_name = "models/gemini-2.5-flash-preview-05-20"
+        elif model_name == 'gemini-2.5-flash-preview-05-20':
+            # Direct mapping for the working 05-20 model
+            model_name = "models/gemini-2.5-flash-preview-05-20"
         elif 'gemini-2.5-flash' in model_name or model_name == 'gemini-2.5-flash':
-            model_name = "models/gemini-2.5-flash-preview-04-17"
+            # Use working 05-20 model instead of deprecated 04-17
+            model_name = "models/gemini-2.5-flash-preview-05-20"
         elif 'gemini-2.5-pro' in model_name:
             model_name = "models/gemini-2.5-pro-preview-03-25"
         elif model_name == 'gemini-2.0-flash-lite' or model_name == 'gemini':

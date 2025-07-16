@@ -26,7 +26,8 @@ class RBACAccessControl {
             'openai',  // OpenAI TTS-1
 
             // Gemini Premium Models
-            'gemini-2.5-flash-preview-04-17',
+            'gemini-2.5-flash-preview-04-17',  // UI compatibility (maps to 05-20)
+            'gemini-2.5-flash-preview-05-20',  // Working model
             'gemini-2.5-flash',
             'gemini-2.5-flash-tts'
         ];
@@ -37,7 +38,8 @@ class RBACAccessControl {
             'gpt-4o-transcribe': { name: 'OpenAI GPT-4o', tier: 'premium' },
             'gpt4o-mini': { name: 'GPT-4o Mini TTS', tier: 'premium', service: 'tts' },
             'openai': { name: 'OpenAI TTS-1', tier: 'premium', service: 'tts' },
-            'gemini-2.5-flash-preview-04-17': { name: 'Gemini 2.5 Flash Preview', tier: 'premium' },
+            'gemini-2.5-flash-preview-04-17': { name: 'Gemini 2.5 Flash Preview', tier: 'premium' },  // UI compatibility
+            'gemini-2.5-flash-preview-05-20': { name: 'Gemini 2.5 Flash Preview 05-20', tier: 'premium' },  // Working model
             'gemini-2.5-flash': { name: 'Gemini 2.5 Flash Preview', tier: 'premium' },
             'gemini-2.5-flash-tts': { name: 'Gemini 2.5 Flash TTS', tier: 'premium', service: 'tts' }
         };

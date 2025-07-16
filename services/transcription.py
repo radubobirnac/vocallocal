@@ -1019,20 +1019,38 @@ class TranscriptionService(BaseService):
                     self.logger.warning(f"Failed to remove temporary WebM file: {str(cleanup_error)}")
 
     def _map_model_name(self, model_name):
-        """Helper method to map model names to Gemini model IDs."""
+        """
+        Helper method to map model names to Gemini model IDs.
+
+        Note: gemini-2.5-flash-preview-04-17 is deprecated and no longer available in Gemini API.
+        All references to 04-17 are automatically mapped to the working 05-20 model.
+        """
         gemini_model_id = 'gemini-2.0-flash-lite'  # Default model
+
         if model_name == 'gemini-2.0-flash-lite':
             gemini_model_id = 'gemini-2.0-flash-lite'
         elif model_name == 'gemini-2.5-flash-preview-04-17':
-            gemini_model_id = 'gemini-2.5-flash-preview-04-17'
+            # 04-17 model is deprecated - automatically use 05-20 instead
+            gemini_model_id = 'gemini-2.5-flash-preview-05-20'
+            self.logger.info(f"Model 04-17 is deprecated, automatically using 05-20 instead")
+        elif model_name == 'gemini-2.5-flash-preview-05-20':
+            # Direct mapping for the working 05-20 model
+            gemini_model_id = 'gemini-2.5-flash-preview-05-20'
         elif model_name == 'gemini-2.5-flash-preview':
-            gemini_model_id = 'gemini-2.5-flash-preview-04-17'
+            # Generic preview mapping - use latest working model (05-20)
+            gemini_model_id = 'gemini-2.5-flash-preview-05-20'
         elif model_name == 'gemini-2.5-flash':
-            gemini_model_id = 'gemini-2.5-flash-preview-04-17'
+            # Alternative model name mapping - use latest working model (05-20)
+            gemini_model_id = 'gemini-2.5-flash-preview-05-20'
         elif model_name == 'gemini-2.5-pro-preview':
             gemini_model_id = 'gemini-2.5-pro-preview-03-25'
         elif model_name == 'gemini' or model_name == 'gemini-1.5-flash':
             gemini_model_id = 'gemini-2.0-flash-lite'
+
+        # Log the mapping for debugging
+        if model_name != gemini_model_id:
+            self.logger.info(f"Model mapping: '{model_name}' -> '{gemini_model_id}'")
+
         return gemini_model_id
 
     def _transcribe_with_files_api_improved(self, temp_file_path, model, generation_config, language, file_size_mb):
@@ -1270,18 +1288,23 @@ class TranscriptionService(BaseService):
             self.logger.info(f"Using Gemini for transcription with model: {model_name}, language: {language}")
 
             # Map model name to actual Gemini model ID
-            gemini_model_id = 'gemini-2.0-flash-lite'  # Default model (updated to use 2.0 Flash Lite)
+            # Note: 04-17 model is deprecated, automatically mapping to working 05-20 model
+            gemini_model_id = 'gemini-2.0-flash-lite'  # Default model
             if model_name == 'gemini-2.0-flash-lite':
                 gemini_model_id = 'gemini-2.0-flash-lite'
             elif model_name == 'gemini-2.5-flash-preview-04-17':
-                # This is the model ID used in the UI for "Gemini 2.5 Flash Preview"
-                gemini_model_id = 'gemini-2.5-flash-preview-04-17'
+                # 04-17 model is deprecated - automatically use 05-20 instead
+                gemini_model_id = 'gemini-2.5-flash-preview-05-20'
+                self.logger.info(f"Model 04-17 is deprecated, automatically using 05-20 instead")
+            elif model_name == 'gemini-2.5-flash-preview-05-20':
+                # Direct mapping for the working 05-20 model
+                gemini_model_id = 'gemini-2.5-flash-preview-05-20'
             elif model_name == 'gemini-2.5-flash-preview':
-                # Legacy mapping for older model name
-                gemini_model_id = 'gemini-2.5-flash-preview-04-17'
+                # Generic preview mapping - use latest working model (05-20)
+                gemini_model_id = 'gemini-2.5-flash-preview-05-20'
             elif model_name == 'gemini-2.5-flash':
-                # Alternative model name mapping
-                gemini_model_id = 'gemini-2.5-flash-preview-04-17'
+                # Alternative model name mapping - use latest working model (05-20)
+                gemini_model_id = 'gemini-2.5-flash-preview-05-20'
             elif model_name == 'gemini-2.5-pro-preview':
                 gemini_model_id = 'gemini-2.5-pro-preview-03-25'
             elif model_name == 'gemini' or model_name == 'gemini-1.5-flash':

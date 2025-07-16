@@ -29,7 +29,8 @@ class ModelAccessService:
         'openai',  # OpenAI TTS-1
 
         # Gemini Premium Models
-        'gemini-2.5-flash-preview-04-17',
+        'gemini-2.5-flash-preview-04-17',  # Kept for UI compatibility (maps to 05-20 in service)
+        'gemini-2.5-flash-preview-05-20',  # Working model
         'gemini-2.5-flash',
         'gemini-2.5-flash-tts'
     ]
