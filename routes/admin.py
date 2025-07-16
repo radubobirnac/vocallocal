@@ -7,6 +7,8 @@ from flask import Blueprint, render_template, request, jsonify, session, flash, 
 from flask_login import current_user
 from models.firebase_models import User, UserActivity, Transcription, Translation
 from services.admin_subscription_service import AdminSubscriptionService
+from services.user_account_service import UserAccountService
+from services.payment_service import PaymentService
 # Import RBAC decorators (will be used as we update routes)
 try:
     from rbac import require_admin_or_special_auth, require_admin, api_require_admin, check_permission
@@ -540,3 +542,73 @@ def get_user_plan():
 def test_plan_access():
     """Test page for plan access control"""
     return render_template('test_plan_access.html')
+
+@bp.route('/api/users/<user_email>/payment-history', methods=['GET'])
+def get_user_payment_history(user_email):
+    """API endpoint to get user's payment and subscription history"""
+    # Check if already authenticated with special admin credentials
+    if session.get('special_admin_auth') != True:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        # Get user account data
+        user_id = user_email.replace('.', ',')
+        user_account = UserAccountService.get_user_account(user_id)
+
+        if not user_account:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Get payment history from billing data
+        billing_data = user_account.get('billing', {})
+        invoices = billing_data.get('invoices', {})
+
+        # Convert Firebase data to list format
+        payment_history = []
+        for invoice_id, invoice_data in invoices.items():
+            payment_history.append({
+                'id': invoice_id,
+                'date': invoice_data.get('paymentDate'),
+                'amount': invoice_data.get('amount', 0),
+                'currency': invoice_data.get('currency', 'USD'),
+                'status': invoice_data.get('status', 'unknown'),
+                'plan_type': invoice_data.get('planType', 'unknown'),
+                'plan_name': invoice_data.get('planName', 'Unknown Plan'),
+                'billing_cycle': invoice_data.get('billingCycle', 'monthly'),
+                'stripe_invoice_id': invoice_data.get('stripeInvoiceId'),
+                'stripe_subscription_id': invoice_data.get('stripeSubscriptionId')
+            })
+
+        # Sort by date (newest first)
+        payment_history.sort(key=lambda x: x.get('date', 0), reverse=True)
+
+        # Get current subscription info
+        subscription = user_account.get('subscription', {})
+        current_plan = {
+            'plan_type': subscription.get('planType', 'free'),
+            'status': subscription.get('status', 'unknown'),
+            'start_date': subscription.get('startDate'),
+            'end_date': subscription.get('endDate'),
+            'billing_cycle': subscription.get('billingCycle', 'monthly')
+        }
+
+        # Calculate total lifetime value
+        total_lifetime_value = sum(payment.get('amount', 0) for payment in payment_history)
+
+        # Get PAYG purchase history
+        payg_data = billing_data.get('payAsYouGo', {})
+        payg_history = payg_data.get('purchaseHistory', [])
+
+        return jsonify({
+            'success': True,
+            'user_email': user_email,
+            'payment_history': payment_history,
+            'current_plan': current_plan,
+            'total_lifetime_value': total_lifetime_value,
+            'payg_history': payg_history
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

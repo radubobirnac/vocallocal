@@ -54,23 +54,9 @@ class PayAsYouGoDashboard {
     }
 
     setupEventListeners() {
-        // Pay outstanding charges button
-        const payButton = document.getElementById('pay-outstanding-btn');
-        if (payButton) {
-            payButton.addEventListener('click', () => this.handlePayOutstanding());
-        }
-
-        // Refresh status button
-        const refreshButton = document.getElementById('refresh-payg-status');
-        if (refreshButton) {
-            refreshButton.addEventListener('click', () => this.refreshStatus());
-        }
-
-        // Show pricing modal
-        const pricingButton = document.getElementById('show-payg-pricing');
-        if (pricingButton) {
-            pricingButton.addEventListener('click', () => this.showPricingModal());
-        }
+        // Event listeners for PAYG dashboard functionality
+        // Note: Pay outstanding charges, refresh status, and pricing buttons have been removed
+        // This method is kept for future event listener additions if needed
     }
 
     updateUI() {
@@ -148,8 +134,7 @@ class PayAsYouGoDashboard {
 
     updateOutstandingCharges() {
         const chargesEl = document.getElementById('payg-outstanding-charges');
-        const payButtonEl = document.getElementById('pay-outstanding-btn');
-        
+
         if (!chargesEl || !this.overageStatus.eligible) return;
 
         const outstanding = this.overageStatus.combined_outstanding || 0;
@@ -162,26 +147,18 @@ class PayAsYouGoDashboard {
                         <span class="charges-amount">$${outstanding.toFixed(2)}</span>
                     </div>
                     <p class="charges-description">
-                        Pay your outstanding usage charges to reset your billing and continue using services.
+                        Outstanding charges will be automatically billed at the end of your billing cycle.
                     </p>
                 </div>
             `;
-            
-            if (payButtonEl) {
-                payButtonEl.style.display = 'block';
-                payButtonEl.textContent = `Pay $${outstanding.toFixed(2)}`;
-            }
         } else {
             chargesEl.innerHTML = `
                 <div class="no-charges">
-                    <i class="fas fa-check-circle"></i>
-                    <span>No outstanding charges</span>
+                    <i class="fas fa-check-circle" style="color: #22c55e; font-size: 2rem; margin-bottom: 1rem;"></i>
+                    <h3>No Outstanding Charges</h3>
+                    <p>You're all caught up! No overage charges at this time.</p>
                 </div>
             `;
-            
-            if (payButtonEl) {
-                payButtonEl.style.display = 'none';
-            }
         }
     }
 
@@ -209,67 +186,11 @@ class PayAsYouGoDashboard {
         pricingEl.innerHTML = pricingHtml;
     }
 
-    async handlePayOutstanding() {
-        try {
-            const payButton = document.getElementById('pay-outstanding-btn');
-            if (payButton) {
-                payButton.disabled = true;
-                payButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-            }
 
-            const response = await fetch('/payg/create-payment-session', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
 
-            const data = await response.json();
 
-            if (data.success) {
-                // Redirect to Stripe checkout
-                window.location.href = data.checkout_url;
-            } else {
-                alert(`Error: ${data.error}`);
-                if (payButton) {
-                    payButton.disabled = false;
-                    payButton.innerHTML = `Pay $${this.overageStatus.combined_outstanding.toFixed(2)}`;
-                }
-            }
-        } catch (error) {
-            console.error('Error creating payment session:', error);
-            alert('Error processing payment. Please try again.');
-            
-            const payButton = document.getElementById('pay-outstanding-btn');
-            if (payButton) {
-                payButton.disabled = false;
-                payButton.innerHTML = `Pay $${this.overageStatus.combined_outstanding.toFixed(2)}`;
-            }
-        }
-    }
 
-    async refreshStatus() {
-        try {
-            const refreshButton = document.getElementById('refresh-payg-status');
-            if (refreshButton) {
-                refreshButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            }
 
-            await this.loadOverageStatus();
-            this.updateUI();
-
-            if (refreshButton) {
-                refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i>';
-            }
-        } catch (error) {
-            console.error('Error refreshing status:', error);
-        }
-    }
-
-    showPricingModal() {
-        // Implementation for pricing modal
-        console.log('Show pricing modal');
-    }
 
     getServiceIcon(service) {
         const icons = {

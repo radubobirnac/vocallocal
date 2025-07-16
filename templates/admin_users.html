@@ -350,6 +350,168 @@
         width: 100%;
       }
     }
+
+    /* Payment History Styles */
+    .payment-history-section {
+      margin-bottom: 2rem;
+    }
+
+    .payment-history-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1rem;
+      border-radius: 8px 8px 0 0;
+      margin-bottom: 0;
+    }
+
+    .current-plan-summary {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .plan-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .plan-summary-item {
+      text-align: center;
+    }
+
+    .plan-summary-label {
+      font-size: 0.875rem;
+      color: #6c757d;
+      margin-bottom: 0.25rem;
+    }
+
+    .plan-summary-value {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #495057;
+    }
+
+    .plan-summary-value.highlight {
+      color: #667eea;
+    }
+
+    .payment-timeline {
+      position: relative;
+      padding-left: 2rem;
+    }
+
+    .payment-timeline::before {
+      content: '';
+      position: absolute;
+      left: 0.75rem;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #dee2e6;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 1.5rem;
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -1.75rem;
+      top: 1rem;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #667eea;
+      border: 3px solid white;
+      box-shadow: 0 0 0 2px #dee2e6;
+    }
+
+    .timeline-item.success::before {
+      background: #28a745;
+    }
+
+    .timeline-item.failed::before {
+      background: #dc3545;
+    }
+
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .timeline-date {
+      font-size: 0.875rem;
+      color: #6c757d;
+    }
+
+    .timeline-amount {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #28a745;
+    }
+
+    .timeline-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .timeline-detail {
+      font-size: 0.875rem;
+    }
+
+    .timeline-detail-label {
+      color: #6c757d;
+      margin-right: 0.25rem;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    .status-badge.success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-badge.failed {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .status-badge.pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .no-payment-history {
+      text-align: center;
+      padding: 3rem;
+      color: #6c757d;
+    }
+
+    .no-payment-history i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
   </style>
 </head>
 <body>
@@ -455,6 +617,10 @@
                         data-email="{{ user.email }}"
                         data-role="{{ user_role }}">
                   Change Role
+                </button>
+                <button type="button" class="btn btn-sm btn-info user-details-btn"
+                        data-email="{{ user.email }}">
+                  Payment History
                 </button>
               </td>
             </tr>
@@ -564,6 +730,30 @@
     </div>
   </div>
 
+  <!-- Payment History Modal -->
+  <div id="paymentHistoryModal" class="modal">
+    <div class="modal-dialog" style="max-width: 900px;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 id="paymentHistoryModalTitle">Payment & Subscription History</h5>
+          <button type="button" class="close modal-close-btn" data-modal="paymentHistoryModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="paymentHistoryContent">
+            <!-- Content will be populated by JavaScript -->
+            <div class="loading-spinner" style="text-align: center; padding: 2rem;">
+              <i class="fas fa-spinner fa-spin"></i>
+              <div>Loading payment history...</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn modal-close-btn" data-modal="paymentHistoryModal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 <script>
 // Simple, reliable JavaScript for admin users page
 console.log('Admin Users page loading...');
@@ -621,6 +811,14 @@ function setupEventListeners() {
             const email = this.dataset.email;
             const role = this.dataset.role;
             showRoleModal(email, role);
+        });
+    });
+
+    // Payment history buttons
+    document.querySelectorAll('.user-details-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const email = this.dataset.email;
+            showPaymentHistory(email);
         });
     });
 
@@ -916,6 +1114,186 @@ function updateTableRow(userEmail, newRole) {
             }
         }
     });
+}
+
+// Payment History Functions
+async function showPaymentHistory(userEmail) {
+    console.log('Loading payment history for:', userEmail);
+
+    // Show modal
+    const modal = document.getElementById('paymentHistoryModal');
+    const title = document.getElementById('paymentHistoryModalTitle');
+    const content = document.getElementById('paymentHistoryContent');
+
+    title.textContent = `Payment & Subscription History - ${userEmail}`;
+    modal.classList.add('show');
+
+    // Show loading state
+    content.innerHTML = `
+        <div class="loading-spinner" style="text-align: center; padding: 2rem;">
+            <i class="fas fa-spinner fa-spin"></i>
+            <div>Loading payment history...</div>
+        </div>
+    `;
+
+    try {
+        // Fetch payment history from API
+        const response = await fetch(`/admin/api/users/${encodeURIComponent(userEmail)}/payment-history`);
+        const data = await response.json();
+
+        if (data.success) {
+            renderPaymentHistory(data);
+        } else {
+            content.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Error loading payment history: ${data.error}
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error fetching payment history:', error);
+        content.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                Error loading payment history. Please try again.
+            </div>
+        `;
+    }
+}
+
+function renderPaymentHistory(data) {
+    const content = document.getElementById('paymentHistoryContent');
+    const { payment_history, current_plan, total_lifetime_value, payg_history } = data;
+
+    let html = '';
+
+    // Current Plan Summary
+    html += `
+        <div class="current-plan-summary">
+            <h4 class="payment-history-header" style="margin: 0 0 1rem 0; padding: 0.75rem; font-size: 1.1rem;">
+                <i class="fas fa-crown"></i> Current Status Summary
+            </h4>
+            <div class="plan-summary-grid">
+                <div class="plan-summary-item">
+                    <div class="plan-summary-label">Active Plan</div>
+                    <div class="plan-summary-value highlight">${formatPlanName(current_plan.plan_type)}</div>
+                </div>
+                <div class="plan-summary-item">
+                    <div class="plan-summary-label">Status</div>
+                    <div class="plan-summary-value">${formatStatus(current_plan.status)}</div>
+                </div>
+                <div class="plan-summary-item">
+                    <div class="plan-summary-label">Billing Cycle</div>
+                    <div class="plan-summary-value">${formatBillingCycle(current_plan.billing_cycle)}</div>
+                </div>
+                <div class="plan-summary-item">
+                    <div class="plan-summary-label">Total Lifetime Value</div>
+                    <div class="plan-summary-value highlight">$${total_lifetime_value.toFixed(2)}</div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Payment History Timeline
+    if (payment_history && payment_history.length > 0) {
+        html += `
+            <div class="payment-history-section">
+                <h4 class="payment-history-header">
+                    <i class="fas fa-credit-card"></i> Payment History (${payment_history.length} transactions)
+                </h4>
+                <div class="payment-timeline">
+        `;
+
+        payment_history.forEach(payment => {
+            const statusClass = payment.status === 'paid' ? 'success' :
+                               payment.status === 'failed' ? 'failed' : 'pending';
+
+            html += `
+                <div class="timeline-item ${statusClass}">
+                    <div class="timeline-header">
+                        <div>
+                            <strong>${formatPlanName(payment.plan_name)}</strong>
+                            <span class="status-badge ${statusClass}">${payment.status}</span>
+                        </div>
+                        <div class="timeline-amount">$${payment.amount.toFixed(2)}</div>
+                    </div>
+                    <div class="timeline-date">${formatDate(payment.date)}</div>
+                    <div class="timeline-details">
+                        <div class="timeline-detail">
+                            <span class="timeline-detail-label">Plan:</span>
+                            ${formatPlanName(payment.plan_type)}
+                        </div>
+                        <div class="timeline-detail">
+                            <span class="timeline-detail-label">Billing:</span>
+                            ${formatBillingCycle(payment.billing_cycle)}
+                        </div>
+                        <div class="timeline-detail">
+                            <span class="timeline-detail-label">Currency:</span>
+                            ${payment.currency}
+                        </div>
+                        ${payment.stripe_invoice_id ? `
+                        <div class="timeline-detail">
+                            <span class="timeline-detail-label">Invoice ID:</span>
+                            ${payment.stripe_invoice_id.substring(0, 20)}...
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="no-payment-history">
+                <i class="fas fa-receipt"></i>
+                <h4>No Payment History</h4>
+                <p>This user has not made any payments yet.</p>
+            </div>
+        `;
+    }
+
+    content.innerHTML = html;
+}
+
+// Helper functions for formatting
+function formatDate(timestamp) {
+    if (!timestamp) return 'N/A';
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function formatPlanName(planType) {
+    if (!planType) return 'Unknown';
+
+    const planNames = {
+        'free': 'Free Plan',
+        'basic': 'Basic Plan',
+        'professional': 'Professional Plan',
+        'payg': 'Pay-As-You-Go'
+    };
+
+    return planNames[planType] || planType;
+}
+
+function formatStatus(status) {
+    if (!status) return 'Unknown';
+    return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function formatBillingCycle(cycle) {
+    if (!cycle) return 'N/A';
+    return cycle.charAt(0).toUpperCase() + cycle.slice(1);
 }
 
 console.log('JavaScript loaded successfully');

@@ -540,12 +540,7 @@
             margin: 0;
         }
 
-        .payg-actions {
-            display: flex;
-            gap: 1rem;
-            margin: 1.5rem 0;
-            flex-wrap: wrap;
-        }
+
 
         .pricing-grid {
             display: grid;
@@ -591,9 +586,7 @@
                 grid-template-columns: 1fr;
             }
 
-            .payg-actions {
-                flex-direction: column;
-            }
+
         }
     </style>
 </head>
@@ -927,18 +920,6 @@
                 <!-- Outstanding charges will be loaded here -->
             </div>
 
-            <div class="payg-actions">
-                <button id="pay-outstanding-btn" class="button button-primary" style="display: none;">
-                    <i class="fas fa-credit-card"></i> Pay Outstanding Charges
-                </button>
-                <button id="refresh-payg-status" class="button button-outline">
-                    <i class="fas fa-sync-alt"></i> Refresh Status
-                </button>
-                <button id="show-payg-pricing" class="button button-outline">
-                    <i class="fas fa-tag"></i> View Pricing
-                </button>
-            </div>
-
             <div id="payg-pricing-summary" class="payg-pricing-section">
                 <!-- Pricing summary will be loaded here -->
             </div>
@@ -964,18 +945,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="billing-card">
-                    <h3><i class="fas fa-cog"></i> Subscription Management</h3>
-                    <div class="subscription-info">
-                        <p><strong>Current Plan:</strong> {{ plan_display }}</p>
-                        <p><strong>Status:</strong> <span class="status-active">Active</span></p>
-                        <div class="billing-actions">
-                            <button id="manage-subscription-btn" class="button button-outline">
-                                <i class="fas fa-external-link-alt"></i> Manage Subscription
-                            </button>
-                        </div>
-                    </div>
-                </div>
+
             </div>
         </div>
         {% endif %}
@@ -1045,13 +1015,7 @@
         {% if plan_type != 'free' %}
         loadBillingHistory();
 
-        // Handle manage subscription button
-        const manageSubBtn = document.getElementById('manage-subscription-btn');
-        if (manageSubBtn) {
-            manageSubBtn.addEventListener('click', function() {
-                openCustomerPortal();
-            });
-        }
+
 
         // Handle billing history button
         const billingHistoryBtn = document.getElementById('billing-history-btn');
@@ -1113,26 +1077,7 @@
         contentEl.innerHTML = invoiceHtml;
     }
 
-    function openCustomerPortal() {
-        fetch('/payment/customer-portal', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && data.portal_url) {
-                window.open(data.portal_url, '_blank');
-            } else {
-                alert('Unable to open customer portal. Please try again later.');
-            }
-        })
-        .catch(error => {
-            console.error('Error opening customer portal:', error);
-            alert('Unable to open customer portal. Please try again later.');
-        });
-    }
+
 
     function scrollToBillingSection() {
         const billingSection = document.querySelector('.billing-section');
