@@ -219,6 +219,30 @@ class User(FirebaseModel):
                 oauth_id=email,  # Use email as OAuth ID for simplicity
                 is_admin=False
             )
+
+            # Send welcome email to new Google OAuth user
+            try:
+                from services.email_service import EmailService
+                email_service = EmailService()
+                welcome_result = email_service.send_welcome_email(
+                    username=username,
+                    email=email,
+                    user_tier='free'
+                )
+                if welcome_result['success']:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.info(f'Welcome email sent successfully to new Google OAuth user: {email}')
+                else:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f'Failed to send welcome email to Google OAuth user {email}: {welcome_result["message"]}')
+            except Exception as welcome_error:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f'Error sending welcome email to Google OAuth user {email}: {str(welcome_error)}')
+                # Don't fail the user creation if welcome email fails
+
             # Get the newly created user
             user_data = User.get_by_email(email)
         else:

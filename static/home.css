@@ -447,6 +447,9 @@
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 2rem;
   margin-bottom: 3rem;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .pricing-card {
@@ -508,6 +511,12 @@
   font-size: 1rem;
   font-weight: 400;
   color: hsl(var(--muted-foreground));
+}
+
+.pricing-unit {
+  font-size: 1rem;
+  color: hsl(var(--muted-foreground));
+  font-weight: normal;
 }
 
 .pricing-features {
@@ -578,9 +587,42 @@
 }
 
 /* Responsive adjustments for pricing section */
+/* Large screens: 4 cards in a row */
+@media (min-width: 1400px) {
+  .pricing-grid {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 1400px;
+  }
+}
+
+/* Medium-large screens: 2 cards per row */
+@media (max-width: 1399px) and (min-width: 1025px) {
+  .pricing-grid {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 800px;
+  }
+}
+
+/* Medium screens: 2 cards per row */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .pricing-grid {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 700px;
+    gap: 1.5rem;
+  }
+}
+
+/* Small screens: 1 card per row */
 @media (max-width: 768px) {
   .pricing-grid {
     grid-template-columns: 1fr;
+    max-width: 400px;
+    gap: 1.5rem;
+  }
+
+  .pricing-card {
+    margin: 0 auto;
+    max-width: 400px;
   }
 
   .pricing-card-highlighted {

@@ -149,6 +149,23 @@ def verify_email_code():
                         )
                         logger.info(f'User account created for {email} after email verification')
 
+                        # Send welcome email to new user
+                        try:
+                            from services.email_service import EmailService
+                            email_service = EmailService()
+                            welcome_result = email_service.send_welcome_email(
+                                username=registration_data['username'],
+                                email=registration_data['email'],
+                                user_tier='free'
+                            )
+                            if welcome_result['success']:
+                                logger.info(f'Welcome email sent successfully to {email}')
+                            else:
+                                logger.warning(f'Failed to send welcome email to {email}: {welcome_result["message"]}')
+                        except Exception as welcome_error:
+                            logger.error(f'Error sending welcome email to {email}: {str(welcome_error)}')
+                            # Don't fail the registration if welcome email fails
+
                         # Clear registration session data
                         session.pop('pending_registration', None)
 

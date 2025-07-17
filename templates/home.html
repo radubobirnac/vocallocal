@@ -345,16 +345,33 @@
             <a href="{{ url_for('auth.login', next='/pricing') }}" class="button button-primary pricing-button-compact">Choose Professional Plan</a>
           {% endif %}
         </div>
-      </div>
 
-      <!-- Pay-As-You-Go -->
-      <div class="pay-as-you-go">
-        <div class="pay-as-you-go-content">
-          <h3>Need more? Try Pay-As-You-Go</h3>
-          <p>$3.99 per unit • 300 AI credits • Requires Basic or Professional Plan</p>
-          <a href="{{ url_for('auth.register') }}?plan=payg" class="button button-secondary">Learn More</a>
+        <!-- Pay-As-You-Go Plan -->
+        <div class="pricing-card">
+          <div class="pricing-header">
+            <h3 class="pricing-title">Pay-As-You-Go</h3>
+            <p class="pricing-price">300<span class="pricing-unit">credits</span></p>
+          </div>
+          <div class="pricing-features">
+            <ul>
+              <li>300 AI credits included</li>
+              <li>Requires Basic or Professional Plan</li>
+              <li>Overage billing for additional usage</li>
+              <li>TTS: $0.15 per minute</li>
+              <li>Transcription: $0.10 per minute</li>
+              <li>Translation: $0.001 per word</li>
+              <li>Flexible usage tracking</li>
+            </ul>
+          </div>
+          {% if current_user.is_authenticated %}
+            <button class="button button-secondary pricing-button-compact payg-enable-btn">Enable Pay-As-You-Go</button>
+          {% else %}
+            <a href="{{ url_for('auth.login', next='/pricing') }}" class="button button-secondary pricing-button-compact">Sign In to Enable</a>
+          {% endif %}
         </div>
       </div>
+
+
     </section>
 
     <!-- Footer -->
