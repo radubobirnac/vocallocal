@@ -162,9 +162,9 @@
 .form-input:focus {
   outline: none;
   border-color: hsl(var(--primary));
-  border-width: 2px;
-  box-shadow: none;
-  transform: translateY(-1px);
+  border-width: 1px;
+  box-shadow: 0 0 0 1px hsla(var(--primary), 0.3);
+  transform: none;
 }
 
 .form-input:hover:not(:focus) {
@@ -179,26 +179,26 @@
 /* Form validation states */
 .form-input.error {
   border-color: hsl(var(--destructive));
-  border-width: 2px;
-  box-shadow: none;
+  border-width: 1px;
+  box-shadow: 0 0 0 1px hsla(var(--destructive), 0.3);
 }
 
 .form-input.success {
   border-color: hsl(150, 100%, 40%);
-  border-width: 2px;
-  box-shadow: none;
+  border-width: 1px;
+  box-shadow: 0 0 0 1px hsla(150, 100%, 40%, 0.3);
 }
 
 .form-input.error:focus {
   border-color: hsl(var(--destructive));
-  border-width: 2px;
-  box-shadow: none;
+  border-width: 1px;
+  box-shadow: 0 0 0 1px hsla(var(--destructive), 0.5);
 }
 
 .form-input.success:focus {
   border-color: hsl(150, 100%, 40%);
-  border-width: 2px;
-  box-shadow: none;
+  border-width: 1px;
+  box-shadow: 0 0 0 1px hsla(150, 100%, 40%, 0.5);
 }
 
 /* Password input styling - simplified without toggle buttons */
@@ -508,8 +508,8 @@ html[data-theme='dark'] {
 
   .form-input:focus {
     border-color: hsl(var(--primary));
-    border-width: 2px;
-    box-shadow: none;
+    border-width: 1px;
+    box-shadow: 0 0 0 1px hsla(var(--primary), 0.4);
   }
 
   /* Password toggle styles removed */
@@ -715,8 +715,8 @@ html[data-theme='dark'] .alert-danger {
 .form-input:focus-visible,
 .button:focus-visible,
 .oauth-button:focus-visible {
-  outline: 2px solid hsl(var(--primary));
-  outline-offset: 2px;
+  outline: 1px solid hsl(var(--primary));
+  outline-offset: 1px;
 }
 
 /* Reduced motion preferences */
@@ -906,14 +906,14 @@ html[data-theme='dark'] .alert-danger {
 /* Email input validation states */
 .form-input.valid {
   border-color: hsl(142, 76%, 50%);
-  border-width: 2px;
-  box-shadow: none;
+  border-width: 1px;
+  box-shadow: 0 0 0 1px hsla(142, 76%, 50%, 0.3);
 }
 
 .form-input.invalid {
   border-color: hsl(0, 84%, 60%);
-  border-width: 2px;
-  box-shadow: none;
+  border-width: 1px;
+  box-shadow: 0 0 0 1px hsla(0, 84%, 60%, 0.3);
 }
 
 /* Dark mode support for email validation */
@@ -931,14 +931,14 @@ html[data-theme='dark'] .alert-danger {
 
 [data-theme="dark"] .form-input.valid {
   border-color: hsl(142, 76%, 40%);
-  border-width: 2px;
-  box-shadow: none;
+  border-width: 1px;
+  box-shadow: 0 0 0 1px hsla(142, 76%, 40%, 0.4);
 }
 
 [data-theme="dark"] .form-input.invalid {
   border-color: hsl(0, 84%, 50%);
-  border-width: 2px;
-  box-shadow: none;
+  border-width: 1px;
+  box-shadow: 0 0 0 1px hsla(0, 84%, 50%, 0.4);
 }
 
 /* Email validation additional elements */

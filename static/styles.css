@@ -264,8 +264,8 @@ p {
 .form-select:focus,
 .form-textarea:focus {
   border-color: hsl(var(--ring));
-  border-width: 2px;
-  box-shadow: none;
+  border-width: 1px;
+  box-shadow: 0 0 0 1px hsla(var(--ring), 0.3);
 }
 
 .form-select {
