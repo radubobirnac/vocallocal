@@ -1,5 +1,15 @@
 /* Authentication specific styles */
 
+/* Auth page container for navbar compatibility */
+.auth-page-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  min-height: 100vh;
+  background-color: hsl(var(--background));
+}
+
 .auth-container {
   max-width: 480px;
   margin: 2rem auto;
@@ -138,7 +148,7 @@
 .form-input {
   width: 100%;
   padding: 0.875rem 1rem;
-  border: 2px solid hsl(var(--border));
+  border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
   background-color: hsl(var(--input));
   color: hsl(var(--foreground));
@@ -152,7 +162,8 @@
 .form-input:focus {
   outline: none;
   border-color: hsl(var(--primary));
-  box-shadow: 0 0 0 3px hsla(var(--primary), 0.1);
+  border-width: 2px;
+  box-shadow: none;
   transform: translateY(-1px);
 }
 
@@ -168,22 +179,26 @@
 /* Form validation states */
 .form-input.error {
   border-color: hsl(var(--destructive));
-  box-shadow: 0 0 0 3px hsla(var(--destructive), 0.1);
+  border-width: 2px;
+  box-shadow: none;
 }
 
 .form-input.success {
   border-color: hsl(150, 100%, 40%);
-  box-shadow: 0 0 0 3px hsla(150, 100%, 40%, 0.1);
+  border-width: 2px;
+  box-shadow: none;
 }
 
 .form-input.error:focus {
   border-color: hsl(var(--destructive));
-  box-shadow: 0 0 0 3px hsla(var(--destructive), 0.2);
+  border-width: 2px;
+  box-shadow: none;
 }
 
 .form-input.success:focus {
   border-color: hsl(150, 100%, 40%);
-  box-shadow: 0 0 0 3px hsla(150, 100%, 40%, 0.2);
+  border-width: 2px;
+  box-shadow: none;
 }
 
 /* Password input styling - simplified without toggle buttons */
@@ -493,7 +508,8 @@ html[data-theme='dark'] {
 
   .form-input:focus {
     border-color: hsl(var(--primary));
-    box-shadow: 0 0 0 3px hsla(var(--primary), 0.2);
+    border-width: 2px;
+    box-shadow: none;
   }
 
   /* Password toggle styles removed */
@@ -890,12 +906,14 @@ html[data-theme='dark'] .alert-danger {
 /* Email input validation states */
 .form-input.valid {
   border-color: hsl(142, 76%, 50%);
-  box-shadow: 0 0 0 2px hsl(142, 76%, 90%);
+  border-width: 2px;
+  box-shadow: none;
 }
 
 .form-input.invalid {
   border-color: hsl(0, 84%, 60%);
-  box-shadow: 0 0 0 2px hsl(0, 84%, 90%);
+  border-width: 2px;
+  box-shadow: none;
 }
 
 /* Dark mode support for email validation */
@@ -913,12 +931,14 @@ html[data-theme='dark'] .alert-danger {
 
 [data-theme="dark"] .form-input.valid {
   border-color: hsl(142, 76%, 40%);
-  box-shadow: 0 0 0 2px hsl(142, 76%, 20%);
+  border-width: 2px;
+  box-shadow: none;
 }
 
 [data-theme="dark"] .form-input.invalid {
   border-color: hsl(0, 84%, 50%);
-  box-shadow: 0 0 0 2px hsl(0, 84%, 20%);
+  border-width: 2px;
+  box-shadow: none;
 }
 
 /* Email validation additional elements */
