@@ -495,7 +495,7 @@ class PaymentService:
             return {'error': str(e)}
 
     def _get_plan_name_from_price(self, price):
-        """Get human-readable plan name from Stripe price object"""
+        """Get human-readable plan name from Stripe price object with enhanced fallbacks"""
         try:
             logger.info(f"Getting plan name from price object: {price}")
 
@@ -510,14 +510,27 @@ class PaymentService:
             logger.info(f"Basic Price ID from env: {basic_price_id}")
             logger.info(f"Professional Price ID from env: {professional_price_id}")
 
+            # Primary mapping: Direct price ID match
             if price_id == basic_price_id:
-                logger.info("Matched Basic Plan by price ID")
+                logger.info("✅ Matched Basic Plan by price ID")
                 return 'Basic Plan'
             elif price_id == professional_price_id:
-                logger.info("Matched Professional Plan by price ID")
+                logger.info("✅ Matched Professional Plan by price ID")
                 return 'Professional Plan'
 
-            # Check if price has a product with a name
+            # Secondary mapping: Amount-based (most reliable fallback)
+            amount = price.get('unit_amount', 0) / 100
+            currency = price.get('currency', 'usd').upper()
+            logger.info(f"Price amount: {amount} {currency}")
+
+            if amount == 4.99:
+                logger.info("✅ Matched Basic Plan by amount ($4.99)")
+                return 'Basic Plan'
+            elif amount == 12.99:
+                logger.info("✅ Matched Professional Plan by amount ($12.99)")
+                return 'Professional Plan'
+
+            # Tertiary mapping: Product name
             if price.get('product'):
                 try:
                     product = stripe.Product.retrieve(price['product'])
@@ -526,62 +539,98 @@ class PaymentService:
                         logger.info(f"Product name: {product_name}")
                         # Extract plan name from product name
                         if 'Basic' in product_name:
-                            logger.info("Matched Basic Plan by product name")
+                            logger.info("✅ Matched Basic Plan by product name")
                             return 'Basic Plan'
                         elif 'Professional' in product_name or 'Premium' in product_name:
-                            logger.info("Matched Professional Plan by product name")
+                            logger.info("✅ Matched Professional Plan by product name")
                             return 'Professional Plan'
-                        return product_name
+                        # Use product name if it looks like a plan name
+                        if 'Plan' in product_name:
+                            logger.info(f"✅ Using product name as plan name: {product_name}")
+                            return product_name
                 except Exception as e:
                     logger.warning(f"Error retrieving product: {str(e)}")
 
-            # Fallback to price nickname
+            # Quaternary mapping: Price nickname
             if price.get('nickname'):
                 nickname = price['nickname']
                 logger.info(f"Price nickname: {nickname}")
                 if 'Basic' in nickname:
-                    logger.info("Matched Basic Plan by nickname")
+                    logger.info("✅ Matched Basic Plan by nickname")
                     return 'Basic Plan'
                 elif 'Professional' in nickname or 'Premium' in nickname:
-                    logger.info("Matched Professional Plan by nickname")
+                    logger.info("✅ Matched Professional Plan by nickname")
                     return 'Professional Plan'
-                return nickname
+                # Use nickname if it looks like a plan name
+                if 'Plan' in nickname:
+                    logger.info(f"✅ Using nickname as plan name: {nickname}")
+                    return nickname
 
-            # Final fallback to amount-based name
-            amount = price.get('unit_amount', 0) / 100
-            currency = price.get('currency', 'usd').upper()
-            logger.info(f"Price amount: {amount} {currency}")
+            # Enhanced fallback: Create descriptive name from amount
+            if amount > 0:
+                if amount < 10:
+                    logger.info(f"✅ Creating Basic-tier plan name for ${amount:.2f}")
+                    return f'Basic Plan (${amount:.2f})'
+                else:
+                    logger.info(f"✅ Creating Professional-tier plan name for ${amount:.2f}")
+                    return f'Professional Plan (${amount:.2f})'
 
-            # Try to map common amounts to plan names
-            if amount == 4.99:
-                logger.info("Matched Basic Plan by amount ($4.99)")
-                return 'Basic Plan'
-            elif amount == 12.99:
-                logger.info("Matched Professional Plan by amount ($12.99)")
-                return 'Professional Plan'
-
-            logger.warning(f"No plan match found, using fallback: {currency} {amount:.2f} Plan")
-            return f"{currency} {amount:.2f} Plan"
+            # Final fallback
+            logger.warning(f"⚠️ No plan match found, using descriptive fallback")
+            return f"{currency} {amount:.2f} Subscription"
 
         except Exception as e:
-            logger.error(f"Error getting plan name from price: {str(e)}")
-            return 'Unknown Plan'
+            logger.error(f"❌ Error getting plan name from price: {str(e)}")
+            # Even in error cases, try to provide a meaningful fallback
+            try:
+                amount = price.get('unit_amount', 0) / 100 if price else 0
+                if amount == 4.99:
+                    return 'Basic Plan'
+                elif amount == 12.99:
+                    return 'Professional Plan'
+                elif amount > 0:
+                    return f'Subscription Plan (${amount:.2f})'
+            except:
+                pass
+            return 'Subscription Plan'
 
     def _get_plan_name_from_type(self, plan_type):
-        """Get human-readable plan name from plan type string"""
+        """Get human-readable plan name from plan type string with enhanced mapping"""
         try:
+            logger.info(f"Getting plan name from type: {plan_type}")
+
             plan_names = {
                 'basic': 'Basic Plan',
                 'professional': 'Professional Plan',
                 'premium': 'Professional Plan',  # Legacy support
-                'enterprise': 'Enterprise Plan'
+                'pro': 'Professional Plan',      # Alternative naming
+                'enterprise': 'Enterprise Plan',
+                'payg': 'Pay-As-You-Go Plan',
+                'pay_as_you_go': 'Pay-As-You-Go Plan',
+                'free': 'Free Plan'
             }
 
-            return plan_names.get(plan_type.lower(), f'{plan_type.title()} Plan')
+            # Normalize the plan type
+            normalized_type = plan_type.lower().strip() if plan_type else ''
+
+            if normalized_type in plan_names:
+                result = plan_names[normalized_type]
+                logger.info(f"✅ Mapped plan type '{plan_type}' to '{result}'")
+                return result
+
+            # If no direct match, create a reasonable fallback
+            if normalized_type:
+                result = f'{plan_type.title()} Plan'
+                logger.info(f"✅ Created fallback plan name: '{result}'")
+                return result
+
+            # Last resort fallback
+            logger.warning(f"⚠️ Empty or invalid plan type, using fallback")
+            return 'Subscription Plan'
 
         except Exception as e:
-            logger.error(f"Error getting plan name from type: {str(e)}")
-            return 'Unknown Plan'
+            logger.error(f"❌ Error getting plan name from type: {str(e)}")
+            return 'Subscription Plan'
 
     def _store_billing_history(self, user_email, billing_data):
         """Store billing history in Firebase"""

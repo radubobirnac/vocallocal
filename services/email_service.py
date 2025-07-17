@@ -688,6 +688,9 @@ class EmailService:
         current_plan = plan_details.get(plan_type, plan_details['basic'])
         features_list = '\n                        '.join(current_plan['features'])
 
+        # Format plan name with enhanced fallback logic
+        formatted_plan_name = self._format_plan_name_for_email(plan_name, plan_type, amount)
+
         # HTML email content with modern, clean design inspired by Anthropic receipt
         html_content = f"""
         <!DOCTYPE html>
@@ -901,7 +904,7 @@ class EmailService:
 
                         <div class="invoice-item">
                             <div>
-                                <div class="invoice-item-name">{plan_name}</div>
+                                <div class="invoice-item-name">{formatted_plan_name}</div>
                                 <div class="invoice-item-qty">Qty 1</div>
                             </div>
                             <div class="invoice-item-price">${amount:.2f}</div>
@@ -918,7 +921,7 @@ class EmailService:
                     </div>
 
                     <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin-top: 32px;">
-                        Hello {username}! Your payment has been successfully processed. Welcome to VocalLocal {plan_name}!
+                        Hello {username}! Your payment has been successfully processed. Welcome to VocalLocal {formatted_plan_name}!
                         You now have access to all premium features including {current_plan['monthly_limits']}.
                         Start using your enhanced AI capabilities right away.
                     </p>
@@ -991,6 +994,40 @@ class EmailService:
                 logger.error(f"Error attaching PDF to email: {str(e)}")
 
         return msg
+
+    def _format_plan_name_for_email(self, plan_name: str, plan_type: str, amount: float) -> str:
+        """Format plan name for email display with fallback logic"""
+        try:
+            # If plan_name is already good, use it
+            if plan_name and plan_name != 'Unknown Plan' and 'Plan' in plan_name:
+                return plan_name
+
+            # Try to resolve from plan_type
+            if plan_type:
+                type_mapping = {
+                    'basic': 'Basic Plan',
+                    'professional': 'Professional Plan',
+                    'premium': 'Professional Plan',
+                    'payg': 'Pay-As-You-Go Plan'
+                }
+                if plan_type.lower() in type_mapping:
+                    return type_mapping[plan_type.lower()]
+
+            # Try to resolve from amount
+            if amount == 4.99:
+                return 'Basic Plan'
+            elif amount == 12.99:
+                return 'Professional Plan'
+
+            # Fallback to original plan_name if it exists
+            if plan_name and plan_name != 'Unknown Plan':
+                return plan_name
+
+            # Final fallback
+            return f'VocalLocal Subscription (${amount:.2f})'
+
+        except Exception:
+            return plan_name or 'VocalLocal Subscription'
 
     def send_payment_confirmation_email(self, username: str, email: str, invoice_id: str,
                                       amount: float, currency: str, payment_date,

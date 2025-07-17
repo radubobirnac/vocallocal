@@ -562,17 +562,40 @@ def get_user_payment_history(user_email):
         billing_data = user_account.get('billing', {})
         invoices = billing_data.get('invoices', {})
 
-        # Convert Firebase data to list format
+        # Convert Firebase data to list format with enhanced plan name resolution
         payment_history = []
         for invoice_id, invoice_data in invoices.items():
+            # Get plan name with fallback logic
+            plan_name = invoice_data.get('planName', '')
+            plan_type = invoice_data.get('planType', 'unknown')
+            amount = invoice_data.get('amount', 0)
+
+            # Enhanced plan name resolution
+            if not plan_name or plan_name == 'Unknown Plan':
+                # Try to resolve from plan type
+                if plan_type == 'basic':
+                    plan_name = 'Basic Plan'
+                elif plan_type == 'professional':
+                    plan_name = 'Professional Plan'
+                elif plan_type == 'payg':
+                    plan_name = 'Pay-As-You-Go Plan'
+                # Try to resolve from amount
+                elif amount == 4.99:
+                    plan_name = 'Basic Plan'
+                elif amount == 12.99:
+                    plan_name = 'Professional Plan'
+                # Final fallback
+                else:
+                    plan_name = f'{plan_type.title()} Plan' if plan_type != 'unknown' else 'Subscription Plan'
+
             payment_history.append({
                 'id': invoice_id,
                 'date': invoice_data.get('paymentDate'),
-                'amount': invoice_data.get('amount', 0),
+                'amount': amount,
                 'currency': invoice_data.get('currency', 'USD'),
                 'status': invoice_data.get('status', 'unknown'),
-                'plan_type': invoice_data.get('planType', 'unknown'),
-                'plan_name': invoice_data.get('planName', 'Unknown Plan'),
+                'plan_type': plan_type,
+                'plan_name': plan_name,
                 'billing_cycle': invoice_data.get('billingCycle', 'monthly'),
                 'stripe_invoice_id': invoice_data.get('stripeInvoiceId'),
                 'stripe_subscription_id': invoice_data.get('stripeSubscriptionId')

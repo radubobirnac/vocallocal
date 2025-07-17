@@ -1177,7 +1177,7 @@ function renderPaymentHistory(data) {
             <div class="plan-summary-grid">
                 <div class="plan-summary-item">
                     <div class="plan-summary-label">Active Plan</div>
-                    <div class="plan-summary-value highlight">${formatPlanName(current_plan.plan_type)}</div>
+                    <div class="plan-summary-value highlight">${formatPlanName(current_plan.plan_type, '', 0)}</div>
                 </div>
                 <div class="plan-summary-item">
                     <div class="plan-summary-label">Status</div>
@@ -1213,7 +1213,7 @@ function renderPaymentHistory(data) {
                 <div class="timeline-item ${statusClass}">
                     <div class="timeline-header">
                         <div>
-                            <strong>${formatPlanName(payment.plan_name)}</strong>
+                            <strong>${formatPlanName(payment.plan_type, payment.plan_name, payment.amount)}</strong>
                             <span class="status-badge ${statusClass}">${payment.status}</span>
                         </div>
                         <div class="timeline-amount">$${payment.amount.toFixed(2)}</div>
@@ -1222,7 +1222,7 @@ function renderPaymentHistory(data) {
                     <div class="timeline-details">
                         <div class="timeline-detail">
                             <span class="timeline-detail-label">Plan:</span>
-                            ${formatPlanName(payment.plan_type)}
+                            ${formatPlanName(payment.plan_type, payment.plan_name, payment.amount)}
                         </div>
                         <div class="timeline-detail">
                             <span class="timeline-detail-label">Billing:</span>
@@ -1273,17 +1273,41 @@ function formatDate(timestamp) {
     });
 }
 
-function formatPlanName(planType) {
-    if (!planType) return 'Unknown';
+function formatPlanName(planType, planName, amount) {
+    // If we have a valid plan name that's not "Unknown Plan", use it
+    if (planName && planName !== 'Unknown Plan' && planName.includes('Plan')) {
+        return planName;
+    }
 
-    const planNames = {
-        'free': 'Free Plan',
-        'basic': 'Basic Plan',
-        'professional': 'Professional Plan',
-        'payg': 'Pay-As-You-Go'
-    };
+    // Try to resolve from plan type
+    if (planType) {
+        const planNames = {
+            'free': 'Free Plan',
+            'basic': 'Basic Plan',
+            'professional': 'Professional Plan',
+            'premium': 'Professional Plan',
+            'payg': 'Pay-As-You-Go Plan',
+            'pay_as_you_go': 'Pay-As-You-Go Plan'
+        };
 
-    return planNames[planType] || planType;
+        if (planNames[planType.toLowerCase()]) {
+            return planNames[planType.toLowerCase()];
+        }
+    }
+
+    // Try to resolve from amount
+    if (amount === 4.99) {
+        return 'Basic Plan';
+    } else if (amount === 12.99) {
+        return 'Professional Plan';
+    }
+
+    // Fallback to plan type or original name
+    if (planType && planType !== 'unknown') {
+        return planType.charAt(0).toUpperCase() + planType.slice(1) + ' Plan';
+    }
+
+    return planName || 'Subscription Plan';
 }
 
 function formatStatus(status) {
