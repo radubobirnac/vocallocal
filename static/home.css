@@ -435,7 +435,7 @@
   background-color: hsla(var(--primary-foreground), 0.1);
 }
 
-/* Pricing Section */
+/* Pricing Section - 4-card layout with enhanced spacing v2.0 */
 .pricing-section {
   padding: 5rem 1.5rem;
   max-width: 1200px;
@@ -445,7 +445,7 @@
 .pricing-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
+  gap: 2rem !important;
   margin-bottom: 3rem;
   max-width: 1400px;
   margin-left: auto;
@@ -590,44 +590,84 @@
 /* Large screens: 4 cards in a row */
 @media (min-width: 1400px) {
   .pricing-grid {
-    grid-template-columns: repeat(4, 1fr);
-    max-width: 1400px;
+    grid-template-columns: repeat(4, 1fr) !important;
+    max-width: 1400px !important;
+    gap: 2rem !important;
   }
 }
 
 /* Medium-large screens: 2 cards per row */
 @media (max-width: 1399px) and (min-width: 1025px) {
   .pricing-grid {
-    grid-template-columns: repeat(2, 1fr);
-    max-width: 800px;
+    grid-template-columns: repeat(2, 1fr) !important;
+    max-width: 800px !important;
+    gap: 2rem !important;
   }
 }
 
 /* Medium screens: 2 cards per row */
 @media (max-width: 1024px) and (min-width: 769px) {
   .pricing-grid {
-    grid-template-columns: repeat(2, 1fr);
-    max-width: 700px;
-    gap: 1.5rem;
+    grid-template-columns: repeat(2, 1fr) !important;
+    max-width: 700px !important;
+    gap: 1.5rem !important;
   }
 }
 
 /* Small screens: 1 card per row */
 @media (max-width: 768px) {
   .pricing-grid {
-    grid-template-columns: 1fr;
-    max-width: 400px;
-    gap: 1.5rem;
+    grid-template-columns: 1fr !important;
+    max-width: 400px !important;
+    gap: 1.5rem !important;
   }
 
   .pricing-card {
-    margin: 0 auto;
-    max-width: 400px;
+    margin: 0 auto !important;
+    max-width: 400px !important;
   }
 
   .pricing-card-highlighted {
     order: -1;
     transform: scale(1.0);
+  }
+}
+
+/* Additional specificity for production deployment */
+.pricing-section .pricing-grid {
+  gap: 2rem !important;
+}
+
+.pricing-section .pricing-grid .pricing-card {
+  margin: 0 !important;
+}
+
+/* Ensure consistent spacing across all environments */
+@media (min-width: 1400px) {
+  .pricing-section .pricing-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 2rem !important;
+  }
+}
+
+@media (max-width: 1399px) and (min-width: 1025px) {
+  .pricing-section .pricing-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 2rem !important;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+  .pricing-section .pricing-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1.5rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .pricing-section .pricing-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
   }
 
   .pricing-button-compact {
