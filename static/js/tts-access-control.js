@@ -79,7 +79,7 @@ class TTSAccessControl {
         // Find all TTS-related buttons and controls
         const ttsButtons = document.querySelectorAll('[data-tts-button], .tts-button, [onclick*="playTTS"], [onclick*="textToSpeech"]');
 
-        if (!this.hasTTSAccess()) {
+        if (!this.hasAccessToTTS()) {
             console.log('TTS access denied for user, disabling buttons');
 
             // Disable TTS buttons (but let RBAC handle model selectors)
@@ -117,7 +117,7 @@ class TTSAccessControl {
 
         // Add our interceptor as the primary click handler
         button.addEventListener('click', (e) => {
-            if (!this.hasTTSAccess()) {
+            if (!this.hasAccessToTTS()) {
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
@@ -198,7 +198,7 @@ class TTSAccessControl {
 
                 // Replace with interceptor
                 window[funcName] = (...args) => {
-                    if (!this.hasTTSAccess()) {
+                    if (!this.hasAccessToTTS()) {
                         console.log(`[TTS Access Control] Intercepted ${funcName} call - showing upgrade modal`);
                         this.showTTSUpgradeModal();
                         return Promise.reject(new Error('TTS access denied - upgrade required'));
@@ -232,7 +232,7 @@ class TTSAccessControl {
         if (syncTTSObj && syncTTSObj.play) {
             const originalPlay = syncTTSObj.play;
             syncTTSObj.play = (...args) => {
-                if (!this.hasTTSAccess()) {
+                if (!this.hasAccessToTTS()) {
                     console.log('[TTS Access Control] Intercepted syncTTS.play - showing upgrade modal');
                     this.showTTSUpgradeModal();
                     return;
@@ -257,7 +257,7 @@ class TTSAccessControl {
                     const originalPlayText = window.playText;
 
                     window.playText = (elementId) => {
-                        if (!window.ttsAccessControl.hasTTSAccess()) {
+                        if (!window.ttsAccessControl.hasAccessToTTS()) {
                             console.log('[TTS Access Control] Intercepted playText call - showing upgrade modal');
                             window.ttsAccessControl.showTTSUpgradeModal();
                             return;
@@ -314,7 +314,7 @@ class TTSAccessControl {
                 try {
                     // Check if this is a TTS API request
                     if (typeof url === 'string' && url.includes('/api/tts')) {
-                        if (!this.hasTTSAccess()) {
+                        if (!this.hasAccessToTTS()) {
                             console.log('[TTS Access Control] Intercepted TTS API request - showing upgrade modal');
                             this.showTTSUpgradeModal();
 
@@ -385,7 +385,7 @@ class TTSAccessControl {
             const target = event.target;
 
             // Check if this is a TTS-related action
-            if (this.isTTSAction(target) && !this.hasTTSAccess()) {
+            if (this.isTTSAction(target) && !this.hasAccessToTTS()) {
                 event.preventDefault();
                 event.stopPropagation();
                 event.stopImmediatePropagation();
@@ -399,7 +399,7 @@ class TTSAccessControl {
             const audio = event.target;
 
             // Check if this audio element is TTS-related
-            if (this.isTTSAudio(audio) && !this.hasTTSAccess()) {
+            if (this.isTTSAudio(audio) && !this.hasAccessToTTS()) {
                 event.preventDefault();
                 event.stopPropagation();
                 audio.pause();
@@ -558,7 +558,7 @@ class TTSAccessControl {
 
     // Public method to validate TTS access before API calls
     validateTTSAccess() {
-        if (!this.hasTTSAccess()) {
+        if (!this.hasAccessToTTS()) {
             return {
                 allowed: false,
                 error: {

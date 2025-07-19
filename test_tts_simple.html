@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTS Button Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .result { background: #f0f0f0; padding: 10px; margin: 10px 0; font-family: monospace; }
+        textarea { width: 100%; height: 100px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>TTS Button Debug Test</h1>
+    
+    <div>
+        <h3>Test Elements (matching main page structure)</h3>
+        <button id="basic-play-interpretation-btn" class="button">▶️ Play Interpretation</button>
+        <button id="basic-stop-interpretation-btn" class="button">⏹️ Stop Interpretation</button>
+        <br>
+        <textarea id="basic-interpretation" placeholder="Interpretation text...">This is test interpretation text for TTS debugging.</textarea>
+        <br>
+        <select id="basic-language">
+            <option value="en">English</option>
+        </select>
+    </div>
+    
+    <div>
+        <h3>Test Results</h3>
+        <div id="test-results" class="result">Test results will appear here...</div>
+    </div>
+    
+    <script>
+        // Simple test functions
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+        
+        function speakText(sourceId, text, lang) {
+            console.log('🎵 speakText called:', { sourceId, text: text.substring(0, 30) + '...', lang });
+            document.getElementById('test-results').innerHTML += 
+                `<div>✅ speakText called: ${sourceId}, ${text.length} chars, ${lang}</div>`;
+        }
+        
+        // Test the button
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🧪 Test page loaded');
+            
+            const playBtn = document.getElementById('basic-play-interpretation-btn');
+            const textarea = document.getElementById('basic-interpretation');
+            const langSelect = document.getElementById('basic-language');
+            
+            document.getElementById('test-results').innerHTML = 
+                `<div>Button found: ${!!playBtn}</div>
+                 <div>Textarea found: ${!!textarea}</div>
+                 <div>Language select found: ${!!langSelect}</div>`;
+            
+            if (playBtn) {
+                playBtn.addEventListener('click', () => {
+                    console.log('🎵 Button clicked!');
+                    
+                    const text = textarea.value;
+                    const lang = langSelect.value;
+                    
+                    document.getElementById('test-results').innerHTML += 
+                        `<div>🎵 Button clicked! Text: ${text.length} chars</div>`;
+                    
+                    if (isMobileDevice()) {
+                        setTimeout(() => {
+                            speakText('basic-interpretation', textarea.value, lang);
+                        }, 50);
+                    } else {
+                        speakText('basic-interpretation', text, lang);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

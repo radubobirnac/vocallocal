@@ -380,6 +380,15 @@ function overrideOriginalTTS() {
     window.speakText = function(sourceId, text, langCode) {
       syncTTS.log(`Intercepted original TTS call for ${sourceId}`);
 
+      // Skip sync-tts for interpretation calls to prevent multiple voices
+      if (sourceId === 'basic-interpretation' || sourceId.includes('interpretation')) {
+        syncTTS.log(`Skipping sync-tts for interpretation sourceId: ${sourceId}, calling original function`);
+        if (window.originalSpeakText) {
+          return window.originalSpeakText(sourceId, text, langCode);
+        }
+        return;
+      }
+
       // Extract the element ID from the sourceId
       let elementId = sourceId;
 

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Interpretation TTS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .debug-section {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .debug-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Debug Interpretation TTS Functionality</h1>
+    
+    <div class="debug-section">
+        <h3>1. Test Interpretation Generation</h3>
+        <textarea id="test-text" placeholder="Enter text to interpret...">Hello, this is a test message for AI interpretation.</textarea>
+        <br>
+        <button class="test-button" onclick="testInterpretation()">Generate Interpretation</button>
+        <div id="interpretation-result" class="result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>2. Test TTS Button Elements</h3>
+        <button class="test-button" onclick="testTTSElements()">Check TTS Button Elements</button>
+        <div id="elements-result" class="result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>3. Test TTS Function Call</h3>
+        <textarea id="tts-text" placeholder="Enter text for TTS test...">This is a test for text-to-speech functionality.</textarea>
+        <br>
+        <button class="test-button" onclick="testTTSFunction()">Test TTS Function</button>
+        <div id="tts-result" class="result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>4. Test TTS API Call</h3>
+        <button class="test-button" onclick="testTTSAPI()">Test TTS API Directly</button>
+        <div id="api-result" class="result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>5. Console Logs</h3>
+        <div id="console-logs" class="result"></div>
+        <button class="test-button" onclick="clearLogs()">Clear Logs</button>
+    </div>
+
+    <script>
+        // Capture console logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const logs = [];
+
+        console.log = function(...args) {
+            logs.push({type: 'log', message: args.join(' '), time: new Date().toLocaleTimeString()});
+            updateConsoleLogs();
+            originalLog.apply(console, args);
+        };
+
+        console.error = function(...args) {
+            logs.push({type: 'error', message: args.join(' '), time: new Date().toLocaleTimeString()});
+            updateConsoleLogs();
+            originalError.apply(console, args);
+        };
+
+        function updateConsoleLogs() {
+            const logsDiv = document.getElementById('console-logs');
+            logsDiv.innerHTML = logs.map(log => 
+                `<div style="color: ${log.type === 'error' ? 'red' : 'black'}">
+                    [${log.time}] ${log.type.toUpperCase()}: ${log.message}
+                </div>`
+            ).join('');
+        }
+
+        function clearLogs() {
+            logs.length = 0;
+            updateConsoleLogs();
+        }
+
+        async function testInterpretation() {
+            const resultDiv = document.getElementById('interpretation-result');
+            const text = document.getElementById('test-text').value;
+            
+            try {
+                resultDiv.innerHTML = 'Testing interpretation...';
+                
+                const response = await fetch('/api/interpret', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        tone: 'professional',
+                        interpretation_model: 'gemini-2.5-flash'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `<strong>Success!</strong><br>Interpretation: ${data.interpretation}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<strong>Error!</strong><br>${data.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>Network Error!</strong><br>${error.message}`;
+            }
+        }
+
+        function testTTSElements() {
+            const resultDiv = document.getElementById('elements-result');
+            
+            const playBtn = document.getElementById('basic-play-interpretation-btn');
+            const stopBtn = document.getElementById('basic-stop-interpretation-btn');
+            const interpretationEl = document.getElementById('basic-interpretation');
+            
+            let results = [];
+            
+            if (playBtn) {
+                results.push('✅ Play button found');
+            } else {
+                results.push('❌ Play button NOT found');
+            }
+            
+            if (stopBtn) {
+                results.push('✅ Stop button found');
+            } else {
+                results.push('❌ Stop button NOT found');
+            }
+            
+            if (interpretationEl) {
+                results.push('✅ Interpretation textarea found');
+            } else {
+                results.push('❌ Interpretation textarea NOT found');
+            }
+            
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = results.join('<br>');
+        }
+
+        function testTTSFunction() {
+            const resultDiv = document.getElementById('tts-result');
+            const text = document.getElementById('tts-text').value;
+            
+            try {
+                // Check if speakText function exists
+                if (typeof speakText === 'function') {
+                    resultDiv.innerHTML = 'Testing speakText function...';
+                    speakText('basic-interpretation', text, 'en');
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = '✅ speakText function called successfully';
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = '❌ speakText function not found';
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Error calling speakText: ${error.message}`;
+            }
+        }
+
+        async function testTTSAPI() {
+            const resultDiv = document.getElementById('api-result');
+            
+            try {
+                resultDiv.innerHTML = 'Testing TTS API...';
+                
+                const response = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: 'This is a test for TTS API',
+                        language: 'en',
+                        model: 'auto'
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ TTS API successful! Audio blob size: ${blob.size} bytes`;
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ TTS API error: ${response.status} - ${errorText}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ TTS API network error: ${error.message}`;
+            }
+        }
+
+        // Test button click simulation
+        function simulateButtonClick() {
+            const resultDiv = document.getElementById('elements-result');
+
+            const playBtn = document.getElementById('basic-play-interpretation-btn');
+            if (playBtn) {
+                resultDiv.innerHTML += '<br><strong>Simulating button click...</strong>';
+                playBtn.click();
+                resultDiv.innerHTML += '<br>✅ Button click simulated';
+            } else {
+                resultDiv.innerHTML += '<br>❌ Cannot simulate - button not found';
+            }
+        }
+
+        // Add button to test simulation
+        function addSimulationButton() {
+            const debugSection = document.querySelector('.debug-section');
+            if (debugSection) {
+                const simButton = document.createElement('button');
+                simButton.className = 'test-button';
+                simButton.textContent = 'Simulate TTS Button Click';
+                simButton.onclick = simulateButtonClick;
+                debugSection.appendChild(simButton);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Debug page loaded');
+            testTTSElements();
+            addSimulationButton();
+        });
+    </script>
+</body>
+</html>

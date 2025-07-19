@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interpretation TTS Button</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button-outline {
+            background: transparent;
+            color: #007bff;
+            border: 1px solid #007bff;
+        }
+        .button-icon {
+            padding: 8px 12px;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        .form-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            resize: vertical;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <h1>🧪 Interpretation TTS Button Test</h1>
+    
+    <div class="test-section">
+        <h3>1. Simulate the Actual UI Elements</h3>
+        <p>This recreates the exact HTML structure from the main page:</p>
+        
+        <!-- Recreate the exact structure from index.html -->
+        <div>
+            <label>AI Interpretation:</label>
+            <div style="display: flex; align-items: center; gap: 8px; margin: 10px 0;">
+                <button id="basic-interpret-btn" class="button">Interpret Text</button>
+                <button id="basic-play-interpretation-btn" class="button button-outline button-icon" title="Play interpretation">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button id="basic-stop-interpretation-btn" class="button button-outline button-icon" title="Stop playback" style="display: none;">
+                    <i class="fas fa-stop"></i>
+                </button>
+                <button id="basic-copy-interpretation-btn" class="button button-outline button-icon" title="Copy interpretation">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+        </div>
+        <textarea id="basic-interpretation" class="form-textarea" placeholder="AI interpretation will appear here..." readonly>This is a test interpretation text for TTS functionality verification. Click the play button to test audio generation.</textarea>
+        
+        <!-- Language selector (needed for TTS) -->
+        <select id="basic-language" style="margin: 10px 0;">
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+        </select>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Manual Button Test</h3>
+        <button class="button" onclick="testButtonManually()">Test Button Click Manually</button>
+        <div id="manual-test-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Console Output Monitor</h3>
+        <div id="console-output" class="result"></div>
+        <button class="button" onclick="clearConsole()">Clear Console</button>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Element Detection Test</h3>
+        <button class="button" onclick="testElementDetection()">Check Element Detection</button>
+        <div id="element-test-result" class="result"></div>
+    </div>
+
+    <script>
+        // Console capture
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const logs = [];
+
+        function captureLog(type, args) {
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            
+            logs.push({
+                type: type,
+                message: message,
+                time: new Date().toLocaleTimeString()
+            });
+            
+            updateConsoleOutput();
+        }
+
+        console.log = function(...args) {
+            captureLog('log', args);
+            originalLog.apply(console, args);
+        };
+
+        console.error = function(...args) {
+            captureLog('error', args);
+            originalError.apply(console, args);
+        };
+
+        console.warn = function(...args) {
+            captureLog('warn', args);
+            originalWarn.apply(console, args);
+        };
+
+        function updateConsoleOutput() {
+            const output = document.getElementById('console-output');
+            output.innerHTML = logs.map(log => 
+                `<div style="color: ${log.type === 'error' ? 'red' : log.type === 'warn' ? 'orange' : 'black'}">
+                    [${log.time}] ${log.type.toUpperCase()}: ${log.message}
+                </div>`
+            ).join('');
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearConsole() {
+            logs.length = 0;
+            updateConsoleOutput();
+        }
+
+        function testButtonManually() {
+            const result = document.getElementById('manual-test-result');
+            const playBtn = document.getElementById('basic-play-interpretation-btn');
+            
+            result.textContent = 'Manual Button Test Results:\n\n';
+            
+            if (!playBtn) {
+                result.textContent += '❌ Button not found!\n';
+                return;
+            }
+            
+            result.textContent += '✅ Button found\n';
+            result.textContent += 'Attempting to click button...\n';
+            result.textContent += 'Check console output for debug messages.\n';
+            
+            // Click the button
+            playBtn.click();
+        }
+
+        function testElementDetection() {
+            const result = document.getElementById('element-test-result');
+            
+            const elements = {
+                'Play Button': document.getElementById('basic-play-interpretation-btn'),
+                'Stop Button': document.getElementById('basic-stop-interpretation-btn'),
+                'Interpretation Textarea': document.getElementById('basic-interpretation'),
+                'Language Select': document.getElementById('basic-language'),
+                'Copy Button': document.getElementById('basic-copy-interpretation-btn')
+            };
+            
+            let output = 'Element Detection Results:\n\n';
+            
+            for (const [name, element] of Object.entries(elements)) {
+                output += `${name}: ${element ? '✅ FOUND' : '❌ NOT FOUND'}\n`;
+                if (element) {
+                    output += `  - ID: ${element.id}\n`;
+                    output += `  - Tag: ${element.tagName}\n`;
+                    output += `  - Visible: ${element.offsetParent !== null ? 'Yes' : 'No'}\n`;
+                }
+                output += '\n';
+            }
+            
+            result.textContent = output;
+        }
+
+        // Minimal functions to prevent errors
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        function speakText(sourceId, text, lang) {
+            console.log('🎵 speakText called with:', { sourceId, text: text.substring(0, 30) + '...', lang });
+            console.log('🔍 This would normally make an API call to /api/tts');
+        }
+
+        function stopSpeakText(sourceId) {
+            console.log('⏹️ stopSpeakText called with:', sourceId);
+        }
+
+        function copyTextToClipboard(text, message) {
+            console.log('📋 copyTextToClipboard called with:', text.substring(0, 30) + '...');
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 Test page loaded');
+            
+            // Simulate the same initialization as the main script
+            console.log('🔍 TTS Debug: Looking for interpretation buttons...');
+            const basicPlayInterpretationBtn = document.getElementById('basic-play-interpretation-btn');
+            const basicStopInterpretationBtn = document.getElementById('basic-stop-interpretation-btn');
+
+            console.log('🔍 TTS Debug: Interpretation buttons found:', {
+                play: !!basicPlayInterpretationBtn,
+                stop: !!basicStopInterpretationBtn,
+                playElement: basicPlayInterpretationBtn,
+                stopElement: basicStopInterpretationBtn
+            });
+
+            if (basicPlayInterpretationBtn) {
+                console.log('✅ TTS Debug: Attaching event listener to interpretation play button');
+                
+                basicPlayInterpretationBtn.addEventListener('click', () => {
+                    console.log('🎵 TTS Debug: Interpretation play button clicked!');
+                    
+                    const interpretationEl = document.getElementById('basic-interpretation');
+                    if (!interpretationEl) {
+                        console.error('❌ TTS Debug: Interpretation textarea not found!');
+                        return;
+                    }
+                    
+                    const text = interpretationEl.value;
+                    console.log('🔍 TTS Debug: Text length:', text.length, 'Preview:', text.substring(0, 30) + '...');
+                    
+                    const langSelect = document.getElementById('basic-language');
+                    const lang = langSelect ? langSelect.value : 'en';
+
+                    if (isMobileDevice()) {
+                        setTimeout(() => {
+                            const currentText = interpretationEl.value;
+                            speakText('basic-interpretation', currentText, lang);
+                        }, 50);
+                    } else {
+                        speakText('basic-interpretation', text, lang);
+                    }
+                });
+            } else {
+                console.error('❌ TTS Debug: Interpretation play button NOT FOUND!');
+            }
+
+            // Auto-run tests
+            setTimeout(() => {
+                testElementDetection();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

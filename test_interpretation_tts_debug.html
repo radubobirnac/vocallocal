@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interpretation TTS Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Interpretation TTS Debug Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Basic Interpretation TTS</h2>
+        <textarea id="basic-interpretation" placeholder="Enter text to interpret and speak...">This is a test interpretation text for TTS debugging.</textarea>
+        <br>
+        <button id="basic-play-interpretation-btn" class="button">🔊 Play Interpretation</button>
+        <button id="basic-stop-interpretation-btn" class="button" style="display: none;">⏹ Stop</button>
+        
+        <select id="basic-language">
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+        </select>
+        
+        <select id="tts-model-select">
+            <option value="gemini-2.5-flash-tts">Gemini 2.5 Flash TTS</option>
+            <option value="gpt4o-mini">GPT-4o Mini TTS</option>
+            <option value="openai">OpenAI TTS</option>
+        </select>
+    </div>
+    
+    <div class="test-section">
+        <h2>Debug Log</h2>
+        <div id="debug-log" class="log"></div>
+        <button onclick="clearLog()" class="button">Clear Log</button>
+    </div>
+
+    <script>
+        // Debug logging function
+        function debugLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('debug-log');
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('debug-log').innerHTML = '';
+        }
+
+        // Override console.log to also show in our debug log
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            debugLog(args.join(' '));
+        };
+
+        // Override console.error to also show in our debug log
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            debugLog('ERROR: ' + args.join(' '));
+        };
+
+        debugLog('🚀 Interpretation TTS Debug Test Started');
+
+        // Check if elements exist
+        document.addEventListener('DOMContentLoaded', function() {
+            debugLog('🔍 DOM Content Loaded');
+            
+            const playBtn = document.getElementById('basic-play-interpretation-btn');
+            const stopBtn = document.getElementById('basic-stop-interpretation-btn');
+            const textarea = document.getElementById('basic-interpretation');
+            const langSelect = document.getElementById('basic-language');
+            const ttsSelect = document.getElementById('tts-model-select');
+            
+            debugLog(`🔍 Elements found: play=${!!playBtn}, stop=${!!stopBtn}, textarea=${!!textarea}, lang=${!!langSelect}, tts=${!!ttsSelect}`);
+            
+            if (playBtn) {
+                debugLog('✅ Adding click event listener to play button');
+                playBtn.addEventListener('click', function() {
+                    debugLog('🎵 Play button clicked!');
+                    
+                    const text = textarea.value;
+                    const lang = langSelect.value;
+                    const ttsModel = ttsSelect.value;
+                    
+                    debugLog(`🔍 Text: "${text}" (length: ${text.length})`);
+                    debugLog(`🔍 Language: ${lang}`);
+                    debugLog(`🔍 TTS Model: ${ttsModel}`);
+                    
+                    if (!text || text.trim() === '') {
+                        debugLog('❌ No text to speak');
+                        alert('Please enter some text to speak');
+                        return;
+                    }
+                    
+                    // Disable play button and show stop button
+                    playBtn.disabled = true;
+                    stopBtn.style.display = 'inline-block';
+                    
+                    debugLog('🔍 Making TTS API request...');
+                    
+                    fetch('/api/tts', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            text: text,
+                            language: lang,
+                            tts_model: ttsModel
+                        })
+                    })
+                    .then(response => {
+                        debugLog(`🔍 API Response: ${response.status} ${response.statusText}`);
+                        if (!response.ok) {
+                            throw new Error(`TTS service error (${response.status}): ${response.statusText}`);
+                        }
+                        return response.blob();
+                    })
+                    .then(audioBlob => {
+                        debugLog(`✅ Audio blob received: ${audioBlob.size} bytes, type: ${audioBlob.type}`);
+                        
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const audio = new Audio(audioUrl);
+                        
+                        audio.onloadeddata = () => debugLog('🔊 Audio loaded');
+                        audio.onplay = () => debugLog('▶️ Audio started playing');
+                        audio.onended = () => {
+                            debugLog('⏹ Audio finished playing');
+                            playBtn.disabled = false;
+                            stopBtn.style.display = 'none';
+                            URL.revokeObjectURL(audioUrl);
+                        };
+                        audio.onerror = (e) => {
+                            debugLog(`❌ Audio error: ${e.message || 'Unknown error'}`);
+                            playBtn.disabled = false;
+                            stopBtn.style.display = 'none';
+                        };
+                        
+                        audio.play().catch(error => {
+                            debugLog(`❌ Play error: ${error.message}`);
+                            playBtn.disabled = false;
+                            stopBtn.style.display = 'none';
+                        });
+                        
+                        // Store audio reference for stop button
+                        window.currentAudio = audio;
+                    })
+                    .catch(error => {
+                        debugLog(`❌ TTS Error: ${error.message}`);
+                        playBtn.disabled = false;
+                        stopBtn.style.display = 'none';
+                    });
+                });
+            }
+            
+            if (stopBtn) {
+                debugLog('✅ Adding click event listener to stop button');
+                stopBtn.addEventListener('click', function() {
+                    debugLog('⏹ Stop button clicked!');
+                    if (window.currentAudio) {
+                        window.currentAudio.pause();
+                        window.currentAudio.currentTime = 0;
+                        debugLog('⏹ Audio stopped');
+                    }
+                    playBtn.disabled = false;
+                    stopBtn.style.display = 'none';
+                });
+            }
+        });
+    </script>
+</body>
+</html>

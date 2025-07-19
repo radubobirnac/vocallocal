@@ -1,5 +1,34 @@
 document.addEventListener('DOMContentLoaded', () => {
   // ========================
+  // DOM ELEMENT VERIFICATION TEST
+  // ========================
+  console.log('🔍 DOM VERIFICATION: Checking all TTS button elements...');
+
+  const transcriptPlayBtn = document.getElementById('basic-play-btn');
+  const transcriptStopBtn = document.getElementById('basic-stop-btn');
+  const interpretationPlayBtn = document.getElementById('basic-play-interpretation-btn');
+  const interpretationStopBtn = document.getElementById('basic-stop-interpretation-btn');
+  const interpretationTextarea = document.getElementById('basic-interpretation');
+  const transcriptTextarea = document.getElementById('basic-transcript');
+  const languageSelect = document.getElementById('basic-language');
+
+  console.log('🔍 DOM VERIFICATION Results:', {
+    transcriptPlayBtn: !!transcriptPlayBtn,
+    transcriptStopBtn: !!transcriptStopBtn,
+    interpretationPlayBtn: !!interpretationPlayBtn,
+    interpretationStopBtn: !!interpretationStopBtn,
+    interpretationTextarea: !!interpretationTextarea,
+    transcriptTextarea: !!transcriptTextarea,
+    languageSelect: !!languageSelect
+  });
+
+  if (!interpretationPlayBtn) {
+    console.error('❌ DOM VERIFICATION: Interpretation play button NOT FOUND in DOM!');
+  } else {
+    console.log('✅ DOM VERIFICATION: Interpretation play button found in DOM');
+  }
+
+  // ========================
   // Utility Functions
   // ========================
 
@@ -63,7 +92,7 @@ function updateModelDropdown(selectElement, models, modelType) {
 
   // Define authorized models for validation
   const authorizedModels = {
-    'transcription': ['gemini-2.0-flash-lite', 'gpt-4o-mini-transcribe', 'gpt-4o-transcribe', 'gemini-2.5-flash-preview-04-17'],
+    'transcription': ['gemini-2.0-flash-lite', 'gpt-4o-mini-transcribe', 'gpt-4o-transcribe', 'gemini-2.5-flash-preview-05-20'],
     'translation': ['gemini-2.0-flash-lite', 'gemini-2.5-flash', 'gpt-4.1-mini']
   };
 
@@ -183,13 +212,20 @@ function updateModelDropdown(selectElement, models, modelType) {
 
   // Function to manage button states for TTS
   function setTTSButtonState(sourceId, state) {
+    console.log('🔘 TTS Debug: setTTSButtonState called with:', { sourceId, state });
     let playBtn, stopBtn;
 
     // Handle different button ID patterns based on sourceId
     if (sourceId === 'basic-transcript') {
-      // Basic mode buttons
+      // Basic mode transcript buttons
       playBtn = document.getElementById('basic-play-btn');
       stopBtn = document.getElementById('basic-stop-btn');
+      console.log('🔘 TTS Debug: Basic transcript buttons found:', { playBtn: !!playBtn, stopBtn: !!stopBtn });
+    } else if (sourceId === 'basic-interpretation') {
+      // Basic mode interpretation buttons
+      playBtn = document.getElementById('basic-play-interpretation-btn');
+      stopBtn = document.getElementById('basic-stop-interpretation-btn');
+      console.log('🔘 TTS Debug: Basic interpretation buttons found:', { playBtn: !!playBtn, stopBtn: !!stopBtn });
     } else if (sourceId.startsWith('transcript-')) {
       // Bilingual mode transcript buttons
       const speakerId = sourceId.split('-')[1];
@@ -232,12 +268,29 @@ function updateModelDropdown(selectElement, models, modelType) {
 
   // Function to stop all audio playback
   function stopAllAudio() {
+    console.log('🛑 TTS Debug: stopAllAudio called');
+
+    // Stop all TTS players
+    Object.keys(ttsPlayers).forEach(sourceId => {
+      if (ttsPlayers[sourceId] && ttsPlayers[sourceId].audio) {
+        console.log('🛑 TTS Debug: Stopping audio for sourceId:', sourceId);
+        ttsPlayers[sourceId].audio.pause();
+        ttsPlayers[sourceId].audio.currentTime = 0;
+        URL.revokeObjectURL(ttsPlayers[sourceId].url);
+        delete ttsPlayers[sourceId];
+      }
+    });
+
+    // Stop global currentAudio as fallback
     if (currentAudio) {
+      console.log('🛑 TTS Debug: Stopping global currentAudio');
       currentAudio.pause();
       currentAudio.currentTime = 0;
       currentAudio = null;
-      showStatus('Audio playback stopped', 'info');
     }
+
+    console.log('🛑 TTS Debug: All audio stopped');
+    showStatus('All audio playback stopped', 'info');
   }
 
   // Add a function to create a stop button
@@ -282,36 +335,67 @@ function updateModelDropdown(selectElement, models, modelType) {
 
   // Speak text using TTS with play/pause/resume
   function speakText(sourceId, text, langCode) {
-    // For mobile devices or when sourceId refers to a DOM element, always get the latest text
-    if (isMobileDevice() || sourceId.includes('-')) {
+    console.log('🎵 TTS Debug: speakText called with:', {
+      sourceId: sourceId,
+      textLength: text ? text.length : 0,
+      textPreview: text ? text.substring(0, 50) + '...' : 'EMPTY',
+      langCode: langCode,
+      isMobile: isMobileDevice()
+    });
+
+    // Always get the latest text from DOM for certain sourceIds
+    if (isMobileDevice() || sourceId.includes('-') || sourceId === 'basic-transcript' || sourceId === 'basic-interpretation') {
+      console.log('🔍 TTS Debug: Getting text from DOM for sourceId:', sourceId);
+
       // For translation elements, always get the current text from the DOM
       if (sourceId.startsWith('translation-')) {
         const speakerId = sourceId.split('-')[1];
         const translationEl = document.getElementById(`translation-${speakerId}`);
         if (translationEl && translationEl.value.trim() !== '') {
           text = translationEl.value;
-          console.log(`Using current DOM text for TTS (translation-${speakerId}): ${text.substring(0, 30)}...`);
+          console.log(`🔍 TTS Debug: Retrieved text from translation-${speakerId}:`, text.substring(0, 30) + '...');
         }
       } else if (sourceId.startsWith('transcript-')) {
         const speakerId = sourceId.split('-')[1];
         const transcriptEl = document.getElementById(`transcript-${speakerId}`);
         if (transcriptEl && transcriptEl.value.trim() !== '') {
           text = transcriptEl.value;
-          console.log(`Using current DOM text for TTS (transcript-${speakerId}): ${text.substring(0, 30)}...`);
+          console.log(`🔍 TTS Debug: Retrieved text from transcript-${speakerId}:`, text.substring(0, 30) + '...');
         }
       } else if (sourceId === 'basic-transcript') {
         const transcriptEl = document.getElementById('basic-transcript');
         if (transcriptEl && transcriptEl.value.trim() !== '') {
           text = transcriptEl.value;
-          console.log(`Using current DOM text for TTS (basic): ${text.substring(0, 30)}...`);
+          console.log('🔍 TTS Debug: Retrieved text from basic-transcript:', text.substring(0, 30) + '...');
+        }
+      } else if (sourceId === 'basic-interpretation') {
+        console.log('🔍 TTS Debug: Handling basic-interpretation case');
+        const interpretationEl = document.getElementById('basic-interpretation');
+        console.log('🔍 TTS Debug: Interpretation element found:', !!interpretationEl);
+
+        if (interpretationEl) {
+          console.log('🔍 TTS Debug: Interpretation element value length:', interpretationEl.value.length);
+          console.log('🔍 TTS Debug: Interpretation element value preview:', interpretationEl.value.substring(0, 50) + '...');
+
+          if (interpretationEl.value.trim() !== '') {
+            text = interpretationEl.value;
+            console.log('✅ TTS Debug: Successfully retrieved interpretation text:', text.substring(0, 30) + '...');
+          } else {
+            console.warn('⚠️ TTS Debug: Interpretation textarea is empty');
+          }
+        } else {
+          console.error('❌ TTS Debug: Interpretation textarea not found in DOM');
         }
       }
     }
 
     if (!text || text.trim() === '') {
+      console.error('❌ TTS Debug: No text to speak');
       showStatus('No text to speak', 'warning');
       return;
     }
+
+    console.log('✅ TTS Debug: Text validation passed, proceeding with TTS');
 
     // Stop any currently playing audio
     stopAllAudio();
@@ -319,93 +403,171 @@ function updateModelDropdown(selectElement, models, modelType) {
     // Get the selected TTS model
     const ttsModelSelect = document.getElementById('tts-model-select');
     const ttsModel = ttsModelSelect ? ttsModelSelect.value : 'auto'; // Default to auto if not found
+    console.log('🔍 TTS Debug: Selected TTS model:', ttsModel);
 
     // Validate TTS access first
+    console.log('🔍 TTS Debug: Checking TTS access control...');
     if (window.ttsAccessControl && window.ttsAccessControl.hasLoadedUserInfo) {
+      console.log('🔍 TTS Debug: TTS access control found, validating access...');
       const accessValidation = window.ttsAccessControl.validateTTSAccess();
+      console.log('🔍 TTS Debug: Access validation result:', accessValidation);
+
       if (!accessValidation.allowed) {
+        console.warn('⚠️ TTS Debug: TTS access denied, showing upgrade modal');
         window.ttsAccessControl.showTTSUpgradeModal();
         setTTSButtonState(sourceId, 'error');
         return;
       }
+      console.log('✅ TTS Debug: TTS access granted');
+    } else {
+      console.log('🔍 TTS Debug: TTS access control not available or not loaded');
     }
 
     // Validate model access if model access control is available
+    console.log('🔍 TTS Debug: Checking model access control...');
     if (window.modelAccessControl && window.modelAccessControl.hasLoadedUserRole) {
-      if (!window.modelAccessControl.canAccessModel(ttsModel)) {
+      console.log('🔍 TTS Debug: Model access control found, checking model access...');
+      const canAccess = window.modelAccessControl.canAccessModel(ttsModel);
+      console.log('🔍 TTS Debug: Can access model:', canAccess);
+
+      if (!canAccess) {
+        console.warn('⚠️ TTS Debug: Model access denied, showing upgrade prompt');
         window.modelAccessControl.showUpgradePrompt(ttsModel);
         setTTSButtonState(sourceId, 'error');
         return;
       }
+      console.log('✅ TTS Debug: Model access granted');
+    } else {
+      console.log('🔍 TTS Debug: Model access control not available or not loaded');
     }
 
     // Show loading status
+    console.log('🔍 TTS Debug: Setting loading state and making API request...');
     showStatus(`Generating audio using ${ttsModel} TTS...`, 'info');
     setTTSButtonState(sourceId, 'loading');
+
+    const apiPayload = {
+      text: text,
+      language: langCode,
+      tts_model: ttsModel
+    };
+    console.log('🔍 TTS Debug: API payload:', apiPayload);
 
     // Make API request
     fetch('/api/tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: text,
-        language: langCode,
-        tts_model: ttsModel
-      })
+      body: JSON.stringify(apiPayload)
     })
     .then(response => {
+      console.log('🔍 TTS Debug: API response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
       if (!response.ok) {
-        throw new Error(`TTS service error (${response.status})`);
+        throw new Error(`TTS service error (${response.status}): ${response.statusText}`);
       }
       return response.blob();
     })
     .then(audioBlob => {
+      console.log('🔍 TTS Debug: Audio blob received:', {
+        size: audioBlob.size,
+        type: audioBlob.type
+      });
+
       // Create URL for the audio blob
       const audioUrl = URL.createObjectURL(audioBlob);
+      console.log('🔍 TTS Debug: Audio URL created:', audioUrl);
 
       // Create and play the audio
       const audio = new Audio(audioUrl);
+      console.log('🔍 TTS Debug: Audio object created');
 
-      // Store the audio element globally so we can stop it later
+      // Store the audio element both globally and per-source
       currentAudio = audio;
+      ttsPlayers[sourceId] = { audio: audio, url: audioUrl };
+      console.log('🔍 TTS Debug: Audio stored in ttsPlayers for sourceId:', sourceId);
 
       // Set playback rate to 1.10 (10% faster)
       audio.playbackRate = 1.10;
+      console.log('🔍 TTS Debug: Playback rate set to 1.10');
 
-      // Play the audio
-      audio.play()
-        .then(() => {
-          showStatus('Playing audio...', 'info');
-        })
-        .catch(error => {
-          showStatus('Error playing audio: ' + error.message, 'danger');
-          console.error('Audio playback error:', error);
-          fallbackSpeakText(text, langCode);
-        });
+      // Add event listeners for proper button state management
+      audio.onplay = () => {
+        console.log('🎵 TTS Debug: Audio onplay event fired');
+        setTTSButtonState(sourceId, 'playing');
+        showStatus('Playing audio...', 'info');
+      };
 
-      // Clean up when done
+      audio.onpause = () => {
+        console.log('⏸️ TTS Debug: Audio onpause event fired');
+        setTTSButtonState(sourceId, 'ready');
+        showStatus('Playback paused.', 'info');
+      };
+
       audio.onended = () => {
+        console.log('🏁 TTS Debug: Audio onended event fired');
+        setTTSButtonState(sourceId, 'ready');
         URL.revokeObjectURL(audioUrl);
         currentAudio = null;
+        delete ttsPlayers[sourceId];
+        showStatus('Playback completed.', 'info');
       };
+
+      audio.onerror = (event) => {
+        console.error('❌ TTS Debug: Audio onerror event fired:', event);
+        setTTSButtonState(sourceId, 'error');
+        showStatus('Audio playback error', 'danger');
+        URL.revokeObjectURL(audioUrl);
+        currentAudio = null;
+        delete ttsPlayers[sourceId];
+      };
+
+      // Play the audio
+      console.log('🎵 TTS Debug: Attempting to play audio...');
+      audio.play()
+        .then(() => {
+          console.log('✅ TTS Debug: Audio play() promise resolved successfully');
+        })
+        .catch(error => {
+          console.error('❌ TTS Debug: Audio play() promise rejected:', error);
+          showStatus('Error playing audio: ' + error.message, 'danger');
+          fallbackSpeakText(sourceId, text, langCode);
+        });
     })
     .catch(error => {
+      console.error('❌ TTS Debug: API request failed:', error);
       showStatus('Error generating speech: ' + error.message, 'danger');
-      console.error('TTS error:', error);
 
       // Fallback to browser's speech synthesis
-      fallbackSpeakText(text, langCode);
+      console.log('🔄 TTS Debug: Attempting fallback to browser TTS');
+      fallbackSpeakText(sourceId, text, langCode);
     })
     .finally(() => {
+      console.log('🔍 TTS Debug: Finally block executed, setting button state to ready');
       setTTSButtonState(sourceId, 'ready');
     });
   }
 
   // Function to stop (pause) TTS playback
   function stopSpeakText(sourceId) {
+    console.log('⏹️ TTS Debug: stopSpeakText called for sourceId:', sourceId);
+
+    // Try to stop the specific audio for this sourceId
     if (ttsPlayers[sourceId] && ttsPlayers[sourceId].audio && !ttsPlayers[sourceId].audio.paused) {
+      console.log('⏹️ TTS Debug: Stopping audio for sourceId:', sourceId);
       ttsPlayers[sourceId].audio.pause();
       // State update (paused=true, button state) handled by onpause listener
+      showStatus('Playback stopped.', 'info');
+      return;
+    }
+
+    // Fallback: stop global currentAudio if it exists
+    if (currentAudio && !currentAudio.paused) {
+      currentAudio.pause();
+      setTTSButtonState(sourceId, 'ready');
       showStatus('Playback stopped.', 'info');
     }
   }
@@ -1805,6 +1967,8 @@ function updateModelDropdown(selectElement, models, modelType) {
     });
   }
 
+  // Duplicate test event listener removed to prevent multiple voices
+
 
   // Basic mode recording
   const basicRecordBtn = document.getElementById('basic-record-btn');
@@ -2888,33 +3052,75 @@ function updateModelDropdown(selectElement, models, modelType) {
     });
   }
 
-  // Basic mode interpretation play/stop buttons
+  // Add auto-scroll on focus for mobile
+  document.querySelectorAll('.form-textarea').forEach(textarea => {
+    textarea.addEventListener('focus', function() {
+      // On mobile, scroll the textarea into view when focused
+      if (window.innerWidth < 768) {
+        setTimeout(() => {
+          this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300); // Short delay to account for keyboard appearance
+      }
+    });
+  });
+
+  // ========================
+  // Basic mode interpretation play/stop buttons (matching transcription pattern)
+  // ========================
+  console.log('🔍 TTS Debug: Looking for interpretation buttons...');
   const basicPlayInterpretationBtn = document.getElementById('basic-play-interpretation-btn');
   const basicStopInterpretationBtn = document.getElementById('basic-stop-interpretation-btn');
 
+  console.log('🔍 TTS Debug: Interpretation buttons found:', {
+    play: !!basicPlayInterpretationBtn,
+    stop: !!basicStopInterpretationBtn,
+    playElement: basicPlayInterpretationBtn,
+    stopElement: basicStopInterpretationBtn
+  });
+
+  // Test if we can find the working transcription button for comparison
+  const workingTranscriptBtn = document.getElementById('basic-play-btn');
+  console.log('🔍 TTS Debug: Working transcript button found:', !!workingTranscriptBtn);
+
   if (basicPlayInterpretationBtn) {
+    console.log('✅ TTS Debug: Attaching event listener to interpretation play button');
+
     basicPlayInterpretationBtn.addEventListener('click', () => {
+      console.log('🎵 TTS Debug: Interpretation play button clicked!');
+
       const interpretationEl = document.getElementById('basic-interpretation');
-      if (!interpretationEl) return;
+      if (!interpretationEl) {
+        console.error('❌ TTS Debug: Interpretation textarea not found!');
+        return;
+      }
 
       const text = interpretationEl.value;
+      console.log('🔍 TTS Debug: Text length:', text.length, 'Preview:', text.substring(0, 30) + '...');
+
       const langSelect = document.getElementById('basic-language');
       const lang = langSelect ? langSelect.value : 'en';
 
+      // For mobile devices, add a small delay to ensure the DOM is fully updated
       if (isMobileDevice()) {
         setTimeout(() => {
+          // Get the text again to ensure it's the most current
           const currentText = interpretationEl.value;
           speakText('basic-interpretation', currentText, lang);
         }, 50);
       } else {
-        speakText('basic-interpretation', text, lang);
+        speakText('basic-interpretation', text, lang); // Use consistent sourceId format
       }
     });
+
+    // Debug code removed - no automatic test text or button clicking
+  } else {
+    console.error('❌ TTS Debug: Interpretation play button NOT FOUND!');
   }
 
   if (basicStopInterpretationBtn) {
     basicStopInterpretationBtn.addEventListener('click', () => {
-      stopSpeakText('basic-interpretation');
+      console.log('⏹️ TTS Debug: Interpretation stop button clicked!');
+      stopSpeakText('basic-interpretation'); // Use consistent sourceId format
     });
   }
 
@@ -2929,16 +3135,4 @@ function updateModelDropdown(selectElement, models, modelType) {
       copyTextToClipboard(text, 'Interpretation copied to clipboard!');
     });
   }
-
-  // Add auto-scroll on focus for mobile
-  document.querySelectorAll('.form-textarea').forEach(textarea => {
-    textarea.addEventListener('focus', function() {
-      // On mobile, scroll the textarea into view when focused
-      if (window.innerWidth < 768) {
-        setTimeout(() => {
-          this.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 300); // Short delay to account for keyboard appearance
-      }
-    });
-  });
 });

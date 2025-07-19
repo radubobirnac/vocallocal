@@ -24,14 +24,14 @@ class InterpretationService:
             self.openai_client = OpenAI(api_key=openai_api_key)
             self.logger.info("OpenAI API initialized")
 
-    def interpret(self, text, tone="neutral", model="gemini-1.5-flash"):
+    def interpret(self, text, tone="neutral", model="gemini-2.0-flash-lite"):
         """
         Enhanced interpretation with contextual understanding and rephrasing capabilities
 
         Args:
             text (str): The text to interpret
             tone (str): The tone for interpretation (professional, simplified, academic, ai-prompts, neutral, formal, casual)
-            model (str): The model to use (gemini-1.5-flash, gpt-3.5-turbo, etc.)
+            model (str): The model to use (gemini-2.0-flash-lite, gemini-2.5-flash, gpt-3.5-turbo, etc.)
 
         Returns:
             str: The enhanced interpretation result with contextual analysis and rephrasing
@@ -47,8 +47,8 @@ class InterpretationService:
         elif "gpt" in model.lower():
             return self._interpret_with_openai(prompt, model)
         else:
-            # Default to Gemini
-            return self._interpret_with_gemini(prompt, "gemini-1.5-flash")
+            # Default to Gemini 2.0 Flash Lite
+            return self._interpret_with_gemini(prompt, "gemini-2.0-flash-lite")
 
     def _create_enhanced_prompt(self, text, tone):
         """Create an enhanced prompt with contextual understanding and rephrasing capabilities"""
@@ -74,12 +74,16 @@ class InterpretationService:
             model_id = model_name
             if model_name == "gemini-2.0-flash-lite":
                 model_id = "gemini-2.0-flash-lite"
-            elif model_name == "gemini-2.5-flash-preview-04-17":
+            elif model_name == "gemini-2.5-flash-preview-05-20":
                 # This is the exact model ID used in the UI for "Gemini 2.5 Flash Preview"
-                model_id = "gemini-2.5-flash-preview-04-17"
+                model_id = "gemini-2.5-flash-preview-05-20"
+            elif model_name == "gemini-2.5-flash-preview-04-17":
+                # Map old model to new working model for backward compatibility
+                model_id = "gemini-2.5-flash-preview-05-20"
+                self.logger.warning(f"Mapping deprecated model {model_name} to {model_id}")
             elif model_name == "gemini-2.5-flash":
                 # Map to the correct Gemini 2.5 Flash Preview model
-                model_id = "gemini-2.5-flash-preview-04-17"
+                model_id = "gemini-2.5-flash-preview-05-20"
 
             self.logger.info(f"Using Gemini model: {model_id}")
 
@@ -183,7 +187,7 @@ class InterpretationService:
             self.logger.error(f"OpenAI interpretation error: {str(e)}")
             raise
 
-    def analyze_context(self, text, model="gemini-1.5-flash"):
+    def analyze_context(self, text, model="gemini-2.0-flash-lite"):
         """
         Perform focused context analysis on text
 
@@ -201,9 +205,9 @@ class InterpretationService:
         elif "gpt" in model.lower():
             return self._interpret_with_openai(prompt, model)
         else:
-            return self._interpret_with_gemini(prompt, "gemini-1.5-flash")
+            return self._interpret_with_gemini(prompt, "gemini-2.0-flash-lite")
 
-    def rephrase_text(self, text, style="clear", model="gemini-1.5-flash"):
+    def rephrase_text(self, text, style="clear", model="gemini-2.0-flash-lite"):
         """
         Rephrase text for better clarity and understanding
 
@@ -222,9 +226,9 @@ class InterpretationService:
         elif "gpt" in model.lower():
             return self._interpret_with_openai(prompt, model)
         else:
-            return self._interpret_with_gemini(prompt, "gemini-1.5-flash")
+            return self._interpret_with_gemini(prompt, "gemini-2.0-flash-lite")
 
-    def detect_intent(self, text, model="gemini-1.5-flash"):
+    def detect_intent(self, text, model="gemini-2.0-flash-lite"):
         """
         Detect the intent and purpose behind the text
 
@@ -242,7 +246,7 @@ class InterpretationService:
         elif "gpt" in model.lower():
             return self._interpret_with_openai(prompt, model)
         else:
-            return self._interpret_with_gemini(prompt, "gemini-1.5-flash")
+            return self._interpret_with_gemini(prompt, "gemini-2.0-flash-lite")
 
     def _extract_text_from_prompt(self, prompt):
         """Extract the original text from the prompt for fallback purposes"""

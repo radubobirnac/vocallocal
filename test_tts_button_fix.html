@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test TTS Button Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 TTS Button Fix Verification</h1>
+    
+    <div class="test-section">
+        <h3>1. Button Element Detection Test</h3>
+        <button class="test-button" onclick="testButtonElements()">Check Button Elements</button>
+        <div id="button-test-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Event Handler Attachment Test</h3>
+        <button class="test-button" onclick="testEventHandlers()">Check Event Handlers</button>
+        <div id="handler-test-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Console Log Monitor</h3>
+        <p>This will capture and display console logs related to TTS debugging:</p>
+        <div id="console-output" class="result"></div>
+        <button class="test-button" onclick="clearConsoleOutput()">Clear Console</button>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Simulate TTS Button Click</h3>
+        <textarea id="test-interpretation-text" placeholder="Enter test interpretation text...">This is a test interpretation text for TTS functionality verification.</textarea>
+        <br>
+        <button class="test-button" onclick="simulateTTSClick()">Simulate TTS Button Click</button>
+        <div id="simulation-result" class="result"></div>
+    </div>
+
+    <script>
+        // Console log capture
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const logs = [];
+
+        function captureLog(type, args) {
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            
+            logs.push({
+                type: type,
+                message: message,
+                time: new Date().toLocaleTimeString()
+            });
+            
+            updateConsoleOutput();
+        }
+
+        console.log = function(...args) {
+            captureLog('log', args);
+            originalLog.apply(console, args);
+        };
+
+        console.error = function(...args) {
+            captureLog('error', args);
+            originalError.apply(console, args);
+        };
+
+        console.warn = function(...args) {
+            captureLog('warn', args);
+            originalWarn.apply(console, args);
+        };
+
+        function updateConsoleOutput() {
+            const output = document.getElementById('console-output');
+            const ttsLogs = logs.filter(log => 
+                log.message.includes('TTS Debug') || 
+                log.message.includes('interpretation') ||
+                log.message.includes('speakText')
+            );
+            
+            output.innerHTML = ttsLogs.map(log => 
+                `<div style="color: ${log.type === 'error' ? 'red' : log.type === 'warn' ? 'orange' : 'black'}">
+                    [${log.time}] ${log.type.toUpperCase()}: ${log.message}
+                </div>`
+            ).join('');
+        }
+
+        function clearConsoleOutput() {
+            logs.length = 0;
+            updateConsoleOutput();
+        }
+
+        function testButtonElements() {
+            const result = document.getElementById('button-test-result');
+            
+            const playBtn = document.getElementById('basic-play-interpretation-btn');
+            const stopBtn = document.getElementById('basic-stop-interpretation-btn');
+            const interpretationEl = document.getElementById('basic-interpretation');
+            
+            let output = 'Button Element Detection Results:\n\n';
+            output += `Play Button (#basic-play-interpretation-btn): ${playBtn ? '✅ FOUND' : '❌ NOT FOUND'}\n`;
+            output += `Stop Button (#basic-stop-interpretation-btn): ${stopBtn ? '✅ FOUND' : '❌ NOT FOUND'}\n`;
+            output += `Interpretation Textarea (#basic-interpretation): ${interpretationEl ? '✅ FOUND' : '❌ NOT FOUND'}\n\n`;
+            
+            if (playBtn) {
+                output += `Play Button Details:\n`;
+                output += `  - Tag: ${playBtn.tagName}\n`;
+                output += `  - Class: ${playBtn.className}\n`;
+                output += `  - Title: ${playBtn.title}\n`;
+                output += `  - Visible: ${playBtn.offsetParent !== null ? 'Yes' : 'No'}\n\n`;
+            }
+            
+            result.textContent = output;
+            result.className = 'result ' + (playBtn && stopBtn && interpretationEl ? 'success' : 'error');
+        }
+
+        function testEventHandlers() {
+            const result = document.getElementById('handler-test-result');
+            
+            const playBtn = document.getElementById('basic-play-interpretation-btn');
+            
+            let output = 'Event Handler Attachment Test:\n\n';
+            
+            if (!playBtn) {
+                output += '❌ Cannot test - play button not found\n';
+                result.textContent = output;
+                result.className = 'result error';
+                return;
+            }
+            
+            // Check if event listeners are attached (this is tricky to detect directly)
+            output += `Play Button Event Listeners:\n`;
+            output += `  - onclick property: ${playBtn.onclick ? 'Set' : 'Not set'}\n`;
+            output += `  - addEventListener used: ${playBtn._listeners ? 'Detected' : 'Cannot detect directly'}\n\n`;
+            
+            // Try to trigger a click and see if debug messages appear
+            output += 'Attempting to trigger click event...\n';
+            output += 'Check console output below for debug messages.\n';
+            
+            result.textContent = output;
+            result.className = 'result';
+            
+            // Trigger click
+            setTimeout(() => {
+                playBtn.click();
+            }, 100);
+        }
+
+        function simulateTTSClick() {
+            const result = document.getElementById('simulation-result');
+            const testText = document.getElementById('test-interpretation-text').value;
+            
+            // First, populate the interpretation textarea if it exists
+            const interpretationEl = document.getElementById('basic-interpretation');
+            if (interpretationEl) {
+                interpretationEl.value = testText;
+            }
+            
+            const playBtn = document.getElementById('basic-play-interpretation-btn');
+            
+            let output = 'TTS Button Click Simulation:\n\n';
+            
+            if (!playBtn) {
+                output += '❌ Cannot simulate - play button not found\n';
+                result.textContent = output;
+                result.className = 'result error';
+                return;
+            }
+            
+            if (!interpretationEl) {
+                output += '❌ Cannot simulate - interpretation textarea not found\n';
+                result.textContent = output;
+                result.className = 'result error';
+                return;
+            }
+            
+            output += `✅ Populated interpretation textarea with test text\n`;
+            output += `✅ Clicking TTS play button...\n`;
+            output += `\nCheck console output below for detailed debug messages.\n`;
+            output += `Expected messages:\n`;
+            output += `  - "🎵 TTS Debug: Interpretation play button clicked!"\n`;
+            output += `  - "🔍 TTS Debug: Interpretation textarea found: true"\n`;
+            output += `  - "🔍 TTS Debug: Interpretation text: ..."\n`;
+            output += `  - "🎵 TTS Debug: Calling speakText with: ..."\n`;
+            
+            result.textContent = output;
+            result.className = 'result';
+            
+            // Trigger the click
+            playBtn.click();
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 TTS Button Fix Test Page Loaded');
+            testButtonElements();
+        });
+    </script>
+</body>
+</html>
