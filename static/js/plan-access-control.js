@@ -18,7 +18,9 @@ class PlanAccessControl {
                 'transcription': [
                     'gemini-2.0-flash-lite', 'gemini',
                     'gpt-4o-mini-transcribe',
-                    'gemini-2.5-flash-preview-04-17'
+                    'gpt-4o-transcribe',                // Added GPT-4o access for Basic Plan
+                    'gemini-2.5-flash-preview-04-17',  // UI compatibility (maps to 05-20)
+                    'gemini-2.5-flash-preview-05-20'   // Working model
                 ],
                 'translation': [
                     'gemini-2.0-flash-lite',
@@ -64,7 +66,7 @@ class PlanAccessControl {
         this.modelInfo = {
             'gemini-2.0-flash-lite': { name: 'Gemini 2.0 Flash Lite', tier: 'free' },
             'gpt-4o-mini-transcribe': { name: 'OpenAI GPT-4o Mini', tier: 'basic' },
-            'gpt-4o-transcribe': { name: 'OpenAI GPT-4o', tier: 'professional' },
+            'gpt-4o-transcribe': { name: 'OpenAI GPT-4o', tier: 'basic' },
             'gemini-2.5-flash-preview-04-17': { name: 'Gemini 2.5 Flash Preview', tier: 'basic' },  // UI compatibility
             'gemini-2.5-flash-preview-05-20': { name: 'Gemini 2.5 Flash Preview 05-20', tier: 'basic' },  // Working model
             'gemini-2.5-flash': { name: 'Gemini 2.5 Flash Preview', tier: 'basic' },

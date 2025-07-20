@@ -80,8 +80,8 @@ class PlanAccessControl:
         },
         'gpt-4o-transcribe': {
             'name': 'OpenAI GPT-4o',
-            'description': 'Premium transcription with latest OpenAI model',
-            'tier': 'professional'
+            'description': 'Premium transcription with latest OpenAI model (available to Basic Plan users)',
+            'tier': 'basic'
         },
         'gemini-2.5-flash-preview-04-17': {
             'name': 'Gemini 2.5 Flash Preview',
@@ -198,6 +198,11 @@ class PlanAccessControl:
             'required_plan': required_plan,
             'upgrade_message': f'Upgrade to {plan_names.get(required_plan, "a higher plan")} to access {model_info.get("name", model)}'
         }
+
+    @classmethod
+    def get_model_info(cls, model: str) -> Dict:
+        """Get model information including name, description, and tier."""
+        return cls.MODEL_INFO.get(model, {})
 
     @classmethod
     def validate_model_access(cls, model: str, service_type: str, user_plan: str = None) -> Tuple[bool, Dict]:
