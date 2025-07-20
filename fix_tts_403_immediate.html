@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix TTS 403 Errors - Immediate Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .stop-button {
+            background: #dc3545;
+            display: none;
+        }
+        .stop-button:hover {
+            background: #c82333;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚨 Fix TTS 403 Errors - Immediate Test</h1>
+    
+    <div class="test-section">
+        <h2>Authentication Status</h2>
+        <button onclick="checkAuth()" class="button">Check Authentication</button>
+        <button onclick="loginSuperUser()" class="button">Login as Super User</button>
+        <button onclick="checkTTSAccess()" class="button">Check TTS Access</button>
+        <div id="auth-status" class="status"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>TTS Test Controls</h2>
+        <textarea id="test-text" placeholder="Enter text to test TTS...">This is a test of the TTS functionality to diagnose 403 errors.</textarea>
+        <br>
+        <select id="tts-model">
+            <option value="gemini-2.5-flash-tts">Gemini 2.5 Flash TTS</option>
+            <option value="gpt4o-mini">GPT-4o Mini</option>
+            <option value="openai">OpenAI TTS</option>
+        </select>
+        <br>
+        <button id="play-btn" onclick="testTTS()" class="button">▶ Test TTS</button>
+        <button id="stop-btn" onclick="stopTTS()" class="stop-button">⏹ Stop TTS</button>
+        <div id="tts-status" class="status"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Debug Log</h2>
+        <div id="debug-log" class="log"></div>
+        <button onclick="clearLog()" class="button">Clear Log</button>
+    </div>
+
+    <script>
+        let currentAudio = null;
+        
+        // Debug logging function
+        function debugLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('debug-log');
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('debug-log').innerHTML = '';
+        }
+
+        function updateAuthStatus(message, isError = false) {
+            const statusDiv = document.getElementById('auth-status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${isError ? 'error' : 'success'}`;
+        }
+
+        function updateTTSStatus(message, isError = false) {
+            const statusDiv = document.getElementById('tts-status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${isError ? 'error' : 'success'}`;
+        }
+
+        async function checkAuth() {
+            debugLog('🔍 Checking authentication status...');
+            
+            try {
+                const response = await fetch('/api/user/role', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                debugLog(`Auth check response: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    debugLog(`User data: ${JSON.stringify(data)}`);
+                    updateAuthStatus(`✅ Authenticated: ${data.email} (${data.role})`);
+                    return true;
+                } else {
+                    debugLog(`Auth check failed: ${response.status}`);
+                    const errorText = await response.text();
+                    debugLog(`Error response: ${errorText.substring(0, 200)}...`);
+                    updateAuthStatus(`❌ Not authenticated (${response.status})`, true);
+                    return false;
+                }
+            } catch (error) {
+                debugLog(`Auth check error: ${error.message}`);
+                updateAuthStatus(`❌ Auth check failed: ${error.message}`, true);
+                return false;
+            }
+        }
+
+        async function loginSuperUser() {
+            debugLog('🔑 Attempting to login as super user...');
+            
+            try {
+                // First get the login page to get any CSRF tokens
+                const loginPageResponse = await fetch('/auth/login', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                debugLog(`Login page response: ${loginPageResponse.status}`);
+                
+                if (loginPageResponse.ok) {
+                    // Attempt login
+                    const formData = new FormData();
+                    formData.append('email', 'superuser@vocallocal.com');
+                    formData.append('password', 'superpassword123');
+                    
+                    const loginResponse = await fetch('/auth/login', {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'include'
+                    });
+                    
+                    debugLog(`Login response: ${loginResponse.status} ${loginResponse.statusText}`);
+                    debugLog(`Login response URL: ${loginResponse.url}`);
+                    
+                    if (loginResponse.ok || loginResponse.status === 302) {
+                        debugLog('✅ Login appears successful');
+                        updateAuthStatus('✅ Logged in as super user');
+                        
+                        // Verify authentication
+                        setTimeout(checkAuth, 1000);
+                        return true;
+                    } else {
+                        const errorText = await loginResponse.text();
+                        debugLog(`Login failed: ${errorText.substring(0, 200)}...`);
+                        updateAuthStatus('❌ Login failed', true);
+                        return false;
+                    }
+                } else {
+                    debugLog('❌ Cannot access login page');
+                    updateAuthStatus('❌ Cannot access login page', true);
+                    return false;
+                }
+            } catch (error) {
+                debugLog(`Login error: ${error.message}`);
+                updateAuthStatus(`❌ Login error: ${error.message}`, true);
+                return false;
+            }
+        }
+
+        async function checkTTSAccess() {
+            debugLog('🔍 Checking TTS access...');
+            
+            try {
+                const response = await fetch('/api/user/tts-access', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                debugLog(`TTS access response: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    debugLog(`TTS access data: ${JSON.stringify(data, null, 2)}`);
+                    
+                    if (data.allowed) {
+                        updateAuthStatus(`✅ TTS Access: ${data.reason}`);
+                        return true;
+                    } else {
+                        updateAuthStatus(`❌ TTS Access Denied: ${data.reason}`, true);
+                        return false;
+                    }
+                } else {
+                    const errorText = await response.text();
+                    debugLog(`TTS access check failed: ${errorText.substring(0, 200)}...`);
+                    updateAuthStatus(`❌ TTS access check failed (${response.status})`, true);
+                    return false;
+                }
+            } catch (error) {
+                debugLog(`TTS access error: ${error.message}`);
+                updateAuthStatus(`❌ TTS access error: ${error.message}`, true);
+                return false;
+            }
+        }
+
+        async function testTTS() {
+            debugLog('🎵 Testing TTS endpoint...');
+            
+            const text = document.getElementById('test-text').value;
+            const model = document.getElementById('tts-model').value;
+            
+            if (!text.trim()) {
+                updateTTSStatus('❌ Please enter text to test', true);
+                return;
+            }
+            
+            try {
+                const payload = {
+                    text: text,
+                    language: 'en',
+                    tts_model: model
+                };
+                
+                debugLog(`TTS request payload: ${JSON.stringify(payload)}`);
+                updateTTSStatus('🔄 Making TTS request...');
+                
+                // Show stop button, hide play button
+                document.getElementById('play-btn').style.display = 'none';
+                document.getElementById('stop-btn').style.display = 'inline-block';
+                
+                const response = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(payload)
+                });
+                
+                debugLog(`TTS response: ${response.status} ${response.statusText}`);
+                debugLog(`TTS response headers: ${JSON.stringify(Object.fromEntries(response.headers))}`);
+                
+                if (response.ok) {
+                    const contentType = response.headers.get('Content-Type');
+                    debugLog(`TTS response content type: ${contentType}`);
+                    
+                    if (contentType && contentType.includes('audio')) {
+                        // Success - got audio
+                        const audioBlob = await response.blob();
+                        debugLog(`✅ TTS success! Audio blob size: ${audioBlob.size} bytes`);
+                        
+                        // Play the audio
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        currentAudio = new Audio(audioUrl);
+                        
+                        currentAudio.onplay = () => {
+                            debugLog('🎵 Audio playback started');
+                            updateTTSStatus('🎵 Playing audio...');
+                        };
+                        
+                        currentAudio.onended = () => {
+                            debugLog('🏁 Audio playback ended');
+                            updateTTSStatus('✅ Audio playback completed');
+                            resetButtons();
+                            URL.revokeObjectURL(audioUrl);
+                            currentAudio = null;
+                        };
+                        
+                        currentAudio.onerror = (e) => {
+                            debugLog(`❌ Audio playback error: ${e.message}`);
+                            updateTTSStatus('❌ Audio playback error', true);
+                            resetButtons();
+                            URL.revokeObjectURL(audioUrl);
+                            currentAudio = null;
+                        };
+                        
+                        await currentAudio.play();
+                        updateTTSStatus('✅ TTS successful - audio playing');
+                        
+                    } else {
+                        // Got HTML instead of audio - authentication issue
+                        const responseText = await response.text();
+                        debugLog(`❌ TTS returned HTML instead of audio: ${responseText.substring(0, 200)}...`);
+                        updateTTSStatus('❌ TTS returned HTML - authentication issue', true);
+                        resetButtons();
+                    }
+                } else if (response.status === 403) {
+                    const errorText = await response.text();
+                    debugLog(`❌ TTS 403 FORBIDDEN: ${errorText}`);
+                    updateTTSStatus('❌ TTS 403 FORBIDDEN - Access denied', true);
+                    resetButtons();
+                } else {
+                    const errorText = await response.text();
+                    debugLog(`❌ TTS failed: ${response.status} - ${errorText}`);
+                    updateTTSStatus(`❌ TTS failed: ${response.status}`, true);
+                    resetButtons();
+                }
+            } catch (error) {
+                debugLog(`❌ TTS error: ${error.message}`);
+                updateTTSStatus(`❌ TTS error: ${error.message}`, true);
+                resetButtons();
+            }
+        }
+
+        function stopTTS() {
+            debugLog('🛑 Stopping TTS...');
+            
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio = null;
+                debugLog('✅ TTS stopped');
+                updateTTSStatus('🛑 TTS stopped');
+            } else {
+                debugLog('ℹ️ No audio to stop');
+                updateTTSStatus('ℹ️ No audio playing');
+            }
+            
+            resetButtons();
+        }
+
+        function resetButtons() {
+            document.getElementById('play-btn').style.display = 'inline-block';
+            document.getElementById('stop-btn').style.display = 'none';
+        }
+
+        // Auto-run authentication check on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            debugLog('🚀 TTS 403 Fix Test Started');
+            setTimeout(checkAuth, 1000);
+        });
+    </script>
+</body>
+</html>

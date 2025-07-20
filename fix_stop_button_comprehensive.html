@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 TTS Stop Button Comprehensive Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .fix-section {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .stop-button {
+            background: #dc3545;
+            display: none;
+        }
+        .stop-button:hover {
+            background: #c82333;
+        }
+        .stop-button.visible {
+            display: inline-block;
+        }
+        .emergency-stop {
+            background: #ff6b6b;
+            font-size: 16px;
+            padding: 15px 25px;
+        }
+        .emergency-stop:hover {
+            background: #ff5252;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .status.warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .status.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        textarea {
+            width: 100%;
+            height: 80px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+        }
+        .audio-controls {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .diagnostic-info {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .fix-step {
+            background: #f1f8e9;
+            border-left: 4px solid #4caf50;
+            padding: 10px 15px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 TTS Stop Button Comprehensive Fix & Test</h1>
+    
+    <div class="diagnostic-info">
+        <h3>🎯 Identified Issues & Fixes:</h3>
+        <ul>
+            <li>✅ Stop functions exist but event handlers may not be attached</li>
+            <li>✅ Audio cleanup logic is comprehensive</li>
+            <li>⚠️ Authentication issues preventing TTS testing</li>
+            <li>⚠️ Service worker may cause persistent audio</li>
+        </ul>
+    </div>
+
+    <div class="fix-section">
+        <h2>🚨 Emergency Audio Stop</h2>
+        <p>Use these buttons if audio is stuck playing:</p>
+        <button onclick="emergencyStopAll()" class="button emergency-stop">🛑 EMERGENCY STOP ALL AUDIO</button>
+        <button onclick="clearAllAudioReferences()" class="button emergency-stop">🗑️ CLEAR ALL AUDIO REFERENCES</button>
+        <button onclick="stopServiceWorkerAudio()" class="button emergency-stop">⚙️ STOP SERVICE WORKER AUDIO</button>
+        <div id="emergency-status" class="status"></div>
+    </div>
+
+    <div class="fix-section">
+        <h2>🔐 Authentication & TTS Test</h2>
+        <div class="test-grid">
+            <button onclick="checkAuth()" class="button">Check Auth</button>
+            <button onclick="loginSuper()" class="button">Login Super User</button>
+            <button onclick="testTTSAccess()" class="button">Test TTS Access</button>
+            <button onclick="testTTSEndpoint()" class="button">Test TTS Endpoint</button>
+        </div>
+        <div id="auth-status" class="status"></div>
+    </div>
+
+    <div class="fix-section">
+        <h2>🎵 TTS Stop Button Test</h2>
+        <textarea id="test-text" placeholder="Enter text to test TTS stop functionality...">This is a comprehensive test of the TTS stop button functionality. Click play to start audio, then immediately test the stop button to ensure it works correctly.</textarea>
+        
+        <div class="audio-controls">
+            <label>TTS Model:</label>
+            <select id="tts-model">
+                <option value="gemini-2.5-flash-tts">Gemini 2.5 Flash TTS</option>
+                <option value="gpt4o-mini">GPT-4o Mini</option>
+                <option value="openai">OpenAI TTS</option>
+            </select>
+            
+            <label>Language:</label>
+            <select id="language">
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+            </select>
+        </div>
+        
+        <div class="audio-controls">
+            <button id="play-btn" onclick="startTTSTest()" class="button">▶ Start TTS Test</button>
+            <button id="stop-btn" onclick="stopTTSTest()" class="stop-button">⏹ Stop TTS</button>
+            <button onclick="testStopFunctions()" class="button">🧪 Test Stop Functions</button>
+            <button onclick="inspectAudioState()" class="button">🔍 Inspect Audio</button>
+        </div>
+        
+        <div id="tts-status" class="status"></div>
+    </div>
+
+    <div class="fix-section">
+        <h2>🔧 Stop Button Diagnostics</h2>
+        <div class="test-grid">
+            <button onclick="testEventHandlers()" class="button">Test Event Handlers</button>
+            <button onclick="testStopFunctions()" class="button">Test Stop Functions</button>
+            <button onclick="testButtonStates()" class="button">Test Button States</button>
+            <button onclick="testAudioCleanup()" class="button">Test Audio Cleanup</button>
+        </div>
+        <div id="diagnostic-status" class="status"></div>
+    </div>
+
+    <div class="fix-section">
+        <h2>📋 Debug Log</h2>
+        <button onclick="clearLog()" class="button">Clear Log</button>
+        <button onclick="exportLog()" class="button">Export Log</button>
+        <div id="debug-log" class="log"></div>
+    </div>
+
+    <script>
+        // Global variables for audio management
+        let currentAudio = null;
+        let ttsPlayers = {};
+        let audioInstances = [];
+        let testAudioCount = 0;
+
+        // Debug logging
+        function debugLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('debug-log');
+            const typeIcon = {
+                'info': 'ℹ️',
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️'
+            }[type] || 'ℹ️';
+            
+            logDiv.innerHTML += `[${timestamp}] ${typeIcon} ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[TTS Fix] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('debug-log').innerHTML = '';
+            debugLog('Log cleared', 'info');
+        }
+
+        function exportLog() {
+            const logContent = document.getElementById('debug-log').innerHTML;
+            const blob = new Blob([logContent.replace(/<br>/g, '\n').replace(/<[^>]*>/g, '')], 
+                                { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `tts-debug-log-${new Date().toISOString().slice(0,19)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function updateStatus(elementId, message, type = 'info') {
+            const statusDiv = document.getElementById(elementId);
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        // Emergency stop functions
+        function emergencyStopAll() {
+            debugLog('🚨 EMERGENCY STOP ALL AUDIO INITIATED', 'warning');
+            let stoppedCount = 0;
+
+            try {
+                // Stop all HTML5 audio elements
+                const audioElements = document.querySelectorAll('audio');
+                audioElements.forEach((audio, index) => {
+                    if (!audio.paused) {
+                        audio.pause();
+                        audio.currentTime = 0;
+                        stoppedCount++;
+                        debugLog(`Stopped HTML5 audio element ${index}`, 'success');
+                    }
+                });
+
+                // Stop tracked audio instances
+                audioInstances.forEach((instance, index) => {
+                    if (instance.audio && !instance.audio.paused) {
+                        instance.audio.pause();
+                        instance.audio.currentTime = 0;
+                        if (instance.url) {
+                            URL.revokeObjectURL(instance.url);
+                        }
+                        stoppedCount++;
+                        debugLog(`Stopped tracked audio instance ${index}`, 'success');
+                    }
+                });
+
+                // Stop TTS players
+                Object.keys(ttsPlayers).forEach(sourceId => {
+                    if (ttsPlayers[sourceId] && ttsPlayers[sourceId].audio) {
+                        const audio = ttsPlayers[sourceId].audio;
+                        if (!audio.paused) {
+                            audio.pause();
+                            audio.currentTime = 0;
+                            stoppedCount++;
+                            debugLog(`Stopped TTS player: ${sourceId}`, 'success');
+                        }
+                    }
+                });
+
+                // Stop current audio
+                if (currentAudio && !currentAudio.paused) {
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
+                    stoppedCount++;
+                    debugLog('Stopped current audio', 'success');
+                }
+
+                debugLog(`Emergency stop completed - stopped ${stoppedCount} audio sources`, 'success');
+                updateStatus('emergency-status', `✅ Emergency stop completed - ${stoppedCount} sources stopped`, 'success');
+
+            } catch (error) {
+                debugLog(`Emergency stop error: ${error.message}`, 'error');
+                updateStatus('emergency-status', `❌ Emergency stop error: ${error.message}`, 'error');
+            }
+        }
+
+        function clearAllAudioReferences() {
+            debugLog('🗑️ CLEARING ALL AUDIO REFERENCES', 'warning');
+            
+            try {
+                // Clear all tracked references
+                audioInstances.forEach(instance => {
+                    if (instance.url) {
+                        URL.revokeObjectURL(instance.url);
+                    }
+                });
+                audioInstances = [];
+
+                // Clear TTS players
+                Object.keys(ttsPlayers).forEach(sourceId => {
+                    const player = ttsPlayers[sourceId];
+                    if (player && player.url) {
+                        URL.revokeObjectURL(player.url);
+                    }
+                });
+                ttsPlayers = {};
+
+                // Clear current audio
+                currentAudio = null;
+
+                debugLog('All audio references cleared', 'success');
+                updateStatus('emergency-status', '✅ All audio references cleared', 'success');
+
+            } catch (error) {
+                debugLog(`Clear references error: ${error.message}`, 'error');
+                updateStatus('emergency-status', `❌ Clear error: ${error.message}`, 'error');
+            }
+        }
+
+        function stopServiceWorkerAudio() {
+            debugLog('⚙️ ATTEMPTING TO STOP SERVICE WORKER AUDIO', 'warning');
+            
+            try {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(registrations => {
+                        debugLog(`Found ${registrations.length} service worker registrations`, 'info');
+                        
+                        registrations.forEach((registration, index) => {
+                            debugLog(`Service worker ${index}: ${registration.scope}`, 'info');
+                            
+                            // Send stop message to service worker
+                            if (registration.active) {
+                                registration.active.postMessage({
+                                    type: 'STOP_ALL_AUDIO',
+                                    timestamp: Date.now()
+                                });
+                                debugLog(`Sent stop message to service worker ${index}`, 'success');
+                            }
+                        });
+                        
+                        updateStatus('emergency-status', `✅ Stop messages sent to ${registrations.length} service workers`, 'success');
+                    });
+                } else {
+                    debugLog('Service workers not supported', 'info');
+                    updateStatus('emergency-status', 'ℹ️ Service workers not supported', 'info');
+                }
+            } catch (error) {
+                debugLog(`Service worker stop error: ${error.message}`, 'error');
+                updateStatus('emergency-status', `❌ Service worker error: ${error.message}`, 'error');
+            }
+        }
+
+        // Authentication functions
+        async function checkAuth() {
+            debugLog('🔍 Checking authentication...', 'info');
+            
+            try {
+                const response = await fetch('/api/user/role', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    debugLog(`Authenticated: ${data.email} (${data.role})`, 'success');
+                    updateStatus('auth-status', `✅ Authenticated: ${data.email} (${data.role})`, 'success');
+                    return true;
+                } else {
+                    debugLog(`Not authenticated: ${response.status}`, 'error');
+                    updateStatus('auth-status', `❌ Not authenticated (${response.status})`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                debugLog(`Auth check error: ${error.message}`, 'error');
+                updateStatus('auth-status', `❌ Auth error: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function loginSuper() {
+            debugLog('🔑 Attempting super user login...', 'info');
+            
+            try {
+                const formData = new FormData();
+                formData.append('email', 'superuser@vocallocal.com');
+                formData.append('password', 'superpassword123');
+                
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                
+                debugLog(`Login response: ${response.status}`, 'info');
+                
+                if (response.ok || response.status === 302) {
+                    debugLog('Login successful', 'success');
+                    updateStatus('auth-status', '✅ Logged in as super user', 'success');
+                    setTimeout(checkAuth, 1000);
+                    return true;
+                } else {
+                    debugLog(`Login failed: ${response.status}`, 'error');
+                    updateStatus('auth-status', `❌ Login failed (${response.status})`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                debugLog(`Login error: ${error.message}`, 'error');
+                updateStatus('auth-status', `❌ Login error: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testTTSAccess() {
+            debugLog('🔍 Testing TTS access...', 'info');
+            
+            try {
+                const response = await fetch('/api/user/tts-access', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    debugLog(`TTS access: ${JSON.stringify(data)}`, 'info');
+                    
+                    if (data.allowed) {
+                        updateStatus('auth-status', `✅ TTS Access: ${data.reason}`, 'success');
+                        return true;
+                    } else {
+                        updateStatus('auth-status', `❌ TTS Denied: ${data.reason}`, 'error');
+                        return false;
+                    }
+                } else {
+                    debugLog(`TTS access check failed: ${response.status}`, 'error');
+                    updateStatus('auth-status', `❌ TTS access check failed (${response.status})`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                debugLog(`TTS access error: ${error.message}`, 'error');
+                updateStatus('auth-status', `❌ TTS access error: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testTTSEndpoint() {
+            debugLog('🎵 Testing TTS endpoint...', 'info');
+            
+            try {
+                const payload = {
+                    text: 'Quick TTS endpoint test.',
+                    language: 'en',
+                    tts_model: 'gemini-2.5-flash-tts'
+                };
+                
+                const response = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(payload)
+                });
+                
+                debugLog(`TTS endpoint response: ${response.status}`, 'info');
+                
+                if (response.ok) {
+                    const contentType = response.headers.get('Content-Type');
+                    if (contentType && contentType.includes('audio')) {
+                        const audioSize = response.headers.get('Content-Length') || 'unknown';
+                        debugLog(`TTS endpoint working! Audio size: ${audioSize}`, 'success');
+                        updateStatus('auth-status', `✅ TTS endpoint working! Audio: ${audioSize} bytes`, 'success');
+                        return true;
+                    } else {
+                        debugLog(`TTS returned non-audio: ${contentType}`, 'error');
+                        updateStatus('auth-status', `❌ TTS returned non-audio: ${contentType}`, 'error');
+                        return false;
+                    }
+                } else {
+                    debugLog(`TTS endpoint failed: ${response.status}`, 'error');
+                    updateStatus('auth-status', `❌ TTS endpoint failed: ${response.status}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                debugLog(`TTS endpoint error: ${error.message}`, 'error');
+                updateStatus('auth-status', `❌ TTS endpoint error: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // TTS test functions
+        async function startTTSTest() {
+            debugLog('🎵 Starting TTS test...', 'info');
+            
+            const text = document.getElementById('test-text').value;
+            const model = document.getElementById('tts-model').value;
+            const language = document.getElementById('language').value;
+            
+            if (!text.trim()) {
+                updateStatus('tts-status', '❌ Please enter text to test', 'error');
+                return;
+            }
+            
+            try {
+                updateStatus('tts-status', '🔄 Making TTS request...', 'warning');
+                setButtonState(true);
+                
+                const payload = { text, language, tts_model: model };
+                debugLog(`TTS request: ${JSON.stringify(payload)}`, 'info');
+                
+                const response = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(payload)
+                });
+                
+                debugLog(`TTS response: ${response.status}`, 'info');
+                
+                if (response.ok) {
+                    const contentType = response.headers.get('Content-Type');
+                    if (contentType && contentType.includes('audio')) {
+                        const audioBlob = await response.blob();
+                        debugLog(`Audio received: ${audioBlob.size} bytes`, 'success');
+                        
+                        // Create and play audio
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        currentAudio = new Audio(audioUrl);
+                        
+                        // Track audio instance
+                        const audioInstance = {
+                            audio: currentAudio,
+                            url: audioUrl,
+                            sourceId: 'tts-test',
+                            created: new Date()
+                        };
+                        audioInstances.push(audioInstance);
+                        ttsPlayers['tts-test'] = audioInstance;
+                        
+                        // Set up event handlers
+                        currentAudio.onplay = () => {
+                            debugLog('Audio playback started', 'success');
+                            updateStatus('tts-status', '🎵 Audio playing - test stop button!', 'success');
+                        };
+                        
+                        currentAudio.onended = () => {
+                            debugLog('Audio playback ended', 'info');
+                            updateStatus('tts-status', '✅ Audio completed', 'success');
+                            cleanupAudio('tts-test');
+                            setButtonState(false);
+                        };
+                        
+                        currentAudio.onerror = (e) => {
+                            debugLog(`Audio error: ${e.message || 'Unknown'}`, 'error');
+                            updateStatus('tts-status', '❌ Audio playback error', 'error');
+                            cleanupAudio('tts-test');
+                            setButtonState(false);
+                        };
+                        
+                        // Start playback
+                        await currentAudio.play();
+                        debugLog('TTS playback started successfully', 'success');
+                        
+                    } else {
+                        debugLog(`Non-audio response: ${contentType}`, 'error');
+                        updateStatus('tts-status', '❌ Authentication issue - not audio', 'error');
+                        setButtonState(false);
+                    }
+                } else {
+                    debugLog(`TTS failed: ${response.status}`, 'error');
+                    updateStatus('tts-status', `❌ TTS failed: ${response.status}`, 'error');
+                    setButtonState(false);
+                }
+            } catch (error) {
+                debugLog(`TTS error: ${error.message}`, 'error');
+                updateStatus('tts-status', `❌ TTS error: ${error.message}`, 'error');
+                setButtonState(false);
+            }
+        }
+
+        function stopTTSTest() {
+            debugLog('🛑 Stop button clicked - testing stop functionality...', 'warning');
+            
+            if (currentAudio) {
+                debugLog(`Audio state: paused=${currentAudio.paused}, time=${currentAudio.currentTime}`, 'info');
+                
+                // Stop the audio
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                
+                debugLog('Audio stopped and reset', 'success');
+                updateStatus('tts-status', '🛑 TTS stopped by user', 'success');
+                
+                // Clean up
+                cleanupAudio('tts-test');
+                setButtonState(false);
+                
+                debugLog('Stop button test completed successfully', 'success');
+            } else {
+                debugLog('No current audio to stop', 'warning');
+                updateStatus('tts-status', 'ℹ️ No audio currently playing', 'info');
+                setButtonState(false);
+            }
+        }
+
+        function cleanupAudio(sourceId) {
+            debugLog(`Cleaning up audio: ${sourceId}`, 'info');
+            
+            // Clean up from ttsPlayers
+            if (ttsPlayers[sourceId]) {
+                const player = ttsPlayers[sourceId];
+                if (player.url) {
+                    URL.revokeObjectURL(player.url);
+                    debugLog(`Revoked URL: ${player.url}`, 'success');
+                }
+                delete ttsPlayers[sourceId];
+            }
+            
+            // Clean up from audioInstances
+            audioInstances = audioInstances.filter(instance => {
+                if (instance.sourceId === sourceId) {
+                    if (instance.url) {
+                        URL.revokeObjectURL(instance.url);
+                    }
+                    return false;
+                }
+                return true;
+            });
+            
+            // Clear global reference
+            if (currentAudio && ttsPlayers['tts-test'] && currentAudio === ttsPlayers['tts-test'].audio) {
+                currentAudio = null;
+            }
+            
+            debugLog(`Audio cleanup completed for: ${sourceId}`, 'success');
+        }
+
+        function setButtonState(playing) {
+            const playBtn = document.getElementById('play-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            
+            if (playing) {
+                playBtn.style.display = 'none';
+                stopBtn.style.display = 'inline-block';
+                stopBtn.classList.add('visible');
+                debugLog('Button state: PLAYING (stop visible)', 'info');
+            } else {
+                playBtn.style.display = 'inline-block';
+                stopBtn.style.display = 'none';
+                stopBtn.classList.remove('visible');
+                debugLog('Button state: STOPPED (play visible)', 'info');
+            }
+        }
+
+        // Diagnostic functions
+        function testEventHandlers() {
+            debugLog('🧪 Testing event handlers...', 'info');
+            
+            const stopBtn = document.getElementById('stop-btn');
+            const playBtn = document.getElementById('play-btn');
+            
+            let handlerCount = 0;
+            
+            if (stopBtn) {
+                debugLog('Stop button found', 'success');
+                if (stopBtn.onclick) {
+                    debugLog('Stop button has onclick handler', 'success');
+                    handlerCount++;
+                }
+                // Test if we can add event listener
+                try {
+                    stopBtn.addEventListener('test', () => {});
+                    debugLog('Stop button accepts event listeners', 'success');
+                    handlerCount++;
+                } catch (e) {
+                    debugLog(`Stop button event listener error: ${e.message}`, 'error');
+                }
+            } else {
+                debugLog('Stop button not found', 'error');
+            }
+            
+            if (playBtn) {
+                debugLog('Play button found', 'success');
+                handlerCount++;
+            } else {
+                debugLog('Play button not found', 'error');
+            }
+            
+            updateStatus('diagnostic-status', `Event handlers test: ${handlerCount}/3 passed`, handlerCount >= 2 ? 'success' : 'error');
+        }
+
+        function testStopFunctions() {
+            debugLog('🧪 Testing stop functions...', 'info');
+            
+            let functionCount = 0;
+            
+            // Test if functions exist
+            if (typeof stopTTSTest === 'function') {
+                debugLog('stopTTSTest function exists', 'success');
+                functionCount++;
+            } else {
+                debugLog('stopTTSTest function missing', 'error');
+            }
+            
+            if (typeof emergencyStopAll === 'function') {
+                debugLog('emergencyStopAll function exists', 'success');
+                functionCount++;
+            } else {
+                debugLog('emergencyStopAll function missing', 'error');
+            }
+            
+            if (typeof clearAllAudioReferences === 'function') {
+                debugLog('clearAllAudioReferences function exists', 'success');
+                functionCount++;
+            } else {
+                debugLog('clearAllAudioReferences function missing', 'error');
+            }
+            
+            // Test function execution
+            try {
+                clearAllAudioReferences();
+                debugLog('clearAllAudioReferences executed successfully', 'success');
+                functionCount++;
+            } catch (e) {
+                debugLog(`clearAllAudioReferences error: ${e.message}`, 'error');
+            }
+            
+            updateStatus('diagnostic-status', `Stop functions test: ${functionCount}/4 passed`, functionCount >= 3 ? 'success' : 'error');
+        }
+
+        function testButtonStates() {
+            debugLog('🧪 Testing button states...', 'info');
+            
+            // Test button state changes
+            setButtonState(true);
+            setTimeout(() => {
+                const stopVisible = document.getElementById('stop-btn').style.display !== 'none';
+                const playHidden = document.getElementById('play-btn').style.display === 'none';
+                
+                if (stopVisible && playHidden) {
+                    debugLog('Playing state: stop visible, play hidden ✅', 'success');
+                } else {
+                    debugLog('Playing state: incorrect button visibility ❌', 'error');
+                }
+                
+                setButtonState(false);
+                setTimeout(() => {
+                    const stopHidden = document.getElementById('stop-btn').style.display === 'none';
+                    const playVisible = document.getElementById('play-btn').style.display !== 'none';
+                    
+                    if (stopHidden && playVisible) {
+                        debugLog('Stopped state: play visible, stop hidden ✅', 'success');
+                        updateStatus('diagnostic-status', '✅ Button state management working', 'success');
+                    } else {
+                        debugLog('Stopped state: incorrect button visibility ❌', 'error');
+                        updateStatus('diagnostic-status', '❌ Button state management broken', 'error');
+                    }
+                }, 100);
+            }, 100);
+        }
+
+        function testAudioCleanup() {
+            debugLog('🧪 Testing audio cleanup...', 'info');
+            
+            // Create test audio
+            const testUrl = URL.createObjectURL(new Blob(['test'], { type: 'audio/mp3' }));
+            const testAudio = new Audio(testUrl);
+            
+            // Add to tracking
+            const testInstance = {
+                audio: testAudio,
+                url: testUrl,
+                sourceId: 'cleanup-test',
+                created: new Date()
+            };
+            audioInstances.push(testInstance);
+            ttsPlayers['cleanup-test'] = testInstance;
+            currentAudio = testAudio;
+            
+            debugLog('Test audio created and tracked', 'info');
+            
+            // Test cleanup
+            cleanupAudio('cleanup-test');
+            
+            // Verify cleanup
+            const stillTracked = audioInstances.some(i => i.sourceId === 'cleanup-test');
+            const stillInPlayers = 'cleanup-test' in ttsPlayers;
+            const currentCleared = currentAudio === null;
+            
+            if (!stillTracked && !stillInPlayers && currentCleared) {
+                debugLog('Audio cleanup test passed ✅', 'success');
+                updateStatus('diagnostic-status', '✅ Audio cleanup working correctly', 'success');
+            } else {
+                debugLog('Audio cleanup test failed ❌', 'error');
+                updateStatus('diagnostic-status', '❌ Audio cleanup not working', 'error');
+            }
+        }
+
+        function inspectAudioState() {
+            debugLog('🔍 Inspecting current audio state...', 'info');
+            
+            debugLog(`Current audio: ${currentAudio ? 'EXISTS' : 'NULL'}`, 'info');
+            debugLog(`TTS players: ${Object.keys(ttsPlayers).length} entries`, 'info');
+            debugLog(`Audio instances: ${audioInstances.length} tracked`, 'info');
+            
+            if (currentAudio) {
+                debugLog(`  - Paused: ${currentAudio.paused}`, 'info');
+                debugLog(`  - Current time: ${currentAudio.currentTime}`, 'info');
+                debugLog(`  - Duration: ${currentAudio.duration}`, 'info');
+            }
+            
+            Object.keys(ttsPlayers).forEach(sourceId => {
+                debugLog(`TTS Player [${sourceId}]: ${ttsPlayers[sourceId] ? 'EXISTS' : 'NULL'}`, 'info');
+            });
+            
+            audioInstances.forEach((instance, index) => {
+                debugLog(`Audio Instance [${index}]: ${instance.sourceId}, created: ${instance.created.toLocaleTimeString()}`, 'info');
+            });
+            
+            updateStatus('diagnostic-status', `Audio state: ${currentAudio ? '1' : '0'} current, ${Object.keys(ttsPlayers).length} players, ${audioInstances.length} instances`, 'info');
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            debugLog('🚀 TTS Stop Button Fix Page Loaded', 'success');
+            
+            // Auto-check authentication
+            setTimeout(checkAuth, 1000);
+            
+            // Set initial button state
+            setButtonState(false);
+            
+            // Add page unload handler
+            window.addEventListener('beforeunload', function() {
+                debugLog('Page unloading - emergency stop all audio', 'warning');
+                emergencyStopAll();
+            });
+            
+            // Add visibility change handler
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    debugLog('Tab hidden - pausing audio', 'info');
+                    if (currentAudio && !currentAudio.paused) {
+                        currentAudio.pause();
+                    }
+                }
+            });
+            
+            debugLog('Page initialization complete', 'success');
+        });
+    </script>
+</body>
+</html>

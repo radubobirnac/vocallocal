@@ -10,6 +10,10 @@ from flask import Flask, redirect, url_for, flash, render_template, jsonify, sen
 from config import Config
 import jinja2
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 # Try to import Google Generative AI, install if missing
 GEMINI_AVAILABLE = False
 try:

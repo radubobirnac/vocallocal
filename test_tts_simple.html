@@ -18,11 +18,15 @@
         <h3>Test Elements (matching main page structure)</h3>
         <button id="basic-play-interpretation-btn" class="button">▶️ Play Interpretation</button>
         <button id="basic-stop-interpretation-btn" class="button">⏹️ Stop Interpretation</button>
+        <button onclick="testStopButton()" class="button">🧪 Test Stop Functions</button>
+        <button onclick="stopAllAudio()" class="button">🛑 Stop All Audio</button>
         <br>
-        <textarea id="basic-interpretation" placeholder="Interpretation text...">This is test interpretation text for TTS debugging.</textarea>
+        <textarea id="basic-interpretation" placeholder="Interpretation text...">This is test interpretation text for TTS debugging and stop button functionality testing.</textarea>
         <br>
         <select id="basic-language">
             <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
         </select>
     </div>
     
@@ -31,47 +35,111 @@
         <div id="test-results" class="result">Test results will appear here...</div>
     </div>
     
+    <!-- Include main script.js for TTS functionality -->
+    <script src="/static/script.js"></script>
+
     <script>
-        // Simple test functions
-        function isMobileDevice() {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        // Test functions for stop button functionality
+        function testStopButton() {
+            console.log('🧪 Testing stop button functionality...');
+            document.getElementById('test-results').innerHTML +=
+                `<div>🧪 Testing stop button functionality...</div>`;
+
+            // Test if stop functions exist
+            if (typeof stopSpeakText === 'function') {
+                document.getElementById('test-results').innerHTML +=
+                    `<div>✅ stopSpeakText function exists</div>`;
+            } else {
+                document.getElementById('test-results').innerHTML +=
+                    `<div>❌ stopSpeakText function missing</div>`;
+            }
+
+            if (typeof stopAllAudio === 'function') {
+                document.getElementById('test-results').innerHTML +=
+                    `<div>✅ stopAllAudio function exists</div>`;
+            } else {
+                document.getElementById('test-results').innerHTML +=
+                    `<div>❌ stopAllAudio function missing</div>`;
+            }
+
+            // Test stop button click
+            const stopBtn = document.getElementById('basic-stop-interpretation-btn');
+            if (stopBtn) {
+                document.getElementById('test-results').innerHTML +=
+                    `<div>✅ Stop button found</div>`;
+
+                // Test stop button click
+                try {
+                    stopSpeakText('basic-interpretation');
+                    document.getElementById('test-results').innerHTML +=
+                        `<div>✅ stopSpeakText('basic-interpretation') executed successfully</div>`;
+                } catch (error) {
+                    document.getElementById('test-results').innerHTML +=
+                        `<div>❌ stopSpeakText error: ${error.message}</div>`;
+                }
+            } else {
+                document.getElementById('test-results').innerHTML +=
+                    `<div>❌ Stop button not found</div>`;
+            }
         }
-        
-        function speakText(sourceId, text, lang) {
-            console.log('🎵 speakText called:', { sourceId, text: text.substring(0, 30) + '...', lang });
-            document.getElementById('test-results').innerHTML += 
-                `<div>✅ speakText called: ${sourceId}, ${text.length} chars, ${lang}</div>`;
-        }
-        
-        // Test the button
+
+        // Test the buttons
         document.addEventListener('DOMContentLoaded', () => {
             console.log('🧪 Test page loaded');
-            
+
             const playBtn = document.getElementById('basic-play-interpretation-btn');
+            const stopBtn = document.getElementById('basic-stop-interpretation-btn');
             const textarea = document.getElementById('basic-interpretation');
             const langSelect = document.getElementById('basic-language');
-            
-            document.getElementById('test-results').innerHTML = 
-                `<div>Button found: ${!!playBtn}</div>
+
+            document.getElementById('test-results').innerHTML =
+                `<div>Play button found: ${!!playBtn}</div>
+                 <div>Stop button found: ${!!stopBtn}</div>
                  <div>Textarea found: ${!!textarea}</div>
                  <div>Language select found: ${!!langSelect}</div>`;
-            
+
+            // Test stop button functionality
+            setTimeout(testStopButton, 1000);
+
+            // Add stop button event handler if it doesn't exist
+            if (stopBtn && !stopBtn.onclick) {
+                stopBtn.addEventListener('click', () => {
+                    console.log('⏹️ Stop button clicked!');
+                    document.getElementById('test-results').innerHTML +=
+                        `<div>⏹️ Stop button clicked!</div>`;
+
+                    if (typeof stopSpeakText === 'function') {
+                        stopSpeakText('basic-interpretation');
+                        document.getElementById('test-results').innerHTML +=
+                            `<div>✅ stopSpeakText called for basic-interpretation</div>`;
+                    } else {
+                        document.getElementById('test-results').innerHTML +=
+                            `<div>❌ stopSpeakText function not available</div>`;
+                    }
+                });
+
+                document.getElementById('test-results').innerHTML +=
+                    `<div>✅ Stop button event handler added</div>`;
+            }
+
             if (playBtn) {
                 playBtn.addEventListener('click', () => {
-                    console.log('🎵 Button clicked!');
-                    
+                    console.log('🎵 Play button clicked!');
+
                     const text = textarea.value;
                     const lang = langSelect.value;
-                    
-                    document.getElementById('test-results').innerHTML += 
-                        `<div>🎵 Button clicked! Text: ${text.length} chars</div>`;
-                    
-                    if (isMobileDevice()) {
-                        setTimeout(() => {
-                            speakText('basic-interpretation', textarea.value, lang);
-                        }, 50);
-                    } else {
+
+                    document.getElementById('test-results').innerHTML +=
+                        `<div>🎵 Play button clicked! Text: ${text.length} chars</div>`;
+
+                    // Use the real speakText function from script.js
+                    if (typeof speakText === 'function') {
                         speakText('basic-interpretation', text, lang);
+                        document.getElementById('test-results').innerHTML +=
+                            `<div>✅ Real speakText function called</div>`;
+                    } else {
+                        document.getElementById('test-results').innerHTML +=
+                            `<div>❌ Real speakText function not available</div>`;
                     }
                 });
             }

@@ -270,14 +270,29 @@ function updateModelDropdown(selectElement, models, modelType) {
   function stopAllAudio() {
     console.log('🛑 TTS Debug: stopAllAudio called');
 
+    let stoppedCount = 0;
+
     // Stop all TTS players
     Object.keys(ttsPlayers).forEach(sourceId => {
       if (ttsPlayers[sourceId] && ttsPlayers[sourceId].audio) {
         console.log('🛑 TTS Debug: Stopping audio for sourceId:', sourceId);
-        ttsPlayers[sourceId].audio.pause();
-        ttsPlayers[sourceId].audio.currentTime = 0;
-        URL.revokeObjectURL(ttsPlayers[sourceId].url);
+        const player = ttsPlayers[sourceId];
+
+        // Stop the audio completely
+        player.audio.pause();
+        player.audio.currentTime = 0;
+
+        // Clean up the URL to free memory
+        if (player.url) {
+          URL.revokeObjectURL(player.url);
+        }
+
+        // Update button state for this sourceId
+        setTTSButtonState(sourceId, 'ready');
+
+        // Clean up the player reference
         delete ttsPlayers[sourceId];
+        stoppedCount++;
       }
     });
 
@@ -287,10 +302,11 @@ function updateModelDropdown(selectElement, models, modelType) {
       currentAudio.pause();
       currentAudio.currentTime = 0;
       currentAudio = null;
+      stoppedCount++;
     }
 
-    console.log('🛑 TTS Debug: All audio stopped');
-    showStatus('All audio playback stopped', 'info');
+    console.log(`🛑 TTS Debug: All audio stopped (${stoppedCount} streams)`);
+    showStatus(`All audio playback stopped (${stoppedCount} streams)`, 'info');
   }
 
   // Add a function to create a stop button
@@ -556,19 +572,47 @@ function updateModelDropdown(selectElement, models, modelType) {
     console.log('⏹️ TTS Debug: stopSpeakText called for sourceId:', sourceId);
 
     // Try to stop the specific audio for this sourceId
-    if (ttsPlayers[sourceId] && ttsPlayers[sourceId].audio && !ttsPlayers[sourceId].audio.paused) {
+    if (ttsPlayers[sourceId] && ttsPlayers[sourceId].audio) {
       console.log('⏹️ TTS Debug: Stopping audio for sourceId:', sourceId);
-      ttsPlayers[sourceId].audio.pause();
-      // State update (paused=true, button state) handled by onpause listener
+      const player = ttsPlayers[sourceId];
+
+      // Stop the audio completely
+      player.audio.pause();
+      player.audio.currentTime = 0;
+
+      // Clean up the URL to free memory
+      if (player.url) {
+        URL.revokeObjectURL(player.url);
+      }
+
+      // Update button state immediately
+      setTTSButtonState(sourceId, 'ready');
+
+      // Clean up the player reference
+      delete ttsPlayers[sourceId];
+
+      // Clear global currentAudio if it matches this audio
+      if (currentAudio === player.audio) {
+        currentAudio = null;
+      }
+
       showStatus('Playback stopped.', 'info');
+      console.log('⏹️ TTS Debug: Audio stopped and cleaned up for sourceId:', sourceId);
       return;
     }
 
     // Fallback: stop global currentAudio if it exists
     if (currentAudio && !currentAudio.paused) {
+      console.log('⏹️ TTS Debug: Stopping global currentAudio as fallback');
       currentAudio.pause();
+      currentAudio.currentTime = 0;
+      currentAudio = null;
       setTTSButtonState(sourceId, 'ready');
       showStatus('Playback stopped.', 'info');
+    } else {
+      console.log('⏹️ TTS Debug: No active audio found for sourceId:', sourceId);
+      // Still update button state in case UI is out of sync
+      setTTSButtonState(sourceId, 'ready');
     }
   }
 

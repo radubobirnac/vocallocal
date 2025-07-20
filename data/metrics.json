@@ -36,10 +36,10 @@
       "failures": 0
     },
     "gemini-2.0-flash-lite": {
-      "calls": 8,
+      "calls": 12,
       "tokens": 0,
-      "chars": 1000,
-      "time": 3.8945956230163574,
+      "chars": 1256,
+      "time": 9.374481439590454,
       "failures": 0
     }
   },
@@ -515,17 +515,17 @@
   },
   "tts": {
     "openai": {
-      "calls": 19,
-      "tokens": 1419,
-      "chars": 5709,
-      "time": 111.63961935043335,
+      "calls": 21,
+      "tokens": 1437,
+      "chars": 5783,
+      "time": 116.98916983604431,
       "failures": 0
     },
     "gpt4o-mini": {
-      "calls": 43,
-      "tokens": 3379,
-      "chars": 13582,
-      "time": 259.862265586853,
+      "calls": 55,
+      "tokens": 3910,
+      "chars": 15721,
+      "time": 318.27625489234924,
       "failures": 3
     }
   },
