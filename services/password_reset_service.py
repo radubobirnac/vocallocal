@@ -6,10 +6,12 @@ Handles password reset functionality including token generation, validation, and
 import secrets
 import hashlib
 import logging
+import os
 from datetime import datetime, timedelta
 from typing import Dict, Optional, Tuple
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from flask import request
 
 from models.firebase_models import User
 from services.email_service import email_service
@@ -23,7 +25,52 @@ class PasswordResetService:
         self.token_expiry_minutes = 30  # Reset tokens expire in 30 minutes
         self.max_attempts = 3  # Maximum reset attempts per email per hour
         self.rate_limit_window = 3600  # 1 hour in seconds
-    
+
+    def get_base_url(self) -> str:
+        """
+        Get the base URL for the application.
+
+        Returns one of four specific base URLs:
+        1. https://vocallocal.com (production)
+        2. https://vocallocal-l5et5.ondigitalocean.app (production DigitalOcean)
+        3. https://test-vocallocal-x9n74.ondigitalocean.app (test DigitalOcean)
+        4. http://localhost:5001 (development)
+
+        Returns:
+            str: Base URL for the application
+        """
+        # 1. Check for explicit base URL in environment variables
+        base_url = os.environ.get('VOCALLOCAL_BASE_URL')
+        if base_url:
+            return base_url.rstrip('/')
+
+        # 2. Check for DigitalOcean App Platform URL
+        app_url = os.environ.get('APP_URL')
+        if app_url:
+            return app_url.rstrip('/')
+
+        # 3. Try to get URL from Flask request context
+        try:
+            from flask import has_request_context
+            if has_request_context() and request:
+                url_root = request.url_root.rstrip('/')
+                # Map known domains to your specific URLs
+                if 'vocallocal-l5et5.ondigitalocean.app' in url_root:
+                    return 'https://vocallocal-l5et5.ondigitalocean.app'
+                elif 'test-vocallocal-x9n74.ondigitalocean.app' in url_root:
+                    return 'https://test-vocallocal-x9n74.ondigitalocean.app'
+                elif 'vocallocal.com' in url_root:
+                    return 'https://vocallocal.com'
+                elif 'localhost' in url_root:
+                    return 'http://localhost:5001'
+                else:
+                    return url_root
+        except (RuntimeError, ImportError):
+            pass
+
+        # 4. Default to localhost for development
+        return 'http://localhost:5001'
+
     def generate_reset_token(self, email: str) -> str:
         """
         Generate a secure password reset token.
@@ -228,9 +275,9 @@ class PasswordResetService:
         msg['To'] = email
 
         display_name = username if username else email.split('@')[0]
-        
-        # Create reset link
-        base_url = "http://localhost:5001"  # Change this to your actual domain
+
+        # Create reset link with dynamic base URL
+        base_url = self.get_base_url()
         reset_link = f"{base_url}/auth/reset-password?email={email}&token={token}"
         
         # HTML version
