@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (currentPath.includes('/try_it_free') || currentPath.includes('/try-it-free')) {
       currentPage = 'try_it_free';
+    } else if (currentPath.includes('/pricing')) {
+      currentPage = 'pricing';
     } else if (currentPath.includes('/dashboard')) {
       currentPage = 'dashboard';
     } else if (currentPath.includes('/history')) {
