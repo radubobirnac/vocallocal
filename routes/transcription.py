@@ -501,15 +501,23 @@ def transcribe_free_trial():
         if 'free_trial_usage' not in session:
             session['free_trial_usage'] = {
                 'total_duration': 0,
+                'total_words': 0,
                 'last_reset': time.time(),
                 'requests': 0
             }
+
+        # Ensure all required fields exist (for backward compatibility)
+        if 'total_duration' not in session['free_trial_usage']:
+            session['free_trial_usage']['total_duration'] = 0
+        if 'total_words' not in session['free_trial_usage']:
+            session['free_trial_usage']['total_words'] = 0
 
         # Reset daily if more than 24 hours have passed
         current_time = time.time()
         if current_time - session['free_trial_usage']['last_reset'] > 86400:  # 24 hours
             session['free_trial_usage'] = {
                 'total_duration': 0,
+                'total_words': 0,
                 'last_reset': current_time,
                 'requests': 0
             }
