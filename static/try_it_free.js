@@ -317,8 +317,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     formData.append('model', selectedModel);
 
-    // Send to API
-    fetch('/api/transcribe', {
+    // Send to Try It Free API endpoint
+    fetch('/api/transcribe_free_trial', {
       method: 'POST',
       body: formData
     })
@@ -497,8 +497,8 @@ document.addEventListener('DOMContentLoaded', function() {
       bilingualProgressContainer.style.display = 'block';
       bilingualProgressText.textContent = 'Translating...';
 
-      // Send translation request
-      const response = await fetch('/api/translate', {
+      // Send translation request to Try It Free endpoint
+      const response = await fetch('/api/translate_free_trial', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

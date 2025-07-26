@@ -253,6 +253,88 @@ def translate_text():
             'details': 'See server logs for more information'
         }), 500
 
+@bp.route('/translate_free_trial', methods=['POST'])
+def translate_free_trial():
+    """
+    Endpoint for Try It Free translation without authentication requirement
+    """
+    try:
+        data = request.json
+        if not data or 'text' not in data or 'target_language' not in data:
+            return jsonify({'error': 'Missing required parameters: text and target_language'}), 400
+
+        text = data.get('text')
+        target_language = data.get('target_language')
+        translation_model = data.get('translation_model', 'gemini-2.0-flash-lite')
+
+        # Ensure only free models are used for free trial
+        if translation_model not in ['gemini-2.0-flash-lite']:
+            translation_model = 'gemini-2.0-flash-lite'
+
+        if not text.strip():
+            return jsonify({'error': 'Empty text provided'}), 400
+
+        # Track free trial usage with session
+        from flask import session
+        import time
+
+        # Initialize session tracking if not exists
+        if 'free_trial_usage' not in session:
+            session['free_trial_usage'] = {
+                'total_words': 0,
+                'last_reset': time.time(),
+                'requests': 0
+            }
+
+        # Reset daily if more than 24 hours have passed
+        current_time = time.time()
+        if current_time - session['free_trial_usage']['last_reset'] > 86400:  # 24 hours
+            session['free_trial_usage'] = {
+                'total_words': 0,
+                'last_reset': current_time,
+                'requests': 0
+            }
+
+        # Count words in the text
+        word_count = len(text.split())
+
+        # Check if adding these words would exceed the limit (1000 words for free trial)
+        projected_total = session['free_trial_usage']['total_words'] + word_count
+        if projected_total > 1000:
+            return jsonify({
+                'error': 'You have exceeded the free trial limit of 1000 words per day.',
+                'errorType': 'FreeTrial_WordLimitExceeded',
+                'details': 'Please sign up for a full account to continue using translation.',
+                'usage': session['free_trial_usage']
+            }), 429  # 429 Too Many Requests
+
+        # Update usage tracking
+        session['free_trial_usage']['total_words'] += word_count
+        session['free_trial_usage']['requests'] += 1
+
+        # Use the translation service
+        translated_text = translation_service.translate(text, target_language, translation_model)
+
+        return jsonify({
+            'text': translated_text,
+            'model': translation_model,
+            'target_language': target_language,
+            'word_count': word_count,
+            'usage': session['free_trial_usage'],
+            'free_trial': True
+        })
+
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Free trial translation error: {str(e)}\n{error_details}")
+
+        return jsonify({
+            'error': str(e),
+            'errorType': type(e).__name__,
+            'details': 'Free trial translation failed'
+        }), 500
+
 @bp.route('/languages', methods=['GET'])
 def get_languages():
     """Return a list of supported languages"""

@@ -451,6 +451,107 @@ def transcribe_audio():
 
     return jsonify({'error': f'Invalid file type. Allowed types: {", ".join(Config.ALLOWED_EXTENSIONS)}'}), 400
 
+@bp.route('/transcribe_free_trial', methods=['POST'])
+def transcribe_free_trial():
+    """Endpoint for Try It Free transcription without authentication requirement"""
+    try:
+        # Check if file is present
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+
+        # Get parameters
+        language = request.form.get('language', 'en')
+        model = request.form.get('model', 'gemini-2.0-flash-lite')
+
+        # Ensure only free models are used for free trial
+        if model not in ['gemini-2.0-flash-lite']:
+            model = 'gemini-2.0-flash-lite'
+
+        # Read audio content
+        audio_content = file.read()
+
+        # Check file size for free trial (max 25MB)
+        file_size_mb = len(audio_content) / (1024 * 1024)
+        if file_size_mb > 25:
+            return jsonify({
+                'error': 'File size exceeds the free trial limit of 25MB.',
+                'errorType': 'FreeTrial_FileSizeLimitExceeded',
+                'details': 'Please sign up for a full account to process larger files.'
+            }), 413
+
+        # Check audio duration for free trial (estimate based on file size)
+        # Rough estimate: ~1MB per minute for compressed audio
+        estimated_duration_minutes = file_size_mb
+        if estimated_duration_minutes > 3:
+            return jsonify({
+                'error': 'Audio duration exceeds the free trial limit of 3 minutes.',
+                'errorType': 'FreeTrial_DurationLimitExceeded',
+                'details': 'Please sign up for a full account to process longer recordings.'
+            }), 413
+
+        # Track free trial usage with session
+        from flask import session
+        import time
+
+        # Initialize session tracking if not exists
+        if 'free_trial_usage' not in session:
+            session['free_trial_usage'] = {
+                'total_duration': 0,
+                'last_reset': time.time(),
+                'requests': 0
+            }
+
+        # Reset daily if more than 24 hours have passed
+        current_time = time.time()
+        if current_time - session['free_trial_usage']['last_reset'] > 86400:  # 24 hours
+            session['free_trial_usage'] = {
+                'total_duration': 0,
+                'last_reset': current_time,
+                'requests': 0
+            }
+
+        # Add current estimated duration to total
+        session['free_trial_usage']['total_duration'] += estimated_duration_minutes
+        session['free_trial_usage']['requests'] += 1
+
+        # Check if total duration exceeds limit (3 minutes)
+        if session['free_trial_usage']['total_duration'] > 3:
+            return jsonify({
+                'error': 'You have exceeded the free trial limit of 3 minutes per day.',
+                'errorType': 'FreeTrial_DailyLimitExceeded',
+                'details': 'Please sign up for a full account to continue using VocalLocal.',
+                'usage': session['free_trial_usage']
+            }), 429  # 429 Too Many Requests
+
+        # Process transcription using the service
+        from services.transcription import transcription_service
+
+        # Use transcription service for free trial (same method as main endpoint)
+        result = transcription_service.transcribe(audio_content, language, model)
+
+        return jsonify({
+            'text': result,
+            'model': model,
+            'language': language,
+            'usage': session['free_trial_usage'],
+            'free_trial': True
+        })
+
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Free trial transcription error: {str(e)}\n{error_details}")
+
+        return jsonify({
+            'error': str(e),
+            'errorType': type(e).__name__,
+            'details': 'Free trial transcription failed'
+        }), 500
+
 @bp.route('/test_transcribe_chunk', methods=['POST'])
 def test_transcribe_chunk():
     """Test-only endpoint for chunk transcription that bypasses usage tracking and authentication"""
