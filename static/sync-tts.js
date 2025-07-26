@@ -508,13 +508,13 @@ function addModeAndLanguageListeners() {
 
 /**
  * Add event listeners for automatic TTS after translation
+ * Note: TTS checkboxes have been removed from the UI
  */
 function addAutoTTSListeners() {
-  // Find the enable TTS checkboxes
-  const enableTTS1 = document.getElementById('enable-tts-1');
-  const enableTTS2 = document.getElementById('enable-tts-2');
+  // TTS checkboxes have been removed from the bilingual mode interface
+  // This function is kept for compatibility but no longer adds automatic TTS
 
-  // Monitor changes to translation elements
+  // Monitor changes to translation elements (for potential future use)
   const translation1 = document.getElementById('translation-1');
   const translation2 = document.getElementById('translation-2');
 

@@ -1446,11 +1446,7 @@ function updateModelDropdown(selectElement, models, modelType) {
               translationEl.value = translatedText;
             }
 
-            // Play TTS if enabled for the partner
-            const enableTTS = document.getElementById('enable-tts-2');
-            if (enableTTS && enableTTS.checked) {
-              speakText(translatedText, partnerLang);
-            }
+            // TTS functionality removed - translations will not be read aloud automatically
 
             showStatus('Translation complete!', 'success');
           }
@@ -1484,11 +1480,7 @@ function updateModelDropdown(selectElement, models, modelType) {
               translationEl.value = translatedText;
             }
 
-            // Play TTS if enabled for the partner
-            const enableTTS = document.getElementById('enable-tts-1');
-            if (enableTTS && enableTTS.checked) {
-              speakText(translatedText, partnerLang);
-            }
+            // TTS functionality removed - translations will not be read aloud automatically
 
             showStatus('Translation complete!', 'success');
           }
@@ -2180,7 +2172,6 @@ function updateModelDropdown(selectElement, models, modelType) {
       stopTranslationBtn: document.getElementById('stop-translation-1'),
       copyTranscriptBtn: document.getElementById('copy-transcript-1'),
       copyTranslationBtn: document.getElementById('copy-translation-1'),
-      enableTTS: document.getElementById('enable-tts-1'),
       recording: null,
       isRecording: false,
       partnerId: 2
@@ -2198,7 +2189,6 @@ function updateModelDropdown(selectElement, models, modelType) {
       stopTranslationBtn: document.getElementById('stop-translation-2'),
       copyTranscriptBtn: document.getElementById('copy-transcript-2'),
       copyTranslationBtn: document.getElementById('copy-translation-2'),
-      enableTTS: document.getElementById('enable-tts-2'),
       recording: null,
       isRecording: false,
       partnerId: 1
@@ -2309,18 +2299,7 @@ function updateModelDropdown(selectElement, models, modelType) {
                       // Update partner's translation display
                       partnerSpeaker.translationEl.value = translatedText;
 
-                      // Play TTS if enabled for the partner
-                      if (partnerSpeaker.enableTTS && partnerSpeaker.enableTTS.checked) {
-                        // Use the correct sourceId format for the translation
-                        const sourceId = `translation-${partnerSpeaker.id}`;
-
-                        // Small delay to ensure the DOM is updated with the latest translation
-                        setTimeout(() => {
-                          // Get the text directly from the DOM element to ensure it's current
-                          const currentTranslationText = partnerSpeaker.translationEl.value;
-                          speakText(sourceId, currentTranslationText, partnerLang);
-                        }, 100);
-                      }
+                      // TTS functionality removed - translations will not be read aloud automatically
 
                       showStatus('Transcription and translation complete!', 'success');
                     } else {

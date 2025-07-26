@@ -232,12 +232,12 @@ p {
 }
 
 .card-content {
-  padding: 1rem;
+  padding: 0.75rem;
 }
 
 /* Form controls */
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .form-label {
@@ -597,7 +597,7 @@ p {
 
 /* Translation section */
 .translation-section {
-  margin-top: 1rem;
+  margin-top: 0.5rem;
 }
 
 /* Interpretation section */
@@ -744,13 +744,61 @@ p {
   margin-bottom: 0.5rem;
 }
 
-/* Speaker cards for bilingual mode */
+/* Enhanced speaker cards for bilingual mode */
 .speaker-card-1 .card-header {
-  background-color: hsla(240, 100%, 97%, 0.5);
+  background: linear-gradient(135deg, hsla(240, 100%, 97%, 0.8), hsla(240, 100%, 95%, 0.6));
+  border-bottom: 2px solid hsla(240, 100%, 90%, 0.8);
 }
 
 .speaker-card-2 .card-header {
-  background-color: hsla(170, 100%, 97%, 0.5);
+  background: linear-gradient(135deg, hsla(170, 100%, 97%, 0.8), hsla(170, 100%, 95%, 0.6));
+  border-bottom: 2px solid hsla(170, 100%, 90%, 0.8);
+}
+
+/* Enhanced bilingual mode container */
+#bilingual-mode-content {
+  transition: all 0.3s ease;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+#bilingual-mode-content[style*="block"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Add subtle animation when bilingual mode is active */
+.bilingual-mode-active .speaker-card-1,
+.bilingual-mode-active .speaker-card-2 {
+  animation: slideInUp 0.4s ease-out;
+}
+
+/* Compact styling for bilingual mode conversation cards */
+#bilingual-mode-content .card-content {
+  padding: 0.5rem;
+}
+
+#bilingual-mode-content .form-group {
+  margin-bottom: 0.5rem;
+}
+
+#bilingual-mode-content .translation-section {
+  margin-top: 0.25rem;
+}
+
+#bilingual-mode-content .transcript-controls {
+  margin-top: 0.5rem;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Upload progress indicator */
@@ -969,6 +1017,23 @@ header .flex.items-center.gap-6 {
   /* Extra small screens */
   .bilingual-mode-label {
     font-size: 0.7rem;
+  }
+
+  /* Smaller toggle switch for mobile */
+  .toggle-switch {
+    width: 36px;
+    height: 20px;
+  }
+
+  .slider:before {
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(16px);
   }
 
   header .button.button-outline.button-icon {

@@ -304,7 +304,7 @@
     </div>
 
     <!-- BILINGUAL MODE -->
-    <div id="bilingual-mode-content" class="space-y-6" style="display: none;">
+    <div id="bilingual-mode-content" class="space-y-1" style="display: none;">
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Speaker 1 UI -->
@@ -321,18 +321,9 @@
             </div>
           </div>
           <div class="card-content">
-            <div class="space-y-4">
-              <div class="form-group">
-                <label for="language-1" class="form-label">Your Language:</label>
-                <select id="language-1" class="form-select"></select>
-              </div>
-
-
-
-              <div class="form-checkbox mt-4">
-                <input type="checkbox" id="enable-tts-1" class="form-checkbox-input">
-                <label for="enable-tts-1" class="form-checkbox-label">Read translations aloud</label>
-              </div>
+            <div class="form-group">
+              <label for="language-1" class="form-label">Your Language:</label>
+              <select id="language-1" class="form-select"></select>
             </div>
           </div>
         </div>
@@ -351,18 +342,9 @@
             </div>
           </div>
           <div class="card-content">
-            <div class="space-y-4">
-              <div class="form-group">
-                <label for="language-2" class="form-label">Your Language:</label>
-                <select id="language-2" class="form-select"></select>
-              </div>
-
-
-
-              <div class="form-checkbox mt-4">
-                <input type="checkbox" id="enable-tts-2" class="form-checkbox-input">
-                <label for="enable-tts-2" class="form-checkbox-label">Read translations aloud</label>
-              </div>
+            <div class="form-group">
+              <label for="language-2" class="form-label">Your Language:</label>
+              <select id="language-2" class="form-select"></select>
             </div>
           </div>
         </div>
@@ -813,5 +795,7 @@
   </script>
   <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
   <script src="{{ url_for('static', filename='js/email-verification-modal.js') }}"></script>
+
+
 </body>
 </html>
