@@ -26,6 +26,77 @@
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='auth.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='home.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/upgrade-modal.css') }}">
+
+  <!-- Pricing Section Styles -->
+  <style>
+    /* Edge compatibility fallbacks for CSS custom properties */
+    .pricing-card {
+      border: 2px solid #e2e8f0; /* Fallback */
+      border: 2px solid hsl(var(--border));
+      background: #ffffff; /* Fallback */
+      background: hsl(var(--card));
+      color: #1a202c; /* Fallback */
+      color: hsl(var(--foreground));
+    }
+
+    .pricing-card h3 {
+      color: #1a202c; /* Fallback */
+      color: hsl(var(--foreground));
+    }
+
+    .pricing-hero h1 {
+      color: #667eea; /* Fallback */
+      color: hsl(var(--primary));
+    }
+
+    .pricing-hero p {
+      color: #718096; /* Fallback */
+      color: hsl(var(--muted-foreground));
+    }
+
+    .button-primary {
+      background-color: #667eea; /* Fallback */
+      background-color: hsl(var(--primary));
+      color: #ffffff; /* Fallback */
+      color: hsl(var(--primary-foreground));
+    }
+
+    /* Responsive grid adjustments for 4 cards */
+    @media (min-width: 1400px) {
+      .pricing-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+        max-width: 1400px !important;
+      }
+    }
+
+    @media (max-width: 1399px) and (min-width: 1025px) {
+      .pricing-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        max-width: 800px !important;
+      }
+    }
+
+    @media (max-width: 1024px) and (min-width: 769px) {
+      .pricing-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        max-width: 700px !important;
+        gap: 1.5rem !important;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .pricing-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.5rem !important;
+        max-width: 400px !important;
+      }
+
+      .pricing-card {
+        margin: 0 auto !important;
+        max-width: 400px !important;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="home-container">
@@ -45,7 +116,7 @@
           <div class="navbar-links">
             <a href="{{ url_for('main.index') }}" class="nav-link" data-page="home">Home</a>
             <a href="#about" class="nav-link" data-section="about">About Us</a>
-            <a href="{{ url_for('pricing') }}" class="nav-link" data-page="pricing">Pricing Plans</a>
+            <a href="#pricing" class="nav-link" data-section="pricing">Pricing Plans</a>
             <a href="{{ url_for('main.try_it_free') }}" class="nav-link" data-page="try_it_free">Try It Free</a>
           </div>
         </div>
@@ -269,109 +340,203 @@
 
     <!-- Pricing Section -->
     <section id="pricing" class="pricing-section">
-      <div class="section-header">
-        <h2 class="section-title">Pricing Plans</h2>
-        <p class="section-subtitle">Choose the plan that fits your needs</p>
+      <div class="pricing-container">
+        <!-- Hero Section -->
+        <div class="pricing-hero" style="text-align: center; margin-bottom: 3rem;">
+          <h1 style="font-size: 2.5rem; margin-bottom: 1rem; color: hsl(var(--primary));">Choose Your Plan</h1>
+          <p style="font-size: 1.2rem; color: hsl(var(--muted-foreground)); max-width: 600px; margin: 0 auto;">
+            Unlock premium AI models, higher usage limits, and advanced features with our flexible subscription plans.
+          </p>
+        </div>
+
+        <!-- Pricing Cards -->
+        <div class="pricing-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; max-width: 1400px; margin: 0 auto;">
+
+          <!-- Free Plan -->
+          <div class="pricing-card" style="border: 2px solid hsl(var(--border)); border-radius: 15px; padding: 2rem; background: hsl(var(--card)); position: relative;">
+            <div class="plan-header" style="text-align: center; margin-bottom: 2rem;">
+              <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: hsl(var(--foreground));">Free Plan</h3>
+              <div style="font-size: 2.5rem; font-weight: 700; color: hsl(var(--primary)); margin-bottom: 0.5rem;">$0</div>
+              <div style="color: hsl(var(--muted-foreground));">per month</div>
+            </div>
+
+            <ul style="list-style: none; padding: 0; margin-bottom: 2rem;">
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+                60 transcription minutes per month
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+                10,000 translation words per month
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-times" style="color: #f44336; margin-right: 0.5rem;"></i>
+                No text-to-speech access
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-times" style="color: #f44336; margin-right: 0.5rem;"></i>
+                No AI credits
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+                Basic AI models
+              </li>
+            </ul>
+
+            {% if current_user.is_authenticated %}
+              <a href="{{ url_for('main.index') }}" class="button button-outline w-full" style="width: 100%; justify-content: center;">
+                Current Plan
+              </a>
+            {% else %}
+              <a href="{{ url_for('auth.register') }}" class="button button-outline w-full" style="width: 100%; justify-content: center;">
+                Get Started Free
+              </a>
+            {% endif %}
+          </div>
+
+          <!-- Basic Plan -->
+          <div class="pricing-card" style="border: 2px solid hsl(var(--border)); border-radius: 15px; padding: 2rem; background: hsl(var(--card)); position: relative;">
+            <div class="plan-header" style="text-align: center; margin-bottom: 2rem;">
+              <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: hsl(var(--foreground));">Basic Plan</h3>
+              <div style="font-size: 2.5rem; font-weight: 700; color: hsl(var(--primary)); margin-bottom: 0.5rem;">$4.99</div>
+              <div style="color: hsl(var(--muted-foreground));">per month</div>
+            </div>
+
+            <ul style="list-style: none; padding: 0; margin-bottom: 2rem;">
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #6b7280; margin-right: 0.5rem;"></i>
+                280 transcription minutes per month
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #6b7280; margin-right: 0.5rem;"></i>
+                50,000 translation words per month
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #6b7280; margin-right: 0.5rem;"></i>
+                60 TTS minutes per month
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #6b7280; margin-right: 0.5rem;"></i>
+                50 AI credits per month
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #6b7280; margin-right: 0.5rem;"></i>
+                Access to premium AI models
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #6b7280; margin-right: 0.5rem;"></i>
+                Email support
+              </li>
+            </ul>
+
+            {% if current_user.is_authenticated %}
+              <button class="button button-primary w-full upgrade-btn" data-plan="basic" style="width: 100%; justify-content: center;">
+                Upgrade to Basic
+              </button>
+            {% else %}
+              <a href="{{ url_for('auth.login', next='/pricing') }}" class="button button-primary w-full" style="width: 100%; justify-content: center;">
+                Choose Basic Plan
+              </a>
+            {% endif %}
+          </div>
+
+          <!-- Professional Plan -->
+          <div class="pricing-card" style="border: 2px solid #667eea; border-radius: 15px; padding: 2rem; background: hsl(var(--card)); position: relative;">
+            <div style="position: absolute; top: -10px; right: 20px; background: #ff4757; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">
+              POPULAR
+            </div>
+
+            <div class="plan-header" style="text-align: center; margin-bottom: 2rem;">
+              <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: hsl(var(--foreground));">Professional Plan</h3>
+              <div style="font-size: 2.5rem; font-weight: 700; color: #667eea; margin-bottom: 0.5rem;">$12.99</div>
+              <div style="color: hsl(var(--muted-foreground));">per month</div>
+            </div>
+
+            <ul style="list-style: none; padding: 0; margin-bottom: 2rem;">
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+                800 transcription minutes per month
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+                160,000 translation words per month
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+                200 TTS minutes per month
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+                150 AI credits per month
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+                Access to all premium AI models
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+                Priority email support
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+                Advanced features
+              </li>
+            </ul>
+
+            {% if current_user.is_authenticated %}
+              <button class="button button-primary w-full upgrade-btn" data-plan="professional" style="width: 100%; justify-content: center; background: #667eea;">
+                Upgrade to Professional
+              </button>
+            {% else %}
+              <a href="{{ url_for('auth.login', next='/pricing') }}" class="button button-primary w-full" style="width: 100%; justify-content: center; background: #667eea;">
+                Choose Professional Plan
+              </a>
+            {% endif %}
+          </div>
+
+          <!-- Pay-As-You-Go Plan -->
+          <div class="pricing-card" style="border: 2px solid hsl(var(--border)); border-radius: 15px; padding: 2rem; background: hsl(var(--card)); position: relative;">
+            <div class="plan-header" style="text-align: center; margin-bottom: 2rem;">
+              <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: hsl(var(--foreground));">Pay-As-You-Go</h3>
+              <div style="font-size: 2.5rem; font-weight: 700; color: hsl(var(--primary)); margin-bottom: 0.5rem;">300</div>
+              <div style="color: hsl(var(--muted-foreground));">credits included</div>
+            </div>
+
+            <ul style="list-style: none; padding: 0; margin-bottom: 2rem;">
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+                $0.15/min TTS overage
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+                $0.10/min transcription overage
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+                $0.001/word translation overage
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+                Only pay for usage beyond limits
+              </li>
+              <li style="padding: 0.5rem 0; display: flex; align-items: center;">
+                <i class="fas fa-check" style="color: #4CAF50; margin-right: 0.5rem;"></i>
+                Requires Basic or Professional plan
+              </li>
+            </ul>
+
+            {% if current_user.is_authenticated %}
+              <button id="enable-payg-static-btn" class="button button-primary w-full" style="width: 100%; justify-content: center;">
+                Enable Pay-As-You-Go
+              </button>
+            {% else %}
+              <a href="{{ url_for('auth.login', next='/pricing') }}" class="button button-primary w-full" style="width: 100%; justify-content: center;">
+                Sign In to Enable
+              </a>
+            {% endif %}
+          </div>
+        </div>
       </div>
-      <div class="pricing-grid">
-        <!-- Free Plan -->
-        <div class="pricing-card">
-          <div class="pricing-header">
-            <h3 class="pricing-title">Free Plan</h3>
-            <p class="pricing-price">$0<span>/month</span></p>
-          </div>
-          <div class="pricing-features">
-            <ul>
-              <li>60 transcription minutes per month</li>
-              <li>10,000 translation words per month</li>
-              <li>No text-to-speech access</li>
-              <li>No AI credits</li>
-              <li>Basic AI models</li>
-            </ul>
-          </div>
-          {% if current_user.is_authenticated %}
-            <a href="{{ url_for('main.index') }}" class="button button-outline pricing-button">Current Plan</a>
-          {% else %}
-            <a href="{{ url_for('auth.register') }}" class="button button-outline pricing-button">Get Started Free</a>
-          {% endif %}
-        </div>
-
-        <!-- Basic Plan -->
-        <div class="pricing-card">
-          <div class="pricing-header">
-            <h3 class="pricing-title">Basic Plan</h3>
-            <p class="pricing-price">$4.99<span>/month</span></p>
-          </div>
-          <div class="pricing-features">
-            <ul>
-              <li>280 transcription minutes per month</li>
-              <li>50,000 translation words per month</li>
-              <li>60 TTS minutes per month</li>
-              <li>50 AI credits per month</li>
-              <li>Access to premium AI models</li>
-              <li>Email support</li>
-            </ul>
-          </div>
-          {% if current_user.is_authenticated %}
-            <button class="button button-primary pricing-button-compact upgrade-btn" data-plan="basic">Upgrade to Basic</button>
-          {% else %}
-            <a href="{{ url_for('auth.login', next='/pricing') }}" class="button button-primary pricing-button-compact">Choose Basic Plan</a>
-          {% endif %}
-        </div>
-
-        <!-- Professional Plan -->
-        <div class="pricing-card pricing-card-highlighted">
-          <div class="popular-badge">
-            MOST POPULAR
-          </div>
-          <div class="pricing-header">
-            <h3 class="pricing-title">Professional Plan</h3>
-            <p class="pricing-price">$12.99<span>/month</span></p>
-          </div>
-          <div class="pricing-features">
-            <ul>
-              <li>800 transcription minutes per month</li>
-              <li>160,000 translation words per month</li>
-              <li>200 TTS minutes per month</li>
-              <li>150 AI credits per month</li>
-              <li>Access to all premium AI models</li>
-              <li>Priority email support</li>
-              <li>Advanced features</li>
-            </ul>
-          </div>
-          {% if current_user.is_authenticated %}
-            <button class="button button-primary pricing-button-compact upgrade-btn" data-plan="professional">Upgrade to Professional</button>
-          {% else %}
-            <a href="{{ url_for('auth.login', next='/pricing') }}" class="button button-primary pricing-button-compact">Choose Professional Plan</a>
-          {% endif %}
-        </div>
-
-        <!-- Pay-As-You-Go Plan -->
-        <div class="pricing-card">
-          <div class="pricing-header">
-            <h3 class="pricing-title">Pay-As-You-Go</h3>
-            <p class="pricing-price">300<span class="pricing-unit">credits</span></p>
-          </div>
-          <div class="pricing-features">
-            <ul>
-              <li>300 AI credits included</li>
-              <li>Requires Basic or Professional Plan</li>
-              <li>Overage billing for additional usage</li>
-              <li>TTS: $0.15 per minute</li>
-              <li>Transcription: $0.10 per minute</li>
-              <li>Translation: $0.001 per word</li>
-              <li>Flexible usage tracking</li>
-            </ul>
-          </div>
-          {% if current_user.is_authenticated %}
-            <button class="button button-secondary pricing-button-compact payg-enable-btn">Enable Pay-As-You-Go</button>
-          {% else %}
-            <a href="{{ url_for('auth.login', next='/pricing') }}" class="button button-secondary pricing-button-compact">Sign In to Enable</a>
-          {% endif %}
-        </div>
-      </div>
-
-
     </section>
 
     <!-- Footer -->
