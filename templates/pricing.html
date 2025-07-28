@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/upgrade-modal.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/edge-compatibility.css') }}">
 </head>
 <body {% if current_user.is_authenticated %}class="authenticated" data-user-authenticated="true"{% endif %}>
   <div class="container">
@@ -292,6 +293,37 @@
 
   <!-- Pricing Card Styles -->
   <style>
+    /* Edge compatibility fallbacks for CSS custom properties */
+    .pricing-card {
+      border: 2px solid #e2e8f0; /* Fallback */
+      border: 2px solid hsl(var(--border));
+      background: #ffffff; /* Fallback */
+      background: hsl(var(--card));
+      color: #1a202c; /* Fallback */
+      color: hsl(var(--foreground));
+    }
+
+    .pricing-card h3 {
+      color: #1a202c; /* Fallback */
+      color: hsl(var(--foreground));
+    }
+
+    .pricing-hero h1 {
+      color: #667eea; /* Fallback */
+      color: hsl(var(--primary));
+    }
+
+    .pricing-hero p {
+      color: #718096; /* Fallback */
+      color: hsl(var(--muted-foreground));
+    }
+
+    .button-primary {
+      background-color: #667eea; /* Fallback */
+      background-color: hsl(var(--primary));
+      color: #ffffff; /* Fallback */
+      color: hsl(var(--primary-foreground));
+    }
 
     /* Responsive grid adjustments for 4 cards */
     @media (min-width: 1400px) {
@@ -494,6 +526,7 @@
   </script>
 
   <!-- Scripts -->
+  <script src="{{ url_for('static', filename='js/edge-compatibility.js') }}"></script>
   <script src="{{ url_for('static', filename='script.js') }}"></script>
   <script src="{{ url_for('static', filename='common.js') }}"></script>
   <script src="{{ url_for('static', filename='auth.js') }}"></script>

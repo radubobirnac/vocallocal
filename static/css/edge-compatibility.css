@@ -1,0 +1,305 @@
+/* Edge Browser Compatibility Fixes for Pricing Page */
+
+/* CSS Grid Fallbacks for Edge */
+@supports not (display: grid) {
+  .pricing-grid {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 2rem !important;
+  }
+  
+  .pricing-card {
+    flex: 1 1 300px !important;
+    max-width: 350px !important;
+    margin: 0 1rem 2rem 1rem !important;
+  }
+}
+
+/* Edge-specific media queries for better responsive behavior */
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+  /* Edge-specific styles */
+  .pricing-grid {
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -ms-flex-pack: center;
+    justify-content: center;
+  }
+  
+  .pricing-card {
+    -ms-flex: 1 1 300px;
+    flex: 1 1 300px;
+    max-width: 350px;
+    margin: 0 1rem 2rem 1rem;
+  }
+  
+  /* Fix for CSS custom properties in Edge */
+  .pricing-card {
+    border: 2px solid #e2e8f0;
+    background: #ffffff;
+    color: #1a202c;
+  }
+  
+  .pricing-card h3 {
+    color: #1a202c;
+  }
+  
+  .pricing-card .plan-header div:first-of-type {
+    color: #667eea;
+  }
+  
+  /* Dark mode fallbacks for Edge */
+  html[data-theme='dark'] .pricing-card {
+    border: 2px solid #4a5568;
+    background: #2d3748;
+    color: #f7fafc;
+  }
+  
+  html[data-theme='dark'] .pricing-card h3 {
+    color: #f7fafc;
+  }
+  
+  /* Button fallbacks */
+  .button-primary {
+    background-color: #667eea;
+    color: #ffffff;
+    border: 1px solid #667eea;
+  }
+  
+  .button-primary:hover {
+    background-color: #5a67d8;
+    border-color: #5a67d8;
+  }
+  
+  /* Professional plan highlight fallback */
+  .pricing-card:nth-child(2) {
+    border-color: #667eea;
+  }
+}
+
+/* Flexbox fallbacks for older Edge versions */
+.pricing-hero {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.pricing-hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #667eea;
+}
+
+.pricing-hero p {
+  font-size: 1.2rem;
+  color: #718096;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Authentication state fallbacks */
+.authenticated .pricing-card {
+  /* Ensure authenticated state is visible in Edge */
+  opacity: 1;
+  transition: all 0.3s ease;
+}
+
+/* Plan highlighting fallbacks for Edge */
+.plan-highlighted {
+  transform: scale(1.05) !important;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3) !important;
+  border: 3px solid #667eea !important;
+  transition: all 0.3s ease !important;
+}
+
+/* Animation fallbacks for Edge */
+@keyframes planGlow {
+  0%, 100% { 
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(color=#4d667eea, Direction=135, Strength=15)";
+  }
+  50% { 
+    box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+    -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(color=#80667eea, Direction=135, Strength=20)";
+  }
+}
+
+/* Edge-specific responsive adjustments */
+@media screen and (max-width: 1399px) and (min-width: 1025px) {
+  .pricing-grid {
+    -ms-grid-columns: 1fr 2rem 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 800px;
+    margin: 0 auto;
+  }
+}
+
+@media screen and (max-width: 1024px) and (min-width: 769px) {
+  .pricing-grid {
+    -ms-grid-columns: 1fr 1.5rem 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 700px;
+    gap: 1.5rem;
+    margin: 0 auto;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .pricing-grid {
+    -ms-grid-columns: 1fr;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  
+  .pricing-card {
+    margin: 0 auto;
+    max-width: 400px;
+  }
+}
+
+/* Edge-specific form and button improvements */
+.button {
+  display: -ms-inline-flexbox;
+  display: inline-flex;
+  -ms-flex-align: center;
+  align-items: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+/* Edge-specific header improvements */
+header {
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  -ms-flex-align: start;
+  align-items: flex-start;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+@media screen and (min-width: 768px) {
+  header {
+    -ms-flex-direction: row;
+    flex-direction: row;
+    -ms-flex-align: center;
+    align-items: center;
+  }
+}
+
+/* Edge-specific utility classes */
+.flex {
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.flex-col {
+  -ms-flex-direction: column;
+  flex-direction: column;
+}
+
+.items-center {
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+.justify-between {
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+}
+
+.w-full {
+  width: 100%;
+}
+
+/* Edge-specific notification styles */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #48bb78;
+  color: #ffffff;
+  padding: 1rem 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  animation: slideInRight 0.3s ease-out;
+  max-width: 300px;
+  word-wrap: break-word;
+}
+
+@keyframes slideInRight {
+  from { 
+    transform: translateX(100%); 
+    opacity: 0; 
+  }
+  to { 
+    transform: translateX(0); 
+    opacity: 1; 
+  }
+}
+
+/* Edge-specific dark mode improvements */
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+  html[data-theme='dark'] {
+    background-color: #1a202c;
+    color: #f7fafc;
+  }
+  
+  html[data-theme='dark'] .pricing-hero h1 {
+    color: #667eea;
+  }
+  
+  html[data-theme='dark'] .pricing-hero p {
+    color: #a0aec0;
+  }
+  
+  html[data-theme='dark'] .button-primary {
+    background-color: #667eea;
+    color: #ffffff;
+  }
+  
+  html[data-theme='dark'] .button-primary:hover {
+    background-color: #5a67d8;
+  }
+}
+
+/* Edge-specific loading states */
+.loading {
+  opacity: 0.7;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* Edge-specific focus improvements */
+.button:focus,
+.pricing-card:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* Edge-specific accessibility improvements */
+@media screen and (-ms-high-contrast: active) {
+  .pricing-card {
+    border: 3px solid;
+  }
+  
+  .button-primary {
+    border: 2px solid;
+  }
+  
+  .plan-highlighted {
+    border: 4px solid;
+  }
+}
