@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='styles.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='home.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='try_it_free.css') }}">
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/brand-link.css') }}">
 
   <!-- ProgressBar.js for circular progress indicator -->
   <script src="https://cdn.jsdelivr.net/npm/progressbar.js@1.1.0/dist/progressbar.min.js"></script>
@@ -32,8 +33,10 @@
         <!-- Left section - Brand -->
         <div class="navbar-brand">
           <h1 class="brand-title">
-            <span class="brand-icon"><i class="fas fa-microphone-alt"></i></span>
-            <a href="{{ url_for('index') }}" style="color: hsl(var(--primary)); text-decoration: none;">VocalLocal</a>
+            <a href="{{ url_for('main.index') }}" class="brand-link">
+              <span class="brand-icon"><i class="fas fa-microphone-alt"></i></span>
+              <span class="brand-name">VocalLocal</span>
+            </a>
           </h1>
         </div>
 

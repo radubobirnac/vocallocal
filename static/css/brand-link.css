@@ -1,0 +1,226 @@
+/* Brand Link Styles - Make VocalLocal brand name clickable across all pages */
+
+/* Brand link base styles */
+.brand-link {
+  text-decoration: none !important;
+  color: inherit !important;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+/* Ensure brand link inherits parent colors */
+.brand-link:visited,
+.brand-link:link {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+/* Brand link hover effects */
+.brand-link:hover {
+  color: inherit !important;
+  text-decoration: none !important;
+  opacity: 0.8;
+  transform: translateY(-1px);
+}
+
+.brand-link:active {
+  transform: translateY(0);
+  opacity: 0.9;
+}
+
+/* Brand name specific styles */
+.brand-name {
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.3s ease;
+}
+
+/* Brand icon styles */
+.brand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.brand-link:hover .brand-icon {
+  transform: scale(1.1);
+}
+
+.brand-link:hover .brand-name {
+  letter-spacing: 0.5px;
+}
+
+/* Header title brand links (for authenticated pages) */
+.header-title-container h1 a {
+  text-decoration: none !important;
+  color: inherit !important;
+  transition: all 0.3s ease;
+}
+
+.header-title-container h1 a:hover {
+  color: inherit !important;
+  text-decoration: none !important;
+  opacity: 0.8;
+  transform: translateY(-1px);
+}
+
+.header-title-container h1 a:visited,
+.header-title-container h1 a:link {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+/* Navbar brand title styles */
+.brand-title {
+  margin: 0;
+  padding: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+}
+
+.brand-title .brand-link {
+  font-size: inherit;
+  font-weight: inherit;
+  font-family: inherit;
+}
+
+/* Accessibility improvements */
+.brand-link:focus {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.brand-link:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Dark mode compatibility */
+html[data-theme='dark'] .brand-link {
+  color: inherit !important;
+}
+
+html[data-theme='dark'] .brand-link:hover {
+  color: inherit !important;
+  opacity: 0.8;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .brand-link {
+    gap: 0.25rem;
+  }
+  
+  .brand-title {
+    font-size: 1.25rem;
+  }
+  
+  .brand-link:hover {
+    transform: none; /* Disable transform on mobile for better touch experience */
+  }
+  
+  .brand-link:hover .brand-icon {
+    transform: scale(1.05); /* Reduced scale on mobile */
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .brand-link:focus {
+    outline: 3px solid;
+    outline-offset: 3px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .brand-link,
+  .brand-name,
+  .brand-icon,
+  .header-title-container h1 a {
+    transition: none;
+  }
+  
+  .brand-link:hover {
+    transform: none;
+  }
+  
+  .brand-link:hover .brand-icon {
+    transform: none;
+  }
+  
+  .brand-link:hover .brand-name {
+    letter-spacing: normal;
+  }
+}
+
+/* Print styles */
+@media print {
+  .brand-link {
+    color: black !important;
+    text-decoration: none !important;
+  }
+  
+  .brand-link:after {
+    content: " (VocalLocal)";
+    font-size: 0.8em;
+    color: #666;
+  }
+}
+
+/* Ensure consistent styling across different page types */
+.navbar-brand .brand-link,
+.header-title-container .brand-link,
+.brand-title .brand-link {
+  color: hsl(var(--primary)) !important;
+}
+
+.navbar-brand .brand-link:hover,
+.header-title-container .brand-link:hover,
+.brand-title .brand-link:hover {
+  color: hsl(var(--primary)) !important;
+}
+
+/* Footer brand links (if any) */
+.footer-brand h2 a {
+  text-decoration: none !important;
+  color: inherit !important;
+  transition: all 0.3s ease;
+}
+
+.footer-brand h2 a:hover {
+  opacity: 0.8;
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+/* Specific overrides for pricing page authenticated header */
+.pricing-container .header-title-container h1 a {
+  color: hsl(var(--primary)) !important;
+}
+
+.pricing-container .header-title-container h1 a:hover {
+  color: hsl(var(--primary)) !important;
+  opacity: 0.8;
+}
+
+/* Edge browser compatibility */
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+  .brand-link {
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-align: center;
+    align-items: center;
+  }
+  
+  .brand-link:hover {
+    opacity: 0.8;
+  }
+}

@@ -26,6 +26,7 @@
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='auth.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='home.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/upgrade-modal.css') }}">
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/brand-link.css') }}">
 
   <!-- Pricing Section Styles -->
   <style>
@@ -106,8 +107,10 @@
         <!-- Logo and Brand (Left) -->
         <div class="navbar-brand">
           <h1 class="brand-title">
-            <span class="brand-icon"><i class="fas fa-microphone-alt"></i></span>
-            <span class="brand-name">VocalLocal</span>
+            <a href="{{ url_for('main.index') }}" class="brand-link">
+              <span class="brand-icon"><i class="fas fa-microphone-alt"></i></span>
+              <span class="brand-name">VocalLocal</span>
+            </a>
           </h1>
         </div>
 

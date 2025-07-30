@@ -26,6 +26,7 @@
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='auth.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/upgrade-modal.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/email-verification-modal.css') }}">
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/brand-link.css') }}">
 
   <!-- Payment Success Animation Styles -->
   <style>
@@ -58,7 +59,9 @@
     <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-1 mb-2 mt-1">
       <!-- Left Section: Title Only -->
       <div class="header-title-container">
-        <h1 class="text-2xl font-bold" style="color: hsl(var(--primary)); font-family: 'Poppins', sans-serif;">Vocal Local</h1>
+        <h1 class="text-2xl font-bold" style="color: hsl(var(--primary)); font-family: 'Poppins', sans-serif;">
+          <a href="{{ url_for('main.index') }}" style="text-decoration: none; color: inherit;">Vocal Local</a>
+        </h1>
         <p id="app-subtitle" class="text-sm text-muted">Accurate Multilingual Speech-to-Text Transcription</p>
       </div>
 
