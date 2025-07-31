@@ -23,7 +23,7 @@ class PlanAccessControl:
             'transcription': [
                 'gemini-2.0-flash-lite',
                 'gpt-4o-mini-transcribe',
-                'gpt-4o-transcribe',                # Added GPT-4o access for Basic Plan
+                'gpt-4o-transcribe',
                 'gemini-2.5-flash-preview-04-17',  # Kept for UI compatibility (maps to 05-20)
                 'gemini-2.5-flash-preview-05-20'   # Working model
             ],
@@ -47,7 +47,8 @@ class PlanAccessControl:
                 'gemini-2.0-flash-lite',
                 'gpt-4o-mini-transcribe',
                 'gpt-4o-transcribe',
-                'gemini-2.5-flash-preview-04-17'
+                'gemini-2.5-flash-preview-04-17',  # Kept for UI compatibility (maps to 05-20)
+                'gemini-2.5-flash-preview-05-20'   # Working model
             ],
             'translation': [
                 'gemini-2.0-flash-lite',

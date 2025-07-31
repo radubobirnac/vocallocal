@@ -108,7 +108,7 @@ class RBACAccessControl {
             return true;
         }
 
-        // Normal users are restricted to free models unless they have premium subscription
+        // Normal users access based on subscription plan
         if (this.userRole === 'normal_user') {
             // Check if this is a TTS model and user is on free plan
             const modelInfo = this.modelInfo[model];
@@ -122,9 +122,14 @@ class RBACAccessControl {
                 return true;
             }
 
-            // Premium models require subscription (future enhancement)
-            // For now, normal users can't access premium models
-            console.log(`Model ${model} restricted for normal user`);
+            // Basic and Professional users have access to all premium models
+            if (this.userPlan === 'basic' || this.userPlan === 'professional') {
+                console.log(`Model ${model} accessible for ${this.userPlan} plan user`);
+                return true;
+            }
+
+            // Free plan users are restricted to free models only
+            console.log(`Model ${model} restricted for free plan user`);
             return false;
         }
 
@@ -164,6 +169,8 @@ class RBACAccessControl {
 
             if (this.freeModels.includes(model)) {
                 return { allowed: true, reason: 'Free model access' };
+            } else if (this.userPlan === 'basic' || this.userPlan === 'professional') {
+                return { allowed: true, reason: `${this.userPlan} plan model access` };
             } else {
                 return {
                     allowed: false,

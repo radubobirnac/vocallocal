@@ -1,13 +1,15 @@
 async function initBilingualMode() {
-    // Check user role
+    // Check user role and plan
     const userRole = window.currentUserRole || 'normal_user';
+    const userPlan = window.currentUserPlan || 'free';
     const isUnlimitedUser = (userRole === 'admin' || userRole === 'super_user');
-    
+    const hasBasicOrHigher = (userPlan === 'basic' || userPlan === 'professional');
+
     // Get translation model dropdown
     const translationModelSelect = document.getElementById('translation-model-select');
-    
-    // For super users, remove any lock icons from model options
-    if (isUnlimitedUser && translationModelSelect) {
+
+    // For super users and Basic+ plan users, remove any lock icons from model options
+    if ((isUnlimitedUser || hasBasicOrHigher) && translationModelSelect) {
         Array.from(translationModelSelect.options).forEach(option => {
             option.text = option.text.replace(' 🔒', '');
         });

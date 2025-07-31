@@ -16,9 +16,9 @@ class PlanAccessControl {
             },
             'basic': {
                 'transcription': [
-                    'gemini-2.0-flash-lite', 'gemini',
+                    'gemini-2.0-flash-lite',
                     'gpt-4o-mini-transcribe',
-                    'gpt-4o-transcribe',                // Added GPT-4o access for Basic Plan
+                    'gpt-4o-transcribe',
                     'gemini-2.5-flash-preview-04-17',  // UI compatibility (maps to 05-20)
                     'gemini-2.5-flash-preview-05-20'   // Working model
                 ],
@@ -39,12 +39,11 @@ class PlanAccessControl {
             },
             'professional': {
                 'transcription': [
-                    // Include all basic models
-                    'gemini-2.0-flash-lite', 'gemini',
+                    'gemini-2.0-flash-lite',
                     'gpt-4o-mini-transcribe',
-                    'gemini-2.5-flash-preview-04-17',
-                    // Professional-only models
-                    'gpt-4o-transcribe'
+                    'gpt-4o-transcribe',
+                    'gemini-2.5-flash-preview-04-17',  // UI compatibility (maps to 05-20)
+                    'gemini-2.5-flash-preview-05-20'   // Working model
                 ],
                 'translation': [
                     'gemini-2.0-flash-lite',
@@ -72,7 +71,7 @@ class PlanAccessControl {
             'gemini-2.5-flash': { name: 'Gemini 2.5 Flash Preview', tier: 'basic' },
             'gemini-2.5-flash-tts': { name: 'Gemini 2.5 Flash TTS', tier: 'basic' },
             'gpt4o-mini': { name: 'GPT-4o Mini TTS', tier: 'basic' },
-            'openai': { name: 'OpenAI TTS-1', tier: 'professional' }
+            'openai': { name: 'OpenAI TTS-1', tier: 'basic' }  // Now available to Basic users
         };
 
         this.planNames = {

@@ -92,16 +92,10 @@ class ModelAccessControl {
             return true;
         }
 
-        // Normal users can only access free models (unless they have premium subscription)
+        // Normal users now have access to all models (Basic plan users included)
         if (this.userRole === 'normal_user') {
-            // Check if it's a free model
-            if (this.modelRestrictions.free_models.includes(modelName)) {
-                return true;
-            }
-
-            // For premium models, we would need to check subscription status
-            // For now, restrict access to premium models for normal users
-            return false;
+            // All models are now accessible to normal users (Basic plan and above)
+            return true;
         }
 
         // Default to no access
@@ -191,7 +185,8 @@ class ModelAccessControl {
         if (this.userRole === 'admin' || this.userRole === 'super_user') {
             return [...this.modelRestrictions.free_models, ...this.modelRestrictions.premium_models];
         } else {
-            return [...this.modelRestrictions.free_models];
+            // All users (including Basic plan) now have access to all models
+            return [...this.modelRestrictions.free_models, ...this.modelRestrictions.premium_models];
         }
     }
 

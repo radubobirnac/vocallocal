@@ -1,17 +1,19 @@
 function updateModelAccessUI() {
-    // Get user role from window object
+    // Get user role and plan from window object
     const userRole = window.currentUserRole || 'normal_user';
+    const userPlan = window.currentUserPlan || 'free';
     const isUnlimitedUser = (userRole === 'admin' || userRole === 'super_user');
-    
+    const hasBasicOrHigher = (userPlan === 'basic' || userPlan === 'professional');
+
     // Update model dropdowns
     document.querySelectorAll('.model-dropdown').forEach(dropdown => {
-        if (isUnlimitedUser) {
-            // Remove lock icons from all options
+        if (isUnlimitedUser || hasBasicOrHigher) {
+            // Remove lock icons from all options for admin/super users and Basic+ plan users
             Array.from(dropdown.options).forEach(option => {
                 option.text = option.text.replace(' 🔒', '');
                 option.disabled = false;
             });
-            
+
             // Remove any "premium only" indicators
             const premiumIndicators = document.querySelectorAll('.premium-model-indicator');
             premiumIndicators.forEach(indicator => {
