@@ -36,10 +36,10 @@
       "failures": 0
     },
     "gemini-2.0-flash-lite": {
-      "calls": 16,
+      "calls": 34,
       "tokens": 0,
-      "chars": 1498,
-      "time": 15.496117115020752,
+      "chars": 3132,
+      "time": 28.6454815864563,
       "failures": 0
     }
   },
@@ -87,10 +87,10 @@
       "failures": 0
     },
     "en": {
-      "calls": 49,
-      "tokens": 15380,
-      "chars": 46166,
-      "time": 260.24163150787354,
+      "calls": 59,
+      "tokens": 15645,
+      "chars": 46965,
+      "time": 280.64709091186523,
       "failures": 0
     },
     "te": {
@@ -243,6 +243,11 @@
       "transcription": {
         "en": 36,
         "pt": 10
+      }
+    },
+    "2025-08-10": {
+      "transcription": {
+        "en": 265
       }
     }
   },
@@ -530,6 +535,16 @@
         "en": 36,
         "pt": 10
       }
+    },
+    "2025-08-10-17": {
+      "transcription": {
+        "en": 27
+      }
+    },
+    "2025-08-10-18": {
+      "transcription": {
+        "en": 238
+      }
     }
   },
   "tts": {
@@ -541,10 +556,10 @@
       "failures": 0
     },
     "gpt4o-mini": {
-      "calls": 57,
-      "tokens": 3941,
-      "chars": 15848,
-      "time": 323.8710286617279,
+      "calls": 62,
+      "tokens": 4154,
+      "chars": 16705,
+      "time": 342.13689708709717,
       "failures": 3
     }
   },

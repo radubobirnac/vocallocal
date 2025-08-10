@@ -1925,11 +1925,22 @@ function updateModelDropdown(selectElement, models, modelType) {
 
   // Initialize language dropdowns
   loadLanguages().then(languages => {
+    // Store languages globally for bilingual conversation mode
+    window.languages = Object.entries(languages).map(([name, details]) => ({
+      name: name,
+      native: details.native,
+      code: details.code
+    }));
+
     // Populate all language dropdowns
     populateLanguageDropdown('global-language', languages, 'en');
     populateLanguageDropdown('basic-language', languages, 'en');
     populateLanguageDropdown('language-1', languages, 'en');
     populateLanguageDropdown('language-2', languages, 'es');
+
+    // Populate new bilingual conversation dropdowns
+    populateLanguageDropdown('bilingual-from-language', languages, 'en');
+    populateLanguageDropdown('bilingual-to-language', languages, 'es');
 
     // Set up global language dropdown listener
     const globalLanguageSelect = document.getElementById('global-language');
@@ -1947,6 +1958,16 @@ function updateModelDropdown(selectElement, models, modelType) {
         const language1Select = document.getElementById('language-1');
         if (language1Select) {
           language1Select.value = selectedLanguage;
+        }
+
+        // Update the new bilingual conversation mode "from" language
+        const bilingualFromSelect = document.getElementById('bilingual-from-language');
+        if (bilingualFromSelect) {
+          bilingualFromSelect.value = selectedLanguage;
+          // Trigger the update of language displays if bilingual conversation is active
+          if (window.bilingualConversation) {
+            window.bilingualConversation.updateLanguageDisplays();
+          }
         }
 
         showStatus(`Input language changed to ${globalLanguageSelect.options[globalLanguageSelect.selectedIndex].text}`, 'info');
@@ -3158,4 +3179,12 @@ function updateModelDropdown(selectElement, models, modelType) {
       copyTextToClipboard(text, 'Interpretation copied to clipboard!');
     });
   }
+
+  // Expose functions globally for bilingual conversation mode
+  window.startRecording = startRecording;
+  window.processAudioWithSmartRouting = processAudioWithSmartRouting;
+  window.showStatus = showStatus;
+  window.getTranscriptionModel = getTranscriptionModel;
+  window.speakText = speakText;
+  window.stopSpeakText = stopSpeakText;
 });

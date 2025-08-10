@@ -309,152 +309,122 @@
     <!-- BILINGUAL MODE -->
     <div id="bilingual-mode-content" class="space-y-1" style="display: none;">
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Speaker 1 UI -->
-        <div class="card speaker-card-1">
-          <div class="card-header">
-            <h2 class="card-title">Speaker 1</h2>
-            <div class="flex items-center gap-2">
-              <button id="record-btn-1" class="header-record-button" title="Record audio">
-                <i class="fas fa-microphone"></i>
-              </button>
-              <button id="upload-btn-1" class="button button-outline button-icon" title="Upload audio file" onclick="document.getElementById('file-input-1').click()">
-                <i class="fas fa-paperclip"></i>
-              </button>
-            </div>
-          </div>
-          <div class="card-content">
-            <div class="form-group">
-              <label for="language-1" class="form-label">Your Language:</label>
-              <select id="language-1" class="form-select"></select>
-            </div>
+      <!-- Quick Conversation Interface -->
+      <div class="card bilingual-conversation-card">
+        <div class="card-header">
+          <h2 class="card-title">Quick Conversation</h2>
+          <div class="flex items-center gap-2">
+            <span id="bilingual-recording-timer" class="timer-display">00:00</span>
           </div>
         </div>
-
-        <!-- Speaker 2 UI -->
-        <div class="card speaker-card-2">
-          <div class="card-header">
-            <h2 class="card-title">Speaker 2</h2>
-            <div class="flex items-center gap-2">
-              <button id="record-btn-2" class="header-record-button" title="Record audio">
-                <i class="fas fa-microphone"></i>
-              </button>
-              <button id="upload-btn-2" class="button button-outline button-icon" title="Upload audio file" onclick="document.getElementById('file-input-2').click()">
-                <i class="fas fa-paperclip"></i>
-              </button>
+        <div class="card-content">
+          <!-- Language Selection Row -->
+          <div class="language-selection-row">
+            <div class="language-group">
+              <label for="bilingual-from-language" class="form-label">From:</label>
+              <select id="bilingual-from-language" class="form-select language-select"></select>
+            </div>
+            <div class="language-arrow">
+              <i class="fas fa-arrow-right"></i>
+            </div>
+            <div class="language-group">
+              <label for="bilingual-to-language" class="form-label">To:</label>
+              <select id="bilingual-to-language" class="form-select language-select"></select>
             </div>
           </div>
-          <div class="card-content">
-            <div class="form-group">
-              <label for="language-2" class="form-label">Your Language:</label>
-              <select id="language-2" class="form-select"></select>
+
+          <!-- Hold to Record Button -->
+          <div class="record-button-container">
+            <button id="bilingual-hold-record-btn" class="hold-record-button">
+              <i class="fas fa-microphone"></i>
+              <span>Hold to Record</span>
+            </button>
+          </div>
+
+          <!-- Action Buttons Row -->
+          <div class="action-buttons-row">
+            <button id="bilingual-manual-record" class="action-button manual-record-btn">
+              <i class="fas fa-microphone"></i>
+              <span>Manual Record</span>
+            </button>
+            <button id="bilingual-translate-btn" class="action-button translate-btn">
+              <i class="fas fa-language"></i>
+              <span>Translate</span>
+            </button>
+            <button id="bilingual-upload-btn" class="action-button upload-btn" onclick="document.getElementById('bilingual-file-input').click()">
+              <i class="fas fa-upload"></i>
+              <span>Upload</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conversation Results -->
+      <div class="card conversation-results-card">
+        <div class="card-header">
+          <h2 class="card-title">Conversation Results</h2>
+          <div class="flex items-center gap-2">
+            <button id="bilingual-clear-results" class="button button-outline button-small" title="Clear results">
+              <i class="fas fa-trash"></i>
+              <span>Clear</span>
+            </button>
+          </div>
+        </div>
+        <div class="card-content">
+          <div class="conversation-results-grid">
+            <!-- Original Text Column -->
+            <div class="result-column original-column">
+              <div class="result-header">
+                <div class="result-title">
+                  <i class="fas fa-microphone"></i>
+                  <span>Original ( <span id="original-language-display">English (English)</span> )</span>
+                </div>
+                <div class="result-controls">
+                  <button id="play-original" class="button button-outline button-icon" title="Play original">
+                    <i class="fas fa-play"></i>
+                  </button>
+                  <button id="stop-original" class="button button-outline button-icon" title="Stop playback" style="display: none;">
+                    <i class="fas fa-stop"></i>
+                  </button>
+                  <button id="copy-original" class="button button-outline button-icon" title="Copy original">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="result-content">
+                <textarea id="bilingual-original-text" class="form-textarea result-textarea" placeholder="Your speech will appear here..."></textarea>
+              </div>
+            </div>
+
+            <!-- Translation Text Column -->
+            <div class="result-column translation-column">
+              <div class="result-header">
+                <div class="result-title">
+                  <i class="fas fa-language"></i>
+                  <span>Translation ( <span id="translation-language-display">Spanish (Español)</span> )</span>
+                </div>
+                <div class="result-controls">
+                  <button id="play-translation" class="button button-outline button-icon" title="Play translation">
+                    <i class="fas fa-play"></i>
+                  </button>
+                  <button id="stop-translation" class="button button-outline button-icon" title="Stop playback" style="display: none;">
+                    <i class="fas fa-stop"></i>
+                  </button>
+                  <button id="copy-translation" class="button button-outline button-icon" title="Copy translation">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="result-content">
+                <textarea id="bilingual-translation-text" class="form-textarea result-textarea" placeholder="Translation will appear here..." readonly></textarea>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Conversation Display -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Speaker 1 Output -->
-        <div class="card">
-          <div class="card-header">
-            <h2 class="card-title">Speaker 1</h2>
-            <div class="flex items-center gap-2">
-              <button id="play-transcript-1" class="button button-outline button-icon" title="Play original">
-                <i class="fas fa-play"></i>
-              </button>
-              <button id="stop-transcript-1" class="button button-outline button-icon" title="Stop playback" style="display: none;">
-                 <i class="fas fa-stop"></i>
-              </button>
-              <button id="copy-transcript-1" class="button button-outline button-icon" title="Copy transcript">
-                <i class="fas fa-copy"></i>
-              </button>
-            </div>
-          </div>
-          <div class="card-content">
-            <div class="form-group">
-              <label class="form-label">Original:</label>
-              <textarea id="transcript-1" class="form-textarea" placeholder="Your speech will appear here..."></textarea>
-              <div class="transcript-controls mt-2 flex justify-between">
-                <div>
-                  <button id="translate-edited-1" class="button button-small">Translate Edited Text</button>
-                  <button id="undo-edits-1" class="button button-outline button-small">Undo Edits</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="translation-section">
-              <div class="translation-title">
-                <label class="form-label">Translation:</label>
-                <div class="flex items-center gap-2">
-                  <button id="play-translation-1" class="button button-outline button-icon" title="Play translation">
-                    <i class="fas fa-play"></i>
-                  </button>
-                   <button id="stop-translation-1" class="button button-outline button-icon" title="Stop playback" style="display: none;">
-                     <i class="fas fa-stop"></i>
-                  </button>
-                  <button id="copy-translation-1" class="button button-outline button-icon" title="Copy translation">
-                    <i class="fas fa-copy"></i>
-                  </button>
-                </div>
-              </div>
-              <textarea id="translation-1" class="form-textarea" placeholder="Translation will appear here..." readonly></textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- Speaker 2 Output -->
-        <div class="card">
-          <div class="card-header">
-            <h2 class="card-title">Speaker 2</h2>
-            <div class="flex items-center gap-2">
-              <button id="play-transcript-2" class="button button-outline button-icon" title="Play original">
-                <i class="fas fa-play"></i>
-              </button>
-              <button id="stop-transcript-2" class="button button-outline button-icon" title="Stop playback" style="display: none;">
-                 <i class="fas fa-stop"></i>
-              </button>
-              <button id="copy-transcript-2" class="button button-outline button-icon" title="Copy transcript">
-                <i class="fas fa-copy"></i>
-              </button>
-            </div>
-          </div>
-          <div class="card-content">
-            <div class="form-group">
-              <label class="form-label">Original:</label>
-              <textarea id="transcript-2" class="form-textarea" placeholder="Your speech will appear here..."></textarea>
-              <div class="transcript-controls mt-2 flex justify-between">
-                <div>
-                  <button id="translate-edited-2" class="button button-small">Translate Edited Text</button>
-                  <button id="undo-edits-2" class="button button-outline button-small">Undo Edits</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="translation-section">
-              <div class="translation-title">
-                <label class="form-label">Translation:</label>
-                <div class="flex items-center gap-2">
-                  <button id="play-translation-2" class="button button-outline button-icon" title="Play translation">
-                    <i class="fas fa-play"></i>
-                  </button>
-                  <button id="stop-translation-2" class="button button-outline button-icon" title="Stop playback" style="display: none;">
-                     <i class="fas fa-stop"></i>
-                  </button>
-                  <button id="copy-translation-2" class="button button-outline button-icon" title="Copy translation">
-                    <i class="fas fa-copy"></i>
-                  </button>
-                </div>
-              </div>
-              <textarea id="translation-2" class="form-textarea" placeholder="Translation will appear here..." readonly></textarea>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Hidden file inputs for bilingual mode -->
-      <input type="file" id="file-input-1" accept="audio/*" class="visually-hidden">
-      <input type="file" id="file-input-2" accept="audio/*" class="visually-hidden">
+      <!-- Hidden file input for bilingual mode -->
+      <input type="file" id="bilingual-file-input" accept="audio/*" class="visually-hidden">
     </div>
 
     <!-- About section moved to dedicated /about page for better UX -->
@@ -484,6 +454,9 @@
 
   <!-- Enhanced file size warnings -->
   <script src="{{ versioned_url_for('static', filename='file-size-warning.js') }}"></script>
+
+  <!-- Bilingual Conversation Mode -->
+  <script src="{{ versioned_url_for('static', filename='js/bilingual-conversation.js') }}"></script>
 
   <!-- Synchronized TTS System - TEMPORARILY DISABLED to fix multiple voices issue -->
   <!-- <script src="{{ versioned_url_for('static', filename='sync-tts.js') }}" defer></script> -->

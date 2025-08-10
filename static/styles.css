@@ -767,27 +767,229 @@ p {
   transform: translateY(0);
 }
 
-/* Add subtle animation when bilingual mode is active */
-.bilingual-mode-active .speaker-card-1,
-.bilingual-mode-active .speaker-card-2 {
-  animation: slideInUp 0.4s ease-out;
+/* Bilingual Conversation Card */
+.bilingual-conversation-card {
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-/* Compact styling for bilingual mode conversation cards */
-#bilingual-mode-content .card-content {
-  padding: 0.5rem;
+/* Language Selection Row */
+.language-selection-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
 }
 
-#bilingual-mode-content .form-group {
-  margin-bottom: 0.5rem;
+.language-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 200px;
 }
 
-#bilingual-mode-content .translation-section {
-  margin-top: 0.25rem;
+.language-group .form-label {
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin-bottom: 0;
 }
 
-#bilingual-mode-content .transcript-controls {
-  margin-top: 0.5rem;
+.language-select {
+  min-width: 200px;
+}
+
+.language-arrow {
+  color: #8b5cf6;
+  font-size: 1.25rem;
+  margin: 0 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Hold to Record Button */
+.record-button-container {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+}
+
+.hold-record-button {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+  min-width: 200px;
+  justify-content: center;
+}
+
+.hold-record-button:hover {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+  transform: translateY(-2px);
+}
+
+.hold-record-button:active,
+.hold-record-button.recording {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+  transform: translateY(0);
+}
+
+.hold-record-button.recording {
+  animation: pulse 1.5s infinite;
+}
+
+/* Action Buttons Row */
+.action-buttons-row {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.action-button {
+  background: white;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.action-button:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #374151;
+}
+
+.action-button.translate-btn {
+  background: #8b5cf6;
+  color: white;
+  border-color: #8b5cf6;
+}
+
+.action-button.translate-btn:hover {
+  background: #7c3aed;
+  border-color: #7c3aed;
+}
+
+/* Conversation Results */
+.conversation-results-card {
+  max-width: 1000px;
+  margin: 2rem auto 0;
+}
+
+.conversation-results-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .conversation-results-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+.result-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.result-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.result-title i {
+  color: #8b5cf6;
+}
+
+.result-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.result-content {
+  flex: 1;
+}
+
+.result-textarea {
+  min-height: 150px;
+  resize: vertical;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Dark mode adjustments for bilingual mode */
+[data-theme="dark"] .action-button {
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--border));
+}
+
+[data-theme="dark"] .action-button:hover {
+  background: hsl(var(--accent));
+  border-color: hsl(var(--accent-foreground));
+}
+
+[data-theme="dark"] .language-arrow {
+  color: #a855f7;
+}
+
+/* Pulse animation for recording */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 25px rgba(220, 38, 38, 0.6);
+  }
+  100% {
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+  }
+}
+
+/* Timer display for bilingual mode */
+.timer-display {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #8b5cf6;
+  font-size: 1rem;
 }
 
 @keyframes slideInUp {
