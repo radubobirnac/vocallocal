@@ -36,10 +36,10 @@
       "failures": 0
     },
     "gemini-2.0-flash-lite": {
-      "calls": 34,
+      "calls": 38,
       "tokens": 0,
-      "chars": 3132,
-      "time": 28.6454815864563,
+      "chars": 3144,
+      "time": 30.98311996459961,
       "failures": 0
     }
   },
@@ -87,10 +87,10 @@
       "failures": 0
     },
     "en": {
-      "calls": 59,
-      "tokens": 15645,
-      "chars": 46965,
-      "time": 280.64709091186523,
+      "calls": 61,
+      "tokens": 15647,
+      "chars": 46969,
+      "time": 284.16769003868103,
       "failures": 0
     },
     "te": {
@@ -247,7 +247,7 @@
     },
     "2025-08-10": {
       "transcription": {
-        "en": 265
+        "en": 267
       }
     }
   },
@@ -543,7 +543,7 @@
     },
     "2025-08-10-18": {
       "transcription": {
-        "en": 238
+        "en": 240
       }
     }
   },
