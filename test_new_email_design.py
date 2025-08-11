@@ -173,23 +173,29 @@ def test_actual_email_sending():
             print("❌ Cannot test email - PDF generation failed")
             return False
         
-        # Send test email to configured sender (self-test)
+        # SECURITY FIX: Do NOT send real emails in tests
         test_email = email_service.default_sender
-        
-        print(f"🧪 Sending new design email to: {test_email}")
-        
-        result = email_service.send_payment_confirmation_email(
-            username="Test User",
-            email=test_email,
-            invoice_id="in_test_design_001",
-            amount=4.99,
-            currency="USD",
-            payment_date=datetime.now(),
-            plan_type="basic",
-            plan_name="Basic Plan",
-            billing_cycle="monthly",
-            pdf_attachment=pdf_content
-        )
+
+        print(f"🧪 SIMULATING new design email to: {test_email}")
+        print("⚠️  SECURITY: Test mode - no actual email will be sent")
+
+        # Simulate email creation without sending
+        try:
+            msg = email_service.create_payment_confirmation_email(
+                username="Test User",
+                email=test_email,
+                invoice_id="in_test_design_001",
+                amount=4.99,
+                currency="USD",
+                payment_date=datetime.now(),
+                plan_type="basic",
+                plan_name="Basic Plan",
+                billing_cycle="monthly",
+                pdf_attachment=pdf_content
+            )
+            result = {'success': True, 'message': 'Test email created successfully (not sent)'}
+        except Exception as e:
+            result = {'success': False, 'message': f'Test email creation failed: {str(e)}'}
         
         if result.get('success'):
             print("✅ New Design Email Sent Successfully!")

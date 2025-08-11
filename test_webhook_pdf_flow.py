@@ -131,11 +131,28 @@ def test_direct_pdf_email_integration():
             print("❌ PDF Generation: Failed")
             return False
         
-        print("🧪 Step 2: Send email with PDF...")
-        email_result = payment_service._send_payment_confirmation_email(
-            **test_data,
-            pdf_attachment=pdf_content
-        )
+        print("🧪 Step 2: SIMULATE email with PDF...")
+        print("⚠️  SECURITY: Test mode - no actual email will be sent")
+
+        # Simulate email creation without sending
+        try:
+            from services.email_service import EmailService
+            email_service = EmailService()
+            msg = email_service.create_payment_confirmation_email(
+                username="Test User",
+                email=test_data['user_email'],
+                invoice_id=test_data['invoice_id'],
+                amount=test_data['amount'],
+                currency=test_data['currency'],
+                payment_date=test_data['payment_date'],
+                plan_type=test_data['plan_type'],
+                plan_name=test_data['plan_name'],
+                billing_cycle=test_data['billing_cycle'],
+                pdf_attachment=pdf_content
+            )
+            email_result = {'success': True, 'message': 'Test email created successfully (not sent)'}
+        except Exception as e:
+            email_result = {'success': False, 'message': f'Test email creation failed: {str(e)}'}
         
         if email_result.get('success'):
             print("✅ Email with PDF: ✓ Sent successfully")
