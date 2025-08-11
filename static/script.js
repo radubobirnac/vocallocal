@@ -236,6 +236,16 @@ function updateModelDropdown(selectElement, models, modelType) {
       const speakerId = sourceId.split('-')[1];
       playBtn = document.getElementById(`play-translation-${speakerId}`);
       stopBtn = document.getElementById(`stop-translation-${speakerId}`);
+    } else if (sourceId === 'bilingual-original-text') {
+      // New bilingual mode original text buttons
+      playBtn = document.getElementById('play-original');
+      stopBtn = document.getElementById('stop-original');
+      console.log('🔘 TTS Debug: Bilingual original buttons found:', { playBtn: !!playBtn, stopBtn: !!stopBtn });
+    } else if (sourceId === 'bilingual-translation-text') {
+      // New bilingual mode translation text buttons
+      playBtn = document.getElementById('play-translation');
+      stopBtn = document.getElementById('stop-translation');
+      console.log('🔘 TTS Debug: Bilingual translation buttons found:', { playBtn: !!playBtn, stopBtn: !!stopBtn });
     } else {
       // Default pattern (for backward compatibility)
       playBtn = document.getElementById(`play-${sourceId}`);
@@ -251,10 +261,21 @@ function updateModelDropdown(selectElement, models, modelType) {
       playBtn.style.display = 'none';
       stopBtn.style.display = 'inline-flex'; // Use inline-flex to match button class
       console.log(`TTS Button State: ${sourceId} - PLAYING - Showing stop button`);
+
+      // Dispatch TTS started event
+      document.dispatchEvent(new CustomEvent('tts-started', {
+        detail: { sourceId: sourceId }
+      }));
     } else { // 'stopped', 'paused', 'ended', 'error'
       playBtn.style.display = 'inline-flex';
       stopBtn.style.display = 'none';
       console.log(`TTS Button State: ${sourceId} - ${state} - Showing play button`);
+
+      // Dispatch appropriate TTS event
+      const eventType = state === 'ended' ? 'tts-ended' : 'tts-stopped';
+      document.dispatchEvent(new CustomEvent(eventType, {
+        detail: { sourceId: sourceId }
+      }));
     }
   }
 
@@ -401,6 +422,20 @@ function updateModelDropdown(selectElement, models, modelType) {
           }
         } else {
           console.error('❌ TTS Debug: Interpretation textarea not found in DOM');
+        }
+      } else if (sourceId === 'bilingual-original-text') {
+        console.log('🔍 TTS Debug: Handling bilingual-original-text case');
+        const originalEl = document.getElementById('bilingual-original-text');
+        if (originalEl && originalEl.value.trim() !== '') {
+          text = originalEl.value;
+          console.log('✅ TTS Debug: Successfully retrieved bilingual original text:', text.substring(0, 30) + '...');
+        }
+      } else if (sourceId === 'bilingual-translation-text') {
+        console.log('🔍 TTS Debug: Handling bilingual-translation-text case');
+        const translationEl = document.getElementById('bilingual-translation-text');
+        if (translationEl && translationEl.value.trim() !== '') {
+          text = translationEl.value;
+          console.log('✅ TTS Debug: Successfully retrieved bilingual translation text:', text.substring(0, 30) + '...');
         }
       }
     }
@@ -3177,6 +3212,87 @@ function updateModelDropdown(selectElement, models, modelType) {
 
       const text = interpretationEl.value;
       copyTextToClipboard(text, 'Interpretation copied to clipboard!');
+    });
+  }
+
+  // ========================
+  // Bilingual mode TTS buttons
+  // ========================
+  console.log('🔍 TTS Debug: Setting up bilingual mode TTS buttons...');
+
+  // Original text play/stop buttons
+  const bilingualPlayOriginalBtn = document.getElementById('play-original');
+  const bilingualStopOriginalBtn = document.getElementById('stop-original');
+
+  if (bilingualPlayOriginalBtn) {
+    console.log('✅ TTS Debug: Found bilingual play-original button');
+    bilingualPlayOriginalBtn.addEventListener('click', () => {
+      console.log('🎵 TTS Debug: Bilingual play-original button clicked');
+      const textArea = document.getElementById('bilingual-original-text');
+      if (!textArea) {
+        console.error('❌ TTS Debug: bilingual-original-text textarea not found');
+        return;
+      }
+
+      const text = textArea.value;
+      if (!text || text.trim() === '') {
+        showStatus('No original text to play', 'warning');
+        return;
+      }
+
+      // Get language from the from-language selector
+      const fromLangSelect = document.getElementById('bilingual-from-language');
+      const langCode = fromLangSelect ? fromLangSelect.value : 'en';
+
+      console.log('🎵 TTS Debug: Playing bilingual original text:', text.substring(0, 30) + '...');
+      speakText('bilingual-original-text', text, langCode);
+    });
+  } else {
+    console.warn('⚠️ TTS Debug: play-original button not found');
+  }
+
+  if (bilingualStopOriginalBtn) {
+    bilingualStopOriginalBtn.addEventListener('click', () => {
+      console.log('⏹️ TTS Debug: Bilingual stop-original button clicked');
+      stopSpeakText('bilingual-original-text');
+    });
+  }
+
+  // Translation text play/stop buttons
+  const bilingualPlayTranslationBtn = document.getElementById('play-translation');
+  const bilingualStopTranslationBtn = document.getElementById('stop-translation');
+
+  if (bilingualPlayTranslationBtn) {
+    console.log('✅ TTS Debug: Found bilingual play-translation button');
+    bilingualPlayTranslationBtn.addEventListener('click', () => {
+      console.log('🎵 TTS Debug: Bilingual play-translation button clicked');
+      const textArea = document.getElementById('bilingual-translation-text');
+      if (!textArea) {
+        console.error('❌ TTS Debug: bilingual-translation-text textarea not found');
+        return;
+      }
+
+      const text = textArea.value;
+      if (!text || text.trim() === '') {
+        showStatus('No translation text to play', 'warning');
+        return;
+      }
+
+      // Get language from the to-language selector
+      const toLangSelect = document.getElementById('bilingual-to-language');
+      const langCode = toLangSelect ? toLangSelect.value : 'es';
+
+      console.log('🎵 TTS Debug: Playing bilingual translation text:', text.substring(0, 30) + '...');
+      speakText('bilingual-translation-text', text, langCode);
+    });
+  } else {
+    console.warn('⚠️ TTS Debug: play-translation button not found');
+  }
+
+  if (bilingualStopTranslationBtn) {
+    bilingualStopTranslationBtn.addEventListener('click', () => {
+      console.log('⏹️ TTS Debug: Bilingual stop-translation button clicked');
+      stopSpeakText('bilingual-translation-text');
     });
   }
 

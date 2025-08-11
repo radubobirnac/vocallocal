@@ -50,8 +50,9 @@ class CacheBuster:
         if not filename:
             return str(int(time.time()))
 
-        # Force refresh for script.js to ensure latest version is served
-        if filename == 'script.js':
+        # Force refresh for critical files to ensure latest version is served
+        critical_files = ['script.js', 'styles.css', 'auth.css', 'js/bilingual-conversation.js']
+        if filename in critical_files:
             current_time = time.time()
             try:
                 static_folder = current_app.static_folder
@@ -66,7 +67,7 @@ class CacheBuster:
                         return version
             except (OSError, IOError):
                 pass
-            # Fallback to current timestamp for script.js
+            # Fallback to current timestamp for critical files
             return str(int(current_time))
 
         # Check if we need to refresh the version
@@ -137,15 +138,27 @@ class CacheBuster:
         if '/static/' in request_path and 'v=' in request.query_string.decode():
             response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
             response.headers['Expires'] = time.strftime(
-                '%a, %d %b %Y %H:%M:%S GMT', 
+                '%a, %d %b %Y %H:%M:%S GMT',
                 time.gmtime(time.time() + 31536000)
             )
-        
-        # Static files without version - cache for 1 hour
+
+        # Critical CSS/JS files without version - force revalidation
+        elif '/static/' in request_path and any(critical in request_path for critical in [
+            'styles.css', 'script.js', 'auth.css', 'bilingual-conversation.js'
+        ]):
+            response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+            response.headers['Last-Modified'] = time.strftime(
+                '%a, %d %b %Y %H:%M:%S GMT',
+                time.gmtime()
+            )
+
+        # Other static files without version - cache for 1 hour
         elif '/static/' in request_path:
             response.headers['Cache-Control'] = 'public, max-age=3600'
             response.headers['Expires'] = time.strftime(
-                '%a, %d %b %Y %H:%M:%S GMT', 
+                '%a, %d %b %Y %H:%M:%S GMT',
                 time.gmtime(time.time() + 3600)
             )
         

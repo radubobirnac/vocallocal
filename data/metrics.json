@@ -36,10 +36,10 @@
       "failures": 0
     },
     "gemini-2.0-flash-lite": {
-      "calls": 40,
+      "calls": 48,
       "tokens": 0,
-      "chars": 3154,
-      "time": 32.84112620353699,
+      "chars": 4422,
+      "time": 41.5315682888031,
       "failures": 0
     }
   },
@@ -556,10 +556,10 @@
       "failures": 0
     },
     "gpt4o-mini": {
-      "calls": 62,
-      "tokens": 4154,
-      "chars": 16705,
-      "time": 342.13689708709717,
+      "calls": 74,
+      "tokens": 4530,
+      "chars": 18241,
+      "time": 386.12876749038696,
       "failures": 3
     }
   },

@@ -39,12 +39,8 @@ class BilingualConversation {
     this.originalTextArea = document.getElementById('bilingual-original-text');
     this.translationTextArea = document.getElementById('bilingual-translation-text');
     
-    // Control buttons
-    this.playOriginalBtn = document.getElementById('play-original');
-    this.stopOriginalBtn = document.getElementById('stop-original');
+    // Control buttons (play/stop buttons handled by main script.js)
     this.copyOriginalBtn = document.getElementById('copy-original');
-    this.playTranslationBtn = document.getElementById('play-translation');
-    this.stopTranslationBtn = document.getElementById('stop-translation');
     this.copyTranslationBtn = document.getElementById('copy-translation');
     
     // File input
@@ -124,19 +120,8 @@ class BilingualConversation {
     // Double Enter key listener
     document.addEventListener('keydown', (e) => this.handleKeyPress(e));
 
-    // Play/Stop buttons (will integrate with existing TTS system)
-    if (this.playOriginalBtn) {
-      this.playOriginalBtn.addEventListener('click', () => this.playText('bilingual-original-text'));
-    }
-    if (this.stopOriginalBtn) {
-      this.stopOriginalBtn.addEventListener('click', () => this.stopText('bilingual-original-text'));
-    }
-    if (this.playTranslationBtn) {
-      this.playTranslationBtn.addEventListener('click', () => this.playText('bilingual-translation-text'));
-    }
-    if (this.stopTranslationBtn) {
-      this.stopTranslationBtn.addEventListener('click', () => this.stopText('bilingual-translation-text'));
-    }
+    // Note: Play/Stop buttons are now handled by the main script.js TTS system
+    // to prevent duplicate event listeners and multiple voices playing
   }
 
   async startHoldRecording() {
@@ -651,5 +636,63 @@ document.addEventListener('DOMContentLoaded', () => {
   if (bilingualModeContent) {
     window.bilingualConversation = new BilingualConversation();
     console.log('Bilingual Conversation mode initialized');
+
+    // Initialize TTS button functionality
+    initializeBilingualTTSButtons();
   }
 });
+
+// Function to manage TTS button states in bilingual mode
+function setBilingualTTSButtonState(type, isPlaying) {
+  const playBtn = document.getElementById(`play-${type}`);
+  const stopBtn = document.getElementById(`stop-${type}`);
+
+  if (playBtn && stopBtn) {
+    if (isPlaying) {
+      playBtn.style.display = 'none';
+      stopBtn.style.display = 'inline-flex';
+    } else {
+      playBtn.style.display = 'inline-flex';
+      stopBtn.style.display = 'none';
+    }
+  }
+}
+
+// Initialize TTS button event listeners for bilingual mode
+function initializeBilingualTTSButtons() {
+  console.log('🎵 Initializing bilingual TTS buttons...');
+
+  // Note: TTS button functionality is now handled by the main script.js
+  // The buttons are already connected through the existing TTS system
+  // We only need to ensure proper button state management through events
+
+  console.log('🎵 Bilingual TTS buttons are handled by main script.js');
+
+  // Listen for TTS events to manage button states
+  document.addEventListener('tts-started', (event) => {
+    const sourceId = event.detail?.sourceId;
+    if (sourceId === 'bilingual-original-text') {
+      setBilingualTTSButtonState('original', true);
+    } else if (sourceId === 'bilingual-translation-text') {
+      setBilingualTTSButtonState('translation', true);
+    }
+  });
+
+  document.addEventListener('tts-stopped', (event) => {
+    const sourceId = event.detail?.sourceId;
+    if (sourceId === 'bilingual-original-text') {
+      setBilingualTTSButtonState('original', false);
+    } else if (sourceId === 'bilingual-translation-text') {
+      setBilingualTTSButtonState('translation', false);
+    }
+  });
+
+  document.addEventListener('tts-ended', (event) => {
+    const sourceId = event.detail?.sourceId;
+    if (sourceId === 'bilingual-original-text') {
+      setBilingualTTSButtonState('original', false);
+    } else if (sourceId === 'bilingual-translation-text') {
+      setBilingualTTSButtonState('translation', false);
+    }
+  });
+}
