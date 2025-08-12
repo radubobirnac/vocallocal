@@ -1967,15 +1967,21 @@ function updateModelDropdown(selectElement, models, modelType) {
       code: details.code
     }));
 
-    // Populate all language dropdowns
-    populateLanguageDropdown('global-language', languages, 'en');
-    populateLanguageDropdown('basic-language', languages, 'en');
-    populateLanguageDropdown('language-1', languages, 'en');
-    populateLanguageDropdown('language-2', languages, 'es');
+    // Get saved language preferences from cookies
+    const sourceLanguage = window.languagePreferences ?
+      window.languagePreferences.loadLanguagePreference('source', 'en') : 'en';
+    const targetLanguage = window.languagePreferences ?
+      window.languagePreferences.loadLanguagePreference('target', 'es') : 'es';
+
+    // Populate all language dropdowns with saved preferences
+    populateLanguageDropdown('global-language', languages, sourceLanguage);
+    populateLanguageDropdown('basic-language', languages, sourceLanguage);
+    populateLanguageDropdown('language-1', languages, sourceLanguage);
+    populateLanguageDropdown('language-2', languages, targetLanguage);
 
     // Populate new bilingual conversation dropdowns
-    populateLanguageDropdown('bilingual-from-language', languages, 'en');
-    populateLanguageDropdown('bilingual-to-language', languages, 'es');
+    populateLanguageDropdown('bilingual-from-language', languages, sourceLanguage);
+    populateLanguageDropdown('bilingual-to-language', languages, targetLanguage);
 
     // Set up global language dropdown listener
     const globalLanguageSelect = document.getElementById('global-language');

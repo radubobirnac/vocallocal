@@ -1,0 +1,616 @@
+/**
+ * Mobile Icon Theme Fix
+ * Ensures all icons are properly visible in both light and dark themes
+ * This file specifically addresses icon contrast issues in mobile view
+ */
+
+/* THEME-AWARE FIX: Apply proper contrast for all screen sizes */
+#basic-mode .card-header i.fas,
+#basic-mode .card-header i.far,
+#basic-mode .card-header i.fab,
+#basic-mode .card-header i[class*="fa-"] {
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", "FontAwesome" !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+  display: inline-block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+}
+
+/* LIGHT THEME: Purple icons for brand consistency */
+[data-theme="light"] #basic-mode .card-header i.fas,
+[data-theme="light"] #basic-mode .card-header i.far,
+[data-theme="light"] #basic-mode .card-header i.fab,
+[data-theme="light"] #basic-mode .card-header i[class*="fa-"] {
+  color: hsl(var(--primary)) !important; /* Purple color for light theme */
+}
+
+[data-theme="light"] #basic-mode .card-header .button,
+[data-theme="light"] #basic-mode .card-header .header-record-button {
+  background: hsla(var(--primary), 0.1) !important;
+  border: 1px solid hsla(var(--primary), 0.2) !important;
+  color: hsl(var(--primary)) !important;
+}
+
+/* DARK THEME: Light icons for proper contrast */
+[data-theme="dark"] #basic-mode .card-header i.fas,
+[data-theme="dark"] #basic-mode .card-header i.far,
+[data-theme="dark"] #basic-mode .card-header i.fab,
+[data-theme="dark"] #basic-mode .card-header i[class*="fa-"] {
+  color: white !important; /* Light color for dark theme */
+}
+
+[data-theme="dark"] #basic-mode .card-header .button,
+[data-theme="dark"] #basic-mode .card-header .header-record-button {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: white !important;
+}
+
+/* EMERGENCY FIX: Force proper icon visibility in mobile basic mode */
+@media (max-width: 768px) {
+
+  /* CRITICAL: Ensure button container is visible */
+  #basic-mode .card-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  #basic-mode .card-header .flex {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  /* CRITICAL: Ensure all buttons are visible */
+  #basic-mode .card-header .button,
+  #basic-mode .card-header .header-record-button,
+  #basic-record-btn,
+  #basic-upload-btn,
+  #basic-play-btn,
+  #basic-stop-btn,
+  #basic-copy-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+  }
+
+  /* CRITICAL: Force all FontAwesome icons to be visible with theme-aware colors */
+  #basic-mode i.fas,
+  #basic-mode i.far,
+  #basic-mode i.fab,
+  #basic-mode i[class*="fa-"] {
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    text-rendering: auto !important;
+    line-height: 1 !important;
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    font-size: 14px !important;
+  }
+
+  /* MOBILE LIGHT THEME: Purple icons for brand consistency */
+  [data-theme="light"] #basic-mode i.fas,
+  [data-theme="light"] #basic-mode i.far,
+  [data-theme="light"] #basic-mode i.fab,
+  [data-theme="light"] #basic-mode i[class*="fa-"] {
+    color: hsl(var(--primary)) !important;
+  }
+
+  /* MOBILE DARK THEME: Light icons for contrast */
+  [data-theme="dark"] #basic-mode i.fas,
+  [data-theme="dark"] #basic-mode i.far,
+  [data-theme="dark"] #basic-mode i.fab,
+  [data-theme="dark"] #basic-mode i[class*="fa-"] {
+    color: white !important;
+  }
+
+  /* MOBILE: Theme-aware button visibility */
+  #basic-mode .card-header .button,
+  #basic-mode .card-header .header-record-button {
+    min-width: 36px !important;
+    min-height: 36px !important;
+  }
+
+  /* MOBILE LIGHT THEME: Button styling */
+  [data-theme="light"] #basic-mode .card-header .button,
+  [data-theme="light"] #basic-mode .card-header .header-record-button {
+    background: hsla(var(--primary), 0.1) !important;
+    border: 1px solid hsla(var(--primary), 0.2) !important;
+    color: hsl(var(--primary)) !important;
+  }
+
+  [data-theme="light"] #basic-mode .card-header i {
+    color: hsl(var(--primary)) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  [data-theme="light"] #basic-record-btn {
+    background: hsl(var(--primary)) !important;
+    color: white !important;
+    border: none !important;
+  }
+
+  [data-theme="light"] #basic-record-btn i.fa-microphone {
+    color: white !important; /* White icon on primary background */
+  }
+
+  [data-theme="light"] #basic-upload-btn i.fa-paperclip,
+  [data-theme="light"] #basic-play-btn i.fa-play,
+  [data-theme="light"] #basic-stop-btn i.fa-stop,
+  [data-theme="light"] #basic-copy-btn i.fa-copy {
+    color: hsl(var(--primary)) !important; /* Purple icons for light theme */
+  }
+
+  /* MOBILE DARK THEME: Button styling */
+  [data-theme="dark"] #basic-mode .card-header .button,
+  [data-theme="dark"] #basic-mode .card-header .header-record-button {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    color: white !important;
+  }
+
+  [data-theme="dark"] #basic-mode .card-header i {
+    color: white !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  [data-theme="dark"] #basic-record-btn {
+    background: hsl(var(--primary)) !important;
+    color: white !important;
+    border: none !important;
+  }
+
+  [data-theme="dark"] #basic-record-btn i.fa-microphone,
+  [data-theme="dark"] #basic-upload-btn i.fa-paperclip,
+  [data-theme="dark"] #basic-play-btn i.fa-play,
+  [data-theme="dark"] #basic-stop-btn i.fa-stop,
+  [data-theme="dark"] #basic-copy-btn i.fa-copy {
+    color: white !important; /* White icons for dark theme */
+  }
+  
+  /* Override any hardcoded icon colors in basic mode - target all button types */
+  #basic-mode .button-icon,
+  #basic-mode .button.button-outline,
+  #basic-mode .header-record-button,
+  #basic-mode .action-button,
+  #basic-record-btn,
+  #basic-upload-btn,
+  #basic-play-btn,
+  #basic-stop-btn,
+  #basic-copy-btn,
+  #basic-interpret-btn,
+  #basic-play-interpretation-btn,
+  #basic-stop-interpretation-btn,
+  #basic-copy-interpretation-btn {
+    /* Ensure icons inherit proper colors */
+    color: inherit !important;
+  }
+  
+  /* Specific icon element styling - target all FontAwesome icons */
+  #basic-mode .button-icon i,
+  #basic-mode .button.button-outline i,
+  #basic-mode .header-record-button i,
+  #basic-mode .action-button i,
+  #basic-record-btn i,
+  #basic-upload-btn i,
+  #basic-play-btn i,
+  #basic-stop-btn i,
+  #basic-copy-btn i,
+  #basic-interpret-btn i,
+  #basic-play-interpretation-btn i,
+  #basic-stop-interpretation-btn i,
+  #basic-copy-interpretation-btn i,
+  #basic-mode .fas,
+  #basic-mode .far,
+  #basic-mode .fab,
+  #basic-mode .fa-microphone,
+  #basic-mode .fa-paperclip,
+  #basic-mode .fa-play,
+  #basic-mode .fa-stop,
+  #basic-mode .fa-copy {
+    color: inherit !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  /* Light theme specific fixes */
+  [data-theme="light"] #basic-mode .card-header {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-dark)) 100%) !important;
+    color: white !important;
+  }
+
+  /* Light theme - card header buttons (white icons on primary background) */
+  [data-theme="light"] #basic-mode .card-header .button-icon,
+  [data-theme="light"] #basic-mode .card-header .button.button-outline,
+  [data-theme="light"] #basic-mode .card-header .header-record-button,
+  [data-theme="light"] #basic-mode .card-header #basic-record-btn,
+  [data-theme="light"] #basic-mode .card-header #basic-upload-btn,
+  [data-theme="light"] #basic-mode .card-header #basic-play-btn,
+  [data-theme="light"] #basic-mode .card-header #basic-stop-btn,
+  [data-theme="light"] #basic-mode .card-header #basic-copy-btn {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+  }
+
+  [data-theme="light"] #basic-mode .card-header .button-icon i,
+  [data-theme="light"] #basic-mode .card-header .button.button-outline i,
+  [data-theme="light"] #basic-mode .card-header .header-record-button i,
+  [data-theme="light"] #basic-mode .card-header #basic-record-btn i,
+  [data-theme="light"] #basic-mode .card-header #basic-upload-btn i,
+  [data-theme="light"] #basic-mode .card-header #basic-play-btn i,
+  [data-theme="light"] #basic-mode .card-header #basic-stop-btn i,
+  [data-theme="light"] #basic-mode .card-header #basic-copy-btn i {
+    color: white !important;
+  }
+  
+  /* Light theme - card content buttons (dark icons on light background) */
+  [data-theme="light"] #basic-mode .card-content .button-icon,
+  [data-theme="light"] #basic-mode .card-content .button.button-outline,
+  [data-theme="light"] #basic-mode .card-content .action-button {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  [data-theme="light"] #basic-mode .card-content .button-icon i,
+  [data-theme="light"] #basic-mode .card-content .button.button-outline i,
+  [data-theme="light"] #basic-mode .card-content .action-button i {
+    color: hsl(var(--foreground)) !important;
+  }
+  
+  /* Dark theme specific fixes */
+  [data-theme="dark"] #basic-mode .card-header {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-dark)) 100%) !important;
+    color: white !important;
+  }
+
+  /* Dark theme - card header buttons (white icons on primary background) */
+  [data-theme="dark"] #basic-mode .card-header .button-icon,
+  [data-theme="dark"] #basic-mode .card-header .button.button-outline,
+  [data-theme="dark"] #basic-mode .card-header .header-record-button,
+  [data-theme="dark"] #basic-mode .card-header #basic-record-btn,
+  [data-theme="dark"] #basic-mode .card-header #basic-upload-btn,
+  [data-theme="dark"] #basic-mode .card-header #basic-play-btn,
+  [data-theme="dark"] #basic-mode .card-header #basic-stop-btn,
+  [data-theme="dark"] #basic-mode .card-header #basic-copy-btn {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    color: white !important;
+  }
+
+  [data-theme="dark"] #basic-mode .card-header .button-icon i,
+  [data-theme="dark"] #basic-mode .card-header .button.button-outline i,
+  [data-theme="dark"] #basic-mode .card-header .header-record-button i,
+  [data-theme="dark"] #basic-mode .card-header #basic-record-btn i,
+  [data-theme="dark"] #basic-mode .card-header #basic-upload-btn i,
+  [data-theme="dark"] #basic-mode .card-header #basic-play-btn i,
+  [data-theme="dark"] #basic-mode .card-header #basic-stop-btn i,
+  [data-theme="dark"] #basic-mode .card-header #basic-copy-btn i {
+    color: white !important;
+  }
+  
+  /* Dark theme - card content buttons (light icons on dark background) */
+  [data-theme="dark"] #basic-mode .card-content .button-icon,
+  [data-theme="dark"] #basic-mode .card-content .button.button-outline,
+  [data-theme="dark"] #basic-mode .card-content .action-button {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  [data-theme="dark"] #basic-mode .card-content .button-icon i,
+  [data-theme="dark"] #basic-mode .card-content .button.button-outline i,
+  [data-theme="dark"] #basic-mode .card-content .action-button i {
+    color: hsl(var(--foreground)) !important;
+  }
+  
+  /* Recording state - always visible regardless of theme */
+  #basic-record-btn.recording {
+    background: hsl(0, 84%, 60%) !important;
+    border-color: hsl(0, 84%, 50%) !important;
+    color: white !important;
+    box-shadow: 0 0 0 3px hsla(0, 84%, 60%, 0.3) !important;
+  }
+  
+  #basic-record-btn.recording i {
+    color: white !important;
+  }
+  
+  /* System theme fallback */
+  [data-theme="system"] #basic-mode .button-icon,
+  [data-theme="system"] #basic-record-btn {
+    color: hsl(var(--foreground)) !important;
+  }
+  
+  [data-theme="system"] #basic-mode .button-icon i,
+  [data-theme="system"] #basic-record-btn i {
+    color: inherit !important;
+  }
+  
+  /* Hover states with proper contrast */
+  [data-theme="light"] #basic-mode .card-header .button-icon:hover,
+  [data-theme="light"] #basic-mode .card-header #basic-record-btn:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+  }
+  
+  [data-theme="dark"] #basic-mode .card-header .button-icon:hover,
+  [data-theme="dark"] #basic-mode .card-header #basic-record-btn:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+  }
+  
+  [data-theme="light"] #basic-mode .card-content .button-icon:hover,
+  [data-theme="light"] #basic-mode .card-content .action-button:hover {
+    background: rgba(0, 0, 0, 0.08) !important;
+  }
+  
+  [data-theme="dark"] #basic-mode .card-content .button-icon:hover,
+  [data-theme="dark"] #basic-mode .card-content .action-button:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+  }
+  
+  /* Focus states for accessibility */
+  #basic-mode .button-icon:focus,
+  #basic-mode .action-button:focus,
+  #basic-record-btn:focus {
+    outline: 2px solid hsl(var(--primary)) !important;
+    outline-offset: 2px !important;
+  }
+  
+  /* Disabled states */
+  #basic-mode .button-icon:disabled,
+  #basic-mode .action-button:disabled,
+  #basic-record-btn:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+  }
+  
+  /* Loading states */
+  #basic-mode .button.loading::after {
+    border-top-color: currentColor !important;
+  }
+  
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    [data-theme="light"] #basic-mode .button-icon,
+    [data-theme="light"] #basic-mode .action-button,
+    [data-theme="light"] #basic-record-btn {
+      background: white !important;
+      color: black !important;
+      border: 2px solid black !important;
+    }
+    
+    [data-theme="light"] #basic-mode .button-icon i,
+    [data-theme="light"] #basic-mode .action-button i,
+    [data-theme="light"] #basic-record-btn i {
+      color: black !important;
+    }
+    
+    [data-theme="dark"] #basic-mode .button-icon,
+    [data-theme="dark"] #basic-mode .action-button,
+    [data-theme="dark"] #basic-record-btn {
+      background: black !important;
+      color: white !important;
+      border: 2px solid white !important;
+    }
+    
+    [data-theme="dark"] #basic-mode .button-icon i,
+    [data-theme="dark"] #basic-mode .action-button i,
+    [data-theme="dark"] #basic-record-btn i {
+      color: white !important;
+    }
+  }
+  
+  /* Ensure FontAwesome icons are properly loaded and visible */
+  #basic-mode .fas,
+  #basic-mode .far,
+  #basic-mode .fab {
+    font-family: "Font Awesome 5 Free", "Font Awesome 5 Pro", "Font Awesome 5 Brands" !important;
+    font-weight: 900 !important;
+    display: inline-block !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    text-rendering: auto !important;
+    line-height: 1 !important;
+  }
+  
+  /* Specific icon fixes for common icons */
+  #basic-mode .fa-microphone,
+  #basic-mode .fa-paperclip,
+  #basic-mode .fa-upload,
+  #basic-mode .fa-play,
+  #basic-mode .fa-stop,
+  #basic-mode .fa-copy,
+  #basic-mode .fa-magic,
+  #basic-mode .fa-volume-up {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  /* Critical: Specific button fixes based on actual HTML structure */
+
+  /* basic-record-btn with header-record-button class */
+  #basic-record-btn.header-record-button {
+    background: hsl(var(--primary)) !important;
+    color: hsl(var(--primary-foreground)) !important;
+    border: none !important;
+  }
+
+  #basic-record-btn.header-record-button i.fas.fa-microphone {
+    color: hsl(var(--primary-foreground)) !important;
+  }
+
+  /* Upload, play, stop, copy buttons with button button-outline button-icon classes */
+  #basic-upload-btn.button.button-outline.button-icon,
+  #basic-play-btn.button.button-outline.button-icon,
+  #basic-stop-btn.button.button-outline.button-icon,
+  #basic-copy-btn.button.button-outline.button-icon {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+  }
+
+  #basic-upload-btn.button.button-outline.button-icon i.fas.fa-paperclip,
+  #basic-play-btn.button.button-outline.button-icon i.fas.fa-play,
+  #basic-stop-btn.button.button-outline.button-icon i.fas.fa-stop,
+  #basic-copy-btn.button.button-outline.button-icon i.fas.fa-copy {
+    color: white !important;
+  }
+
+  /* Light theme overrides for card header */
+  [data-theme="light"] #basic-record-btn.header-record-button {
+    background: hsl(var(--primary)) !important;
+    color: white !important;
+  }
+
+  [data-theme="light"] #basic-record-btn.header-record-button i.fas.fa-microphone {
+    color: white !important;
+  }
+
+  [data-theme="light"] #basic-upload-btn.button.button-outline.button-icon,
+  [data-theme="light"] #basic-play-btn.button.button-outline.button-icon,
+  [data-theme="light"] #basic-stop-btn.button.button-outline.button-icon,
+  [data-theme="light"] #basic-copy-btn.button.button-outline.button-icon {
+    background: rgba(255, 255, 255, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    color: white !important;
+  }
+
+  [data-theme="light"] #basic-upload-btn.button.button-outline.button-icon i.fas.fa-paperclip,
+  [data-theme="light"] #basic-play-btn.button.button-outline.button-icon i.fas.fa-play,
+  [data-theme="light"] #basic-stop-btn.button.button-outline.button-icon i.fas.fa-stop,
+  [data-theme="light"] #basic-copy-btn.button.button-outline.button-icon i.fas.fa-copy {
+    color: white !important;
+  }
+
+  /* Dark theme overrides for card header */
+  [data-theme="dark"] #basic-record-btn.header-record-button {
+    background: hsl(var(--primary)) !important;
+    color: white !important;
+  }
+
+  [data-theme="dark"] #basic-record-btn.header-record-button i.fas.fa-microphone {
+    color: white !important;
+  }
+
+  [data-theme="dark"] #basic-upload-btn.button.button-outline.button-icon,
+  [data-theme="dark"] #basic-play-btn.button.button-outline.button-icon,
+  [data-theme="dark"] #basic-stop-btn.button.button-outline.button-icon,
+  [data-theme="dark"] #basic-copy-btn.button.button-outline.button-icon {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+  }
+
+  [data-theme="dark"] #basic-upload-btn.button.button-outline.button-icon i.fas.fa-paperclip,
+  [data-theme="dark"] #basic-play-btn.button.button-outline.button-icon i.fas.fa-play,
+  [data-theme="dark"] #basic-stop-btn.button.button-outline.button-icon i.fas.fa-stop,
+  [data-theme="dark"] #basic-copy-btn.button.button-outline.button-icon i.fas.fa-copy {
+    color: white !important;
+  }
+}
+
+/* Additional fixes for very small screens */
+@media (max-width: 480px) {
+  #basic-mode .button-icon,
+  #basic-record-btn {
+    min-width: 40px !important;
+    min-height: 40px !important;
+  }
+  
+  #basic-mode .button-icon i,
+  #basic-record-btn i {
+    font-size: 1rem !important;
+  }
+}
+
+/* Landscape orientation fixes */
+@media (max-width: 768px) and (orientation: landscape) {
+  #basic-mode .card-header {
+    padding: 0.75rem !important;
+  }
+  
+  #basic-mode .card-header .flex {
+    gap: 0.375rem !important;
+  }
+}
+
+/* Print media - hide interactive elements */
+@media print {
+  #basic-mode .button-icon,
+  #basic-mode .action-button,
+  #basic-record-btn {
+    display: none !important;
+  }
+}
+
+/* Debug mode - uncomment to test icon visibility */
+/*
+@media (max-width: 768px) {
+  #basic-mode .card-header .button {
+    border: 2px solid red !important;
+  }
+
+  #basic-mode .card-header .button i {
+    background: yellow !important;
+    padding: 2px !important;
+  }
+
+  #basic-record-btn {
+    border: 3px solid green !important;
+  }
+
+  #basic-upload-btn,
+  #basic-play-btn,
+  #basic-stop-btn,
+  #basic-copy-btn {
+    border: 2px solid blue !important;
+  }
+}
+*/
+
+/* Final fallback for any missed cases */
+@media (max-width: 768px) {
+  /* Ensure all FontAwesome icons in basic mode are visible */
+  #basic-mode i[class*="fa-"] {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: inline-block !important;
+  }
+
+  /* Theme-aware fallback colors */
+  [data-theme="light"] #basic-mode .card-header i[class*="fa-"] {
+    color: hsl(var(--primary)) !important; /* Purple icons for light theme */
+  }
+
+  [data-theme="dark"] #basic-mode .card-header i[class*="fa-"] {
+    color: white !important; /* Light icons for dark theme */
+  }
+
+  /* System theme fallback */
+  [data-theme="system"] #basic-mode .card-header i[class*="fa-"] {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  /* Ensure button text color is inherited by icons */
+  #basic-mode button i {
+    color: inherit !important;
+  }
+}

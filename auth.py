@@ -84,6 +84,26 @@ def init_app(app):
     # Initialize OAuth
     oauth.init_app(app)
 
+    # Add session activity tracker for mobile UX
+    @app.before_request
+    def track_user_activity():
+        """Track user activity to extend session for active users."""
+        if current_user.is_authenticated:
+            from datetime import datetime, timedelta
+
+            # Check if we need to extend the session
+            last_activity = session.get('last_activity')
+            now = datetime.now()
+
+            if last_activity:
+                last_activity_time = datetime.fromisoformat(last_activity)
+                # If user has been active within the last hour, extend session
+                if now - last_activity_time < timedelta(hours=1):
+                    session.permanent = True
+
+            # Update last activity timestamp
+            session['last_activity'] = now.isoformat()
+
     # Register blueprint
     app.register_blueprint(auth_bp)
 
@@ -349,13 +369,18 @@ def login():
                     return self.role == 'normal_user'
 
             user = UserObject(email, user_data)
-            login_user(user, remember=remember)
+            # Always use remember=True for 7-day session persistence
+            # This provides better mobile UX by keeping users logged in
+            login_user(user, remember=True, duration=current_app.config.get('REMEMBER_COOKIE_DURATION'))
+
+            # Make session permanent for better mobile experience
+            session.permanent = True
 
             # Log activity
             UserActivity.log(
                 user_email=email,
                 activity_type='login',
-                details='Manual login'
+                details='Manual login with 7-day persistence'
             )
 
             next_page = request.args.get('next')
@@ -659,11 +684,14 @@ def google_callback():
         # Get or create user
         user = User.get_or_create(email, name, picture)
 
-        # Log the user in
-        login_user(user)
+        # Log the user in with 7-day persistence for better mobile UX
+        login_user(user, remember=True, duration=current_app.config.get('REMEMBER_COOKIE_DURATION'))
+
+        # Make session permanent for better mobile experience
+        session.permanent = True
 
         # Log user activity
-        UserActivity.log(email, 'login', {'method': 'google'})
+        UserActivity.log(email, 'login', {'method': 'google', 'persistence': '7-day'})
 
         # Check for next parameter in session or URL args for redirect after login
         next_page = session.get('next') or request.args.get('next')
@@ -763,11 +791,14 @@ def _handle_google_callback():
         # Get or create user
         user = User.get_or_create(email, name, picture)
 
-        # Log the user in
-        login_user(user)
+        # Log the user in with 7-day persistence for better mobile UX
+        login_user(user, remember=True, duration=current_app.config.get('REMEMBER_COOKIE_DURATION'))
+
+        # Make session permanent for better mobile experience
+        session.permanent = True
 
         # Log user activity
-        UserActivity.log(email, 'login', {'method': 'google'})
+        UserActivity.log(email, 'login', {'method': 'google', 'persistence': '7-day'})
 
         # Check for next parameter in session or URL args for redirect after login
         next_page = session.get('next') or request.args.get('next')

@@ -27,6 +27,11 @@
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/upgrade-modal.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/email-verification-modal.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/brand-link.css') }}">
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='mobile-nav.css') }}">
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/mobile-performance.css') }}" media="screen and (max-width: 768px)">
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/mobile-basic-mode.css') }}" media="screen and (max-width: 768px)">
+  <!-- Critical fix for mobile icon visibility - load without media query for immediate effect -->
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/mobile-icon-theme-fix.css') }}">
 
   <!-- Payment Success Animation Styles -->
   <style>
@@ -50,6 +55,142 @@
         transform: translateX(100%);
         opacity: 0;
       }
+    }
+
+    /* THEME-AWARE ICON FIX: Ensure FontAwesome icons are visible with proper contrast */
+    #basic-mode .card-header i.fas,
+    #basic-mode .card-header i.far,
+    #basic-mode .card-header i.fab,
+    #basic-mode .card-header i[class*="fa-"] {
+      font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", "FontAwesome" !important;
+      font-weight: 900 !important;
+      font-style: normal !important;
+      display: inline-block !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      font-size: 14px !important;
+      line-height: 1 !important;
+    }
+
+    /* LIGHT THEME: Purple icons for brand consistency */
+    [data-theme="light"] #basic-mode .card-header i.fas,
+    [data-theme="light"] #basic-mode .card-header i[class*="fa-"] {
+      color: hsl(var(--primary)) !important; /* Purple color for light theme */
+    }
+
+    [data-theme="light"] #basic-mode .card-header .button,
+    [data-theme="light"] #basic-mode .card-header .header-record-button {
+      background: hsla(var(--primary), 0.1) !important;
+      border: 1px solid hsla(var(--primary), 0.2) !important;
+      color: hsl(var(--primary)) !important;
+    }
+
+    [data-theme="light"] #basic-record-btn {
+      background: hsl(262, 83%, 67%) !important;
+      color: white !important; /* Keep white text on primary background */
+    }
+
+    [data-theme="light"] #basic-record-btn i.fa-microphone {
+      color: white !important; /* White icon on primary background */
+    }
+
+    [data-theme="light"] #basic-upload-btn i.fa-paperclip,
+    [data-theme="light"] #basic-play-btn i.fa-play,
+    [data-theme="light"] #basic-stop-btn i.fa-stop,
+    [data-theme="light"] #basic-copy-btn i.fa-copy {
+      color: hsl(var(--primary)) !important; /* Purple icons for light theme */
+    }
+
+    /* DARK THEME: Light icons for contrast against dark backgrounds */
+    [data-theme="dark"] #basic-mode .card-header i.fas,
+    [data-theme="dark"] #basic-mode .card-header i[class*="fa-"] {
+      color: white !important; /* Light color for dark theme */
+    }
+
+    [data-theme="dark"] #basic-mode .card-header .button,
+    [data-theme="dark"] #basic-mode .card-header .header-record-button {
+      background: rgba(255, 255, 255, 0.15) !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+      color: white !important;
+    }
+
+    [data-theme="dark"] #basic-record-btn {
+      background: hsl(262, 83%, 67%) !important;
+      color: white !important;
+    }
+
+    [data-theme="dark"] #basic-record-btn i.fa-microphone,
+    [data-theme="dark"] #basic-upload-btn i.fa-paperclip,
+    [data-theme="dark"] #basic-play-btn i.fa-play,
+    [data-theme="dark"] #basic-stop-btn i.fa-stop,
+    [data-theme="dark"] #basic-copy-btn i.fa-copy {
+      color: white !important; /* White icons for dark theme */
+    }
+
+    /* SYSTEM THEME: Fallback to CSS variables */
+    [data-theme="system"] #basic-mode .card-header i.fas,
+    [data-theme="system"] #basic-mode .card-header i[class*="fa-"] {
+      color: hsl(var(--foreground)) !important;
+    }
+
+    /* CRITICAL FIX: Ensure buttons are always visible in mobile view */
+    @media (max-width: 768px) {
+      #basic-mode .card-header .flex {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+
+      #basic-mode .card-header .button,
+      #basic-mode .card-header .header-record-button,
+      #basic-record-btn,
+      #basic-upload-btn,
+      #basic-play-btn,
+      #basic-stop-btn,
+      #basic-copy-btn {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+      }
+
+      /* Force FontAwesome icons to be visible */
+      #basic-mode .card-header i.fas,
+      #basic-mode .card-header i.far,
+      #basic-mode .card-header i.fab,
+      #basic-mode .card-header i[class*="fa-"] {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        font-size: 14px !important;
+      }
+
+      /* Light theme mobile icons */
+      [data-theme="light"] #basic-mode .card-header i.fas,
+      [data-theme="light"] #basic-mode .card-header i[class*="fa-"] {
+        color: hsl(var(--primary)) !important;
+      }
+
+      [data-theme="light"] #basic-record-btn i.fa-microphone {
+        color: white !important;
+      }
+
+      /* Dark theme mobile icons */
+      [data-theme="dark"] #basic-mode .card-header i.fas,
+      [data-theme="dark"] #basic-mode .card-header i[class*="fa-"] {
+        color: white !important;
+      }
+
+      /* Debug borders - uncomment to see button boundaries */
+      /*
+      #basic-mode .card-header .button {
+        border: 2px solid red !important;
+      }
+      #basic-mode .card-header i {
+        background: yellow !important;
+      }
+      */
     }
   </style>
 </head>
@@ -771,6 +912,109 @@
   </script>
   <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
   <script src="{{ url_for('static', filename='js/email-verification-modal.js') }}"></script>
+
+  <!-- Device Compatibility - Load first for device detection -->
+  <script src="{{ versioned_url_for('static', filename='js/device-compatibility.js') }}"></script>
+
+  <!-- Performance Optimizer - Load early for mobile optimization -->
+  <script src="{{ versioned_url_for('static', filename='js/performance-optimizer.js') }}"></script>
+
+  <!-- Language Preferences System for Mobile UX -->
+  <script src="{{ versioned_url_for('static', filename='js/language-preferences.js') }}"></script>
+
+  <!-- Mobile Basic Mode Enhancements -->
+  <script src="{{ versioned_url_for('static', filename='js/mobile-basic-mode.js') }}"></script>
+
+  <!-- Mobile Navigation System -->
+  <script src="{{ versioned_url_for('static', filename='mobile-nav.js') }}"></script>
+
+  <!-- Mobile Icon Debugging Script -->
+  <script>
+    // Debug mobile icon visibility issues
+    function debugMobileIcons() {
+      console.log('=== MOBILE ICON DEBUG ===');
+
+      // Check if we're in mobile view
+      const isMobile = window.innerWidth <= 768;
+      console.log('Is mobile view:', isMobile);
+      console.log('Window width:', window.innerWidth);
+
+      // Check if basic mode is active
+      const basicMode = document.getElementById('basic-mode');
+      console.log('Basic mode element:', basicMode);
+      console.log('Basic mode display:', basicMode ? getComputedStyle(basicMode).display : 'not found');
+
+      // Check card header
+      const cardHeader = document.querySelector('#basic-mode .card-header');
+      console.log('Card header element:', cardHeader);
+      console.log('Card header display:', cardHeader ? getComputedStyle(cardHeader).display : 'not found');
+
+      // Check button container
+      const buttonContainer = document.querySelector('#basic-mode .card-header .flex');
+      console.log('Button container element:', buttonContainer);
+      console.log('Button container display:', buttonContainer ? getComputedStyle(buttonContainer).display : 'not found');
+
+      // Check individual buttons
+      const buttons = ['basic-record-btn', 'basic-upload-btn', 'basic-play-btn', 'basic-stop-btn', 'basic-copy-btn'];
+      buttons.forEach(id => {
+        const btn = document.getElementById(id);
+        console.log(`Button ${id}:`, btn);
+        if (btn) {
+          const styles = getComputedStyle(btn);
+          console.log(`  Display: ${styles.display}`);
+          console.log(`  Visibility: ${styles.visibility}`);
+          console.log(`  Opacity: ${styles.opacity}`);
+
+          // Check icon
+          const icon = btn.querySelector('i');
+          if (icon) {
+            const iconStyles = getComputedStyle(icon);
+            console.log(`  Icon display: ${iconStyles.display}`);
+            console.log(`  Icon color: ${iconStyles.color}`);
+            console.log(`  Icon font-family: ${iconStyles.fontFamily}`);
+          } else {
+            console.log('  No icon found!');
+          }
+        }
+      });
+
+      console.log('=== END DEBUG ===');
+    }
+
+    // Run debug on load and resize
+    document.addEventListener('DOMContentLoaded', debugMobileIcons);
+    window.addEventListener('resize', debugMobileIcons);
+
+    // Force button visibility on mobile
+    function forceMobileButtonVisibility() {
+      if (window.innerWidth <= 768) {
+        const buttons = document.querySelectorAll('#basic-mode .card-header .button, #basic-mode .card-header .header-record-button');
+        buttons.forEach(btn => {
+          btn.style.display = 'flex';
+          btn.style.visibility = 'visible';
+          btn.style.opacity = '1';
+
+          const icon = btn.querySelector('i');
+          if (icon) {
+            icon.style.display = 'inline-block';
+            icon.style.visibility = 'visible';
+            icon.style.opacity = '1';
+          }
+        });
+
+        const container = document.querySelector('#basic-mode .card-header .flex');
+        if (container) {
+          container.style.display = 'flex';
+          container.style.visibility = 'visible';
+          container.style.opacity = '1';
+        }
+      }
+    }
+
+    // Run force visibility
+    document.addEventListener('DOMContentLoaded', forceMobileButtonVisibility);
+    window.addEventListener('resize', forceMobileButtonVisibility);
+  </script>
 
 
 </body>

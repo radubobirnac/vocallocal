@@ -103,6 +103,17 @@ app.config['STRIPE_WEBHOOK_SECRET'] = Config.STRIPE_WEBHOOK_SECRET
 # Configure Flask-Login to use session for next parameter
 app.config['USE_SESSION_FOR_NEXT'] = True
 
+# Configure session management for 7-day persistence
+from datetime import timedelta
+app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=7)
+app.config['REMEMBER_COOKIE_SECURE'] = True  # Use HTTPS in production
+app.config['REMEMBER_COOKIE_HTTPONLY'] = True  # Prevent XSS attacks
+app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'  # CSRF protection
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+
+# Configure session to be permanent by default for better mobile UX
+app.config['SESSION_PERMANENT'] = True
+
 # Set up comprehensive error handling
 try:
     from utils.error_handler import register_error_handlers

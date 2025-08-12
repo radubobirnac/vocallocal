@@ -1,0 +1,505 @@
+/**
+ * Mobile-Optimized Basic Mode Design
+ * Cleaner, more focused interface for mobile users
+ * Theme-aware icon styling for proper contrast in light and dark modes
+ */
+
+/* Fallback styles for browsers that don't support CSS custom properties */
+@supports not (color: hsl(var(--primary))) {
+  #basic-mode .card-header {
+    color: white !important;
+  }
+
+  #basic-record-btn {
+    color: #1a202c !important; /* Dark color for light theme fallback */
+    background: rgba(26, 32, 44, 0.1) !important;
+    border-color: rgba(26, 32, 44, 0.2) !important;
+  }
+
+  #basic-mode .button-icon {
+    color: #1a202c !important;
+    background: rgba(26, 32, 44, 0.08) !important;
+    border-color: rgba(26, 32, 44, 0.15) !important;
+  }
+}
+
+/* Mobile-first basic mode layout */
+@media (max-width: 768px) {
+  #basic-mode {
+    padding: 0;
+    margin: 0;
+  }
+  
+  /* Simplified card design */
+  #basic-mode .card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  
+  /* Mobile-optimized card header */
+  #basic-mode .card-header {
+    padding: 1rem;
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-dark)) 100%);
+    color: hsl(var(--primary-foreground));
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  #basic-mode .card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    text-align: center;
+  }
+  
+  /* Mobile-focused action buttons */
+  #basic-mode .card-header .flex {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  /* Primary record button - make it prominent */
+  #basic-record-btn {
+    background: hsla(var(--primary-foreground), 0.2);
+    border: 2px solid hsla(var(--primary-foreground), 0.3);
+    color: hsl(var(--primary-foreground));
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+  }
+  
+  #basic-record-btn:hover,
+  #basic-record-btn.recording {
+    background: hsla(var(--primary-foreground), 0.3);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  #basic-record-btn.recording {
+    background: hsl(0, 84%, 60%); /* Red for recording state */
+    color: white; /* Ensure white text on red background */
+    border-color: hsl(0, 84%, 50%);
+    animation: pulse-record 1.5s infinite;
+  }
+  
+  @keyframes pulse-record {
+    0%, 100% { transform: scale(1.05); }
+    50% { transform: scale(1.1); }
+  }
+  
+  /* Secondary action buttons */
+  #basic-mode .button-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: hsla(var(--primary-foreground), 0.15);
+    border: 1px solid hsla(var(--primary-foreground), 0.2);
+    color: hsl(var(--primary-foreground));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+  }
+
+  #basic-mode .button-icon:hover {
+    background: hsla(var(--primary-foreground), 0.25);
+  }
+  
+  /* Mobile-optimized card content */
+  #basic-mode .card-content {
+    padding: 1.5rem 1rem;
+  }
+  
+  /* Simplified grid layout for mobile */
+  #basic-mode .grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  /* Language selector optimization */
+  #basic-mode .form-group {
+    margin-bottom: 0;
+  }
+  
+  #basic-mode .form-label {
+    font-weight: 600;
+    color: hsl(var(--foreground));
+    margin-bottom: 0.5rem;
+    display: block;
+    font-size: 0.95rem;
+  }
+  
+  #basic-mode .form-select {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 2px solid hsl(var(--border));
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+  }
+  
+  #basic-mode .form-select:focus {
+    outline: none;
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 3px hsla(var(--primary), 0.1);
+  }
+  
+  /* Transcript area optimization */
+  #basic-transcript {
+    min-height: 200px;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 2px solid hsl(var(--border));
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-size: 1rem;
+    line-height: 1.6;
+    resize: vertical;
+    transition: border-color 0.2s ease;
+  }
+  
+  #basic-transcript:focus {
+    outline: none;
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 3px hsla(var(--primary), 0.1);
+  }
+  
+  #basic-transcript::placeholder {
+    color: hsl(var(--muted-foreground));
+    font-style: italic;
+  }
+  
+  /* Transcript controls optimization */
+  .transcript-controls {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .transcript-controls .button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  /* AI Interpretation section optimization */
+  .interpretation-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid hsl(var(--border));
+  }
+  
+  .interpretation-title {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  
+  .interpretation-title .form-label {
+    margin-bottom: 0;
+  }
+  
+  .interpretation-title .flex {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  #basic-interpretation {
+    min-height: 150px;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 2px solid hsl(var(--border));
+    background: hsl(var(--muted));
+    color: hsl(var(--foreground));
+    font-size: 1rem;
+    line-height: 1.6;
+    resize: vertical;
+  }
+  
+  #basic-interpretation::placeholder {
+    color: hsl(var(--muted-foreground));
+    font-style: italic;
+  }
+  
+  /* Button optimizations */
+  #basic-mode .button {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  #basic-mode .button-small {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    min-height: 36px;
+  }
+  
+  #basic-interpret-btn {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border: none;
+  }
+  
+  #basic-interpret-btn:hover {
+    background: hsl(var(--primary-dark));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Loading states */
+  .button.loading {
+    opacity: 0.7;
+    pointer-events: none;
+    position: relative;
+  }
+  
+  .button.loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Status message optimization */
+  #status {
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+  
+  /* Theme-specific optimizations for better contrast */
+
+  /* Light theme - ensure dark icons on light backgrounds */
+  [data-theme="light"] #basic-mode .card-header {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-dark)) 100%);
+    color: white; /* Force white text on primary gradient background */
+  }
+
+  [data-theme="light"] #basic-record-btn {
+    background: hsla(0, 0%, 0%, 0.1); /* Dark background for light theme */
+    border: 2px solid hsla(0, 0%, 0%, 0.2);
+    color: hsl(var(--foreground)); /* Use theme foreground color */
+  }
+
+  [data-theme="light"] #basic-mode .button-icon {
+    background: hsla(0, 0%, 0%, 0.08);
+    border: 1px solid hsla(0, 0%, 0%, 0.15);
+    color: hsl(var(--foreground));
+  }
+
+  [data-theme="light"] #basic-record-btn:hover {
+    background: hsla(0, 0%, 0%, 0.15);
+  }
+
+  [data-theme="light"] #basic-mode .button-icon:hover {
+    background: hsla(0, 0%, 0%, 0.12);
+  }
+
+  /* Dark theme - ensure light icons on dark backgrounds */
+  [data-theme="dark"] #basic-mode .card-header {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-dark)) 100%);
+    color: white; /* Force white text on primary gradient background */
+  }
+
+  [data-theme="dark"] #basic-record-btn {
+    background: hsla(0, 0%, 100%, 0.1);
+    border: 2px solid hsla(0, 0%, 100%, 0.2);
+    color: hsl(var(--foreground));
+  }
+
+  [data-theme="dark"] #basic-mode .button-icon {
+    background: hsla(0, 0%, 100%, 0.1);
+    border: 1px solid hsla(0, 0%, 100%, 0.15);
+    color: hsl(var(--foreground));
+  }
+
+  [data-theme="dark"] #basic-record-btn:hover {
+    background: hsla(0, 0%, 100%, 0.15);
+  }
+
+  [data-theme="dark"] #basic-mode .button-icon:hover {
+    background: hsla(0, 0%, 100%, 0.15);
+  }
+
+  /* Ensure all action button icons are visible with proper contrast */
+  #basic-mode .button-icon i,
+  #basic-record-btn i,
+  #basic-upload-btn i,
+  #basic-play-btn i,
+  #basic-stop-btn i,
+  #basic-copy-btn i,
+  #basic-interpret-btn i,
+  #basic-play-interpretation-btn i,
+  #basic-stop-interpretation-btn i,
+  #basic-copy-interpretation-btn i {
+    font-size: inherit;
+    line-height: 1;
+    display: inline-block;
+  }
+
+  /* Light theme icon contrast */
+  [data-theme="light"] #basic-mode .button-icon i,
+  [data-theme="light"] #basic-record-btn i {
+    color: hsl(var(--foreground));
+    text-shadow: none;
+  }
+
+  /* Dark theme icon contrast */
+  [data-theme="dark"] #basic-mode .button-icon i,
+  [data-theme="dark"] #basic-record-btn i {
+    color: hsl(var(--foreground));
+    text-shadow: none;
+  }
+
+  /* System theme fallback - ensure visibility */
+  [data-theme="system"] #basic-mode .button-icon i,
+  [data-theme="system"] #basic-record-btn i {
+    color: hsl(var(--foreground));
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    #basic-mode .button-icon,
+    #basic-record-btn {
+      border-width: 2px !important;
+    }
+
+    [data-theme="light"] #basic-mode .button-icon,
+    [data-theme="light"] #basic-record-btn {
+      background: white !important;
+      color: black !important;
+      border-color: black !important;
+    }
+
+    [data-theme="dark"] #basic-mode .button-icon,
+    [data-theme="dark"] #basic-record-btn {
+      background: black !important;
+      color: white !important;
+      border-color: white !important;
+    }
+  }
+}
+
+/* Very small screens (< 480px) */
+@media (max-width: 480px) {
+  #basic-mode .card-content {
+    padding: 1rem 0.75rem;
+  }
+  
+  #basic-mode .card-header {
+    padding: 0.75rem;
+  }
+  
+  #basic-record-btn {
+    width: 56px;
+    height: 56px;
+    font-size: 1.25rem;
+  }
+  
+  #basic-mode .button-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .interpretation-title .flex {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .transcript-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .transcript-controls .button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Landscape mobile optimization */
+@media (max-width: 768px) and (orientation: landscape) {
+  #basic-transcript {
+    min-height: 120px;
+  }
+
+  #basic-interpretation {
+    min-height: 100px;
+  }
+
+  .interpretation-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+  }
+}
+
+/* Additional contrast fixes for specific button states */
+@media (max-width: 768px) {
+  /* Ensure recording state is always visible */
+  #basic-record-btn.recording {
+    background: hsl(0, 84%, 60%) !important; /* Red background */
+    color: white !important; /* White icon */
+    border-color: hsl(0, 84%, 50%) !important;
+    box-shadow: 0 0 0 3px hsla(0, 84%, 60%, 0.3) !important;
+  }
+
+  #basic-record-btn.recording i {
+    color: white !important;
+  }
+
+  /* Ensure disabled states are visible but dimmed */
+  #basic-mode .button-icon:disabled,
+  #basic-record-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Focus states for accessibility */
+  #basic-mode .button-icon:focus,
+  #basic-record-btn:focus {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+  }
+
+  /* Loading state visibility */
+  #basic-mode .button.loading {
+    position: relative;
+  }
+
+  #basic-mode .button.loading::after {
+    border-top-color: currentColor;
+  }
+}
