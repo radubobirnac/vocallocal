@@ -5,14 +5,38 @@
 
 class MobileBasicMode {
   constructor() {
-    this.isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase());
+    // Improved mobile detection: check both user agent AND viewport width
+    this.isMobile = this.detectMobile();
     this.isRecording = false;
     this.recordingStartTime = null;
     this.recordingTimer = null;
-    
+
     if (this.isMobile) {
       this.init();
     }
+  }
+
+  detectMobile() {
+    // Check user agent for actual mobile devices
+    const userAgentMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase());
+
+    // Check viewport width for mobile emulation or small screens
+    const viewportMobile = window.innerWidth <= 768;
+
+    // Check for touch capability
+    const touchCapable = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    const isMobile = userAgentMobile || (viewportMobile && touchCapable) || viewportMobile;
+
+    console.log('[MobileBasicMode] Mobile detection:', {
+      userAgent: userAgentMobile,
+      viewport: viewportMobile,
+      touch: touchCapable,
+      final: isMobile,
+      width: window.innerWidth
+    });
+
+    return isMobile;
   }
 
   init() {
@@ -22,6 +46,25 @@ class MobileBasicMode {
     this.setupVisualFeedback();
     this.setupAccessibility();
     this.setupPerformanceOptimizations();
+    this.setupMobilePlaybackControls();
+    this.setupResizeListener();
+    this.runMobileInterfaceTests();
+  }
+
+  setupResizeListener() {
+    // Re-check mobile status on window resize (for desktop browser mobile emulation)
+    window.addEventListener('resize', () => {
+      const wasMobile = this.isMobile;
+      this.isMobile = this.detectMobile();
+
+      if (this.isMobile && !wasMobile) {
+        console.log('[MobileBasicMode] Switched to mobile view, re-initializing...');
+        this.setupMobilePlaybackControls();
+        this.runMobileInterfaceTests();
+      } else if (!this.isMobile && wasMobile) {
+        console.log('[MobileBasicMode] Switched to desktop view');
+      }
+    });
   }
 
   /**
@@ -135,6 +178,9 @@ class MobileBasicMode {
   }
 
   setupRecordButtonEnhancements(recordBtn) {
+    // Ensure microphone button is always visible on mobile
+    this.ensureMicrophoneButtonPersistence(recordBtn);
+
     // Add visual recording state
     recordBtn.addEventListener('click', () => {
       if (!this.isRecording) {
@@ -143,10 +189,10 @@ class MobileBasicMode {
         this.stopRecordingVisuals(recordBtn);
       }
     });
-    
+
     // Add long press for continuous recording
     let longPressTimer;
-    
+
     recordBtn.addEventListener('touchstart', (e) => {
       longPressTimer = setTimeout(() => {
         if (!this.isRecording) {
@@ -154,7 +200,7 @@ class MobileBasicMode {
         }
       }, 500);
     }, { passive: true });
-    
+
     recordBtn.addEventListener('touchend', () => {
       clearTimeout(longPressTimer);
     }, { passive: true });
@@ -163,13 +209,15 @@ class MobileBasicMode {
   startRecordingVisuals(recordBtn) {
     this.isRecording = true;
     this.recordingStartTime = Date.now();
-    
+
     recordBtn.classList.add('recording');
-    recordBtn.innerHTML = '<i class="fas fa-stop"></i>';
-    
+    // Keep microphone icon instead of changing to stop icon for mobile
+    // This ensures the button always shows its purpose
+    recordBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+
     // Start recording timer
     this.startRecordingTimer();
-    
+
     // Show recording indicator
     this.showRecordingIndicator();
   }
@@ -177,15 +225,78 @@ class MobileBasicMode {
   stopRecordingVisuals(recordBtn) {
     this.isRecording = false;
     this.recordingStartTime = null;
-    
+
     recordBtn.classList.remove('recording');
     recordBtn.innerHTML = '<i class="fas fa-microphone"></i>';
-    
+
     // Stop recording timer
     this.stopRecordingTimer();
-    
+
     // Hide recording indicator
     this.hideRecordingIndicator();
+  }
+
+  ensureMicrophoneButtonPersistence(recordBtn) {
+    // Force the button to always be visible and maintain its microphone icon
+    const forceVisibility = () => {
+      recordBtn.style.display = 'flex';
+      recordBtn.style.visibility = 'visible';
+      recordBtn.style.opacity = '1';
+
+      // Ensure microphone icon is present
+      const icon = recordBtn.querySelector('i');
+      if (!icon || !icon.classList.contains('fa-microphone')) {
+        recordBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+      }
+    };
+
+    // Initial force
+    forceVisibility();
+
+    // Set up mutation observer to prevent the button from being hidden
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' || mutation.type === 'childList') {
+          // Check if button visibility was changed
+          const computedStyle = getComputedStyle(recordBtn);
+          if (computedStyle.display === 'none' ||
+              computedStyle.visibility === 'hidden' ||
+              computedStyle.opacity === '0') {
+            console.log('[MobileBasicMode] Microphone button visibility was changed, restoring...');
+            forceVisibility();
+          }
+        }
+      });
+    });
+
+    // Observe the button and its parent for changes
+    observer.observe(recordBtn, {
+      attributes: true,
+      childList: true,
+      subtree: true,
+      attributeFilter: ['style', 'class']
+    });
+
+    // Also observe the parent container
+    const parentContainer = recordBtn.closest('.flex');
+    if (parentContainer) {
+      observer.observe(parentContainer, {
+        attributes: true,
+        childList: true,
+        subtree: true
+      });
+    }
+
+    // Periodic check as backup
+    setInterval(() => {
+      const computedStyle = getComputedStyle(recordBtn);
+      if (computedStyle.display === 'none' ||
+          computedStyle.visibility === 'hidden' ||
+          computedStyle.opacity === '0') {
+        console.log('[MobileBasicMode] Periodic check: Microphone button was hidden, restoring...');
+        forceVisibility();
+      }
+    }, 1000);
   }
 
   startRecordingTimer() {
@@ -476,6 +587,194 @@ class MobileBasicMode {
       });
     });
   }
+
+  /**
+   * Setup mobile-specific playback controls
+   * Combines play/pause/stop functionality into a single button
+   */
+  setupMobilePlaybackControls() {
+    console.log('[MobileBasicMode] Setting up mobile playback controls');
+
+    // Track current playback state
+    this.playbackState = 'stopped'; // 'stopped', 'playing', 'paused'
+    this.currentAudio = null;
+
+    // Override the play button behavior for mobile
+    const playBtn = document.getElementById('basic-play-btn');
+    if (playBtn) {
+      // Remove existing event listeners by cloning the button
+      const newPlayBtn = playBtn.cloneNode(true);
+      playBtn.parentNode.replaceChild(newPlayBtn, playBtn);
+
+      // Add mobile-specific event listener
+      newPlayBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.handleMobilePlaybackClick();
+      });
+
+      // Update button title for mobile
+      newPlayBtn.setAttribute('title', 'Play/Pause/Stop audio');
+      newPlayBtn.setAttribute('aria-label', 'Play, pause, or stop audio playback');
+    }
+
+    // Listen for TTS events to update button state
+    document.addEventListener('tts-started', (e) => {
+      if (e.detail.sourceId === 'basic-transcript') {
+        this.updateMobilePlayButton('playing');
+      }
+    });
+
+    document.addEventListener('tts-stopped', (e) => {
+      if (e.detail.sourceId === 'basic-transcript') {
+        this.updateMobilePlayButton('stopped');
+      }
+    });
+
+    document.addEventListener('tts-ended', (e) => {
+      if (e.detail.sourceId === 'basic-transcript') {
+        this.updateMobilePlayButton('stopped');
+      }
+    });
+  }
+
+  handleMobilePlaybackClick() {
+    console.log('[MobileBasicMode] Mobile playback button clicked, current state:', this.playbackState);
+
+    const transcriptEl = document.getElementById('basic-transcript');
+    if (!transcriptEl || !transcriptEl.value.trim()) {
+      console.log('[MobileBasicMode] No transcript text to play');
+      return;
+    }
+
+    switch (this.playbackState) {
+      case 'stopped':
+        // Start playing
+        console.log('[MobileBasicMode] Starting playback');
+        this.startMobilePlayback();
+        break;
+      case 'playing':
+        // Stop playback (combining pause and stop functionality)
+        console.log('[MobileBasicMode] Stopping playback');
+        this.stopMobilePlayback();
+        break;
+      case 'paused':
+        // Resume playing (not implemented yet, so restart)
+        console.log('[MobileBasicMode] Resuming playback');
+        this.startMobilePlayback();
+        break;
+    }
+  }
+
+  startMobilePlayback() {
+    // Use the existing TTS function
+    if (window.speakText) {
+      window.speakText('basic-transcript');
+      this.playbackState = 'playing';
+      this.updateMobilePlayButton('playing');
+    }
+  }
+
+  stopMobilePlayback() {
+    // Use the existing stop function
+    if (window.stopSpeakText) {
+      window.stopSpeakText('basic-transcript');
+      this.playbackState = 'stopped';
+      this.updateMobilePlayButton('stopped');
+    }
+  }
+
+  updateMobilePlayButton(state) {
+    const playBtn = document.getElementById('basic-play-btn');
+    if (!playBtn) return;
+
+    const icon = playBtn.querySelector('i');
+    if (!icon) return;
+
+    this.playbackState = state;
+
+    switch (state) {
+      case 'playing':
+        icon.className = 'fas fa-stop';
+        playBtn.setAttribute('title', 'Stop audio');
+        break;
+      case 'paused':
+        icon.className = 'fas fa-play';
+        playBtn.setAttribute('title', 'Resume audio');
+        break;
+      case 'stopped':
+      default:
+        icon.className = 'fas fa-play';
+        playBtn.setAttribute('title', 'Play audio');
+        break;
+    }
+
+    console.log('[MobileBasicMode] Updated mobile play button to state:', state);
+  }
+
+  /**
+   * Run tests to verify mobile interface functionality
+   */
+  runMobileInterfaceTests() {
+    console.log('[MobileBasicMode] Running mobile interface tests...');
+
+    setTimeout(() => {
+      this.testStopButtonHidden();
+      this.testMicrophoneButtonVisible();
+      this.testPlayButtonEnhanced();
+    }, 1000);
+  }
+
+  testStopButtonHidden() {
+    const stopBtn = document.getElementById('basic-stop-btn');
+    if (stopBtn) {
+      const computedStyle = getComputedStyle(stopBtn);
+      const isHidden = computedStyle.display === 'none';
+      console.log('[MobileBasicMode] Stop button hidden test:', isHidden ? '✅ PASS' : '❌ FAIL');
+      if (!isHidden) {
+        console.warn('[MobileBasicMode] Stop button should be hidden on mobile');
+      }
+    } else {
+      console.log('[MobileBasicMode] Stop button not found');
+    }
+  }
+
+  testMicrophoneButtonVisible() {
+    const recordBtn = document.getElementById('basic-record-btn');
+    if (recordBtn) {
+      const computedStyle = getComputedStyle(recordBtn);
+      const isVisible = computedStyle.display !== 'none' &&
+                       computedStyle.visibility !== 'hidden' &&
+                       computedStyle.opacity !== '0';
+      console.log('[MobileBasicMode] Microphone button visible test:', isVisible ? '✅ PASS' : '❌ FAIL');
+
+      // Test icon presence
+      const icon = recordBtn.querySelector('i.fa-microphone');
+      const hasIcon = icon !== null;
+      console.log('[MobileBasicMode] Microphone icon present test:', hasIcon ? '✅ PASS' : '❌ FAIL');
+
+      if (!isVisible || !hasIcon) {
+        console.warn('[MobileBasicMode] Microphone button should be visible with microphone icon');
+      }
+    } else {
+      console.log('[MobileBasicMode] Microphone button not found');
+    }
+  }
+
+  testPlayButtonEnhanced() {
+    const playBtn = document.getElementById('basic-play-btn');
+    if (playBtn) {
+      const hasEnhancedTitle = playBtn.getAttribute('title').includes('Play/Pause/Stop') ||
+                              playBtn.getAttribute('aria-label').includes('Play, pause, or stop');
+      console.log('[MobileBasicMode] Play button enhanced test:', hasEnhancedTitle ? '✅ PASS' : '❌ FAIL');
+
+      if (!hasEnhancedTitle) {
+        console.warn('[MobileBasicMode] Play button should have enhanced functionality for mobile');
+      }
+    } else {
+      console.log('[MobileBasicMode] Play button not found');
+    }
+  }
 }
 
 // Initialize mobile basic mode enhancements
@@ -485,6 +784,13 @@ function initializeMobileBasicMode() {
   if (!mobileBasicMode) {
     mobileBasicMode = new MobileBasicMode();
     window.mobileBasicMode = mobileBasicMode;
+
+    // Force initialization for testing purposes if viewport is mobile-sized
+    if (!mobileBasicMode.isMobile && window.innerWidth <= 768) {
+      console.log('[MobileBasicMode] Force initializing for mobile viewport testing');
+      mobileBasicMode.isMobile = true;
+      mobileBasicMode.init();
+    }
   }
 }
 

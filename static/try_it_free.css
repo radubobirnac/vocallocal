@@ -137,42 +137,7 @@ input:checked + .slider:before {
   color: hsl(var(--primary));
 }
 
-.theme-options-dropdown {
-  position: absolute;
-  right: 0;
-  top: 100%;
-  margin-top: 0.5rem;
-  background-color: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-  min-width: 150px;
-  overflow: hidden;
-}
 
-.theme-option {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: hsl(var(--foreground));
-  transition: background-color 0.2s ease;
-}
-
-.theme-option:hover {
-  background-color: hsl(var(--secondary));
-}
-
-.theme-option.active {
-  background-color: hsla(var(--primary), 0.1);
-  color: hsl(var(--primary));
-}
 
 /* Settings Panel Styles */
 .settings-panel {

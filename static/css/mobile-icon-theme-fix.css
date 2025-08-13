@@ -27,6 +27,33 @@
   color: hsl(var(--primary)) !important; /* Purple color for light theme */
 }
 
+/* ULTRA HIGH SPECIFICITY: White microphone icon on blue record button */
+html[data-theme="light"] body #basic-mode .card-header #basic-record-btn.header-record-button i.fas.fa-microphone-lines,
+html[data-theme="light"] body #basic-mode .card-header #basic-record-btn.header-record-button i.fas.fa-microphone,
+html[data-theme="light"] body #basic-mode .card-header #basic-record-btn i.fas.fa-microphone-lines,
+html[data-theme="light"] body #basic-mode .card-header #basic-record-btn i.fas.fa-microphone,
+html[data-theme="light"] body #basic-record-btn.header-record-button i.fas.fa-microphone-lines,
+html[data-theme="light"] body #basic-record-btn.header-record-button i.fas.fa-microphone,
+html[data-theme="light"] body #basic-record-btn i.fas.fa-microphone-lines,
+html[data-theme="light"] body #basic-record-btn i.fas.fa-microphone,
+html[data-theme="light"] body #basic-record-btn i {
+  color: #ffffff !important; /* White for contrast on blue background */
+  background-color: transparent !important; /* No background needed */
+  border-radius: 0 !important;
+  padding: 0 !important;
+  position: relative !important;
+  z-index: 9999 !important;
+  display: inline-block !important;
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  text-align: center !important;
+}
+
 [data-theme="light"] #basic-mode .card-header .button,
 [data-theme="light"] #basic-mode .card-header .header-record-button {
   background: hsla(var(--primary), 0.1) !important;
@@ -69,15 +96,24 @@
     opacity: 1 !important;
   }
 
-  /* CRITICAL: Ensure all buttons are visible */
+  /* CRITICAL: Ensure all buttons are visible except stop button on mobile */
   #basic-mode .card-header .button,
   #basic-mode .card-header .header-record-button,
   #basic-record-btn,
   #basic-upload-btn,
   #basic-play-btn,
-  #basic-stop-btn,
   #basic-copy-btn {
     display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+  }
+
+  /* Stop button visibility controlled by mobile-specific CSS */
+  #basic-stop-btn {
     align-items: center !important;
     justify-content: center !important;
     visibility: visible !important;
@@ -140,13 +176,30 @@
     visibility: visible !important;
   }
 
+  /* ULTRA HIGH SPECIFICITY: White microphone icon override */
+  html[data-theme="light"] body #basic-mode .card-header #basic-record-btn.header-record-button i,
+  html[data-theme="light"] body #basic-mode .card-header #basic-record-btn i {
+    color: #ffffff !important;
+    background-color: transparent !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    position: relative !important;
+    z-index: 9999 !important;
+    font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
   [data-theme="light"] #basic-record-btn {
     background: hsl(var(--primary)) !important;
     color: white !important;
     border: none !important;
   }
 
-  [data-theme="light"] #basic-record-btn i.fa-microphone {
+  [data-theme="light"] #basic-record-btn i.fa-microphone,
+  [data-theme="light"] #basic-record-btn i.fa-microphone-lines {
     color: white !important; /* White icon on primary background */
   }
 
@@ -154,7 +207,7 @@
   [data-theme="light"] #basic-play-btn i.fa-play,
   [data-theme="light"] #basic-stop-btn i.fa-stop,
   [data-theme="light"] #basic-copy-btn i.fa-copy {
-    color: hsl(var(--primary)) !important; /* Purple icons for light theme */
+    color: black !important; /* Black icons for better visibility in light theme */
   }
 
   /* MOBILE DARK THEME: Button styling */
@@ -172,9 +225,9 @@
   }
 
   [data-theme="dark"] #basic-record-btn {
-    background: hsl(var(--primary)) !important;
+    background: #3b82f6 !important; /* Blue background for dark theme */
     color: white !important;
-    border: none !important;
+    border: 2px solid #3b82f6 !important; /* Blue border */
   }
 
   [data-theme="dark"] #basic-record-btn i.fa-microphone,
@@ -387,6 +440,23 @@
     border-top-color: currentColor !important;
   }
   
+  /* CRITICAL FIX: Override any inline styles that might be applied by JavaScript */
+  [data-theme="light"] #basic-mode .card-header #basic-upload-btn[style],
+  [data-theme="light"] #basic-mode .card-header #basic-play-btn[style],
+  [data-theme="light"] #basic-mode .card-header #basic-stop-btn[style],
+  [data-theme="light"] #basic-mode .card-header #basic-copy-btn[style] {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.7) !important;
+    color: hsl(var(--primary)) !important;
+  }
+
+  [data-theme="light"] #basic-mode .card-header #basic-upload-btn[style] i,
+  [data-theme="light"] #basic-mode .card-header #basic-play-btn[style] i,
+  [data-theme="light"] #basic-mode .card-header #basic-stop-btn[style] i,
+  [data-theme="light"] #basic-mode .card-header #basic-copy-btn[style] i {
+    color: black !important;
+  }
+
   /* High contrast mode support */
   @media (prefers-contrast: high) {
     [data-theme="light"] #basic-mode .button-icon,
@@ -396,13 +466,13 @@
       color: black !important;
       border: 2px solid black !important;
     }
-    
+
     [data-theme="light"] #basic-mode .button-icon i,
     [data-theme="light"] #basic-mode .action-button i,
     [data-theme="light"] #basic-record-btn i {
       color: black !important;
     }
-    
+
     [data-theme="dark"] #basic-mode .button-icon,
     [data-theme="dark"] #basic-mode .action-button,
     [data-theme="dark"] #basic-record-btn {
@@ -410,7 +480,7 @@
       color: white !important;
       border: 2px solid white !important;
     }
-    
+
     [data-theme="dark"] #basic-mode .button-icon i,
     [data-theme="dark"] #basic-mode .action-button i,
     [data-theme="dark"] #basic-record-btn i {
@@ -442,55 +512,146 @@
   #basic-mode .fa-volume-up {
     opacity: 1 !important;
     visibility: visible !important;
+    font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    display: inline-block !important;
   }
 
   /* Critical: Specific button fixes based on actual HTML structure */
 
   /* basic-record-btn with header-record-button class */
   #basic-record-btn.header-record-button {
-    background: hsl(var(--primary)) !important;
-    color: hsl(var(--primary-foreground)) !important;
-    border: none !important;
+    background: #2563eb !important; /* Blue background */
+    color: white !important;
+    border: 2px solid #2563eb !important; /* Blue border */
   }
 
+  #basic-record-btn.header-record-button i.fas.fa-microphone-lines,
   #basic-record-btn.header-record-button i.fas.fa-microphone {
     color: hsl(var(--primary-foreground)) !important;
+    font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
   }
 
-  /* Upload, play, stop, copy buttons with button button-outline button-icon classes */
-  #basic-upload-btn.button.button-outline.button-icon,
-  #basic-play-btn.button.button-outline.button-icon,
-  #basic-stop-btn.button.button-outline.button-icon,
-  #basic-copy-btn.button.button-outline.button-icon {
+  /* Ensure all FontAwesome icons in basic mode are properly displayed */
+  #basic-mode .fas,
+  #basic-mode .far,
+  #basic-mode .fab,
+  #basic-mode [class*="fa-"] {
+    font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  /* CRITICAL: Microphone icon specific fixes for record button */
+  #basic-record-btn i.fas.fa-microphone,
+  #basic-record-btn i.fa-microphone,
+  #basic-record-btn i[class*="microphone"],
+  #basic-record-btn .fas.fa-microphone,
+  #basic-record-btn .fa-microphone,
+  #basic-record-btn i {
+    font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    color: white !important;
+    font-size: 16px !important;
+    line-height: 1 !important;
+    text-align: center !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+  }
+
+  /* Ensure record button is always properly styled with blue background */
+  #basic-record-btn,
+  #basic-record-btn.header-record-button {
+    background: #2563eb !important; /* Blue background */
+    border: 2px solid #2563eb !important; /* Blue border */
+    color: white !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  /* Dark theme specific blue styling for record button */
+  [data-theme="dark"] #basic-record-btn,
+  [data-theme="dark"] #basic-record-btn.header-record-button {
+    background: #3b82f6 !important; /* Slightly lighter blue for dark theme */
+    border: 2px solid #3b82f6 !important;
+  }
+
+  /* LIGHT THEME: Upload, play, stop, copy buttons with proper contrast */
+  [data-theme="light"] #basic-upload-btn.button.button-outline.button-icon,
+  [data-theme="light"] #basic-play-btn.button.button-outline.button-icon,
+  [data-theme="light"] #basic-stop-btn.button.button-outline.button-icon,
+  [data-theme="light"] #basic-copy-btn.button.button-outline.button-icon {
+    background: hsla(var(--primary), 0.1) !important;
+    border: 1px solid hsla(var(--primary), 0.2) !important;
+    color: hsl(var(--primary)) !important;
+  }
+
+  [data-theme="light"] #basic-upload-btn.button.button-outline.button-icon i.fas.fa-paperclip,
+  [data-theme="light"] #basic-play-btn.button.button-outline.button-icon i.fas.fa-play,
+  [data-theme="light"] #basic-stop-btn.button.button-outline.button-icon i.fas.fa-stop,
+  [data-theme="light"] #basic-copy-btn.button.button-outline.button-icon i.fas.fa-copy {
+    color: black !important;
+  }
+
+  /* DARK THEME: Upload, play, stop, copy buttons with white styling */
+  [data-theme="dark"] #basic-upload-btn.button.button-outline.button-icon,
+  [data-theme="dark"] #basic-play-btn.button.button-outline.button-icon,
+  [data-theme="dark"] #basic-stop-btn.button.button-outline.button-icon,
+  [data-theme="dark"] #basic-copy-btn.button.button-outline.button-icon {
     background: rgba(255, 255, 255, 0.2) !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     color: white !important;
   }
 
-  #basic-upload-btn.button.button-outline.button-icon i.fas.fa-paperclip,
-  #basic-play-btn.button.button-outline.button-icon i.fas.fa-play,
-  #basic-stop-btn.button.button-outline.button-icon i.fas.fa-stop,
-  #basic-copy-btn.button.button-outline.button-icon i.fas.fa-copy {
+  [data-theme="dark"] #basic-upload-btn.button.button-outline.button-icon i.fas.fa-paperclip,
+  [data-theme="dark"] #basic-play-btn.button.button-outline.button-icon i.fas.fa-play,
+  [data-theme="dark"] #basic-stop-btn.button.button-outline.button-icon i.fas.fa-stop,
+  [data-theme="dark"] #basic-copy-btn.button.button-outline.button-icon i.fas.fa-copy {
     color: white !important;
   }
 
-  /* Light theme overrides for card header */
+  /* Light theme overrides for card header - record button stays primary colored */
   [data-theme="light"] #basic-record-btn.header-record-button {
     background: hsl(var(--primary)) !important;
     color: white !important;
   }
 
-  [data-theme="light"] #basic-record-btn.header-record-button i.fas.fa-microphone {
+  [data-theme="light"] #basic-record-btn.header-record-button i.fas.fa-microphone,
+  [data-theme="light"] #basic-record-btn.header-record-button i.fas.fa-microphone-lines {
     color: white !important;
   }
 
-  [data-theme="light"] #basic-upload-btn.button.button-outline.button-icon,
-  [data-theme="light"] #basic-play-btn.button.button-outline.button-icon,
-  [data-theme="light"] #basic-stop-btn.button.button-outline.button-icon,
-  [data-theme="light"] #basic-copy-btn.button.button-outline.button-icon {
-    background: rgba(255, 255, 255, 0.25) !important;
-    border: 1px solid rgba(255, 255, 255, 0.4) !important;
-    color: white !important;
+  /* Light theme card header buttons - removed white styling that was causing invisibility */
+  [data-theme="light"] #basic-mode .card-header #basic-upload-btn.button.button-outline.button-icon,
+  [data-theme="light"] #basic-mode .card-header #basic-play-btn.button.button-outline.button-icon,
+  [data-theme="light"] #basic-mode .card-header #basic-stop-btn.button.button-outline.button-icon,
+  [data-theme="light"] #basic-mode .card-header #basic-copy-btn.button.button-outline.button-icon {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.7) !important;
+    color: hsl(var(--primary)) !important;
+  }
+
+  [data-theme="light"] #basic-mode .card-header #basic-upload-btn i.fas.fa-paperclip,
+  [data-theme="light"] #basic-mode .card-header #basic-play-btn i.fas.fa-play,
+  [data-theme="light"] #basic-mode .card-header #basic-stop-btn i.fas.fa-stop,
+  [data-theme="light"] #basic-mode .card-header #basic-copy-btn i.fas.fa-copy {
+    color: black !important;
   }
 
   [data-theme="light"] #basic-upload-btn.button.button-outline.button-icon i.fas.fa-paperclip,
@@ -598,6 +759,22 @@
   /* Theme-aware fallback colors */
   [data-theme="light"] #basic-mode .card-header i[class*="fa-"] {
     color: hsl(var(--primary)) !important; /* Purple icons for light theme */
+  }
+
+  /* ULTRA HIGH SPECIFICITY: Microphone icon exception */
+  html[data-theme="light"] body #basic-mode .card-header #basic-record-btn.header-record-button i[class*="fa-"],
+  html[data-theme="light"] body #basic-mode .card-header #basic-record-btn i[class*="fa-"] {
+    color: #ffffff !important;
+    background-color: transparent !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    position: relative !important;
+    z-index: 9999 !important;
+    font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    opacity: 1 !important;
+    visibility: visible !important;
   }
 
   [data-theme="dark"] #basic-mode .card-header i[class*="fa-"] {

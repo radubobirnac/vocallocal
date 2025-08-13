@@ -51,23 +51,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Theme toggle functionality
   const themeToggleBtn = document.getElementById('theme-toggle-btn');
-  const themeOptionsDropdown = document.getElementById('theme-options');
 
-  if (themeToggleBtn && themeOptionsDropdown) {
+  if (themeToggleBtn) {
     themeToggleBtn.addEventListener('click', (event) => {
       event.stopPropagation();
-      const isShown = themeOptionsDropdown.classList.toggle('show');
-      themeOptionsDropdown.style.display = isShown ? 'block' : 'none';
-    });
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (event) => {
-      if (!themeToggleBtn.contains(event.target) && !themeOptionsDropdown.contains(event.target)) {
-        themeOptionsDropdown.classList.remove('show');
-        themeOptionsDropdown.style.display = 'none';
-      }
+      toggleTheme();
     });
   }
+
+  // Function to toggle between light and dark themes
+  function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    applyTheme(newTheme);
+  }
+
+  // Function to apply the selected theme
+  function applyTheme(theme) {
+    // Apply the theme class to the <html> element
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // Update the toggle button icon
+    if (themeToggleBtn) {
+      const icon = themeToggleBtn.querySelector('i');
+      if (icon) {
+        if (theme === 'light') {
+          // Show moon icon when in light mode (clicking will switch to dark)
+          icon.className = 'fas fa-moon';
+        } else {
+          // Show sun icon when in dark mode (clicking will switch to light)
+          icon.className = 'fas fa-sun';
+        }
+      }
+    }
+
+    // Save theme preference
+    try {
+      localStorage.setItem('vocal-local-theme', theme);
+    } catch (e) {
+      console.warn('LocalStorage is not available.');
+    }
+  }
+
+  // Function to load the saved theme or default to light
+  function loadTheme() {
+    let savedTheme = 'light'; // Default to light
+    try {
+      savedTheme = localStorage.getItem('vocal-local-theme') || 'light';
+    } catch (e) {
+      console.warn('LocalStorage is not available. Defaulting to light theme.');
+    }
+    applyTheme(savedTheme);
+  }
+
+  // Load saved theme on page load
+  loadTheme();
 
   // Initialize dropdowns for authenticated users using global functions
   console.log('Home.js: Checking for authenticated user dropdowns');
@@ -82,17 +120,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // History is now consolidated under Profile dropdown, no separate History dropdown needed
 
-  // Handle theme dropdown separately
-  const themeToggleBtn = document.getElementById('theme-toggle-btn');
-  const themeOptionsDropdown = document.getElementById('theme-options');
-
-  if (themeToggleBtn && themeOptionsDropdown) {
-    // Close theme dropdown when clicking outside
-    document.addEventListener('click', (event) => {
-      if (!themeToggleBtn.contains(event.target) && !themeOptionsDropdown.contains(event.target)) {
-        themeOptionsDropdown.classList.remove('show');
-        themeOptionsDropdown.style.display = 'none';
-      }
-    });
-  }
+  // Theme dropdown handling is now consolidated above with the main theme toggle functionality
 });

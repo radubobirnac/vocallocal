@@ -99,9 +99,7 @@ html[data-theme='dark'] {
     box-shadow: 0 6px 8px rgba(255, 255, 255, 0.08);
   }
 
-  .theme-options-dropdown {
-    box-shadow: 0 4px 6px rgba(255, 255, 255, 0.05);
-  }
+
 
   .upgrade-header-btn:hover {
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.6);
@@ -997,6 +995,123 @@ p {
   }
 }
 
+/* CRITICAL FIX: Override inline styles for audio control buttons in light theme */
+[data-theme="light"] #basic-mode .card-header #basic-upload-btn[style*="color: white"],
+[data-theme="light"] #basic-mode .card-header #basic-play-btn[style*="color: white"],
+[data-theme="light"] #basic-mode .card-header #basic-stop-btn[style*="color: white"],
+[data-theme="light"] #basic-mode .card-header #basic-copy-btn[style*="color: white"] {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.7) !important;
+  color: hsl(var(--primary)) !important;
+}
+
+[data-theme="light"] #basic-mode .card-header #basic-upload-btn[style*="color: white"] i,
+[data-theme="light"] #basic-mode .card-header #basic-play-btn[style*="color: white"] i,
+[data-theme="light"] #basic-mode .card-header #basic-stop-btn[style*="color: white"] i,
+[data-theme="light"] #basic-mode .card-header #basic-copy-btn[style*="color: white"] i {
+  color: black !important;
+}
+
+/* Ensure record button maintains primary styling */
+[data-theme="light"] #basic-record-btn {
+  background: hsl(var(--primary)) !important;
+  color: white !important;
+  border: 2px solid hsl(var(--primary)) !important;
+}
+
+/* ULTRA HIGH SPECIFICITY: White microphone icon on blue record button */
+html[data-theme="light"] body #basic-record-btn.header-record-button i,
+html[data-theme="light"] body #basic-record-btn i {
+  color: #ffffff !important;
+  background-color: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  position: relative !important;
+  z-index: 9999 !important;
+  display: inline-block !important;
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  text-align: center !important;
+}
+
+/* Light theme: Make other button icons black for better visibility */
+[data-theme="light"] #basic-upload-btn i.fa-paperclip,
+[data-theme="light"] #basic-play-btn i.fa-play,
+[data-theme="light"] #basic-stop-btn i.fa-stop,
+[data-theme="light"] #basic-copy-btn i.fa-copy {
+  color: black !important;
+}
+
+/* Light theme: Override any existing icon colors for these buttons */
+[data-theme="light"] #basic-upload-btn i,
+[data-theme="light"] #basic-play-btn i,
+[data-theme="light"] #basic-stop-btn i,
+[data-theme="light"] #basic-copy-btn i {
+  color: black !important;
+}
+
+/* CRITICAL FIX: Ensure microphone icon is always visible and properly styled */
+#basic-record-btn i.fas.fa-microphone,
+#basic-record-btn i.fa-microphone,
+#basic-record-btn i[class*="microphone"],
+#basic-record-btn .fas.fa-microphone,
+#basic-record-btn .fa-microphone,
+#basic-record-btn i {
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+  display: inline-block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  color: white !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  width: 18px !important;
+  height: 18px !important;
+  position: relative !important;
+  z-index: 999 !important;
+}
+
+/* Force FontAwesome microphone icon content */
+#basic-record-btn i.fas.fa-microphone::before,
+#basic-record-btn i.fa-microphone::before,
+#basic-record-btn i::before {
+  content: "\f130" !important; /* FontAwesome microphone unicode */
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+  font-weight: 900 !important;
+  display: inline-block !important;
+  color: #ffffff !important; /* White for contrast on blue background */
+  font-size: 18px !important;
+  position: relative !important;
+  z-index: 1000 !important;
+}
+
+/* Ensure record button itself is always properly styled with blue background */
+#basic-record-btn,
+#basic-record-btn.header-record-button {
+  background: #2563eb !important; /* Blue background */
+  border: 2px solid #2563eb !important; /* Blue border */
+  color: white !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Dark theme specific blue styling */
+[data-theme="dark"] #basic-record-btn,
+[data-theme="dark"] #basic-record-btn.header-record-button {
+  background: #3b82f6 !important; /* Slightly lighter blue for dark theme */
+  border: 2px solid #3b82f6 !important;
+}
+
 /* Timer display for bilingual mode - Compact */
 .timer-display {
   font-family: 'Courier New', monospace;
@@ -1146,55 +1261,7 @@ input:checked + .slider:before {
   display: inline-block;
 }
 
-.theme-options-dropdown {
-  display: none; /* Hidden by default */
-  position: absolute;
-  right: 0;
-  top: calc(100% + 0.5rem); /* Position below the button */
-  background-color: hsl(var(--popover));
-  color: hsl(var(--popover-foreground));
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-  min-width: 150px; /* Ensure enough width */
-  padding: 0.5rem 0;
-}
 
-.theme-options-dropdown.show {
-  display: block; /* Show when active */
-}
-
-.theme-option {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem; /* Space between icon and text */
-  background: none;
-  border: none;
-  color: hsl(var(--popover-foreground));
-  padding: 0.5rem 1rem;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  font-size: 0.875rem;
-  transition: background-color 0.2s ease;
-}
-
-.theme-option i {
-  width: 1em; /* Align icons */
-  text-align: center;
-}
-
-.theme-option:hover {
-  background-color: hsl(var(--accent));
-  color: hsl(var(--accent-foreground));
-}
-
-/* Style for the active theme button */
-.theme-option.active {
-  font-weight: 600;
-  color: hsl(var(--primary));
-}
 
 /* Ensure toggle button icon color matches theme */
 #theme-toggle-btn i {

@@ -949,24 +949,13 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
 
-    // Handle theme selection
-    themeOptions.forEach(option => {
-      option.addEventListener('click', () => {
-        const theme = option.getAttribute('data-theme');
-        applyTheme(theme);
-
-        // Save theme preference
-        try {
-          localStorage.setItem('vocal-local-theme', theme);
-        } catch (e) {
-          console.warn('LocalStorage is not available.');
-        }
-
-        // Close dropdown
-        themeOptionsDropdown.classList.remove('show');
-        themeOptionsDropdown.style.display = 'none';
+    // Handle theme toggle
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        toggleTheme();
       });
-    });
+    }
 
     // Load saved theme
     loadTheme();
@@ -974,38 +963,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Function to apply the selected theme
   function applyTheme(theme) {
-    let effectiveTheme = theme;
-
-    // Determine the actual theme if 'system' is selected
-    if (theme === 'system') {
-      effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-
     // Apply the theme class to the <html> element
-    document.documentElement.setAttribute('data-theme', effectiveTheme);
+    document.documentElement.setAttribute('data-theme', theme);
 
     // Update the toggle button icon
     if (themeToggleBtn) {
       const icon = themeToggleBtn.querySelector('i');
       if (icon) {
         if (theme === 'light') {
-          icon.className = 'fas fa-lightbulb';
-        } else if (theme === 'dark') {
+          // Show moon icon when in light mode (clicking will switch to dark)
           icon.className = 'fas fa-moon';
-        } else { // system
-          icon.className = 'fas fa-circle-half-stroke';
+        } else {
+          // Show sun icon when in dark mode (clicking will switch to light)
+          icon.className = 'fas fa-sun';
         }
       }
     }
+
+    // Save theme preference
+    try {
+      localStorage.setItem('vocal-local-theme', theme);
+    } catch (e) {
+      console.warn('LocalStorage is not available.');
+    }
   }
 
-  // Function to load the saved theme or default to system
+  // Function to toggle between light and dark themes
+  function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    applyTheme(newTheme);
+  }
+
+  // Function to load the saved theme or default to light
   function loadTheme() {
-    let savedTheme = 'system'; // Default to system
+    let savedTheme = 'light'; // Default to light
     try {
-      savedTheme = localStorage.getItem('vocal-local-theme') || 'system';
+      savedTheme = localStorage.getItem('vocal-local-theme') || 'light';
     } catch (e) {
-      console.warn('LocalStorage is not available. Defaulting to system theme.');
+      console.warn('LocalStorage is not available. Defaulting to light theme.');
     }
     applyTheme(savedTheme);
   }

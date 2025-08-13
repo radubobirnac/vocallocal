@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/brand-link.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='mobile-nav.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/mobile-performance.css') }}" media="screen and (max-width: 768px)">
-  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/mobile-basic-mode.css') }}" media="screen and (max-width: 768px)">
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/mobile-basic-mode.css') }}">
   <!-- Critical fix for mobile icon visibility - load without media query for immediate effect -->
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/mobile-icon-theme-fix.css') }}">
 
@@ -86,19 +86,170 @@
     }
 
     [data-theme="light"] #basic-record-btn {
-      background: hsl(262, 83%, 67%) !important;
-      color: white !important; /* Keep white text on primary background */
+      background: #2563eb !important; /* Blue background for light theme */
+      color: white !important; /* Keep white text on blue background */
     }
 
     [data-theme="light"] #basic-record-btn i.fa-microphone {
       color: white !important; /* White icon on primary background */
+      font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+      font-weight: 900 !important;
+      font-style: normal !important;
+      display: inline-block !important;
+      opacity: 1 !important;
+      visibility: visible !important;
     }
 
     [data-theme="light"] #basic-upload-btn i.fa-paperclip,
     [data-theme="light"] #basic-play-btn i.fa-play,
     [data-theme="light"] #basic-stop-btn i.fa-stop,
     [data-theme="light"] #basic-copy-btn i.fa-copy {
-      color: hsl(var(--primary)) !important; /* Purple icons for light theme */
+      color: black !important; /* Black icons for better visibility in light theme */
+    }
+
+    /* HIGHEST PRIORITY FIX: Override any inline styles that make buttons invisible */
+    [data-theme="light"] #basic-upload-btn[style],
+    [data-theme="light"] #basic-play-btn[style],
+    [data-theme="light"] #basic-stop-btn[style],
+    [data-theme="light"] #basic-copy-btn[style] {
+      background: rgba(255, 255, 255, 0.9) !important;
+      border: 1px solid rgba(255, 255, 255, 0.7) !important;
+      color: hsl(var(--primary)) !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    [data-theme="light"] #basic-upload-btn[style] i,
+    [data-theme="light"] #basic-play-btn[style] i,
+    [data-theme="light"] #basic-stop-btn[style] i,
+    [data-theme="light"] #basic-copy-btn[style] i {
+      color: black !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    /* CRITICAL: Ensure microphone icon is always visible on record button */
+    #basic-record-btn i.fas.fa-microphone,
+    #basic-record-btn i.fa-microphone,
+    #basic-record-btn i[class*="microphone"],
+    #basic-record-btn i {
+      font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+      font-weight: 900 !important;
+      font-style: normal !important;
+      display: inline-block !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      color: white !important;
+      font-size: 18px !important;
+      line-height: 1 !important;
+      text-align: center !important;
+      width: auto !important;
+      height: auto !important;
+      position: relative !important;
+      z-index: 999 !important;
+    }
+
+    /* Force FontAwesome microphone icon content */
+    #basic-record-btn i.fas.fa-microphone::before,
+    #basic-record-btn i.fa-microphone::before,
+    #basic-record-btn i::before {
+      content: "\f130" !important; /* FontAwesome microphone unicode */
+      font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+      font-weight: 900 !important;
+      display: inline-block !important;
+      color: white !important;
+      font-size: 18px !important;
+    }
+
+
+
+    /* Ensure record button background is always blue colored */
+    #basic-record-btn.header-record-button {
+      background: #2563eb !important; /* Blue background */
+      border: 2px solid #2563eb !important; /* Blue border */
+      color: white !important;
+    }
+
+    /* CRITICAL: Force black icons in light theme for non-record buttons */
+    [data-theme="light"] #basic-mode .card-header #basic-upload-btn i.fas,
+    [data-theme="light"] #basic-mode .card-header #basic-play-btn i.fas,
+    [data-theme="light"] #basic-mode .card-header #basic-stop-btn i.fas,
+    [data-theme="light"] #basic-mode .card-header #basic-copy-btn i.fas,
+    [data-theme="light"] #basic-upload-btn i.fa-paperclip,
+    [data-theme="light"] #basic-play-btn i.fa-play,
+    [data-theme="light"] #basic-stop-btn i.fa-stop,
+    [data-theme="light"] #basic-copy-btn i.fa-copy {
+      color: black !important;
+      font-weight: 900 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    /* MAXIMUM SPECIFICITY: White microphone icon on blue record button */
+    html[data-theme="light"] body div#basic-mode .card-header #basic-record-btn.header-record-button i.fas.fa-microphone,
+    html[data-theme="light"] body div#basic-mode .card-header #basic-record-btn i.fas.fa-microphone,
+    html[data-theme="light"] body #basic-record-btn.header-record-button i.fas.fa-microphone,
+    html[data-theme="light"] body #basic-record-btn i.fas.fa-microphone,
+    html[data-theme="light"] body #basic-record-btn i {
+      color: #ffffff !important; /* White for contrast on blue background */
+      background-color: transparent !important; /* No background needed on blue button */
+      border-radius: 0 !important;
+      padding: 0 !important;
+      z-index: 9999 !important;
+      position: relative !important;
+      display: inline-block !important;
+      font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+      font-weight: 900 !important;
+      font-style: normal !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      font-size: 16px !important;
+      line-height: 1 !important;
+      text-align: center !important;
+    }
+
+    /* Dark theme specific blue styling for record button */
+    [data-theme="dark"] #basic-record-btn.header-record-button {
+      background: #3b82f6 !important; /* Slightly lighter blue for dark theme */
+      border: 2px solid #3b82f6 !important;
+    }
+
+    /* Dark theme: White microphone icon for contrast */
+    [data-theme="dark"] #basic-record-btn i.fas.fa-microphone,
+    [data-theme="dark"] #basic-record-btn i {
+      color: white !important;
+      background-color: transparent !important;
+      padding: 0 !important;
+      border-radius: 0 !important;
+      font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+      font-weight: 900 !important;
+      display: inline-block !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    /* NUCLEAR OPTION: JavaScript-added class with maximum specificity */
+    html[data-theme="light"] body div#basic-mode .card-header #basic-record-btn.header-record-button i.microphone-icon-override,
+    html[data-theme="light"] body div#basic-mode .card-header #basic-record-btn i.microphone-icon-override,
+    html[data-theme="light"] body #basic-record-btn i.microphone-icon-override,
+    html[data-theme="dark"] body div#basic-mode .card-header #basic-record-btn.header-record-button i.microphone-icon-override,
+    html[data-theme="dark"] body div#basic-mode .card-header #basic-record-btn i.microphone-icon-override,
+    html[data-theme="dark"] body #basic-record-btn i.microphone-icon-override {
+      color: #ffffff !important;
+      background-color: transparent !important;
+      border-radius: 0 !important;
+      padding: 0 !important;
+      position: relative !important;
+      z-index: 9999 !important;
+      display: inline-block !important;
+      font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+      font-weight: 900 !important;
+      font-style: normal !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      font-size: 16px !important;
+      line-height: 1 !important;
+      text-align: center !important;
     }
 
     /* DARK THEME: Light icons for contrast against dark backgrounds */
@@ -115,7 +266,7 @@
     }
 
     [data-theme="dark"] #basic-record-btn {
-      background: hsl(262, 83%, 67%) !important;
+      background: #3b82f6 !important; /* Slightly lighter blue for dark theme */
       color: white !important;
     }
 
@@ -125,6 +276,12 @@
     [data-theme="dark"] #basic-stop-btn i.fa-stop,
     [data-theme="dark"] #basic-copy-btn i.fa-copy {
       color: white !important; /* White icons for dark theme */
+      font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+      font-weight: 900 !important;
+      font-style: normal !important;
+      display: inline-block !important;
+      opacity: 1 !important;
+      visibility: visible !important;
     }
 
     /* SYSTEM THEME: Fallback to CSS variables */
@@ -166,14 +323,32 @@
         font-size: 14px !important;
       }
 
-      /* Light theme mobile icons */
+      /* Light theme mobile icons - make non-record icons black for visibility */
       [data-theme="light"] #basic-mode .card-header i.fas,
       [data-theme="light"] #basic-mode .card-header i[class*="fa-"] {
-        color: hsl(var(--primary)) !important;
+        color: black !important;
       }
 
-      [data-theme="light"] #basic-record-btn i.fa-microphone {
+      /* Override for specific non-record button icons */
+      [data-theme="light"] #basic-upload-btn i,
+      [data-theme="light"] #basic-play-btn i,
+      [data-theme="light"] #basic-stop-btn i,
+      [data-theme="light"] #basic-copy-btn i {
+        color: black !important;
+        font-weight: 900 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
+
+      /* Keep microphone icon white on record button */
+      [data-theme="light"] #basic-record-btn i.fa-microphone,
+      [data-theme="light"] #basic-record-btn i {
         color: white !important;
+        font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+        font-weight: 900 !important;
+        display: inline-block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
       }
 
       /* Dark theme mobile icons */
@@ -226,20 +401,9 @@
 
         <!-- Theme Selector -->
         <div class="theme-selector">
-          <button id="theme-toggle-btn" class="button button-outline button-icon" title="Change theme">
-            <i class="fas fa-lightbulb"></i> <!-- Changed to lightbulb icon -->
+          <button id="theme-toggle-btn" class="button button-outline button-icon" title="Toggle theme">
+            <i class="fas fa-moon"></i>
           </button>
-          <div id="theme-options" class="theme-options-dropdown" style="display: none;">
-            <button class="theme-option" data-theme="light">
-              <i class="fas fa-sun"></i> Light Mode
-            </button>
-            <button class="theme-option" data-theme="dark">
-              <i class="fas fa-moon"></i> Dark Mode
-            </button>
-            <button class="theme-option" data-theme="system">
-              <i class="fas fa-circle-half-stroke"></i> System
-            </button>
-          </div>
         </div>
         <!-- End Theme Selector -->
 
@@ -930,6 +1094,49 @@
 
   <!-- Mobile Icon Debugging Script -->
   <script>
+    // Force mobile interface for testing
+    function forceMobileInterface() {
+      console.log('🔧 Forcing mobile interface for testing...');
+
+      // Hide stop button
+      const stopBtn = document.getElementById('basic-stop-btn');
+      if (stopBtn) {
+        stopBtn.style.display = 'none';
+        console.log('✅ Stop button hidden');
+      }
+
+      // Initialize mobile basic mode if not already done
+      if (window.mobileBasicMode) {
+        window.mobileBasicMode.isMobile = true;
+        window.mobileBasicMode.setupMobilePlaybackControls();
+        window.mobileBasicMode.runMobileInterfaceTests();
+      } else {
+        console.log('⚠️ Mobile basic mode not loaded yet');
+      }
+    }
+
+    // Test TTS pause/resume functionality
+    function testTTSPauseResume() {
+      console.log('🧪 Testing TTS pause/resume functionality...');
+
+      // Add test text to transcript
+      const transcriptEl = document.getElementById('basic-transcript');
+      if (transcriptEl) {
+        transcriptEl.value = 'This is a test of the Text-to-Speech pause and resume functionality. The audio should be able to pause at any point and resume from the exact same position without making a new API call.';
+        console.log('✅ Test text added to transcript');
+
+        // Instructions for manual testing
+        console.log('📋 Manual Test Instructions:');
+        console.log('1. Click the play button to start TTS');
+        console.log('2. Wait a few seconds, then click the play button again (should show pause icon) to pause');
+        console.log('3. Click the play button again (should show play icon) to resume from the same position');
+        console.log('4. Check that no new API call is made when resuming');
+        console.log('5. Use debugTTSState("basic-transcript") to check audio state');
+      } else {
+        console.error('❌ Transcript element not found');
+      }
+    }
+
     // Debug mobile icon visibility issues
     function debugMobileIcons() {
       console.log('=== MOBILE ICON DEBUG ===');
@@ -1014,6 +1221,135 @@
     // Run force visibility
     document.addEventListener('DOMContentLoaded', forceMobileButtonVisibility);
     window.addEventListener('resize', forceMobileButtonVisibility);
+
+    // Enhanced microphone icon function - ensures visibility and persistence
+    function ensureMicrophoneIcon() {
+      const recordBtn = document.getElementById('basic-record-btn');
+      if (recordBtn) {
+        // Check if icon already exists and is properly configured
+        let icon = recordBtn.querySelector('i.fas.fa-microphone, i.fas');
+
+        if (!icon) {
+          // Only clear and recreate if no icon exists
+          recordBtn.innerHTML = '';
+          icon = document.createElement('i');
+          icon.className = 'fas fa-microphone';
+          recordBtn.appendChild(icon);
+          console.log('Created new microphone icon');
+        } else {
+          // Update existing icon class if needed
+          if (!icon.classList.contains('fa-microphone')) {
+            icon.className = 'fas fa-microphone';
+            console.log('Updated existing microphone icon class');
+          }
+        }
+
+        // Get current theme
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+
+        // Apply theme-appropriate styling - WHITE icon for blue button background
+        const baseStyles = `
+          font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+          font-weight: 900 !important;
+          font-style: normal !important;
+          display: inline-block !important;
+          opacity: 1 !important;
+          visibility: visible !important;
+          color: #ffffff !important;
+          background-color: transparent !important;
+          border-radius: 0 !important;
+          padding: 0 !important;
+          font-size: 16px !important;
+          line-height: 1 !important;
+          text-align: center !important;
+          position: relative !important;
+          z-index: 9999 !important;
+        `;
+
+        icon.style.cssText = baseStyles;
+
+        // Force white color with additional specificity
+        icon.style.setProperty('color', '#ffffff', 'important');
+
+        // Add CSS class for additional specificity
+        icon.classList.add('microphone-icon-override');
+
+        console.log(`Microphone icon styled for ${currentTheme} theme`);
+      }
+    }
+
+    // Run microphone icon fix on various events
+    document.addEventListener('DOMContentLoaded', ensureMicrophoneIcon);
+    window.addEventListener('load', ensureMicrophoneIcon);
+
+    // Run after theme changes
+    const observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
+          setTimeout(ensureMicrophoneIcon, 100);
+        }
+      });
+    });
+    observer.observe(document.documentElement, { attributes: true });
+
+    // Also run after delays to catch any dynamic content
+    setTimeout(ensureMicrophoneIcon, 1000);
+    setTimeout(ensureMicrophoneIcon, 3000);
+    setTimeout(ensureMicrophoneIcon, 5000);
+
+    // Force icon fix every 2 seconds for the first 10 seconds to catch any interference
+    let fixAttempts = 0;
+    const forceFixInterval = setInterval(() => {
+      ensureMicrophoneIcon();
+
+      // Additional check: verify icon color is white
+      const recordBtn = document.getElementById('basic-record-btn');
+      if (recordBtn) {
+        const icon = recordBtn.querySelector('i');
+        if (icon) {
+          const computedColor = getComputedStyle(icon).color;
+          if (computedColor !== 'rgb(255, 255, 255)' && computedColor !== '#ffffff' && computedColor !== 'white') {
+            console.log(`Microphone icon color is wrong: ${computedColor}, forcing white...`);
+            icon.style.setProperty('color', '#ffffff', 'important');
+            icon.classList.add('microphone-icon-override');
+          }
+        }
+      }
+
+      fixAttempts++;
+      if (fixAttempts >= 5) {
+        clearInterval(forceFixInterval);
+      }
+    }, 2000);
+
+    // Add visibility observer to detect if icon becomes hidden
+    function observeIconVisibility() {
+      const recordBtn = document.getElementById('basic-record-btn');
+      if (recordBtn) {
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.type === 'childList' || mutation.type === 'attributes') {
+              // Check if icon is still present and visible
+              const icon = recordBtn.querySelector('i');
+              if (!icon || getComputedStyle(icon).opacity === '0' || getComputedStyle(icon).visibility === 'hidden') {
+                console.log('Microphone icon visibility issue detected, fixing...');
+                setTimeout(ensureMicrophoneIcon, 100);
+              }
+            }
+          });
+        });
+
+        observer.observe(recordBtn, {
+          childList: true,
+          attributes: true,
+          attributeFilter: ['style', 'class'],
+          subtree: true
+        });
+      }
+    }
+
+    // Start observing after initial setup
+    setTimeout(observeIconVisibility, 2000);
   </script>
 
 

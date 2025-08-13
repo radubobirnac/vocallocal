@@ -97,6 +97,34 @@
     50% { transform: scale(1.1); }
   }
   
+  /* Hide stop button on mobile - desktop will show both play and stop */
+  /* Use high specificity to override other CSS rules */
+  html body #basic-mode .card-header #basic-stop-btn.button.button-outline.button-icon,
+  html body #basic-mode #basic-stop-btn.button.button-outline.button-icon,
+  html body #basic-stop-btn.button.button-outline.button-icon,
+  html body #basic-stop-btn,
+  #basic-stop-btn {
+    display: none !important;
+  }
+
+  /* Ensure microphone button is always visible and prominent on mobile */
+  #basic-record-btn {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: 1000 !important;
+  }
+
+  /* Prevent any styles from hiding the microphone button */
+  #basic-record-btn[style*="display: none"],
+  #basic-record-btn[style*="visibility: hidden"],
+  #basic-record-btn[style*="opacity: 0"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
   /* Secondary action buttons */
   #basic-mode .button-icon {
     width: 44px;
@@ -308,13 +336,22 @@
     color: white; /* Force white text on primary gradient background */
   }
 
+  /* Light theme: Record button styling */
   [data-theme="light"] #basic-record-btn {
-    background: hsla(0, 0%, 0%, 0.1); /* Dark background for light theme */
-    border: 2px solid hsla(0, 0%, 0%, 0.2);
-    color: hsl(var(--foreground)); /* Use theme foreground color */
+    background: #2563eb !important; /* Blue background for record button */
+    border: 2px solid #2563eb !important; /* Blue border */
+    color: white !important; /* White icon on blue background */
   }
 
-  [data-theme="light"] #basic-mode .button-icon {
+  /* Light theme: Other buttons in card header need high contrast against gradient */
+  [data-theme="light"] #basic-mode .card-header .button-icon {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.7) !important;
+    color: hsl(var(--primary)) !important;
+  }
+
+  /* Light theme: Buttons outside card header */
+  [data-theme="light"] #basic-mode .card-content .button-icon {
     background: hsla(0, 0%, 0%, 0.08);
     border: 1px solid hsla(0, 0%, 0%, 0.15);
     color: hsl(var(--foreground));
@@ -335,9 +372,9 @@
   }
 
   [data-theme="dark"] #basic-record-btn {
-    background: hsla(0, 0%, 100%, 0.1);
-    border: 2px solid hsla(0, 0%, 100%, 0.2);
-    color: hsl(var(--foreground));
+    background: #3b82f6 !important; /* Slightly lighter blue for dark theme */
+    border: 2px solid #3b82f6 !important; /* Blue border */
+    color: white !important; /* White icon on blue background */
   }
 
   [data-theme="dark"] #basic-mode .button-icon {
@@ -371,10 +408,25 @@
   }
 
   /* Light theme icon contrast */
-  [data-theme="light"] #basic-mode .button-icon i,
-  [data-theme="light"] #basic-record-btn i {
+  [data-theme="light"] #basic-mode .card-content .button-icon i {
     color: hsl(var(--foreground));
     text-shadow: none;
+  }
+
+  [data-theme="light"] #basic-mode .card-header .button-icon i {
+    color: hsl(var(--primary)) !important;
+    text-shadow: none;
+  }
+
+  [data-theme="light"] #basic-record-btn i {
+    color: white !important;
+    text-shadow: none;
+    font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
   }
 
   /* Dark theme icon contrast */
@@ -382,6 +434,12 @@
   [data-theme="dark"] #basic-record-btn i {
     color: hsl(var(--foreground));
     text-shadow: none;
+    font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
   }
 
   /* System theme fallback - ensure visibility */

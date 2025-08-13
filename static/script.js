@@ -210,6 +210,30 @@ function updateModelDropdown(selectElement, models, modelType) {
   // Global state for TTS players
   const ttsPlayers = {};
 
+  // Global state for TTS audio objects (for pause/resume functionality)
+  const ttsAudioObjects = {};
+
+  // Debug function to check TTS state
+  window.debugTTSState = function(sourceId) {
+    const audioObj = ttsAudioObjects[sourceId];
+    const player = ttsPlayers[sourceId];
+
+    console.log('🔍 TTS Debug State for', sourceId, ':', {
+      hasAudioObject: !!audioObj,
+      audioState: audioObj ? {
+        paused: audioObj.paused,
+        ended: audioObj.ended,
+        currentTime: audioObj.currentTime,
+        duration: audioObj.duration,
+        readyState: audioObj.readyState
+      } : null,
+      hasPlayer: !!player,
+      playerUrl: player ? player.url : null
+    });
+
+    return { audioObj, player };
+  };
+
   // Function to manage button states for TTS
   function setTTSButtonState(sourceId, state) {
     console.log('🔘 TTS Debug: setTTSButtonState called with:', { sourceId, state });
@@ -258,17 +282,44 @@ function updateModelDropdown(selectElement, models, modelType) {
     }
 
     if (state === 'playing') {
-      playBtn.style.display = 'none';
-      stopBtn.style.display = 'inline-flex'; // Use inline-flex to match button class
-      console.log(`TTS Button State: ${sourceId} - PLAYING - Showing stop button`);
+      // Show pause icon when playing
+      const playIcon = playBtn.querySelector('i');
+      if (playIcon) {
+        playIcon.className = 'fas fa-pause';
+      }
+      playBtn.style.display = 'inline-flex';
+      stopBtn.style.display = 'inline-flex';
+      playBtn.setAttribute('title', 'Pause audio');
+      console.log(`TTS Button State: ${sourceId} - PLAYING - Showing pause button`);
 
       // Dispatch TTS started event
       document.dispatchEvent(new CustomEvent('tts-started', {
         detail: { sourceId: sourceId }
       }));
-    } else { // 'stopped', 'paused', 'ended', 'error'
+    } else if (state === 'paused') {
+      // Show play icon when paused
+      const playIcon = playBtn.querySelector('i');
+      if (playIcon) {
+        playIcon.className = 'fas fa-play';
+      }
+      playBtn.style.display = 'inline-flex';
+      stopBtn.style.display = 'inline-flex';
+      playBtn.setAttribute('title', 'Resume audio');
+      console.log(`TTS Button State: ${sourceId} - PAUSED - Showing play button for resume`);
+
+      // Dispatch TTS paused event
+      document.dispatchEvent(new CustomEvent('tts-paused', {
+        detail: { sourceId: sourceId }
+      }));
+    } else { // 'stopped', 'ended', 'error', 'ready'
+      // Show play icon when stopped
+      const playIcon = playBtn.querySelector('i');
+      if (playIcon) {
+        playIcon.className = 'fas fa-play';
+      }
       playBtn.style.display = 'inline-flex';
       stopBtn.style.display = 'none';
+      playBtn.setAttribute('title', 'Play audio');
       console.log(`TTS Button State: ${sourceId} - ${state} - Showing play button`);
 
       // Dispatch appropriate TTS event
@@ -370,6 +421,42 @@ function updateModelDropdown(selectElement, models, modelType) {
     // Other initialization code...
   });
 
+  // Function to pause TTS playback
+  function pauseSpeakText(sourceId) {
+    console.log('⏸️ TTS Debug: pauseSpeakText called for sourceId:', sourceId);
+
+    const audioObj = ttsAudioObjects[sourceId];
+    if (audioObj && !audioObj.paused) {
+      audioObj.pause();
+      setTTSButtonState(sourceId, 'paused');
+      showStatus('Audio paused', 'info');
+      console.log('✅ TTS Debug: Audio paused successfully');
+    } else {
+      console.log('⚠️ TTS Debug: No active audio to pause for sourceId:', sourceId);
+    }
+  }
+
+  // Function to resume TTS playback
+  function resumeSpeakText(sourceId) {
+    console.log('▶️ TTS Debug: resumeSpeakText called for sourceId:', sourceId);
+
+    const audioObj = ttsAudioObjects[sourceId];
+    if (audioObj && audioObj.paused) {
+      audioObj.play()
+        .then(() => {
+          setTTSButtonState(sourceId, 'playing');
+          showStatus('Audio resumed', 'info');
+          console.log('✅ TTS Debug: Audio resumed successfully');
+        })
+        .catch(error => {
+          console.error('❌ TTS Debug: Error resuming audio:', error);
+          showStatus('Error resuming audio: ' + error.message, 'danger');
+        });
+    } else {
+      console.log('⚠️ TTS Debug: No paused audio to resume for sourceId:', sourceId);
+    }
+  }
+
   // Speak text using TTS with play/pause/resume
   function speakText(sourceId, text, langCode) {
     console.log('🎵 TTS Debug: speakText called with:', {
@@ -379,6 +466,14 @@ function updateModelDropdown(selectElement, models, modelType) {
       langCode: langCode,
       isMobile: isMobileDevice()
     });
+
+    // Check if there's a paused audio for this sourceId that can be resumed
+    const existingAudio = ttsAudioObjects[sourceId];
+    if (existingAudio && existingAudio.paused && !existingAudio.ended) {
+      console.log('🔄 TTS Debug: Found paused audio, resuming instead of creating new');
+      resumeSpeakText(sourceId);
+      return;
+    }
 
     // Always get the latest text from DOM for certain sourceIds
     if (isMobileDevice() || sourceId.includes('-') || sourceId === 'basic-transcript' || sourceId === 'basic-interpretation') {
@@ -539,7 +634,8 @@ function updateModelDropdown(selectElement, models, modelType) {
       // Store the audio element both globally and per-source
       currentAudio = audio;
       ttsPlayers[sourceId] = { audio: audio, url: audioUrl };
-      console.log('🔍 TTS Debug: Audio stored in ttsPlayers for sourceId:', sourceId);
+      ttsAudioObjects[sourceId] = audio; // Store for pause/resume functionality
+      console.log('🔍 TTS Debug: Audio stored in ttsPlayers and ttsAudioObjects for sourceId:', sourceId);
 
       // Set playback rate to 1.10 (10% faster)
       audio.playbackRate = 1.10;
@@ -554,16 +650,17 @@ function updateModelDropdown(selectElement, models, modelType) {
 
       audio.onpause = () => {
         console.log('⏸️ TTS Debug: Audio onpause event fired');
-        setTTSButtonState(sourceId, 'ready');
+        setTTSButtonState(sourceId, 'paused');
         showStatus('Playback paused.', 'info');
       };
 
       audio.onended = () => {
         console.log('🏁 TTS Debug: Audio onended event fired');
-        setTTSButtonState(sourceId, 'ready');
+        setTTSButtonState(sourceId, 'stopped');
         URL.revokeObjectURL(audioUrl);
         currentAudio = null;
         delete ttsPlayers[sourceId];
+        delete ttsAudioObjects[sourceId]; // Clean up pause/resume audio object
         showStatus('Playback completed.', 'info');
       };
 
@@ -574,6 +671,7 @@ function updateModelDropdown(selectElement, models, modelType) {
         URL.revokeObjectURL(audioUrl);
         currentAudio = null;
         delete ttsPlayers[sourceId];
+        delete ttsAudioObjects[sourceId]; // Clean up pause/resume audio object
       };
 
       // Play the audio
@@ -602,7 +700,7 @@ function updateModelDropdown(selectElement, models, modelType) {
     });
   }
 
-  // Function to stop (pause) TTS playback
+  // Function to completely stop TTS playback (not pause)
   function stopSpeakText(sourceId) {
     console.log('⏹️ TTS Debug: stopSpeakText called for sourceId:', sourceId);
 
@@ -621,10 +719,11 @@ function updateModelDropdown(selectElement, models, modelType) {
       }
 
       // Update button state immediately
-      setTTSButtonState(sourceId, 'ready');
+      setTTSButtonState(sourceId, 'stopped');
 
       // Clean up the player reference
       delete ttsPlayers[sourceId];
+      delete ttsAudioObjects[sourceId]; // Clean up pause/resume audio object
 
       // Clear global currentAudio if it matches this audio
       if (currentAudio === player.audio) {
@@ -1588,88 +1687,58 @@ function updateModelDropdown(selectElement, models, modelType) {
   // Theme Switcher Logic
   // ========================
   const themeToggleButton = document.getElementById('theme-toggle-btn');
-  const themeOptionsContainer = document.getElementById('theme-options');
-  const themeOptionButtons = document.querySelectorAll('.theme-option');
   const htmlElement = document.documentElement; // Get the <html> element
 
   // Function to apply the selected theme
   function applyTheme(theme) {
-    let effectiveTheme = theme;
-
-    // Determine the actual theme if 'system' is selected
-    if (theme === 'system') {
-      effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-
     // Apply the theme class to the <html> element
-    htmlElement.setAttribute('data-theme', effectiveTheme);
+    htmlElement.setAttribute('data-theme', theme);
 
-    // Update the toggle button icon
+    // Update the toggle button icon based on current theme
     const icon = themeToggleButton.querySelector('i');
     if (theme === 'light') {
-      icon.className = 'fas fa-lightbulb'; // Changed to lightbulb
-    } else if (theme === 'dark') {
+      // Show moon icon when in light mode (clicking will switch to dark)
       icon.className = 'fas fa-moon';
-    } else { // system
-      icon.className = 'fas fa-circle-half-stroke'; // Changed to circle-half-stroke
+    } else {
+      // Show sun icon when in dark mode (clicking will switch to light)
+      icon.className = 'fas fa-sun';
     }
 
-    // Update active state in dropdown
-    themeOptionButtons.forEach(btn => {
-      if (btn.getAttribute('data-theme') === theme) {
-        btn.classList.add('active');
-      } else {
-        btn.classList.remove('active');
-      }
-    });
-
-    // Save the user's *chosen* theme preference (light, dark, or system)
+    // Save the user's theme preference
     try {
       localStorage.setItem('vocal-local-theme', theme);
     } catch (e) {
       console.warn('LocalStorage is not available. Theme preference will not be saved.');
     }
 
-    console.log(`Applied theme: ${effectiveTheme} (User choice: ${theme})`);
+    console.log(`Applied theme: ${theme}`);
   }
 
-  // Function to load the saved theme or default to system
+  // Function to load the saved theme or default to light
   function loadTheme() {
-    let savedTheme = 'system'; // Default to system
+    let savedTheme = 'light'; // Default to light
     try {
-      savedTheme = localStorage.getItem('vocal-local-theme') || 'system';
+      savedTheme = localStorage.getItem('vocal-local-theme') || 'light';
     } catch (e) {
-      console.warn('LocalStorage is not available. Defaulting to system theme.');
+      console.warn('LocalStorage is not available. Defaulting to light theme.');
     }
     applyTheme(savedTheme);
   }
 
-  // Event listener for the theme toggle button
-  if (themeToggleButton && themeOptionsContainer) {
-    themeToggleButton.addEventListener('click', (event) => {
-      event.stopPropagation(); // Prevent click from immediately closing dropdown
-      const isShown = themeOptionsContainer.classList.toggle('show');
-      themeOptionsContainer.style.display = isShown ? 'block' : 'none';
-    });
+  // Function to toggle between light and dark themes
+  function toggleTheme() {
+    const currentTheme = htmlElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    applyTheme(newTheme);
   }
 
-  // Event listeners for theme option buttons
-  themeOptionButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const selectedTheme = button.getAttribute('data-theme');
-      applyTheme(selectedTheme);
-      themeOptionsContainer.classList.remove('show'); // Hide dropdown after selection
-      themeOptionsContainer.style.display = 'none';
+  // Event listener for the theme toggle button
+  if (themeToggleButton) {
+    themeToggleButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      toggleTheme();
     });
-  });
-
-  // Listener to close dropdown when clicking outside
-  document.addEventListener('click', (event) => {
-    if (themeOptionsContainer && themeOptionsContainer.classList.contains('show') && !themeToggleButton.contains(event.target) && !themeOptionsContainer.contains(event.target)) {
-      themeOptionsContainer.classList.remove('show');
-      themeOptionsContainer.style.display = 'none';
-    }
-  });
+  }
 
   // Listener for changes in system color scheme preference
   const systemColorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -2041,8 +2110,26 @@ function updateModelDropdown(selectElement, models, modelType) {
 
   if (basicPlayBtn) {
     basicPlayBtn.addEventListener('click', () => {
+      const sourceId = 'basic-transcript';
       const transcriptEl = document.getElementById('basic-transcript');
       if (!transcriptEl) return;
+
+      // Check if there's currently playing audio that should be paused
+      const currentAudioObj = ttsAudioObjects[sourceId];
+      if (currentAudioObj && !currentAudioObj.paused && !currentAudioObj.ended) {
+        // Audio is currently playing, so pause it
+        pauseSpeakText(sourceId);
+        return;
+      }
+
+      // Check if there's paused audio that should be resumed
+      if (currentAudioObj && currentAudioObj.paused && !currentAudioObj.ended) {
+        // Audio is paused, so resume it
+        resumeSpeakText(sourceId);
+        return;
+      }
+
+      // No audio or audio ended, start new playback
       const text = transcriptEl.value;
       const langSelect = document.getElementById('basic-language');
       const lang = langSelect ? langSelect.value : 'en';
@@ -2052,10 +2139,10 @@ function updateModelDropdown(selectElement, models, modelType) {
         setTimeout(() => {
           // Get the text again to ensure it's the most current
           const currentText = transcriptEl.value;
-          speakText('basic-transcript', currentText, lang);
+          speakText(sourceId, currentText, lang);
         }, 50);
       } else {
-        speakText('basic-transcript', text, lang); // Use consistent sourceId format
+        speakText(sourceId, text, lang);
       }
     });
   }
@@ -3173,12 +3260,29 @@ function updateModelDropdown(selectElement, models, modelType) {
     basicPlayInterpretationBtn.addEventListener('click', () => {
       console.log('🎵 TTS Debug: Interpretation play button clicked!');
 
+      const sourceId = 'basic-interpretation';
       const interpretationEl = document.getElementById('basic-interpretation');
       if (!interpretationEl) {
         console.error('❌ TTS Debug: Interpretation textarea not found!');
         return;
       }
 
+      // Check if there's currently playing audio that should be paused
+      const currentAudioObj = ttsAudioObjects[sourceId];
+      if (currentAudioObj && !currentAudioObj.paused && !currentAudioObj.ended) {
+        // Audio is currently playing, so pause it
+        pauseSpeakText(sourceId);
+        return;
+      }
+
+      // Check if there's paused audio that should be resumed
+      if (currentAudioObj && currentAudioObj.paused && !currentAudioObj.ended) {
+        // Audio is paused, so resume it
+        resumeSpeakText(sourceId);
+        return;
+      }
+
+      // No audio or audio ended, start new playback
       const text = interpretationEl.value;
       console.log('🔍 TTS Debug: Text length:', text.length, 'Preview:', text.substring(0, 30) + '...');
 
@@ -3190,10 +3294,10 @@ function updateModelDropdown(selectElement, models, modelType) {
         setTimeout(() => {
           // Get the text again to ensure it's the most current
           const currentText = interpretationEl.value;
-          speakText('basic-interpretation', currentText, lang);
+          speakText(sourceId, currentText, lang);
         }, 50);
       } else {
-        speakText('basic-interpretation', text, lang); // Use consistent sourceId format
+        speakText(sourceId, text, lang);
       }
     });
 

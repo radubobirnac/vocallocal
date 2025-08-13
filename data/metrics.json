@@ -113,6 +113,13 @@
       "chars": 31,
       "time": 1.588170051574707,
       "failures": 0
+    },
+    "cs": {
+      "calls": 3,
+      "tokens": 18,
+      "chars": 53,
+      "time": 5.159826993942261,
+      "failures": 0
     }
   },
   "daily_usage": {
@@ -252,7 +259,13 @@
     },
     "2025-08-12": {
       "transcription": {
-        "en": 14
+        "en": 14,
+        "cs": 8
+      }
+    },
+    "2025-08-13": {
+      "transcription": {
+        "cs": 10
       }
     }
   },
@@ -555,6 +568,16 @@
       "transcription": {
         "en": 14
       }
+    },
+    "2025-08-12-22": {
+      "transcription": {
+        "cs": 8
+      }
+    },
+    "2025-08-13-17": {
+      "transcription": {
+        "cs": 10
+      }
     }
   },
   "tts": {
@@ -566,10 +589,10 @@
       "failures": 0
     },
     "gpt4o-mini": {
-      "calls": 76,
-      "tokens": 4533,
-      "chars": 18257,
-      "time": 391.6234383583069,
+      "calls": 94,
+      "tokens": 6645,
+      "chars": 26733,
+      "time": 540.3768045902252,
       "failures": 3
     }
   },
