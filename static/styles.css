@@ -1092,24 +1092,210 @@ html[data-theme="light"] body #basic-record-btn i {
   z-index: 1000 !important;
 }
 
-/* Ensure record button itself is always properly styled with blue background */
+/* CRITICAL FIX: Ensure record button is ALWAYS visible and functional - PURPLE BRAND */
 #basic-record-btn,
-#basic-record-btn.header-record-button {
-  background: #2563eb !important; /* Blue background */
-  border: 2px solid #2563eb !important; /* Blue border */
-  color: white !important;
+#basic-record-btn.header-record-button,
+button#basic-record-btn,
+button#basic-record-btn.header-record-button {
   display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 1000 !important;
+  width: auto !important;
+  min-width: 140px !important;
+  height: 40px !important;
+  padding: 8px 16px !important;
+  border-radius: 20px !important; /* Rounded pill shape */
+  background: hsl(var(--primary)) !important; /* Purple brand color */
+  border: 2px solid hsl(var(--primary)) !important;
+  color: white !important;
   align-items: center !important;
   justify-content: center !important;
-  opacity: 1 !important;
-  visibility: visible !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
 }
 
-/* Dark theme specific blue styling */
+/* Dark theme specific purple styling */
 [data-theme="dark"] #basic-record-btn,
-[data-theme="dark"] #basic-record-btn.header-record-button {
-  background: #3b82f6 !important; /* Slightly lighter blue for dark theme */
-  border: 2px solid #3b82f6 !important;
+[data-theme="dark"] #basic-record-btn.header-record-button,
+[data-theme="dark"] button#basic-record-btn,
+[data-theme="dark"] button#basic-record-btn.header-record-button {
+  background: hsl(var(--primary)) !important; /* Keep purple brand color in dark theme */
+  border: 2px solid hsl(var(--primary)) !important;
+}
+
+/* Record button text styling */
+#basic-record-btn .record-button-text,
+.record-button-text {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: white !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+}
+
+/* Hover effects */
+#basic-record-btn:hover,
+#basic-record-btn.header-record-button:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px hsla(var(--primary), 0.3) !important;
+  filter: brightness(1.1) !important;
+}
+
+/* Recording state */
+#basic-record-btn.recording,
+#basic-record-btn.header-record-button.recording {
+  background: #dc2626 !important; /* Red for recording */
+  border-color: #dc2626 !important;
+  animation: pulse-recording 1.5s infinite !important;
+}
+
+/* Update recording state text */
+#basic-record-btn.recording .record-button-text {
+  content: "Stop Recording" !important;
+}
+
+@keyframes pulse-recording {
+  0%, 100% { transform: scale(1.05); }
+  50% { transform: scale(1.1); }
+}
+
+/* CRITICAL: Ensure microphone icon is ALWAYS visible in purple button */
+#basic-record-btn i,
+#basic-record-btn i.fas,
+#basic-record-btn i.fa-microphone,
+#basic-record-btn i.fas.fa-microphone,
+button#basic-record-btn i,
+button#basic-record-btn i.fas,
+button#basic-record-btn i.fa-microphone,
+button#basic-record-btn i.fas.fa-microphone {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: white !important;
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  position: relative !important;
+  z-index: 1001 !important;
+  margin-right: 0 !important;
+}
+
+/* Force microphone icon content */
+#basic-record-btn i::before,
+#basic-record-btn i.fas::before,
+#basic-record-btn i.fa-microphone::before,
+#basic-record-btn i.fas.fa-microphone::before,
+button#basic-record-btn i::before,
+button#basic-record-btn i.fas::before,
+button#basic-record-btn i.fa-microphone::before,
+button#basic-record-btn i.fas.fa-microphone::before {
+  content: "\f130" !important; /* FontAwesome microphone unicode */
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+  font-weight: 900 !important;
+  display: inline-block !important;
+  color: white !important;
+  font-size: 16px !important;
+}
+
+/* Card header layout for title and record button */
+.card-header .flex.items-center.justify-between {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 1rem !important;
+}
+
+.card-header .card-title {
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+/* Centered record button section */
+.record-button-section {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 1.5rem 1rem !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Centered record button styling */
+.centered-record-button,
+#basic-record-btn.centered-record-button {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 100 !important;
+  width: auto !important;
+  min-width: 140px !important;
+  height: 40px !important;
+  padding: 8px 16px !important;
+  border-radius: 20px !important;
+  background: hsl(var(--primary)) !important;
+  border: 2px solid hsl(var(--primary)) !important;
+  color: white !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+}
+
+/* Centered button hover effects */
+.centered-record-button:hover,
+#basic-record-btn.centered-record-button:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px hsla(var(--primary), 0.3) !important;
+  filter: brightness(1.1) !important;
+}
+
+/* Centered button recording state */
+.centered-record-button.recording,
+#basic-record-btn.centered-record-button.recording {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+  animation: pulse-recording 1.5s infinite !important;
+}
+
+/* Centered button icon and text */
+.centered-record-button i,
+#basic-record-btn.centered-record-button i {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: white !important;
+  font-family: "Font Awesome 6 Free" !important;
+  font-weight: 900 !important;
+  font-size: 14px !important;
+}
+
+.centered-record-button .record-button-text,
+#basic-record-btn.centered-record-button .record-button-text {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: white !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
 }
 
 /* Timer display for bilingual mode - Compact */

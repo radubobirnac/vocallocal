@@ -86,8 +86,8 @@
     }
 
     [data-theme="light"] #basic-record-btn {
-      background: #2563eb !important; /* Blue background for light theme */
-      color: white !important; /* Keep white text on blue background */
+      background: hsl(var(--primary)) !important; /* Purple brand background for light theme */
+      color: white !important; /* Keep white text on purple background */
     }
 
     [data-theme="light"] #basic-record-btn i.fa-microphone {
@@ -128,45 +128,23 @@
       visibility: visible !important;
     }
 
-    /* CRITICAL: Ensure microphone icon is always visible on record button */
-    #basic-record-btn i.fas.fa-microphone,
-    #basic-record-btn i.fa-microphone,
-    #basic-record-btn i[class*="microphone"],
+    /* SIMPLIFIED: Ensure microphone icon is always visible on record button */
     #basic-record-btn i {
-      font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+      font-family: "Font Awesome 6 Free" !important;
       font-weight: 900 !important;
-      font-style: normal !important;
       display: inline-block !important;
       opacity: 1 !important;
       visibility: visible !important;
       color: white !important;
-      font-size: 18px !important;
-      line-height: 1 !important;
-      text-align: center !important;
-      width: auto !important;
-      height: auto !important;
-      position: relative !important;
-      z-index: 999 !important;
-    }
-
-    /* Force FontAwesome microphone icon content */
-    #basic-record-btn i.fas.fa-microphone::before,
-    #basic-record-btn i.fa-microphone::before,
-    #basic-record-btn i::before {
-      content: "\f130" !important; /* FontAwesome microphone unicode */
-      font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
-      font-weight: 900 !important;
-      display: inline-block !important;
-      color: white !important;
-      font-size: 18px !important;
+      font-size: 16px !important;
     }
 
 
 
-    /* Ensure record button background is always blue colored */
+    /* Ensure record button background is always purple brand colored */
     #basic-record-btn.header-record-button {
-      background: #2563eb !important; /* Blue background */
-      border: 2px solid #2563eb !important; /* Blue border */
+      background: hsl(var(--primary)) !important; /* Purple brand background */
+      border: 2px solid hsl(var(--primary)) !important; /* Purple brand border */
       color: white !important;
     }
 
@@ -185,33 +163,22 @@
       visibility: visible !important;
     }
 
-    /* MAXIMUM SPECIFICITY: White microphone icon on blue record button */
-    html[data-theme="light"] body div#basic-mode .card-header #basic-record-btn.header-record-button i.fas.fa-microphone,
-    html[data-theme="light"] body div#basic-mode .card-header #basic-record-btn i.fas.fa-microphone,
-    html[data-theme="light"] body #basic-record-btn.header-record-button i.fas.fa-microphone,
-    html[data-theme="light"] body #basic-record-btn i.fas.fa-microphone,
-    html[data-theme="light"] body #basic-record-btn i {
-      color: #ffffff !important; /* White for contrast on blue background */
-      background-color: transparent !important; /* No background needed on blue button */
-      border-radius: 0 !important;
-      padding: 0 !important;
-      z-index: 9999 !important;
-      position: relative !important;
-      display: inline-block !important;
-      font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+    /* SIMPLIFIED: White microphone icon on blue record button */
+    [data-theme="light"] #basic-record-btn i,
+    [data-theme="dark"] #basic-record-btn i {
+      color: white !important;
+      font-family: "Font Awesome 6 Free" !important;
       font-weight: 900 !important;
-      font-style: normal !important;
+      display: inline-block !important;
       opacity: 1 !important;
       visibility: visible !important;
       font-size: 16px !important;
-      line-height: 1 !important;
-      text-align: center !important;
     }
 
-    /* Dark theme specific blue styling for record button */
+    /* Dark theme specific purple styling for record button */
     [data-theme="dark"] #basic-record-btn.header-record-button {
-      background: #3b82f6 !important; /* Slightly lighter blue for dark theme */
-      border: 2px solid #3b82f6 !important;
+      background: hsl(var(--primary)) !important; /* Purple brand for dark theme */
+      border: 2px solid hsl(var(--primary)) !important;
     }
 
     /* Dark theme: White microphone icon for contrast */
@@ -228,28 +195,15 @@
       visibility: visible !important;
     }
 
-    /* NUCLEAR OPTION: JavaScript-added class with maximum specificity */
-    html[data-theme="light"] body div#basic-mode .card-header #basic-record-btn.header-record-button i.microphone-icon-override,
-    html[data-theme="light"] body div#basic-mode .card-header #basic-record-btn i.microphone-icon-override,
-    html[data-theme="light"] body #basic-record-btn i.microphone-icon-override,
-    html[data-theme="dark"] body div#basic-mode .card-header #basic-record-btn.header-record-button i.microphone-icon-override,
-    html[data-theme="dark"] body div#basic-mode .card-header #basic-record-btn i.microphone-icon-override,
-    html[data-theme="dark"] body #basic-record-btn i.microphone-icon-override {
-      color: #ffffff !important;
-      background-color: transparent !important;
-      border-radius: 0 !important;
-      padding: 0 !important;
-      position: relative !important;
-      z-index: 9999 !important;
-      display: inline-block !important;
-      font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+    /* SIMPLIFIED: Microphone icon override class */
+    .microphone-icon-override {
+      color: white !important;
+      font-family: "Font Awesome 6 Free" !important;
       font-weight: 900 !important;
-      font-style: normal !important;
+      display: inline-block !important;
       opacity: 1 !important;
       visibility: visible !important;
       font-size: 16px !important;
-      line-height: 1 !important;
-      text-align: center !important;
     }
 
     /* DARK THEME: Light icons for contrast against dark backgrounds */
@@ -266,7 +220,7 @@
     }
 
     [data-theme="dark"] #basic-record-btn {
-      background: #3b82f6 !important; /* Slightly lighter blue for dark theme */
+      background: hsl(var(--primary)) !important; /* Purple brand for dark theme */
       color: white !important;
     }
 
@@ -547,9 +501,6 @@
         <div class="card-header">
           <h2 class="card-title">Voice Transcription</h2>
           <div class="flex items-center gap-2">
-            <button id="basic-record-btn" class="header-record-button" title="Record audio">
-              <i class="fas fa-microphone"></i>
-            </button>
             <button id="basic-upload-btn" class="button button-outline button-icon" title="Upload audio file" onclick="document.getElementById('basic-file-input').click()">
               <i class="fas fa-paperclip"></i>
             </button>
@@ -564,6 +515,15 @@
             </button>
           </div>
         </div>
+
+        <!-- Centered Recording Button Section -->
+        <div class="record-button-section">
+          <button id="basic-record-btn" class="centered-record-button" title="Start voice recording">
+            <i class="fas fa-microphone"></i>
+            <span class="record-button-text">Start Recording</span>
+          </button>
+        </div>
+
         <div class="card-content">
           <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div class="space-y-4">

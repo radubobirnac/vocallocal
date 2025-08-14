@@ -115,10 +115,10 @@
       "failures": 0
     },
     "cs": {
-      "calls": 3,
-      "tokens": 18,
-      "chars": 53,
-      "time": 5.159826993942261,
+      "calls": 4,
+      "tokens": 26,
+      "chars": 79,
+      "time": 6.924964427947998,
       "failures": 0
     }
   },
@@ -266,6 +266,11 @@
     "2025-08-13": {
       "transcription": {
         "cs": 10
+      }
+    },
+    "2025-08-14": {
+      "transcription": {
+        "cs": 8
       }
     }
   },
@@ -577,6 +582,11 @@
     "2025-08-13-17": {
       "transcription": {
         "cs": 10
+      }
+    },
+    "2025-08-14-11": {
+      "transcription": {
+        "cs": 8
       }
     }
   },

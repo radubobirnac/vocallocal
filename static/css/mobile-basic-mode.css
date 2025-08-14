@@ -47,12 +47,60 @@
     flex-direction: column;
     gap: 0.75rem;
   }
+
+  /* Mobile centered record button section */
+  .record-button-section {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 1rem 0.75rem !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* Mobile centered record button styling */
+  .centered-record-button,
+  #basic-record-btn.centered-record-button {
+    min-width: 120px !important;
+    height: 36px !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    border-radius: 18px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  }
   
   #basic-mode .card-title {
     font-size: 1.25rem;
     font-weight: 600;
     margin: 0;
-    text-align: center;
+    text-align: left;
+    flex-shrink: 0;
+  }
+
+  /* Mobile centered button icon and text */
+  .centered-record-button i,
+  #basic-record-btn.centered-record-button i {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: white !important;
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+  }
+
+  .centered-record-button .record-button-text,
+  #basic-record-btn.centered-record-button .record-button-text {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: white !important;
+    font-weight: 500 !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
   }
   
   /* Mobile-focused action buttons */
@@ -62,34 +110,46 @@
     gap: 0.5rem;
   }
   
-  /* Primary record button - make it prominent */
-  #basic-record-btn {
-    background: hsla(var(--primary-foreground), 0.2);
-    border: 2px solid hsla(var(--primary-foreground), 0.3);
-    color: hsl(var(--primary-foreground));
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
+  /* CRITICAL: Primary record button - ALWAYS visible and prominent - MOBILE PURPLE */
+  #basic-record-btn,
+  #basic-record-btn.header-record-button,
+  button#basic-record-btn,
+  button#basic-record-btn.header-record-button {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: 1000 !important;
+    background: hsl(var(--primary)) !important; /* Purple brand background */
+    border: 2px solid hsl(var(--primary)) !important; /* Purple brand border */
+    color: white !important;
+    width: auto !important;
+    min-width: 120px !important;
+    height: 48px !important;
+    padding: 8px 16px !important;
+    border-radius: 24px !important; /* Rounded pill shape for mobile */
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
   }
   
   #basic-record-btn:hover,
-  #basic-record-btn.recording {
-    background: hsla(var(--primary-foreground), 0.3);
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  #basic-record-btn:active {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 16px hsla(var(--primary), 0.3) !important;
+    filter: brightness(1.1) !important;
   }
 
   #basic-record-btn.recording {
-    background: hsl(0, 84%, 60%); /* Red for recording state */
-    color: white; /* Ensure white text on red background */
-    border-color: hsl(0, 84%, 50%);
-    animation: pulse-record 1.5s infinite;
+    background: hsl(0, 84%, 60%) !important; /* Red for recording state */
+    border-color: hsl(0, 84%, 50%) !important;
+    color: white !important; /* Ensure white text on red background */
+    animation: pulse-record 1.5s infinite !important;
   }
   
   @keyframes pulse-record {
@@ -107,8 +167,11 @@
     display: none !important;
   }
 
-  /* Ensure microphone button is always visible and prominent on mobile */
-  #basic-record-btn {
+  /* CRITICAL: Ensure microphone button is ALWAYS visible and prominent on mobile */
+  #basic-record-btn,
+  #basic-record-btn.header-record-button,
+  button#basic-record-btn,
+  button#basic-record-btn.header-record-button {
     display: flex !important;
     visibility: visible !important;
     opacity: 1 !important;
@@ -116,13 +179,53 @@
     z-index: 1000 !important;
   }
 
-  /* Prevent any styles from hiding the microphone button */
+  /* CRITICAL: Prevent ANY styles from hiding the microphone button */
   #basic-record-btn[style*="display: none"],
   #basic-record-btn[style*="visibility: hidden"],
-  #basic-record-btn[style*="opacity: 0"] {
+  #basic-record-btn[style*="opacity: 0"],
+  button#basic-record-btn[style*="display: none"],
+  button#basic-record-btn[style*="visibility: hidden"],
+  button#basic-record-btn[style*="opacity: 0"] {
     display: flex !important;
     visibility: visible !important;
     opacity: 1 !important;
+  }
+
+  /* CRITICAL: Ensure microphone icon is ALWAYS visible on mobile - PURPLE THEME */
+  #basic-record-btn i,
+  #basic-record-btn i.fas,
+  #basic-record-btn i.fa-microphone,
+  #basic-record-btn i.fas.fa-microphone,
+  button#basic-record-btn i,
+  button#basic-record-btn i.fas,
+  button#basic-record-btn i.fa-microphone,
+  button#basic-record-btn i.fas.fa-microphone {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: white !important;
+    font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    text-align: center !important;
+    position: relative !important;
+    z-index: 1001 !important;
+    margin-right: 0 !important;
+  }
+
+  /* Mobile record button text styling */
+  #basic-record-btn .record-button-text,
+  .record-button-text {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: white !important;
+    font-weight: 500 !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
   }
 
   /* Secondary action buttons */
@@ -338,9 +441,9 @@
 
   /* Light theme: Record button styling */
   [data-theme="light"] #basic-record-btn {
-    background: #2563eb !important; /* Blue background for record button */
-    border: 2px solid #2563eb !important; /* Blue border */
-    color: white !important; /* White icon on blue background */
+    background: hsl(var(--primary)) !important; /* Purple brand background for record button */
+    border: 2px solid hsl(var(--primary)) !important; /* Purple brand border */
+    color: white !important; /* White text/icon on purple background */
   }
 
   /* Light theme: Other buttons in card header need high contrast against gradient */
@@ -372,9 +475,9 @@
   }
 
   [data-theme="dark"] #basic-record-btn {
-    background: #3b82f6 !important; /* Slightly lighter blue for dark theme */
-    border: 2px solid #3b82f6 !important; /* Blue border */
-    color: white !important; /* White icon on blue background */
+    background: hsl(var(--primary)) !important; /* Purple brand for dark theme */
+    border: 2px solid hsl(var(--primary)) !important; /* Purple brand border */
+    color: white !important; /* White text/icon on purple background */
   }
 
   [data-theme="dark"] #basic-mode .button-icon {
@@ -482,9 +585,42 @@
   }
   
   #basic-record-btn {
-    width: 56px;
-    height: 56px;
-    font-size: 1.25rem;
+    min-width: 100px !important;
+    height: 44px !important;
+    font-size: 13px !important;
+    padding: 6px 12px !important;
+  }
+
+  #basic-record-btn i {
+    font-size: 13px !important;
+  }
+
+  #basic-record-btn .record-button-text {
+    font-size: 13px !important;
+  }
+
+  /* Very small screens - centered button adjustments */
+  .record-button-section {
+    padding: 0.75rem 0.5rem !important;
+  }
+
+  .centered-record-button,
+  #basic-record-btn.centered-record-button {
+    min-width: 100px !important;
+    height: 32px !important;
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+    border-radius: 16px !important;
+  }
+
+  .centered-record-button i,
+  #basic-record-btn.centered-record-button i {
+    font-size: 11px !important;
+  }
+
+  .centered-record-button .record-button-text,
+  #basic-record-btn.centered-record-button .record-button-text {
+    font-size: 11px !important;
   }
   
   #basic-mode .button-icon {

@@ -1,5 +1,59 @@
 document.addEventListener('DOMContentLoaded', () => {
   // ========================
+  // CRITICAL: ENSURE RECORD BUTTON VISIBILITY FIRST
+  // ========================
+  function ensureRecordButtonVisibility() {
+    const recordBtn = document.getElementById('basic-record-btn');
+    if (recordBtn) {
+      // Force visibility with maximum specificity - centered button
+      recordBtn.style.setProperty('display', 'flex', 'important');
+      recordBtn.style.setProperty('visibility', 'visible', 'important');
+      recordBtn.style.setProperty('opacity', '1', 'important');
+      recordBtn.style.setProperty('position', 'relative', 'important');
+      recordBtn.style.setProperty('z-index', '100', 'important');
+
+      // Ensure icon and text are present and visible
+      let icon = recordBtn.querySelector('i');
+      let textSpan = recordBtn.querySelector('.record-button-text');
+
+      if (!icon || !textSpan) {
+        recordBtn.innerHTML = '<i class="fas fa-microphone"></i><span class="record-button-text">Start Recording</span>';
+        icon = recordBtn.querySelector('i');
+        textSpan = recordBtn.querySelector('.record-button-text');
+      }
+
+      // Force icon visibility
+      if (icon) {
+        icon.style.setProperty('display', 'inline-block', 'important');
+        icon.style.setProperty('visibility', 'visible', 'important');
+        icon.style.setProperty('opacity', '1', 'important');
+        icon.style.setProperty('color', 'white', 'important');
+        icon.style.setProperty('font-size', '14px', 'important');
+      }
+
+      // Force text visibility
+      if (textSpan) {
+        textSpan.style.setProperty('display', 'inline-block', 'important');
+        textSpan.style.setProperty('visibility', 'visible', 'important');
+        textSpan.style.setProperty('opacity', '1', 'important');
+        textSpan.style.setProperty('color', 'white', 'important');
+        textSpan.style.setProperty('font-size', '14px', 'important');
+        textSpan.style.setProperty('font-weight', '500', 'important');
+      }
+
+      console.log('✅ Record button visibility ensured');
+    } else {
+      console.error('❌ Record button not found in DOM');
+    }
+  }
+
+  // Ensure record button is visible immediately
+  ensureRecordButtonVisibility();
+
+  // Also ensure it stays visible with periodic checks
+  setInterval(ensureRecordButtonVisibility, 1000);
+
+  // ========================
   // DOM ELEMENT VERIFICATION TEST
   // ========================
   console.log('🔍 DOM VERIFICATION: Checking all TTS button elements...');
@@ -789,20 +843,16 @@ function updateModelDropdown(selectElement, models, modelType) {
     // Check for MediaRecorder API
     if (!window.MediaRecorder) {
       showStatus('Your browser does not support audio recording. Please try a modern browser like Chrome, Firefox, Edge, or Safari.', 'error', true);
-      document.querySelectorAll('.record-button').forEach(btn => {
-        btn.disabled = true;
-        btn.style.opacity = 0.5;
-      });
+      // Don't disable the button - let it show an error when clicked instead
+      console.warn('MediaRecorder API not supported, but keeping record button visible');
       return false;
     }
 
     // Check for getUserMedia support
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       showStatus('Your browser does not support microphone access. Please try a modern browser.', 'error', true);
-      document.querySelectorAll('.record-button').forEach(btn => {
-        btn.disabled = true;
-        btn.style.opacity = 0.5;
-      });
+      // Don't disable the button - let it show an error when clicked instead
+      console.warn('getUserMedia not supported, but keeping record button visible');
       return false;
     }
 
@@ -1009,6 +1059,11 @@ function updateModelDropdown(selectElement, models, modelType) {
       const recordButton = options.recordButton || null;
       if (recordButton) {
         recordButton.classList.add('recording');
+        // Update button text to "Stop Recording"
+        const textSpan = recordButton.querySelector('.record-button-text');
+        if (textSpan) {
+          textSpan.textContent = 'Stop Recording';
+        }
       }
 
       // Start recording timer
@@ -2270,6 +2325,11 @@ function updateModelDropdown(selectElement, models, modelType) {
 
               // Reset UI and recording state
               basicRecordBtn.classList.remove('recording');
+              // Reset button text to "Start Recording"
+              const textSpan = basicRecordBtn.querySelector('.record-button-text');
+              if (textSpan) {
+                textSpan.textContent = 'Start Recording';
+              }
               const recordingStatus = document.getElementById('basic-recording-status');
               if (recordingStatus) {
                 recordingStatus.textContent = 'Click to start recording';
