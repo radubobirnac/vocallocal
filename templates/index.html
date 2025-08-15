@@ -500,20 +500,6 @@
       <div class="card">
         <div class="card-header">
           <h2 class="card-title">Voice Transcription</h2>
-          <div class="flex items-center gap-2">
-            <button id="basic-upload-btn" class="button button-outline button-icon" title="Upload audio file" onclick="document.getElementById('basic-file-input').click()">
-              <i class="fas fa-paperclip"></i>
-            </button>
-            <button id="basic-play-btn" class="button button-outline button-icon" title="Play transcription">
-              <i class="fas fa-play"></i>
-            </button>
-            <button id="basic-stop-btn" class="button button-outline button-icon" title="Stop playback" style="display: none;">
-              <i class="fas fa-stop"></i>
-            </button>
-            <button id="basic-copy-btn" class="button button-outline button-icon" title="Copy transcript">
-              <i class="fas fa-copy"></i>
-            </button>
-          </div>
         </div>
 
         <!-- Centered Recording Button Section -->
@@ -534,7 +520,23 @@
             </div>
 
             <div class="col-span-3">
-              <label for="basic-transcript" class="form-label">Transcript</label>
+              <div class="flex items-center justify-between mb-2">
+                <label for="basic-transcript" class="form-label">Transcript</label>
+                <div class="flex items-center gap-2">
+                  <button id="basic-upload-btn" class="button button-outline button-icon" title="Upload audio file" onclick="document.getElementById('basic-file-input').click()">
+                    <i class="fas fa-paperclip"></i>
+                  </button>
+                  <button id="basic-play-btn" class="button button-outline button-icon" title="Play transcription">
+                    <i class="fas fa-play"></i>
+                  </button>
+                  <button id="basic-stop-btn" class="button button-outline button-icon" title="Stop playback" style="display: none;">
+                    <i class="fas fa-stop"></i>
+                  </button>
+                  <button id="basic-copy-btn" class="button button-outline button-icon" title="Copy transcript">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </div>
+              </div>
               <textarea id="basic-transcript" class="form-textarea w-full" placeholder="Your transcription will appear here..."></textarea>
               <div class="transcript-controls mt-2 flex justify-between">
                 <div>
