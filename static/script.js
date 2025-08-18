@@ -5,40 +5,35 @@ document.addEventListener('DOMContentLoaded', () => {
   function ensureRecordButtonVisibility() {
     const recordBtn = document.getElementById('basic-record-btn');
     if (recordBtn) {
-      // Force visibility with maximum specificity - centered button
+      // Force visibility with maximum specificity - circular button
       recordBtn.style.setProperty('display', 'flex', 'important');
       recordBtn.style.setProperty('visibility', 'visible', 'important');
       recordBtn.style.setProperty('opacity', '1', 'important');
       recordBtn.style.setProperty('position', 'relative', 'important');
       recordBtn.style.setProperty('z-index', '100', 'important');
 
-      // Ensure icon and text are present and visible
+      // Ensure icon is present and visible (icon-only circular button)
       let icon = recordBtn.querySelector('i');
-      let textSpan = recordBtn.querySelector('.record-button-text');
 
-      if (!icon || !textSpan) {
-        recordBtn.innerHTML = '<i class="fas fa-microphone"></i><span class="record-button-text">Start Recording</span>';
+      if (!icon) {
+        recordBtn.innerHTML = '<i class="fas fa-microphone"></i>';
         icon = recordBtn.querySelector('i');
-        textSpan = recordBtn.querySelector('.record-button-text');
       }
 
-      // Force icon visibility
+      // Force icon visibility with comprehensive styling
       if (icon) {
         icon.style.setProperty('display', 'inline-block', 'important');
         icon.style.setProperty('visibility', 'visible', 'important');
         icon.style.setProperty('opacity', '1', 'important');
         icon.style.setProperty('color', 'white', 'important');
-        icon.style.setProperty('font-size', '14px', 'important');
-      }
-
-      // Force text visibility
-      if (textSpan) {
-        textSpan.style.setProperty('display', 'inline-block', 'important');
-        textSpan.style.setProperty('visibility', 'visible', 'important');
-        textSpan.style.setProperty('opacity', '1', 'important');
-        textSpan.style.setProperty('color', 'white', 'important');
-        textSpan.style.setProperty('font-size', '14px', 'important');
-        textSpan.style.setProperty('font-weight', '500', 'important');
+        icon.style.setProperty('font-size', '20px', 'important');
+        icon.style.setProperty('font-family', '"Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome', 'important');
+        icon.style.setProperty('font-weight', '900', 'important');
+        icon.style.setProperty('font-style', 'normal', 'important');
+        icon.style.setProperty('line-height', '1', 'important');
+        icon.style.setProperty('text-align', 'center', 'important');
+        icon.style.setProperty('position', 'relative', 'important');
+        icon.style.setProperty('z-index', '1000', 'important');
       }
 
       console.log('✅ Record button visibility ensured');

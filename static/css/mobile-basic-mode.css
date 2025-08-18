@@ -48,27 +48,81 @@
     gap: 0.75rem;
   }
 
-  /* Mobile centered record button section */
-  .record-button-section {
+  /* Mobile language and recording section */
+  .language-recording-section {
     display: flex !important;
-    justify-content: center !important;
+    flex-direction: column !important;
     align-items: center !important;
-    padding: 1rem 0.75rem !important;
+    padding: 1.5rem 1rem !important;
     background: rgba(255, 255, 255, 0.02) !important;
     border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    gap: 1.5rem !important;
+    position: relative !important;
   }
 
-  /* Mobile centered record button styling */
-  .centered-record-button,
-  #basic-record-btn.centered-record-button {
-    min-width: 120px !important;
-    height: 36px !important;
-    padding: 6px 12px !important;
-    font-size: 12px !important;
-    border-radius: 18px !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  /* Mobile language dropdown */
+  .language-dropdown-container {
+    width: 100% !important;
+    max-width: 280px !important;
   }
+
+  .language-select-new {
+    min-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Mobile circular recording container - reset positioning for stacked layout */
+  .circular-recording-container {
+    position: relative !important;
+    left: auto !important;
+    transform: none !important;
+  }
+
+  /* Mobile circular recording button */
+  .circular-record-button,
+  #basic-record-btn.circular-record-button {
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+    min-height: 50px !important;
+    max-height: 50px !important;
+  }
+
+  /* Mobile circular button icon styling */
+  .circular-record-button i,
+  #basic-record-btn.circular-record-button i,
+  #basic-record-btn i,
+  button#basic-record-btn i {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    font-size: 18px !important;
+    color: white !important;
+    line-height: 1 !important;
+    text-align: center !important;
+    position: relative !important;
+    z-index: 1000 !important;
+  }
+
+  /* Mobile microphone icon content */
+  .circular-record-button i::before,
+  #basic-record-btn.circular-record-button i::before,
+  #basic-record-btn i::before,
+  button#basic-record-btn i::before {
+    content: "\f130" !important;
+    font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+    font-weight: 900 !important;
+    display: inline-block !important;
+    color: white !important;
+    font-size: 18px !important;
+  }
+
+
   
   #basic-mode .card-title {
     font-size: 1.25rem;
@@ -599,29 +653,42 @@
     font-size: 13px !important;
   }
 
-  /* Very small screens - centered button adjustments */
-  .record-button-section {
-    padding: 0.75rem 0.5rem !important;
+  /* Very small screens - language and recording adjustments */
+  .language-recording-section {
+    padding: 1rem 0.5rem !important;
+    gap: 1rem !important;
   }
 
-  .centered-record-button,
-  #basic-record-btn.centered-record-button {
-    min-width: 100px !important;
-    height: 32px !important;
-    padding: 4px 8px !important;
-    font-size: 11px !important;
-    border-radius: 16px !important;
+  .language-dropdown-container {
+    max-width: 240px !important;
   }
 
-  .centered-record-button i,
-  #basic-record-btn.centered-record-button i {
-    font-size: 11px !important;
+  .circular-record-button,
+  #basic-record-btn.circular-record-button {
+    width: 45px !important;
+    height: 45px !important;
+    min-width: 45px !important;
+    max-width: 45px !important;
+    min-height: 45px !important;
+    max-height: 45px !important;
   }
 
-  .centered-record-button .record-button-text,
-  #basic-record-btn.centered-record-button .record-button-text {
-    font-size: 11px !important;
+  /* Very small screens circular button icon */
+  .circular-record-button i,
+  #basic-record-btn.circular-record-button i,
+  #basic-record-btn i,
+  button#basic-record-btn i {
+    font-size: 16px !important;
   }
+
+  .circular-record-button i::before,
+  #basic-record-btn.circular-record-button i::before,
+  #basic-record-btn i::before,
+  button#basic-record-btn i::before {
+    font-size: 16px !important;
+  }
+
+
   
   #basic-mode .button-icon {
     width: 40px;

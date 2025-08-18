@@ -502,24 +502,28 @@
           <h2 class="card-title">Voice Transcription</h2>
         </div>
 
-        <!-- Centered Recording Button Section -->
-        <div class="record-button-section">
-          <button id="basic-record-btn" class="centered-record-button" title="Start voice recording">
-            <i class="fas fa-microphone"></i>
-            <span class="record-button-text">Start Recording</span>
-          </button>
+        <!-- New Horizontal Layout Section -->
+        <div class="language-recording-section">
+          <!-- Input Language Dropdown -->
+          <div class="language-dropdown-container">
+            <div class="language-dropdown-header">
+              <i class="fas fa-globe"></i>
+              <span class="language-label">Input Language</span>
+            </div>
+            <select id="basic-language" class="language-select-new"></select>
+          </div>
+
+          <!-- Circular Recording Button -->
+          <div class="circular-recording-container">
+            <button id="basic-record-btn" class="circular-record-button" title="Start voice recording">
+              <i class="fas fa-microphone"></i>
+            </button>
+          </div>
         </div>
 
         <div class="card-content">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div class="space-y-4">
-              <div class="form-group">
-                <label for="basic-language" class="form-label">Input Language:</label>
-                <select id="basic-language" class="form-select"></select>
-              </div>
-            </div>
-
-            <div class="col-span-3">
+          <div class="grid grid-cols-1 gap-6">
+            <div class="w-full">
               <div class="flex items-start justify-between mb-3">
                 <label for="basic-transcript" class="form-label">Transcript</label>
                 <div class="flex items-center gap-2" style="margin-top: -4px;">

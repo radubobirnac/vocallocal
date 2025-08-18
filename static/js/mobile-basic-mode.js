@@ -245,29 +245,24 @@ class MobileBasicMode {
       recordBtn.style.setProperty('opacity', '1', 'important');
       recordBtn.style.setProperty('position', 'relative', 'important');
       recordBtn.style.setProperty('z-index', '1000', 'important');
-      // Centered button positioning and styling
+      // Circular button positioning and styling
       recordBtn.style.setProperty('position', 'relative', 'important');
       recordBtn.style.setProperty('z-index', '100', 'important');
-      recordBtn.style.setProperty('width', 'auto', 'important');
-      recordBtn.style.setProperty('min-width', '120px', 'important');
-      recordBtn.style.setProperty('height', '36px', 'important');
-      recordBtn.style.setProperty('padding', '6px 12px', 'important');
-      recordBtn.style.setProperty('border-radius', '18px', 'important');
+      recordBtn.style.setProperty('width', '50px', 'important');
+      recordBtn.style.setProperty('height', '50px', 'important');
+      recordBtn.style.setProperty('border-radius', '50%', 'important');
       recordBtn.style.setProperty('background', 'hsl(var(--primary))', 'important');
       recordBtn.style.setProperty('border', '2px solid hsl(var(--primary))', 'important');
-      recordBtn.style.setProperty('gap', '6px', 'important');
-      recordBtn.style.setProperty('box-shadow', '0 2px 4px rgba(0, 0, 0, 0.1)', 'important');
+      recordBtn.style.setProperty('box-shadow', '0 4px 12px hsla(var(--primary), 0.3)', 'important');
       recordBtn.style.setProperty('color', 'white', 'important');
       recordBtn.style.setProperty('cursor', 'pointer', 'important');
 
-      // Ensure microphone icon and text are present and properly styled
+      // Ensure microphone icon is present and properly styled (icon-only button)
       let icon = recordBtn.querySelector('i');
-      let textSpan = recordBtn.querySelector('.record-button-text');
 
-      if (!icon || !icon.classList.contains('fa-microphone') || !textSpan) {
-        recordBtn.innerHTML = '<i class="fas fa-microphone"></i><span class="record-button-text">Start Recording</span>';
+      if (!icon || !icon.classList.contains('fa-microphone')) {
+        recordBtn.innerHTML = '<i class="fas fa-microphone"></i>';
         icon = recordBtn.querySelector('i');
-        textSpan = recordBtn.querySelector('.record-button-text');
       }
 
       if (icon) {
@@ -275,11 +270,14 @@ class MobileBasicMode {
         icon.style.setProperty('visibility', 'visible', 'important');
         icon.style.setProperty('opacity', '1', 'important');
         icon.style.setProperty('color', 'white', 'important');
-        icon.style.setProperty('font-size', '14px', 'important');
+        icon.style.setProperty('font-size', '18px', 'important');
         icon.style.setProperty('font-family', '"Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome', 'important');
         icon.style.setProperty('font-weight', '900', 'important');
+        icon.style.setProperty('font-style', 'normal', 'important');
         icon.style.setProperty('line-height', '1', 'important');
         icon.style.setProperty('text-align', 'center', 'important');
+        icon.style.setProperty('position', 'relative', 'important');
+        icon.style.setProperty('z-index', '1000', 'important');
       }
 
       if (textSpan) {

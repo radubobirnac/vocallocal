@@ -1222,80 +1222,147 @@ button#basic-record-btn i.fas.fa-microphone::before {
   flex-shrink: 0 !important;
 }
 
-/* Centered record button section */
-.record-button-section {
+/* New Horizontal Language and Recording Section */
+.language-recording-section {
   display: flex !important;
-  justify-content: center !important;
+  justify-content: flex-start !important;
   align-items: center !important;
-  padding: 1.5rem 1rem !important;
+  padding: 2rem 2rem !important;
   background: rgba(255, 255, 255, 0.02) !important;
   border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  gap: 2rem !important;
+  position: relative !important;
 }
 
-/* Centered record button styling */
-.centered-record-button,
-#basic-record-btn.centered-record-button {
+/* Language Dropdown Container */
+.language-dropdown-container {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.5rem !important;
+  flex-shrink: 0 !important;
+}
+
+.language-dropdown-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  color: hsl(var(--foreground)) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.language-dropdown-header i {
+  color: hsl(var(--primary)) !important;
+  font-size: 16px !important;
+}
+
+.language-select-new {
+  min-width: 200px !important;
+  padding: 8px 12px !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 8px !important;
+  background: hsl(var(--background)) !important;
+  color: hsl(var(--foreground)) !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+}
+
+/* Circular Recording Button Container - Centered */
+.circular-recording-container {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  flex-shrink: 0 !important;
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+}
+
+/* Circular Recording Button - Perfect Circle, 40% smaller than original design */
+.circular-record-button,
+#basic-record-btn.circular-record-button {
   display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;
   position: relative !important;
   z-index: 100 !important;
-  width: auto !important;
-  min-width: 140px !important;
-  height: 40px !important;
-  padding: 8px 16px !important;
-  border-radius: 20px !important;
+  width: 60px !important;
+  height: 60px !important;
+  min-width: 60px !important;
+  max-width: 60px !important;
+  min-height: 60px !important;
+  max-height: 60px !important;
+  border-radius: 50% !important;
   background: hsl(var(--primary)) !important;
   border: 2px solid hsl(var(--primary)) !important;
   color: white !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 8px !important;
   cursor: pointer !important;
   transition: all 0.3s ease !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-  font-weight: 500 !important;
-  font-size: 14px !important;
+  box-shadow: 0 4px 12px hsla(var(--primary), 0.3) !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
 }
 
-/* Centered button hover effects */
-.centered-record-button:hover,
-#basic-record-btn.centered-record-button:hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 12px hsla(var(--primary), 0.3) !important;
+/* CRITICAL: Microphone icon styling for circular button */
+.circular-record-button i,
+#basic-record-btn.circular-record-button i,
+#basic-record-btn i,
+button#basic-record-btn i {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+  font-size: 20px !important;
+  color: white !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  position: relative !important;
+  z-index: 1000 !important;
+}
+
+/* Force microphone icon content with ::before pseudo-element */
+.circular-record-button i::before,
+#basic-record-btn.circular-record-button i::before,
+#basic-record-btn i::before,
+button#basic-record-btn i::before {
+  content: "\f130" !important; /* FontAwesome microphone unicode */
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+  font-weight: 900 !important;
+  display: inline-block !important;
+  color: white !important;
+  font-size: 20px !important;
+}
+
+
+
+/* Circular button hover effects */
+.circular-record-button:hover,
+#basic-record-btn.circular-record-button:hover {
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 0 6px 20px hsla(var(--primary), 0.4) !important;
   filter: brightness(1.1) !important;
 }
 
-/* Centered button recording state */
-.centered-record-button.recording,
-#basic-record-btn.centered-record-button.recording {
+/* Circular button recording state */
+.circular-record-button.recording,
+#basic-record-btn.circular-record-button.recording {
   background: #dc2626 !important;
   border-color: #dc2626 !important;
   animation: pulse-recording 1.5s infinite !important;
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4) !important;
 }
 
-/* Centered button icon and text */
-.centered-record-button i,
-#basic-record-btn.centered-record-button i {
-  display: inline-block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  color: white !important;
-  font-family: "Font Awesome 6 Free" !important;
-  font-weight: 900 !important;
-  font-size: 14px !important;
-}
 
-.centered-record-button .record-button-text,
-#basic-record-btn.centered-record-button .record-button-text {
-  display: inline-block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  color: white !important;
-  font-weight: 500 !important;
-  font-size: 14px !important;
-  line-height: 1 !important;
+
+@keyframes pulse-recording {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
 }
 
 /* Timer display for bilingual mode - Compact */
