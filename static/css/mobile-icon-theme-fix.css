@@ -654,11 +654,150 @@ html[data-theme="light"] body #basic-record-btn i {
     color: black !important;
   }
 
+  /* TRANSCRIPT SECTION BUTTONS: Light theme - black icons for visibility */
   [data-theme="light"] #basic-upload-btn.button.button-outline.button-icon i.fas.fa-paperclip,
   [data-theme="light"] #basic-play-btn.button.button-outline.button-icon i.fas.fa-play,
   [data-theme="light"] #basic-stop-btn.button.button-outline.button-icon i.fas.fa-stop,
   [data-theme="light"] #basic-copy-btn.button.button-outline.button-icon i.fas.fa-copy {
-    color: white !important;
+    color: black !important;
+    font-weight: 900 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  /* MOBILE SPECIFIC: Ensure transcript buttons are always visible on mobile devices */
+  @media (max-width: 768px) {
+    /* Light theme mobile transcript buttons */
+    [data-theme="light"] #basic-upload-btn,
+    [data-theme="light"] #basic-play-btn,
+    [data-theme="light"] #basic-stop-btn,
+    [data-theme="light"] #basic-copy-btn {
+      background: hsla(var(--primary), 0.1) !important;
+      border: 1px solid hsla(var(--primary), 0.2) !important;
+      color: hsl(var(--primary)) !important;
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    [data-theme="light"] #basic-upload-btn i,
+    [data-theme="light"] #basic-play-btn i,
+    [data-theme="light"] #basic-stop-btn i,
+    [data-theme="light"] #basic-copy-btn i {
+      color: black !important;
+      font-weight: 900 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    /* Dark theme mobile transcript buttons */
+    [data-theme="dark"] #basic-upload-btn,
+    [data-theme="dark"] #basic-play-btn,
+    [data-theme="dark"] #basic-stop-btn,
+    [data-theme="dark"] #basic-copy-btn {
+      background: rgba(255, 255, 255, 0.2) !important;
+      border: 1px solid rgba(255, 255, 255, 0.3) !important;
+      color: white !important;
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    [data-theme="dark"] #basic-upload-btn i,
+    [data-theme="dark"] #basic-play-btn i,
+    [data-theme="dark"] #basic-stop-btn i,
+    [data-theme="dark"] #basic-copy-btn i {
+      color: white !important;
+      font-weight: 900 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    /* ULTRA HIGH SPECIFICITY: Override any inline styles or dynamic changes */
+    html[data-theme="light"] body #basic-mode #basic-upload-btn,
+    html[data-theme="light"] body #basic-mode #basic-play-btn,
+    html[data-theme="light"] body #basic-mode #basic-stop-btn,
+    html[data-theme="light"] body #basic-mode #basic-copy-btn {
+      background: hsla(var(--primary), 0.1) !important;
+      border: 1px solid hsla(var(--primary), 0.2) !important;
+      color: hsl(var(--primary)) !important;
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    html[data-theme="light"] body #basic-mode #basic-upload-btn i,
+    html[data-theme="light"] body #basic-mode #basic-play-btn i,
+    html[data-theme="light"] body #basic-mode #basic-stop-btn i,
+    html[data-theme="light"] body #basic-mode #basic-copy-btn i {
+      color: black !important;
+      font-weight: 900 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    html[data-theme="dark"] body #basic-mode #basic-upload-btn,
+    html[data-theme="dark"] body #basic-mode #basic-play-btn,
+    html[data-theme="dark"] body #basic-mode #basic-stop-btn,
+    html[data-theme="dark"] body #basic-mode #basic-copy-btn {
+      background: rgba(255, 255, 255, 0.2) !important;
+      border: 1px solid rgba(255, 255, 255, 0.3) !important;
+      color: white !important;
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    html[data-theme="dark"] body #basic-mode #basic-upload-btn i,
+    html[data-theme="dark"] body #basic-mode #basic-play-btn i,
+    html[data-theme="dark"] body #basic-mode #basic-stop-btn i,
+    html[data-theme="dark"] body #basic-mode #basic-copy-btn i {
+      color: white !important;
+      font-weight: 900 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    /* INTERPRETATION SECTION BUTTONS: Ensure proper visibility */
+    html[data-theme="light"] body #basic-mode #basic-play-interpretation-btn,
+    html[data-theme="light"] body #basic-mode #basic-stop-interpretation-btn,
+    html[data-theme="light"] body #basic-mode #basic-copy-interpretation-btn {
+      background: hsla(var(--primary), 0.1) !important;
+      border: 1px solid hsla(var(--primary), 0.2) !important;
+      color: hsl(var(--primary)) !important;
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    html[data-theme="light"] body #basic-mode #basic-play-interpretation-btn i,
+    html[data-theme="light"] body #basic-mode #basic-stop-interpretation-btn i,
+    html[data-theme="light"] body #basic-mode #basic-copy-interpretation-btn i {
+      color: black !important;
+      font-weight: 900 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    html[data-theme="dark"] body #basic-mode #basic-play-interpretation-btn,
+    html[data-theme="dark"] body #basic-mode #basic-stop-interpretation-btn,
+    html[data-theme="dark"] body #basic-mode #basic-copy-interpretation-btn {
+      background: rgba(255, 255, 255, 0.2) !important;
+      border: 1px solid rgba(255, 255, 255, 0.3) !important;
+      color: white !important;
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    html[data-theme="dark"] body #basic-mode #basic-play-interpretation-btn i,
+    html[data-theme="dark"] body #basic-mode #basic-stop-interpretation-btn i,
+    html[data-theme="dark"] body #basic-mode #basic-copy-interpretation-btn i {
+      color: white !important;
+      font-weight: 900 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
   }
 
   /* Dark theme overrides for card header */
