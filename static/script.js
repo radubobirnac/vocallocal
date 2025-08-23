@@ -1783,7 +1783,8 @@ function updateModelDropdown(selectElement, models, modelType) {
   }
 
   // Event listener for the theme toggle button
-  if (themeToggleButton) {
+  // Only add if mobile navigation system is not present to avoid conflicts
+  if (themeToggleButton && !window.mobileNav) {
     themeToggleButton.addEventListener('click', (event) => {
       event.stopPropagation();
       toggleTheme();

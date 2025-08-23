@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Theme Toggle Fix Test</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/mobile-nav.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+            transition: all 0.3s ease;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid hsl(var(--border));
+            border-radius: 8px;
+            background: hsl(var(--card));
+        }
+        
+        .theme-info {
+            padding: 15px;
+            background: hsl(var(--muted));
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .button {
+            padding: 10px 20px;
+            border: 1px solid hsl(var(--border));
+            border-radius: 6px;
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 5px;
+        }
+        
+        .button:hover {
+            background: hsl(var(--accent));
+        }
+        
+        .button-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        .test-pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .test-fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        /* Mobile simulation */
+        @media (max-width: 768px) {
+            .mobile-only {
+                display: block !important;
+            }
+            .desktop-only {
+                display: none !important;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .mobile-only {
+                display: none !important;
+            }
+            .desktop-only {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Mobile Theme Toggle Fix Test</h1>
+        <p>This page tests the fixed mobile theme toggle functionality.</p>
+        
+        <div class="theme-info">
+            <strong>Current Theme:</strong> <span id="current-theme">light</span><br>
+            <strong>Theme Source:</strong> <span id="theme-source">localStorage</span><br>
+            <strong>Screen Width:</strong> <span id="screen-width">-</span>px<br>
+            <strong>Mobile Nav System:</strong> <span id="mobile-nav-status">Not loaded</span>
+        </div>
+        
+        <div class="test-section">
+            <h3>Theme Toggle Button Test</h3>
+            <p>This button should work on both desktop and mobile:</p>
+            <div class="theme-selector">
+                <button id="theme-toggle-btn" class="button button-icon" title="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Manual Test Instructions</h3>
+            <ol>
+                <li>Click the theme toggle button above</li>
+                <li>Verify the theme changes from light to dark (or vice versa)</li>
+                <li>Verify the button icon changes (moon ↔ sun)</li>
+                <li>Refresh the page and verify the theme persists</li>
+                <li>Test on both desktop and mobile screen sizes</li>
+            </ol>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test Results</h3>
+            <div id="test-results">
+                <p>Test results will appear here...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Load the mobile navigation system -->
+    <script src="/static/mobile-nav.js"></script>
+    
+    <script>
+        // Test script
+        function updateThemeInfo() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const savedTheme = localStorage.getItem('vocal-local-theme') || 'light';
+            const screenWidth = window.innerWidth;
+            const mobileNavStatus = window.mobileNav ? 'Loaded' : 'Not loaded';
+            
+            document.getElementById('current-theme').textContent = currentTheme;
+            document.getElementById('theme-source').textContent = savedTheme;
+            document.getElementById('screen-width').textContent = screenWidth;
+            document.getElementById('mobile-nav-status').textContent = mobileNavStatus;
+        }
+        
+        function addTestResult(message, success = true) {
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${success ? 'test-pass' : 'test-fail'}`;
+            resultDiv.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            resultsDiv.appendChild(resultDiv);
+        }
+        
+        // Monitor theme changes
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
+                    const newTheme = document.documentElement.getAttribute('data-theme');
+                    addTestResult(`Theme changed to: ${newTheme}`);
+                    updateThemeInfo();
+                }
+            });
+        });
+        
+        observer.observe(document.documentElement, { attributes: true });
+        
+        // Initial update
+        updateThemeInfo();
+        
+        // Test mobile navigation system loading
+        setTimeout(() => {
+            if (window.mobileNav) {
+                addTestResult('Mobile navigation system loaded successfully');
+                
+                // Test theme toggle functionality
+                const themeToggleBtn = document.getElementById('theme-toggle-btn');
+                if (themeToggleBtn) {
+                    addTestResult('Theme toggle button found');
+                    
+                    // Test if button has event listener
+                    const hasEventListener = themeToggleBtn.onclick || 
+                        themeToggleBtn.addEventListener.toString().includes('click');
+                    
+                    if (hasEventListener) {
+                        addTestResult('Theme toggle button has event listener');
+                    } else {
+                        addTestResult('Theme toggle button missing event listener', false);
+                    }
+                } else {
+                    addTestResult('Theme toggle button NOT found', false);
+                }
+            } else {
+                addTestResult('Mobile navigation system failed to load', false);
+            }
+        }, 1000);
+        
+        // Update screen width on resize
+        window.addEventListener('resize', updateThemeInfo);
+        
+        // Test localStorage sync
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'vocal-local-theme') {
+                addTestResult(`LocalStorage theme updated: ${e.newValue}`);
+                updateThemeInfo();
+            }
+        });
+    </script>
+</body>
+</html>

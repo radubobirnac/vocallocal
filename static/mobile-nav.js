@@ -194,42 +194,73 @@ class MobileNavigation {
   }
 
   setupThemeSystem() {
-    // Theme cards in settings panel
-    document.querySelectorAll('.theme-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const theme = card.dataset.theme;
-        this.setTheme(theme);
-        this.updateThemeCards(theme);
-      });
-    });
+    // Setup mobile theme toggle button sync with desktop
+    this.setupMobileThemeToggleSync();
 
-    // Load and apply saved theme
-    const savedTheme = localStorage.getItem('theme') || 'system';
+    // Load and apply saved theme - use same key as desktop system
+    const savedTheme = localStorage.getItem('vocal-local-theme') || 'light';
     this.setTheme(savedTheme);
-    this.updateThemeCards(savedTheme);
   }
 
   setTheme(theme) {
     // Apply theme to document
     document.documentElement.setAttribute('data-theme', theme);
-    
-    // Save to localStorage
-    localStorage.setItem('theme', theme);
-    
+
+    // Save to localStorage using same key as desktop system
+    localStorage.setItem('vocal-local-theme', theme);
+
+    // Update desktop theme toggle button icon if it exists
+    this.updateDesktopThemeToggleIcon(theme);
+
     // Trigger theme change event for other components
     window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme } }));
-    
+
     // Update legacy theme system if it exists
     if (window.setTheme) {
       window.setTheme(theme);
     }
   }
 
-  updateThemeCards(activeTheme) {
-    document.querySelectorAll('.theme-card').forEach(card => {
-      card.classList.toggle('active', card.dataset.theme === activeTheme);
-    });
+  setupMobileThemeToggleSync() {
+    // Find the desktop theme toggle button
+    const desktopThemeToggle = document.getElementById('theme-toggle-btn');
+
+    if (desktopThemeToggle) {
+      // Remove any existing event listeners to avoid duplicates
+      const newToggleBtn = desktopThemeToggle.cloneNode(true);
+      desktopThemeToggle.parentNode.replaceChild(newToggleBtn, desktopThemeToggle);
+
+      // Add unified event listener that works for both mobile and desktop
+      newToggleBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        this.toggleTheme();
+      });
+    }
   }
+
+  toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    this.setTheme(newTheme);
+  }
+
+  updateDesktopThemeToggleIcon(theme) {
+    const desktopThemeToggle = document.getElementById('theme-toggle-btn');
+    if (desktopThemeToggle) {
+      const icon = desktopThemeToggle.querySelector('i');
+      if (icon) {
+        if (theme === 'light') {
+          // Show moon icon when in light mode (clicking will switch to dark)
+          icon.className = 'fas fa-moon';
+        } else {
+          // Show sun icon when in dark mode (clicking will switch to light)
+          icon.className = 'fas fa-sun';
+        }
+      }
+    }
+  }
+
+
 
   setupMobileToggles() {
     // Sync mobile bilingual toggle with main toggle
