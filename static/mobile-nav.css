@@ -145,6 +145,35 @@
   }
 }
 
+/* ===== MOBILE INTERPRETATION SECTION BUTTON LAYOUT ===== */
+
+/* Ensure interpretation section buttons are horizontally aligned on mobile */
+@media (max-width: 768px) {
+  .interpretation-section .flex.items-center.gap-2 {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    flex-wrap: nowrap !important;
+  }
+
+  /* Specific styling for interpretation buttons */
+  #basic-interpret-btn,
+  #basic-play-interpretation-btn,
+  #basic-stop-interpretation-btn,
+  #basic-copy-interpretation-btn {
+    display: inline-flex !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Ensure the interpret button doesn't take full width */
+  #basic-interpret-btn {
+    white-space: nowrap !important;
+    min-width: auto !important;
+    width: auto !important;
+  }
+}
+
 /* End of mobile bilingual mode styling */
 
 
