@@ -134,6 +134,8 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1rem;
+  overflow: visible; /* Ensure dropdowns are not clipped */
+  position: relative; /* Ensure proper stacking context */
 }
 
 /* Typography */
@@ -664,6 +666,8 @@ p {
     flex-direction: column !important;
     align-items: stretch !important;
     gap: 0.75rem !important;
+    overflow: visible !important; /* Ensure dropdowns are not clipped */
+    position: relative !important; /* Ensure proper stacking context */
   }
 
   header .flex.items-center {
@@ -685,6 +689,126 @@ p {
   header > div:last-child {
     order: 3;
     justify-content: center;
+    overflow: visible !important; /* Ensure user dropdown is not clipped */
+    position: relative !important; /* Ensure proper stacking context */
+  }
+
+  /* MOBILE BILINGUAL MODE: Ensure user avatar dropdown is always visible */
+  .user-avatar-menu {
+    position: relative !important;
+    z-index: 10000 !important;
+    overflow: visible !important;
+  }
+
+  /* MOBILE FIX: Position dropdown to open downward from avatar button */
+  .user-dropdown {
+    position: absolute !important; /* Use absolute positioning relative to avatar button */
+    top: calc(100% + 8px) !important; /* Position below avatar button */
+    bottom: auto !important;
+    right: 0 !important; /* Align with right edge of avatar button */
+    left: auto !important;
+    z-index: 10001 !important;
+    min-width: 200px !important;
+    max-width: 250px !important;
+    background-color: hsl(var(--popover)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+    padding: 0.5rem !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    opacity: 0 !important;
+    transform: translateY(-10px) scale(0.95) !important;
+    transition: opacity 0.3s ease, transform 0.3s ease !important;
+  }
+
+  .user-dropdown.show {
+    opacity: 1 !important;
+    transform: translateY(0) scale(1) !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  /* Ensure bilingual mode content doesn't interfere with dropdown */
+  #bilingual-mode-content {
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+  /* Force dropdown visibility when bilingual mode is active */
+  body:has(#bilingual-mode-content[style*="block"]) .user-avatar-menu {
+    z-index: 10002 !important;
+  }
+
+  body:has(#bilingual-mode-content[style*="block"]) .user-dropdown {
+    z-index: 10003 !important;
+  }
+
+  /* Alternative positioning for larger mobile screens */
+  @media (min-width: 481px) and (max-width: 768px) {
+    .user-dropdown {
+      position: absolute !important;
+      top: calc(100% + 8px) !important;
+      bottom: auto !important;
+      right: 0 !important;
+      left: auto !important;
+      transform: translateY(-10px) !important;
+    }
+
+    .user-dropdown.show {
+      transform: translateY(0) !important;
+    }
+  }
+
+  /* Small mobile screens - ensure downward positioning with viewport awareness */
+  @media (max-width: 480px) {
+    .user-dropdown {
+      position: absolute !important;
+      top: calc(100% + 8px) !important;
+      bottom: auto !important;
+      right: 0 !important;
+      left: auto !important;
+      min-width: 180px !important;
+      max-width: 220px !important;
+      /* Ensure dropdown stays within viewport */
+      max-height: calc(100vh - 120px) !important;
+      overflow-y: auto !important;
+    }
+
+    /* Advanced positioning to prevent overlaps */
+    .user-avatar-menu.dropdown-above .user-dropdown {
+      top: auto !important;
+      bottom: calc(100% + 8px) !important;
+      transform: translateY(10px) scale(0.95) !important;
+    }
+
+    .user-avatar-menu.dropdown-above .user-dropdown.show {
+      transform: translateY(0) scale(1) !important;
+    }
+
+    /* Left-aligned dropdown for edge cases */
+    .user-avatar-menu.dropdown-left .user-dropdown {
+      right: auto !important;
+      left: 0 !important;
+    }
+
+    /* Center-aligned dropdown for very small screens */
+    .user-avatar-menu.dropdown-center .user-dropdown {
+      right: auto !important;
+      left: 50% !important;
+      transform: translateX(-50%) translateY(-10px) scale(0.95) !important;
+    }
+
+    .user-avatar-menu.dropdown-center .user-dropdown.show {
+      transform: translateX(-50%) translateY(0) scale(1) !important;
+    }
+
+    /* Ensure dropdown doesn't overlap with bottom navigation */
+    @media (max-width: 768px) {
+      .bottom-nav ~ * .user-dropdown {
+        max-height: calc(100vh - 140px) !important; /* Account for bottom nav */
+      }
+    }
   }
 
   .bilingual-mode-label {
@@ -976,6 +1100,28 @@ p {
 [data-theme="dark"] .action-button:hover {
   background: hsl(var(--accent));
   border-color: hsl(var(--accent-foreground));
+}
+
+/* DARK MODE: Purple styling for specific bilingual mode buttons */
+[data-theme="dark"] .action-button.manual-record-btn,
+[data-theme="dark"] .action-button.translate-btn,
+[data-theme="dark"] .action-button.upload-btn {
+  background: hsl(var(--primary)) !important; /* Purple brand background */
+  border: 1px solid hsl(var(--primary)) !important; /* Purple brand border */
+  color: white !important;
+}
+
+[data-theme="dark"] .action-button.manual-record-btn:hover,
+[data-theme="dark"] .action-button.translate-btn:hover,
+[data-theme="dark"] .action-button.upload-btn:hover {
+  background: hsl(var(--primary-dark)) !important;
+  border-color: hsl(var(--primary-dark)) !important;
+}
+
+[data-theme="dark"] .hold-record-button {
+  background: hsl(var(--primary)) !important; /* Purple brand background */
+  border: 2px solid hsl(var(--primary)) !important; /* Purple brand border */
+  color: white !important;
 }
 
 [data-theme="dark"] .language-arrow {
@@ -1945,11 +2091,28 @@ html[data-theme='dark'] #about-toggle i {
     margin: 0.25rem 0;
   }
 
+  /* MOBILE BILINGUAL MODE: Purple color styling for Hold to Record button */
   .hold-record-button {
     padding: 0.625rem 1.25rem;
     font-size: 0.9rem;
     min-width: 160px;
     height: 44px;
+    background: hsl(var(--primary)) !important; /* Purple brand background */
+    border: 2px solid hsl(var(--primary)) !important; /* Purple brand border */
+    color: white !important;
+  }
+
+  .hold-record-button:hover {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4) !important;
+    transform: translateY(-2px) !important;
+  }
+
+  .hold-record-button:active,
+  .hold-record-button.recording {
+    background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4) !important;
+    transform: translateY(0) !important;
   }
 
   .action-buttons-row {
@@ -1957,12 +2120,64 @@ html[data-theme='dark'] #about-toggle i {
     margin-top: 0.75rem;
   }
 
+  /* MOBILE BILINGUAL MODE: Purple color styling for action buttons */
   .action-button {
     padding: 0.4rem 0.6rem;
     font-size: 0.75rem;
     min-width: 100px;
     height: 34px;
     gap: 0.25rem;
+  }
+
+  /* MOBILE BILINGUAL MODE: Manual Record button purple styling */
+  .action-button.manual-record-btn {
+    background: hsl(var(--primary)) !important; /* Purple brand background */
+    border: 1px solid hsl(var(--primary)) !important; /* Purple brand border */
+    color: white !important;
+  }
+
+  .action-button.manual-record-btn:hover {
+    background: hsl(var(--primary-dark)) !important;
+    border-color: hsl(var(--primary-dark)) !important;
+  }
+
+  /* MOBILE BILINGUAL MODE: Translate button purple styling */
+  .action-button.translate-btn {
+    background: hsl(var(--primary)) !important; /* Purple brand background */
+    border: 1px solid hsl(var(--primary)) !important; /* Purple brand border */
+    color: white !important;
+  }
+
+  .action-button.translate-btn:hover {
+    background: hsl(var(--primary-dark)) !important;
+    border-color: hsl(var(--primary-dark)) !important;
+  }
+
+  /* MOBILE BILINGUAL MODE: Upload button purple styling */
+  .action-button.upload-btn {
+    background: hsl(var(--primary)) !important; /* Purple brand background */
+    border: 1px solid hsl(var(--primary)) !important; /* Purple brand border */
+    color: white !important;
+  }
+
+  .action-button.upload-btn:hover {
+    background: hsl(var(--primary-dark)) !important;
+    border-color: hsl(var(--primary-dark)) !important;
+  }
+
+  /* MOBILE DARK MODE: Ensure purple styling is maintained in dark theme */
+  [data-theme="dark"] .hold-record-button {
+    background: hsl(var(--primary)) !important; /* Purple brand background */
+    border: 2px solid hsl(var(--primary)) !important; /* Purple brand border */
+    color: white !important;
+  }
+
+  [data-theme="dark"] .action-button.manual-record-btn,
+  [data-theme="dark"] .action-button.translate-btn,
+  [data-theme="dark"] .action-button.upload-btn {
+    background: hsl(var(--primary)) !important; /* Purple brand background */
+    border: 1px solid hsl(var(--primary)) !important; /* Purple brand border */
+    color: white !important;
   }
 }
 
@@ -1980,17 +2195,58 @@ html[data-theme='dark'] #about-toggle i {
     font-size: 0.8rem;
   }
 
+  /* MOBILE BILINGUAL MODE: Small screen Hold to Record button purple styling */
   .hold-record-button {
     padding: 0.5rem 1rem;
     font-size: 0.85rem;
     min-width: 140px;
     height: 40px;
+    background: hsl(var(--primary)) !important; /* Purple brand background */
+    border: 2px solid hsl(var(--primary)) !important; /* Purple brand border */
+    color: white !important;
   }
 
+  /* MOBILE BILINGUAL MODE: Small screen action buttons purple styling */
   .action-button {
     padding: 0.35rem 0.5rem;
     font-size: 0.7rem;
     min-width: 90px;
     height: 32px;
+  }
+
+  /* MOBILE BILINGUAL MODE: Small screen Manual Record button purple styling */
+  .action-button.manual-record-btn {
+    background: hsl(var(--primary)) !important; /* Purple brand background */
+    border: 1px solid hsl(var(--primary)) !important; /* Purple brand border */
+    color: white !important;
+  }
+
+  /* MOBILE BILINGUAL MODE: Small screen Translate button purple styling */
+  .action-button.translate-btn {
+    background: hsl(var(--primary)) !important; /* Purple brand background */
+    border: 1px solid hsl(var(--primary)) !important; /* Purple brand border */
+    color: white !important;
+  }
+
+  /* MOBILE BILINGUAL MODE: Small screen Upload button purple styling */
+  .action-button.upload-btn {
+    background: hsl(var(--primary)) !important; /* Purple brand background */
+    border: 1px solid hsl(var(--primary)) !important; /* Purple brand border */
+    color: white !important;
+  }
+
+  /* MOBILE DARK MODE: Small screen - Ensure purple styling is maintained in dark theme */
+  [data-theme="dark"] .hold-record-button {
+    background: hsl(var(--primary)) !important; /* Purple brand background */
+    border: 2px solid hsl(var(--primary)) !important; /* Purple brand border */
+    color: white !important;
+  }
+
+  [data-theme="dark"] .action-button.manual-record-btn,
+  [data-theme="dark"] .action-button.translate-btn,
+  [data-theme="dark"] .action-button.upload-btn {
+    background: hsl(var(--primary)) !important; /* Purple brand background */
+    border: 1px solid hsl(var(--primary)) !important; /* Purple brand border */
+    color: white !important;
   }
 }

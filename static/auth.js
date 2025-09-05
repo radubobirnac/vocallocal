@@ -47,8 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
 
-        // Ensure dropdown is visible when shown
-        userDropdown.style.zIndex = '1000';
+        // Ensure dropdown is visible when shown - Ultra high z-index for bilingual mode compatibility
+        userDropdown.style.zIndex = '10001';
 
         // Prevent dropdown from closing when clicking inside it
         userDropdown.addEventListener('click', function(event) {

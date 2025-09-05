@@ -251,7 +251,12 @@ html[data-theme="light"] body #basic-record-btn i {
   #basic-interpret-btn,
   #basic-play-interpretation-btn,
   #basic-stop-interpretation-btn,
-  #basic-copy-interpretation-btn {
+  #basic-copy-interpretation-btn,
+  /* BILINGUAL MODE: Include bilingual mode buttons */
+  #bilingual-mode-content .hold-record-button,
+  #bilingual-mode-content .action-button.manual-record-btn,
+  #bilingual-mode-content .action-button.translate-btn,
+  #bilingual-mode-content .action-button.upload-btn {
     /* Ensure icons inherit proper colors */
     color: inherit !important;
   }
@@ -282,7 +287,27 @@ html[data-theme="light"] body #basic-record-btn i {
     opacity: 1 !important;
     visibility: visible !important;
   }
-  
+
+  /* BILINGUAL MODE: Specific icon element styling for bilingual mode buttons */
+  #bilingual-mode-content .hold-record-button i,
+  #bilingual-mode-content .action-button.manual-record-btn i,
+  #bilingual-mode-content .action-button.translate-btn i,
+  #bilingual-mode-content .action-button.upload-btn i,
+  #bilingual-mode-content .fas,
+  #bilingual-mode-content .far,
+  #bilingual-mode-content .fab,
+  #bilingual-mode-content .fa-microphone,
+  #bilingual-mode-content .fa-language,
+  #bilingual-mode-content .fa-upload {
+    color: inherit !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", FontAwesome !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    display: inline-block !important;
+  }
+
   /* Light theme specific fixes */
   [data-theme="light"] #basic-mode .card-header {
     background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-dark)) 100%) !important;
@@ -680,11 +705,43 @@ html[data-theme="light"] body #basic-record-btn i {
       opacity: 1 !important;
     }
 
+    /* MOBILE BILINGUAL MODE: Light theme - Purple styling for bilingual mode buttons */
+    [data-theme="light"] #bilingual-mode-content .hold-record-button {
+      background: hsl(var(--primary)) !important; /* Purple brand background */
+      border: 2px solid hsl(var(--primary)) !important; /* Purple brand border */
+      color: white !important;
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    [data-theme="light"] #bilingual-mode-content .action-button.manual-record-btn,
+    [data-theme="light"] #bilingual-mode-content .action-button.translate-btn,
+    [data-theme="light"] #bilingual-mode-content .action-button.upload-btn {
+      background: hsl(var(--primary)) !important; /* Purple brand background */
+      border: 1px solid hsl(var(--primary)) !important; /* Purple brand border */
+      color: white !important;
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
     [data-theme="light"] #basic-upload-btn i,
     [data-theme="light"] #basic-play-btn i,
     [data-theme="light"] #basic-stop-btn i,
     [data-theme="light"] #basic-copy-btn i {
       color: black !important;
+      font-weight: 900 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    /* MOBILE BILINGUAL MODE: Light theme - Icon styling for bilingual mode buttons */
+    [data-theme="light"] #bilingual-mode-content .hold-record-button i,
+    [data-theme="light"] #bilingual-mode-content .action-button.manual-record-btn i,
+    [data-theme="light"] #bilingual-mode-content .action-button.translate-btn i,
+    [data-theme="light"] #bilingual-mode-content .action-button.upload-btn i {
+      color: white !important;
       font-weight: 900 !important;
       opacity: 1 !important;
       visibility: visible !important;
@@ -703,10 +760,42 @@ html[data-theme="light"] body #basic-record-btn i {
       opacity: 1 !important;
     }
 
+    /* MOBILE BILINGUAL MODE: Dark theme - Purple styling for bilingual mode buttons */
+    [data-theme="dark"] #bilingual-mode-content .hold-record-button {
+      background: hsl(var(--primary)) !important; /* Purple brand background */
+      border: 2px solid hsl(var(--primary)) !important; /* Purple brand border */
+      color: white !important;
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    [data-theme="dark"] #bilingual-mode-content .action-button.manual-record-btn,
+    [data-theme="dark"] #bilingual-mode-content .action-button.translate-btn,
+    [data-theme="dark"] #bilingual-mode-content .action-button.upload-btn {
+      background: hsl(var(--primary)) !important; /* Purple brand background */
+      border: 1px solid hsl(var(--primary)) !important; /* Purple brand border */
+      color: white !important;
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
     [data-theme="dark"] #basic-upload-btn i,
     [data-theme="dark"] #basic-play-btn i,
     [data-theme="dark"] #basic-stop-btn i,
     [data-theme="dark"] #basic-copy-btn i {
+      color: white !important;
+      font-weight: 900 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    /* MOBILE BILINGUAL MODE: Dark theme - Icon styling for bilingual mode buttons */
+    [data-theme="dark"] #bilingual-mode-content .hold-record-button i,
+    [data-theme="dark"] #bilingual-mode-content .action-button.manual-record-btn i,
+    [data-theme="dark"] #bilingual-mode-content .action-button.translate-btn i,
+    [data-theme="dark"] #bilingual-mode-content .action-button.upload-btn i {
       color: white !important;
       font-weight: 900 !important;
       opacity: 1 !important;
@@ -752,6 +841,52 @@ html[data-theme="light"] body #basic-record-btn i {
     html[data-theme="dark"] body #basic-mode #basic-play-btn i,
     html[data-theme="dark"] body #basic-mode #basic-stop-btn i,
     html[data-theme="dark"] body #basic-mode #basic-copy-btn i {
+      color: white !important;
+      font-weight: 900 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    /* ULTRA HIGH SPECIFICITY: Bilingual mode buttons - Light theme */
+    html[data-theme="light"] body #bilingual-mode-content .hold-record-button,
+    html[data-theme="light"] body #bilingual-mode-content .action-button.manual-record-btn,
+    html[data-theme="light"] body #bilingual-mode-content .action-button.translate-btn,
+    html[data-theme="light"] body #bilingual-mode-content .action-button.upload-btn {
+      background: hsl(var(--primary)) !important; /* Purple brand background */
+      border: 1px solid hsl(var(--primary)) !important; /* Purple brand border */
+      color: white !important;
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    html[data-theme="light"] body #bilingual-mode-content .hold-record-button i,
+    html[data-theme="light"] body #bilingual-mode-content .action-button.manual-record-btn i,
+    html[data-theme="light"] body #bilingual-mode-content .action-button.translate-btn i,
+    html[data-theme="light"] body #bilingual-mode-content .action-button.upload-btn i {
+      color: white !important;
+      font-weight: 900 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    /* ULTRA HIGH SPECIFICITY: Bilingual mode buttons - Dark theme */
+    html[data-theme="dark"] body #bilingual-mode-content .hold-record-button,
+    html[data-theme="dark"] body #bilingual-mode-content .action-button.manual-record-btn,
+    html[data-theme="dark"] body #bilingual-mode-content .action-button.translate-btn,
+    html[data-theme="dark"] body #bilingual-mode-content .action-button.upload-btn {
+      background: hsl(var(--primary)) !important; /* Purple brand background */
+      border: 1px solid hsl(var(--primary)) !important; /* Purple brand border */
+      color: white !important;
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    html[data-theme="dark"] body #bilingual-mode-content .hold-record-button i,
+    html[data-theme="dark"] body #bilingual-mode-content .action-button.manual-record-btn i,
+    html[data-theme="dark"] body #bilingual-mode-content .action-button.translate-btn i,
+    html[data-theme="dark"] body #bilingual-mode-content .action-button.upload-btn i {
       color: white !important;
       font-weight: 900 !important;
       opacity: 1 !important;

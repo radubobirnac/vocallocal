@@ -94,7 +94,7 @@
 /* User Avatar Menu */
 .user-avatar-menu {
   position: relative;
-  z-index: 1000 !important; /* Ensure it's above other elements */
+  z-index: 10000 !important; /* Ultra high z-index for bilingual mode compatibility */
   cursor: pointer !important; /* Show pointer cursor to indicate it's clickable */
   pointer-events: auto !important; /* Ensure clicks are captured */
 }
@@ -109,7 +109,7 @@
   padding: 0.25rem;
   border-radius: var(--radius);
   transition: background-color 0.2s ease;
-  z-index: 1000 !important; /* Ensure it's above other elements */
+  z-index: 10000 !important; /* Ultra high z-index for bilingual mode compatibility */
   pointer-events: auto !important; /* Ensure clicks are captured */
   position: relative; /* Ensure proper stacking context */
 }
@@ -151,7 +151,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   padding: 0.5rem;
   margin-top: 0.5rem;
-  z-index: 9999 !important; /* Very high z-index to ensure it's above all other elements */
+  z-index: 10001 !important; /* Ultra high z-index for bilingual mode compatibility */
   display: none;
   pointer-events: auto !important; /* Ensure clicks are captured */
   opacity: 1 !important; /* Ensure it's fully visible */
@@ -163,6 +163,166 @@
   opacity: 1 !important;
   visibility: visible !important;
   pointer-events: auto !important;
+}
+
+/* Mobile-specific fixes for user avatar dropdown in bilingual mode */
+@media (max-width: 768px) {
+  /* Ensure user avatar menu is always visible and functional */
+  .user-avatar-menu {
+    position: relative !important;
+    z-index: 10000 !important;
+    pointer-events: auto !important;
+  }
+
+  .avatar-button {
+    z-index: 10000 !important;
+    pointer-events: auto !important;
+    position: relative !important;
+  }
+
+  /* MOBILE FIX: Position dropdown to open downward from avatar button */
+  .user-dropdown {
+    position: absolute !important; /* Use absolute positioning relative to avatar button */
+    top: calc(100% + 8px) !important; /* Position below avatar button */
+    bottom: auto !important;
+    right: 0 !important; /* Align with right edge of avatar button */
+    left: auto !important;
+    z-index: 10001 !important;
+    min-width: 200px !important;
+    max-width: 250px !important;
+    background-color: hsl(var(--popover)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+    padding: 0.5rem !important;
+    margin: 0 !important;
+    pointer-events: auto !important;
+    display: none !important;
+    opacity: 0 !important;
+    transform: translateY(-10px) scale(0.95) !important;
+    transition: opacity 0.3s ease, transform 0.3s ease !important;
+  }
+
+  .user-dropdown.show {
+    display: block !important;
+    opacity: 1 !important;
+    transform: translateY(0) scale(1) !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  /* Ensure dropdown items are properly styled on mobile */
+  .user-dropdown .dropdown-item {
+    display: flex !important;
+    align-items: center !important;
+    padding: 0.75rem 1rem !important;
+    color: hsl(var(--foreground)) !important;
+    text-decoration: none !important;
+    font-size: 0.9rem !important;
+    transition: background-color 0.2s ease !important;
+  }
+
+  .user-dropdown .dropdown-item:hover {
+    background-color: hsl(var(--accent)) !important;
+  }
+
+  .user-dropdown .dropdown-item i {
+    margin-right: 0.75rem !important;
+    width: 16px !important;
+    text-align: center !important;
+    font-size: 0.9rem !important;
+  }
+
+  .user-dropdown .dropdown-divider {
+    height: 1px !important;
+    background-color: hsl(var(--border)) !important;
+    margin: 0.5rem 0 !important;
+    border: none !important;
+  }
+
+  /* Ensure dropdown is above bilingual mode content */
+  #bilingual-mode-content {
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+  /* Force dropdown to be above everything when bilingual mode is active */
+  body:has(#bilingual-mode-content[style*="block"]) .user-avatar-menu {
+    z-index: 10002 !important;
+  }
+
+  body:has(#bilingual-mode-content[style*="block"]) .user-dropdown {
+    z-index: 10003 !important;
+  }
+}
+
+/* Alternative positioning for larger mobile screens */
+@media (min-width: 481px) and (max-width: 768px) {
+  .user-dropdown {
+    position: absolute !important;
+    top: calc(100% + 8px) !important;
+    bottom: auto !important;
+    right: 0 !important;
+    left: auto !important;
+    transform: translateY(-10px) !important;
+  }
+
+  .user-dropdown.show {
+    transform: translateY(0) !important;
+  }
+}
+
+/* Small mobile screens - ensure downward positioning with viewport awareness */
+@media (max-width: 480px) {
+  .user-dropdown {
+    position: absolute !important;
+    top: calc(100% + 8px) !important;
+    bottom: auto !important;
+    right: 0 !important;
+    left: auto !important;
+    min-width: 180px !important;
+    max-width: 220px !important;
+    /* Ensure dropdown stays within viewport */
+    max-height: calc(100vh - 120px) !important;
+    overflow-y: auto !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3) !important; /* More prominent shadow */
+    border: 2px solid hsl(var(--primary)) !important; /* Purple border for visibility */
+  }
+
+  /* Advanced positioning to prevent overlaps */
+  .user-avatar-menu.dropdown-above .user-dropdown {
+    top: auto !important;
+    bottom: calc(100% + 8px) !important;
+    transform: translateY(10px) scale(0.95) !important;
+  }
+
+  .user-avatar-menu.dropdown-above .user-dropdown.show {
+    transform: translateY(0) scale(1) !important;
+  }
+
+  /* Left-aligned dropdown for edge cases */
+  .user-avatar-menu.dropdown-left .user-dropdown {
+    right: auto !important;
+    left: 0 !important;
+  }
+
+  /* Center-aligned dropdown for very small screens */
+  .user-avatar-menu.dropdown-center .user-dropdown {
+    right: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%) translateY(-10px) scale(0.95) !important;
+  }
+
+  .user-avatar-menu.dropdown-center .user-dropdown.show {
+    transform: translateX(-50%) translateY(0) scale(1) !important;
+  }
+
+  /* Ensure dropdown doesn't overlap with bottom navigation */
+  @media (max-width: 768px) {
+    .bottom-nav ~ * .user-dropdown {
+      max-height: calc(100vh - 140px) !important; /* Account for bottom nav */
+    }
+  }
 }
 
 .dropdown-item {
