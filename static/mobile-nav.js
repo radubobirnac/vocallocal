@@ -282,25 +282,10 @@ class MobileNavigation {
       });
     }
 
-    // Sync mobile interpretation toggle
-    const mobileInterpretation = document.getElementById('mobile-interpretation-toggle');
-    const mainInterpretation = document.getElementById('enable-interpretation');
-    
-    if (mobileInterpretation && mainInterpretation) {
-      // Sync initial state
-      mobileInterpretation.checked = mainInterpretation.checked;
-      
-      // Sync changes
-      mobileInterpretation.addEventListener('change', () => {
-        mainInterpretation.checked = mobileInterpretation.checked;
-        mainInterpretation.dispatchEvent(new Event('change'));
-      });
-      
-      mainInterpretation.addEventListener('change', () => {
-        mobileInterpretation.checked = mainInterpretation.checked;
-      });
-    }
+    // Mobile settings sync removed - keeping only core mobile navigation
   }
+
+
 
   // Public API methods
   isOpen() {
