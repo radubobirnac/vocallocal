@@ -9,10 +9,10 @@ class PlanAccessControl {
         this.userRole = 'normal_user'; // Default to normal user role
         this.planModelAccess = {
             'free': {
-                'transcription': ['gemini-2.0-flash-lite', 'gemini'],
-                'translation': ['gemini-2.0-flash-lite'],
+                'transcription': ['gemini-2.5-flash-preview', 'gemini'],
+                'translation': ['gemini-2.5-flash-preview'],
                 'tts': [], // No free TTS models - all require upgrade
-                'interpretation': ['gemini-2.0-flash-lite']
+                'interpretation': ['gemini-2.5-flash-preview']
             },
             'basic': {
                 'transcription': [
@@ -63,7 +63,7 @@ class PlanAccessControl {
         };
 
         this.modelInfo = {
-            'gemini-2.0-flash-lite': { name: 'Gemini 2.0 Flash Lite', tier: 'free' },
+            'gemini-2.5-flash-preview': { name: 'Gemini 2.5 Flash Preview', tier: 'free' },
             'gpt-4o-mini-transcribe': { name: 'OpenAI GPT-4o Mini', tier: 'basic' },
             'gpt-4o-transcribe': { name: 'OpenAI GPT-4o', tier: 'basic' },
             'gemini-2.5-flash-preview-04-17': { name: 'Gemini 2.5 Flash Preview', tier: 'basic' },  // UI compatibility

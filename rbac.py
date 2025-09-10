@@ -193,9 +193,9 @@ def check_model_access(model_name):
     if user_role in [User.ROLE_ADMIN, User.ROLE_SUPER_USER]:
         return True
     
-    # Normal users are restricted to Flash 2.0 models unless they have a subscription
+    # Normal users are restricted to Flash 2.5 models unless they have a subscription
     # This will be integrated with the existing subscription system
-    if model_name in ['gemini-2.0-flash-lite', 'gemini-2.0-flash']:
+    if model_name in ['gemini-2.5-flash-preview', 'gemini-2.5-flash']:
         return True
     
     # For other models, check subscription (this will be handled by existing subscription logic)

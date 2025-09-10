@@ -25,7 +25,7 @@ def interpret_text():
             
         text = data.get('text')
         tone = data.get('tone', 'neutral')
-        model = data.get('interpretation_model', 'gemini-1.5-flash')
+        model = data.get('interpretation_model', 'gemini-2.5-flash-preview')
         
         if not text:
             return jsonify({'error': 'No text provided'}), 400

@@ -141,8 +141,8 @@ function updateModelDropdown(selectElement, models, modelType) {
 
   // Define authorized models for validation
   const authorizedModels = {
-    'transcription': ['gemini-2.0-flash-lite', 'gpt-4o-mini-transcribe', 'gpt-4o-transcribe', 'gemini-2.5-flash-preview-05-20'],
-    'translation': ['gemini-2.0-flash-lite', 'gemini-2.5-flash', 'gpt-4.1-mini']
+    'transcription': ['gemini-2.5-flash-preview', 'gpt-4o-mini-transcribe', 'gpt-4o-transcribe', 'gemini-2.5-flash-preview-05-20'],
+    'translation': ['gemini-2.5-flash-preview', 'gemini-2.5-flash', 'gpt-4.1-mini']
   };
 
   // Store current selection
@@ -1349,7 +1349,7 @@ function updateModelDropdown(selectElement, models, modelType) {
     if (interpretationModelSelect) {
       return interpretationModelSelect.value;
     } else {
-      return 'gemini-2.0-flash-lite'; // Default to Gemini 2.0 Flash Lite if dropdown not found
+      return 'gemini-2.5-flash-preview'; // Default to Gemini 2.5 Flash Preview if dropdown not found
     }
   }
 
@@ -1365,10 +1365,17 @@ function updateModelDropdown(selectElement, models, modelType) {
   // Load interpretation model preference
   function loadInterpretationModelPreference() {
     try {
-      return localStorage.getItem('vocal-local-interpretation-model') || 'gemini-2.0-flash-lite'; // Default to Gemini 2.0 Flash Lite
+      const savedModel = localStorage.getItem('vocal-local-interpretation-model');
+      
+      // Handle legacy model names for backward compatibility
+      if (savedModel === 'gemini-2.0-flash-lite') {
+        return 'gemini-2.5-flash-preview';
+      }
+      
+      return savedModel || 'gemini-2.5-flash-preview'; // Default to Gemini 2.5 Flash Preview
     } catch (e) {
-      console.warn('LocalStorage is not available. Defaulting to Gemini 2.0 Flash Lite.');
-      return 'gemini-2.0-flash-lite';
+      console.warn('LocalStorage is not available. Defaulting to Gemini 2.5 Flash Preview.');
+      return 'gemini-2.5-flash-preview';
     }
   }
 
@@ -1450,15 +1457,19 @@ function updateModelDropdown(selectElement, models, modelType) {
 
       // Handle old model names for backward compatibility
       if (savedModel === 'gemini') {
-        return 'gemini-2.0-flash-lite';
+        return 'gemini-2.5-flash-preview';
       } else if (savedModel === 'openai') {
-        return 'gemini-2.5-flash';
+        return 'gemini-2.5-flash-preview';
+      } else if (savedModel === 'gemini-2.0-flash-lite') {
+        return 'gemini-2.5-flash-preview';
+      } else if (savedModel === 'gemini-2.5-flash') {
+        return 'gemini-2.5-flash-preview-05-20';
       }
 
-      return savedModel || 'gemini-2.0-flash-lite'; // Default to Gemini 2.0 Flash Lite
+      return savedModel || 'gemini-2.5-flash-preview'; // Default to Gemini 2.5 Flash Preview
     } catch (e) {
-      console.warn('LocalStorage is not available. Defaulting to Gemini 2.0 Flash Lite.');
-      return 'gemini-2.0-flash-lite';
+      console.warn('LocalStorage is not available. Defaulting to Gemini 2.5 Flash Preview.');
+      return 'gemini-2.5-flash-preview';
     }
   }
 

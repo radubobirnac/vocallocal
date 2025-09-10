@@ -14,22 +14,22 @@ class PlanAccessControl:
     # Model access matrix by plan type
     PLAN_MODEL_ACCESS = {
         'free': {
-            'transcription': ['gemini-2.0-flash-lite'],
-            'translation': ['gemini-2.0-flash-lite'],
+            'transcription': ['gemini-2.5-flash-preview'],
+            'translation': ['gemini-2.5-flash-preview'],
             'tts': [],  # No free TTS models - all require upgrade
-            'interpretation': ['gemini-2.0-flash-lite']
+            'interpretation': ['gemini-2.5-flash-preview']
         },
         'basic': {
             'transcription': [
-                'gemini-2.0-flash-lite',
+                'gemini-2.5-flash-preview',
                 'gpt-4o-mini-transcribe',
                 'gpt-4o-transcribe',
                 'gemini-2.5-flash-preview-04-17',  # Kept for UI compatibility (maps to 05-20)
                 'gemini-2.5-flash-preview-05-20'   # Working model
             ],
             'translation': [
-                'gemini-2.0-flash-lite',
-                'gemini-2.5-flash',
+                'gemini-2.5-flash-preview',
+                'gemini-2.5-flash-preview-05-20',
                 'gpt-4.1-mini'
             ],
             'tts': [
@@ -38,20 +38,21 @@ class PlanAccessControl:
                 'openai'
             ],
             'interpretation': [
-                'gemini-2.0-flash-lite',
+                'gemini-2.5-flash-preview',
+                'gemini-2.5-flash-preview-05-20',
                 'gemini-2.5-flash'
             ]
         },
         'professional': {
             'transcription': [
-                'gemini-2.0-flash-lite',
+                'gemini-2.5-flash-preview',
                 'gpt-4o-mini-transcribe',
                 'gpt-4o-transcribe',
                 'gemini-2.5-flash-preview-04-17',  # Kept for UI compatibility (maps to 05-20)
                 'gemini-2.5-flash-preview-05-20'   # Working model
             ],
             'translation': [
-                'gemini-2.0-flash-lite',
+                'gemini-2.5-flash-preview',
                 'gemini-2.5-flash',
                 'gpt-4.1-mini'
             ],
@@ -61,7 +62,8 @@ class PlanAccessControl:
                 'openai'
             ],
             'interpretation': [
-                'gemini-2.0-flash-lite',
+                'gemini-2.5-flash-preview',
+                'gemini-2.5-flash-preview-05-20',
                 'gemini-2.5-flash'
             ]
         }
@@ -69,9 +71,9 @@ class PlanAccessControl:
 
     # Model display names and descriptions
     MODEL_INFO = {
-        'gemini-2.0-flash-lite': {
-            'name': 'Gemini 2.0 Flash Lite',
-            'description': 'Fast and efficient model for basic tasks',
+        'gemini-2.5-flash-preview': {
+            'name': 'Gemini 2.5 Flash Preview',
+            'description': 'Fast and efficient model with enhanced capabilities',
             'tier': 'free'
         },
         'gpt-4o-mini-transcribe': {

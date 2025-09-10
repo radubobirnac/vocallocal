@@ -9,7 +9,7 @@ class ModelAccessControl {
         this.hasLoadedUserRole = false;
         this.modelRestrictions = {
             free_models: [
-                'gemini-2.0-flash-lite'
+                'gemini-2.5-flash-preview'
             ],
             premium_models: [
                 // Transcription models

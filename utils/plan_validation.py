@@ -37,7 +37,7 @@ def validate_model_access(service_type):
                 if not model:
                     user_plan = PlanAccessControl.get_user_plan()
                     accessible_models = PlanAccessControl.get_accessible_models(service_type, user_plan)
-                    model = accessible_models[0] if accessible_models else 'gemini-2.0-flash-lite'
+                    model = accessible_models[0] if accessible_models else 'gemini-2.5-flash-preview'
                     
                     # Update request with default model
                     if request.is_json:

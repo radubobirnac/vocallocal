@@ -10,7 +10,7 @@ class RBACAccessControl {
 
         // Define model categories based on RBAC system
         this.freeModels = [
-            'gemini-2.0-flash-lite'
+            'gemini-2.5-flash-preview'
         ];
 
         this.premiumModels = [
@@ -33,7 +33,7 @@ class RBACAccessControl {
         ];
 
         this.modelInfo = {
-            'gemini-2.0-flash-lite': { name: 'Gemini 2.0 Flash Lite', tier: 'free' },
+            'gemini-2.5-flash-preview': { name: 'Gemini 2.5 Flash Preview', tier: 'free' },
             'gpt-4o-mini-transcribe': { name: 'OpenAI GPT-4o Mini', tier: 'premium' },
             'gpt-4o-transcribe': { name: 'OpenAI GPT-4o', tier: 'premium' },
             'gpt4o-mini': { name: 'GPT-4o Mini TTS', tier: 'premium', service: 'tts' },

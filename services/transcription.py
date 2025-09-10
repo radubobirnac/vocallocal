@@ -1025,19 +1025,19 @@ class TranscriptionService(BaseService):
         Note: gemini-2.5-flash-preview-04-17 is deprecated and no longer available in Gemini API.
         All references to 04-17 are automatically mapped to the working 05-20 model.
         """
-        gemini_model_id = 'gemini-2.0-flash-lite'  # Default model
+        gemini_model_id = 'gemini-2.5-flash-preview-05-20'  # Default model updated to 2.5
 
-        if model_name == 'gemini-2.0-flash-lite':
-            gemini_model_id = 'gemini-2.0-flash-lite'
+        if model_name == 'gemini-2.5-flash-preview' or model_name == 'gemini-2.0-flash-lite':
+            # Updated default model to use 2.5 Flash Preview
+            gemini_model_id = 'gemini-2.5-flash-preview-05-20'
+            if model_name == 'gemini-2.0-flash-lite':
+                self.logger.info(f"Using Gemini 2.5 Flash Preview instead of 2.0 Flash Lite for better performance")
         elif model_name == 'gemini-2.5-flash-preview-04-17':
             # 04-17 model is deprecated - automatically use 05-20 instead
             gemini_model_id = 'gemini-2.5-flash-preview-05-20'
             self.logger.info(f"Model 04-17 is deprecated, automatically using 05-20 instead")
         elif model_name == 'gemini-2.5-flash-preview-05-20':
             # Direct mapping for the working 05-20 model
-            gemini_model_id = 'gemini-2.5-flash-preview-05-20'
-        elif model_name == 'gemini-2.5-flash-preview':
-            # Generic preview mapping - use latest working model (05-20)
             gemini_model_id = 'gemini-2.5-flash-preview-05-20'
         elif model_name == 'gemini-2.5-flash':
             # Alternative model name mapping - use latest working model (05-20)
@@ -1289,18 +1289,18 @@ class TranscriptionService(BaseService):
 
             # Map model name to actual Gemini model ID
             # Note: 04-17 model is deprecated, automatically mapping to working 05-20 model
-            gemini_model_id = 'gemini-2.0-flash-lite'  # Default model
-            if model_name == 'gemini-2.0-flash-lite':
-                gemini_model_id = 'gemini-2.0-flash-lite'
+            gemini_model_id = 'gemini-2.5-flash-preview-05-20'  # Default model updated to 2.5
+            if model_name == 'gemini-2.5-flash-preview' or model_name == 'gemini-2.0-flash-lite':
+                # Updated default model to use 2.5 Flash Preview
+                gemini_model_id = 'gemini-2.5-flash-preview-05-20'
+                if model_name == 'gemini-2.0-flash-lite':
+                    self.logger.info(f"Using Gemini 2.5 Flash Preview instead of 2.0 Flash Lite for better performance")
             elif model_name == 'gemini-2.5-flash-preview-04-17':
                 # 04-17 model is deprecated - automatically use 05-20 instead
                 gemini_model_id = 'gemini-2.5-flash-preview-05-20'
                 self.logger.info(f"Model 04-17 is deprecated, automatically using 05-20 instead")
             elif model_name == 'gemini-2.5-flash-preview-05-20':
                 # Direct mapping for the working 05-20 model
-                gemini_model_id = 'gemini-2.5-flash-preview-05-20'
-            elif model_name == 'gemini-2.5-flash-preview':
-                # Generic preview mapping - use latest working model (05-20)
                 gemini_model_id = 'gemini-2.5-flash-preview-05-20'
             elif model_name == 'gemini-2.5-flash':
                 # Alternative model name mapping - use latest working model (05-20)
