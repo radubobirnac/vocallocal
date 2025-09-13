@@ -142,7 +142,7 @@ function updateModelDropdown(selectElement, models, modelType) {
   // Define authorized models for validation
   const authorizedModels = {
     'transcription': ['gemini-2.5-flash-preview', 'gpt-4o-mini-transcribe', 'gpt-4o-transcribe', 'gemini-2.5-flash-preview-05-20'],
-    'translation': ['gemini-2.5-flash-preview', 'gemini-2.5-flash', 'gpt-4.1-mini']
+    'translation': ['gemini-2.5-flash-preview', 'gpt-4.1-mini']
   };
 
   // Store current selection
@@ -151,7 +151,7 @@ function updateModelDropdown(selectElement, models, modelType) {
   // Clear existing options
   selectElement.innerHTML = '';
 
-  // Filter models to only include authorized ones
+  // Filter models to only include authorized ones and remove duplicates
   const filteredModels = models.filter(model => {
     if (modelType === 'transcription') {
       return authorizedModels.transcription.includes(model.value);
@@ -161,11 +161,23 @@ function updateModelDropdown(selectElement, models, modelType) {
     return true; // Allow other model types (TTS, interpretation) to pass through
   });
 
-  // Add authorized models only
-  filteredModels.forEach(model => {
+  // Remove duplicates based on model value
+  const uniqueModels = filteredModels.filter((model, index, self) =>
+    index === self.findIndex(m => m.value === model.value)
+  );
+
+  // Add unique authorized models only
+  uniqueModels.forEach(model => {
     const option = document.createElement('option');
     option.value = model.value;
     option.textContent = model.label;
+
+    // Add title attribute for additional context
+    if (model.free) {
+      option.title = `${model.label} - Free Access`;
+    } else {
+      option.title = `${model.label} - Premium Access`;
+    }
 
     // Disable locked models
     if (model.locked) {
@@ -202,7 +214,7 @@ function updateModelDropdown(selectElement, models, modelType) {
     }
   });
 
-  console.log(`Updated ${modelType} model dropdown with ${filteredModels.length} authorized models (filtered from ${models.length} total)`);
+  console.log(`Updated ${modelType} model dropdown with ${uniqueModels.length} unique authorized models (filtered from ${models.length} total, removed ${filteredModels.length - uniqueModels.length} duplicates)`);
 }
 
   // Show status message

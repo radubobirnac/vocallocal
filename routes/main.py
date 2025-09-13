@@ -615,7 +615,6 @@ def get_user_available_models():
             ],
             'translation': [
                 {'value': 'gemini-2.5-flash-preview', 'label': 'Gemini 2.5 Flash Preview', 'free': True},
-                {'value': 'gemini-2.5-flash', 'label': 'Gemini 2.5 Flash', 'free': False},
                 {'value': 'gpt-4.1-mini', 'label': 'GPT-4.1 Mini', 'free': False}
             ]
         }
