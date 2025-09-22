@@ -3,6 +3,8 @@
  * Manages model restrictions and UI updates based on user subscription plans
  */
 
+// Prevent class redeclaration
+if (typeof PlanAccessControl === 'undefined') {
 class PlanAccessControl {
     constructor() {
         this.userPlan = 'free'; // Default to free plan
@@ -520,3 +522,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Export for use in other scripts
 window.PlanAccessControl = PlanAccessControl;
+
+} // End of PlanAccessControl class guard

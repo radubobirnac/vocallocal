@@ -43,10 +43,10 @@
       "failures": 0
     },
     "gemini-2.5-flash-preview-05-20": {
-      "calls": 2,
+      "calls": 44,
       "tokens": 0,
-      "chars": 36,
-      "time": 5.769856691360474,
+      "chars": 814,
+      "time": 380.4540169239044,
       "failures": 0
     }
   },
@@ -73,10 +73,10 @@
       "failures": 0
     },
     "unknown": {
-      "calls": 95,
-      "tokens": 86521,
-      "chars": 79553,
-      "time": 703.5450961589813,
+      "calls": 96,
+      "tokens": 86556,
+      "chars": 79658,
+      "time": 707.2825860977173,
       "failures": 0
     },
     "gemini-2.0-flash-lite": {
@@ -94,10 +94,10 @@
       "failures": 0
     },
     "en": {
-      "calls": 66,
-      "tokens": 15661,
-      "chars": 47008,
-      "time": 293.04464745521545,
+      "calls": 75,
+      "tokens": 15958,
+      "chars": 47908,
+      "time": 600.7790777683258,
       "failures": 0
     },
     "te": {
@@ -147,6 +147,13 @@
       "tokens": 10,
       "chars": 30,
       "time": 8.106489419937134,
+      "failures": 0
+    },
+    "undefined": {
+      "calls": 1,
+      "tokens": 21,
+      "chars": 63,
+      "time": 4.435876131057739,
       "failures": 0
     }
   },
@@ -322,6 +329,23 @@
       "transcription": {
         "am": 10,
         "te": 7
+      }
+    },
+    "2025-09-20": {
+      "transcription": {
+        "undefined": 21,
+        "en": 261
+      }
+    },
+    "2025-09-21": {
+      "transcription": {
+        "en": 12,
+        "unknown": 35
+      }
+    },
+    "2025-09-22": {
+      "transcription": {
+        "en": 24
       }
     }
   },
@@ -674,6 +698,32 @@
       "transcription": {
         "te": 7
       }
+    },
+    "2025-09-20-10": {
+      "transcription": {
+        "undefined": 21
+      }
+    },
+    "2025-09-20-11": {
+      "transcription": {
+        "en": 261
+      }
+    },
+    "2025-09-21-22": {
+      "transcription": {
+        "en": 12,
+        "unknown": 35
+      }
+    },
+    "2025-09-22-22": {
+      "transcription": {
+        "en": 7
+      }
+    },
+    "2025-09-22-23": {
+      "transcription": {
+        "en": 17
+      }
     }
   },
   "tts": {
@@ -685,10 +735,10 @@
       "failures": 0
     },
     "gpt4o-mini": {
-      "calls": 100,
-      "tokens": 6691,
-      "chars": 26928,
-      "time": 561.5699920654297,
+      "calls": 101,
+      "tokens": 6695,
+      "chars": 26947,
+      "time": 565.6381394863129,
       "failures": 3
     }
   },

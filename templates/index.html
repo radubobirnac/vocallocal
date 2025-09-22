@@ -26,6 +26,7 @@
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='auth.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/upgrade-modal.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/email-verification-modal.css') }}">
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/conversation-modal.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/brand-link.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='mobile-nav.css') }}">
   <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/mobile-performance.css') }}" media="screen and (max-width: 768px)">
@@ -360,6 +361,13 @@
           </button>
         </div>
         <!-- End Theme Selector -->
+
+        <!-- Conversation Button -->
+        <button id="conversation-button" class="button button-outline button-icon conversation-header-btn" title="Start Conversation">
+          <i class="fas fa-comments"></i>
+          <span class="conversation-text">Chat</span>
+        </button>
+        <!-- End Conversation Button -->
 
         <!-- Upgrade Button -->
         <button id="upgrade-button" class="button button-outline button-icon upgrade-header-btn" title="Upgrade Plan">
@@ -1058,6 +1066,7 @@
   </script>
   <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
   <script src="{{ url_for('static', filename='js/email-verification-modal.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='js/conversation-modal.js') }}"></script>
 
   <!-- Device Compatibility - Load first for device detection -->
   <script src="{{ versioned_url_for('static', filename='js/device-compatibility.js') }}"></script>
@@ -1337,6 +1346,104 @@
 
 
 
+
+  <!-- Conversation Modal -->
+  <div id="conversation-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content conversation-modal">
+      <div class="modal-header">
+        <h3><i class="fas fa-comments"></i> Start Conversation</h3>
+        <button class="modal-close" onclick="closeConversationModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="conversation-setup">
+          <div class="setup-step">
+            <h4>Create a new conversation room</h4>
+            <p class="text-muted">Generate a room code and link to share with others</p>
+            <button id="create-room-btn" class="button button-primary">
+              <i class="fas fa-plus"></i> Create Room
+            </button>
+          </div>
+
+          <div class="divider">
+            <span>OR</span>
+          </div>
+
+          <div class="setup-step">
+            <h4>Join an existing room</h4>
+            <div class="form-group">
+              <label for="room-code-input">Enter room code:</label>
+              <input type="text" id="room-code-input" class="form-input" placeholder="ABC123" maxlength="6">
+            </div>
+            <button id="join-room-btn" class="button button-outline">
+              <i class="fas fa-sign-in-alt"></i> Join Room
+            </button>
+          </div>
+        </div>
+
+        <div id="room-created" class="room-created" style="display: none;">
+          <div class="success-message">
+            <i class="fas fa-check-circle"></i>
+            <h4>Room Created Successfully!</h4>
+          </div>
+
+          <div class="room-details">
+            <div class="room-code-section">
+              <label>Room Code:</label>
+              <div class="room-code-display">
+                <span id="generated-room-code"></span>
+                <button class="copy-btn" onclick="copyRoomCode()">
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="room-link-section">
+              <label>Shareable Link:</label>
+              <div class="room-link-display">
+                <input type="text" id="generated-room-link" readonly>
+                <button class="copy-btn" onclick="copyRoomLink()">
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="room-actions">
+            <button id="enter-room-btn" class="button button-primary">
+              <i class="fas fa-arrow-right"></i> Enter Room
+            </button>
+            <button class="button button-outline" onclick="resetConversationModal()">
+              <i class="fas fa-plus"></i> Create Another
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auto-activate bilingual mode if requested -->
+  {% if auto_bilingual %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Wait a bit for other scripts to initialize
+      setTimeout(function() {
+        const bilingualToggle = document.getElementById('bilingual-mode');
+        if (bilingualToggle && !bilingualToggle.checked) {
+          // Programmatically activate bilingual mode
+          bilingualToggle.checked = true;
+
+          // Trigger the change event to activate the mode
+          const event = new Event('change', { bubbles: true });
+          bilingualToggle.dispatchEvent(event);
+
+          console.log('Bilingual mode automatically activated for conversation room');
+        }
+      }, 500);
+    });
+  </script>
+  {% endif %}
 
 </body>
 </html>

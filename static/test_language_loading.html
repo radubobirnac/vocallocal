@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Loading Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        
+        .debug-output {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            min-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        
+        select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Language Loading Test</h1>
+        
+        <div class="test-section">
+            <h3>Test Language Dropdowns</h3>
+            <label for="test-from-language">From Language:</label>
+            <select id="test-from-language">
+                <option value="">Loading...</option>
+            </select>
+            
+            <label for="test-to-language">To Language:</label>
+            <select id="test-to-language">
+                <option value="">Loading...</option>
+            </select>
+            
+            <button onclick="testLanguageLoading()">Test Language Loading</button>
+            <button onclick="testPopulateDropdown()">Test Populate Dropdown</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>Debug Console</h3>
+            <div id="debug-output" class="debug-output"></div>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('debug-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : type === 'warn' ? '#ffd43b' : '#0f0';
+            output.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        function clearLog() {
+            document.getElementById('debug-output').innerHTML = '';
+        }
+        
+        // Define loadLanguages function exactly like main script.js
+        function loadLanguages() {
+            return fetch('/api/languages')
+                .then(response => response.json())
+                .then(languages => {
+                    // Sort language names alphabetically
+                    const sortedLanguages = Object.entries(languages).sort((a, b) =>
+                        a[0].localeCompare(b[0])
+                    );
+                    return sortedLanguages;
+                })
+                .catch(error => {
+                    console.error("Error loading languages:", error);
+                    return [];
+                });
+        }
+
+        // Define populateLanguageDropdown function exactly like main script.js
+        function populateLanguageDropdown(dropdownId, languages, defaultCode) {
+            const dropdown = document.getElementById(dropdownId);
+            if (!dropdown) {
+                log(`❌ Dropdown not found: ${dropdownId}`, 'error');
+                return;
+            }
+
+            dropdown.innerHTML = ''; // Clear existing options
+
+            // Add language options
+            languages.forEach(([name, details]) => {
+                const option = document.createElement('option');
+                option.value = details.code;
+                option.textContent = `${name} (${details.native})`;
+                if (details.code === defaultCode) option.selected = true;
+                dropdown.appendChild(option);
+            });
+            
+            log(`✅ Populated ${dropdownId} with ${languages.length} languages, default: ${defaultCode}`, 'success');
+        }
+        
+        function testLanguageLoading() {
+            log('🧪 Testing language loading...', 'info');
+            
+            loadLanguages().then(languages => {
+                log(`✅ Languages loaded: ${languages.length} languages`, 'success');
+                log(`First few languages: ${languages.slice(0, 3).map(([name, details]) => `${name} (${details.code})`).join(', ')}`, 'info');
+                
+                // Test populating dropdowns
+                populateLanguageDropdown('test-from-language', languages, 'en');
+                populateLanguageDropdown('test-to-language', languages, 'es');
+                
+            }).catch(error => {
+                log(`❌ Error loading languages: ${error.message}`, 'error');
+            });
+        }
+        
+        function testPopulateDropdown() {
+            log('🧪 Testing populate dropdown with fallback languages...', 'info');
+            
+            // Create fallback languages in the same format as the API
+            const fallbackLanguages = [
+                ['English', { code: 'en', native: 'English' }],
+                ['Spanish', { code: 'es', native: 'Español' }],
+                ['French', { code: 'fr', native: 'Français' }],
+                ['German', { code: 'de', native: 'Deutsch' }],
+                ['Italian', { code: 'it', native: 'Italiano' }],
+                ['Portuguese', { code: 'pt', native: 'Português' }],
+                ['Chinese', { code: 'zh', native: '中文' }],
+                ['Japanese', { code: 'ja', native: '日本語' }],
+                ['Korean', { code: 'ko', native: '한국어' }],
+                ['Russian', { code: 'ru', native: 'Русский' }]
+            ];
+            
+            populateLanguageDropdown('test-from-language', fallbackLanguages, 'en');
+            populateLanguageDropdown('test-to-language', fallbackLanguages, 'es');
+        }
+        
+        // Initialize
+        log('Language Loading Test initialized', 'success');
+        log('Ready to test language loading functionality', 'info');
+        
+        // Auto-test on load
+        setTimeout(() => {
+            testLanguageLoading();
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -82,6 +82,40 @@ class TranscriptionService(BaseService):
             transcription_service=self
         )
 
+    def _extract_text_from_gemini_response(self, response, context=""):
+        """
+        Extract text from Gemini response with proper error handling
+        """
+        try:
+            # Check if response has text directly
+            if hasattr(response, 'text') and response.text:
+                text = response.text
+            # Check if response has candidates with content
+            elif hasattr(response, 'candidates') and response.candidates:
+                candidate = response.candidates[0]
+                if hasattr(candidate, 'content') and candidate.content:
+                    if hasattr(candidate.content, 'parts') and candidate.content.parts:
+                        text = candidate.content.parts[0].text
+                    else:
+                        raise Exception("No text content in candidate parts")
+                else:
+                    raise Exception("No content in candidate")
+            else:
+                raise Exception("No candidates in response")
+
+            # Check for empty transcription
+            if not text or not text.strip():
+                raise Exception(f"Empty transcription received from Gemini API {context}")
+
+            return text
+
+        except AttributeError as attr_error:
+            self.logger.error(f"Gemini response structure error {context}: {str(attr_error)}")
+            raise Exception(f"Invalid Gemini API response structure {context}: {str(attr_error)}")
+        except Exception as text_error:
+            self.logger.error(f"Error extracting text from Gemini response {context}: {str(text_error)}")
+            raise Exception(f"Failed to extract transcription from Gemini response {context}: {str(text_error)}")
+
     def _clean_gemini_transcription(self, text):
         """
         Clean up Gemini transcription by removing timestamps and bracketed artifacts.
@@ -1147,10 +1181,9 @@ class TranscriptionService(BaseService):
                 elapsed_time = time.time() - start_time
                 self.logger.info(f"Gemini API call completed in {elapsed_time:.2f} seconds")
 
-                # Extract and clean transcription
-                transcription = response.text
+                # Extract and clean transcription with proper error handling
+                transcription = self._extract_text_from_gemini_response(response, "(improved method)")
                 cleaned_transcription = self._clean_gemini_transcription(transcription)
-
                 self.logger.info(f"Improved Gemini transcription successful: {len(cleaned_transcription)} characters")
                 return cleaned_transcription
 
@@ -1162,7 +1195,9 @@ class TranscriptionService(BaseService):
                     # Try once more with a delay
                     time.sleep(5)
                     response = model.generate_content([prompt, file_obj], generation_config=generation_config)
-                    transcription = response.text
+
+                    # Extract text with proper error handling
+                    transcription = self._extract_text_from_gemini_response(response, "(retry)")
                     cleaned_transcription = self._clean_gemini_transcription(transcription)
                     self.logger.info(f"Retry successful: {len(cleaned_transcription)} characters")
                     return cleaned_transcription
@@ -1476,7 +1511,7 @@ class TranscriptionService(BaseService):
                                     ], generation_config=generation_config)
 
                                     # Extract the transcription
-                                    transcription = response.text
+                                    transcription = self._extract_text_from_gemini_response(response, "(file state retry)")
 
                                     # Clean up any bracketed artifacts at the end
                                     cleaned_transcription = self._clean_gemini_transcription(transcription)
@@ -1650,7 +1685,7 @@ class TranscriptionService(BaseService):
                                         ], generation_config=generation_config)
 
                                         # Extract the transcription
-                                        transcription = response.text
+                                        transcription = self._extract_text_from_gemini_response(response, "(final retry)")
 
                                         # Clean up any bracketed artifacts at the end
                                         cleaned_transcription = self._clean_gemini_transcription(transcription)
@@ -1669,7 +1704,7 @@ class TranscriptionService(BaseService):
                     self.logger.info(f"Gemini API call completed in {elapsed_time:.2f} seconds")
 
                     # Extract the transcription
-                    transcription = response.text
+                    transcription = self._extract_text_from_gemini_response(response, "(main method)")
 
                     # Clean up any bracketed artifacts at the end
                     cleaned_transcription = self._clean_gemini_transcription(transcription)

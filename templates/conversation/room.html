@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversation Room {{ room_code }} - VocalLocal</title>
+
+    <!-- Bootstrap and Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <!-- VocalLocal Styles - Same as main page -->
+    <link rel="stylesheet" href="{{ versioned_url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ versioned_url_for('static', filename='auth.css') }}">
+    <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/upgrade-modal.css') }}">
+    <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/email-verification-modal.css') }}">
+    <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/conversation-modal.css') }}">
+    <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/brand-link.css') }}">
+    <link rel="stylesheet" href="{{ versioned_url_for('static', filename='mobile-nav.css') }}">
+    <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/mobile-icon-theme-fix.css') }}">
+    <style>
+        .conversation-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .conversation-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .conversation-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            animation: fadeIn 0.3s ease-in;
+        }
+        .message.own {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        .message.other {
+            background: white;
+            border: 1px solid #dee2e6;
+            margin-right: auto;
+        }
+        .message-header {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+        .message-original {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .message-translation {
+            font-style: italic;
+            opacity: 0.9;
+        }
+        .controls-panel {
+            background: white;
+            border-top: 1px solid #dee2e6;
+            padding: 20px;
+        }
+        .language-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .record-button {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            background: #dc3545;
+            color: white;
+            font-size: 2rem;
+            transition: all 0.3s ease;
+        }
+        .record-button:hover {
+            transform: scale(1.1);
+        }
+        .record-button.recording {
+            background: #28a745;
+            animation: pulse 1s infinite;
+        }
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #28a745;
+        }
+        .status-indicator.disconnected {
+            background: #dc3545;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Override bilingual mode to always show */
+        #bilingual-mode-content {
+            display: block !important;
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+        }
+
+        /* Conversation room specific spacing */
+        .space-y-1 > * + * {
+            margin-top: 1rem;
+        }
+
+        /* Ensure proper container styling */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Status message styles */
+        .status-message {
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .status-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Model Selection Controls */
+        .model-selection-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .model-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .model-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #666;
+            margin: 0;
+            white-space: nowrap;
+        }
+
+        .model-select {
+            font-size: 12px;
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            min-width: 120px;
+            max-width: 150px;
+        }
+
+        .model-select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .conversation-header {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+
+            .model-selection-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .model-select {
+                min-width: 100px;
+                max-width: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="conversation-container">
+        <!-- Header -->
+        <div class="conversation-header">
+            <div>
+                <h5 class="mb-0">
+                    <i class="fas fa-comments"></i> Room {{ room_code }}
+                </h5>
+                <small id="participantCount">Connecting...</small>
+            </div>
+
+            <!-- Model Selection Controls -->
+            <div class="model-selection-controls">
+                <div class="model-group">
+                    <label for="global-transcription-model" class="model-label">Transcription:</label>
+                    <select id="global-transcription-model" class="model-select">
+                        <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
+                        <option value="gpt-4o-mini-transcribe">GPT-4o Mini</option>
+                        <option value="openai-whisper-1">OpenAI Whisper-1</option>
+                    </select>
+                </div>
+                <div class="model-group">
+                    <label for="global-translation-model" class="model-label">Translation:</label>
+                    <select id="global-translation-model" class="model-select">
+                        <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
+                        <option value="gpt-4o-mini">GPT-4o Mini</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="connection-status">
+                <div class="status-indicator" id="connectionStatus"></div>
+                <span id="connectionText">Connected</span>
+            </div>
+        </div>
+
+        <!-- Bilingual Mode Content -->
+        <div class="conversation-body">
+            <div class="container">
+                <!-- BILINGUAL MODE -->
+                <div id="bilingual-mode-content" class="space-y-1">
+
+                  <!-- Quick Conversation Interface -->
+                  <div class="card bilingual-conversation-card">
+                    <div class="card-header">
+                      <h2 class="card-title">Quick Conversation</h2>
+                      <div class="flex items-center gap-2">
+                        <span id="bilingual-recording-timer" class="timer-display">00:00</span>
+                      </div>
+                    </div>
+                    <div class="card-content">
+                      <!-- Language Selection Row -->
+                      <div class="language-selection-row">
+                        <div class="language-group">
+                          <label for="bilingual-from-language" class="form-label">From:</label>
+                          <select id="bilingual-from-language" class="form-select language-select"></select>
+                        </div>
+                        <div class="language-arrow">
+                          <i class="fas fa-arrow-right"></i>
+                        </div>
+                        <div class="language-group">
+                          <label for="bilingual-to-language" class="form-label">To:</label>
+                          <select id="bilingual-to-language" class="form-select language-select"></select>
+                        </div>
+                      </div>
+
+                      <!-- Model Selectors (Hidden but required for functionality) -->
+                      <div style="display: none;">
+                        <!-- Bilingual Mode Toggle (Always checked for conversation rooms) -->
+                        <input type="checkbox" id="bilingual-mode" checked style="display: none;">
+
+                        <!-- Transcription Model Selector -->
+                        <div class="form-group">
+                          <label for="global-transcription-model" class="form-label">Transcription Model:</label>
+                          <select id="global-transcription-model" class="form-select mt-2">
+                            <option value="gemini-2.0-flash-lite" selected>Gemini 2.0 Flash Lite</option>
+                            <option value="gpt-4o-mini-transcribe">OpenAI GPT-4o Mini</option>
+                            <option value="gpt-4o-transcribe">OpenAI GPT-4o</option>
+                            <option value="gemini-2.5-flash-preview-04-17">Gemini 2.5 Flash Preview</option>
+                          </select>
+                        </div>
+
+                        <!-- Translation Model Selector -->
+                        <div id="translation-model-container" class="form-group">
+                          <label for="translation-model-select" class="form-label">Translation Model:</label>
+                          <select id="translation-model-select" class="form-select mt-2">
+                            <option value="gemini-2.5-flash-preview" selected>Gemini 2.5 Flash Preview</option>
+                            <option value="openai">OpenAI GPT-4o</option>
+                            <option value="gemini">Gemini 2.0 Flash</option>
+                          </select>
+                        </div>
+
+                        <!-- Hidden Basic Mode Elements (Required by script.js) -->
+                        <button id="basic-record-btn" style="display: none;"><i class="fas fa-microphone"></i></button>
+                        <div id="basic-recording-status" style="display: none;"></div>
+                        <div id="basic-mode" style="display: none;"></div>
+                        <div id="record-btn-1" style="display: none;"></div>
+                        <div id="record-btn-2" style="display: none;"></div>
+                        <div id="recording-status-1" style="display: none;"></div>
+                        <div id="recording-status-2" style="display: none;"></div>
+                      </div>
+
+                      <!-- Hold to Record Button -->
+                      <div class="record-button-container">
+                        <button id="bilingual-hold-record-btn" class="hold-record-button" title="Click to toggle recording or hold to record">
+                          <i class="fas fa-microphone"></i>
+                          <span>Hold to Record</span>
+                        </button>
+                      </div>
+
+                      <!-- Action Buttons Row -->
+                      <div class="action-buttons-row">
+                        <button id="bilingual-manual-record" class="action-button manual-record-btn">
+                          <i class="fas fa-microphone"></i>
+                          <span>Manual Record</span>
+                        </button>
+                        <button id="bilingual-translate-btn" class="action-button translate-btn">
+                          <i class="fas fa-language"></i>
+                          <span>Translate</span>
+                        </button>
+                        <button id="bilingual-upload-btn" class="action-button upload-btn" onclick="document.getElementById('bilingual-file-input').click()">
+                          <i class="fas fa-upload"></i>
+                          <span>Upload</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Conversation Results -->
+                  <div class="card conversation-results-card">
+                    <div class="card-header">
+                      <h2 class="card-title">Conversation Results</h2>
+                      <div class="flex items-center gap-2">
+                        <button id="bilingual-clear-results" class="button button-outline button-small" title="Clear results">
+                          <i class="fas fa-trash"></i>
+                          <span>Clear</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="card-content">
+                      <div class="conversation-results-grid">
+                        <!-- Original Text Column -->
+                        <div class="result-column original-column">
+                          <div class="result-header">
+                            <div class="result-title">
+                              <i class="fas fa-microphone"></i>
+                              <span>Original ( <span id="original-language-display">English (English)</span> )</span>
+                            </div>
+                            <div class="result-controls">
+                              <button id="play-original" class="button button-outline button-icon" title="Play original">
+                                <i class="fas fa-play"></i>
+                              </button>
+                              <button id="stop-original" class="button button-outline button-icon" title="Stop playback" style="display: none;">
+                                <i class="fas fa-stop"></i>
+                              </button>
+                              <button id="copy-original" class="button button-outline button-icon" title="Copy original">
+                                <i class="fas fa-copy"></i>
+                              </button>
+                            </div>
+                          </div>
+                          <div class="result-content">
+                            <textarea id="bilingual-original-text" class="form-textarea result-textarea" placeholder="Your speech will appear here..."></textarea>
+                          </div>
+                        </div>
+
+                        <!-- Translation Text Column -->
+                        <div class="result-column translation-column">
+                          <div class="result-header">
+                            <div class="result-title">
+                              <i class="fas fa-language"></i>
+                              <span>Translation ( <span id="translation-language-display">Spanish (Español)</span> )</span>
+                            </div>
+                            <div class="result-controls">
+                              <button id="play-translation" class="button button-outline button-icon" title="Play translation">
+                                <i class="fas fa-play"></i>
+                              </button>
+                              <button id="stop-translation" class="button button-outline button-icon" title="Stop playback" style="display: none;">
+                                <i class="fas fa-stop"></i>
+                              </button>
+                              <button id="copy-translation" class="button button-outline button-icon" title="Copy translation">
+                                <i class="fas fa-copy"></i>
+                              </button>
+                            </div>
+                          </div>
+                          <div class="result-content">
+                            <textarea id="bilingual-translation-text" class="form-textarea result-textarea" placeholder="Translation will appear here..." readonly></textarea>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Hidden file input for bilingual mode -->
+                  <input type="file" id="bilingual-file-input" accept="audio/*" class="visually-hidden">
+
+                  <!-- Status display for conversation room -->
+                  <div id="status" class="status-message" style="display: none; margin-top: 10px; padding: 10px; border-radius: 4px; text-align: center; font-weight: 500;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- ProgressBar.js for circular progress indicator -->
+    <script src="https://cdn.jsdelivr.net/npm/progressbar.js@1.1.0/dist/progressbar.min.js"></script>
+
+    <!-- Cache Manager -->
+    <script src="{{ versioned_url_for('static', filename='cache-manager.js') }}"></script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+    <!-- Usage Validation -->
+    <script src="{{ versioned_url_for('static', filename='js/usage-validation.js') }}"></script>
+
+    <!-- Plan Access Control -->
+    <script src="{{ versioned_url_for('static', filename='js/plan-access-control.js') }}"></script>
+
+    <!-- Language Preferences System (Required for bilingual mode) -->
+    <script src="{{ versioned_url_for('static', filename='js/language-preferences.js') }}"></script>
+
+    <!-- Conversation Room Recording Module (Self-contained) -->
+    <script>
+        // Self-contained recording functions for conversation room
+        console.log('🎙️ Loading conversation room recording module...');
+
+        let currentMediaRecorder = null;
+        let recordingStartTime = null;
+        let recordingTimer = null;
+
+        // Status display function
+        window.showStatus = function(message, type = 'info', persistent = false) {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+
+            // Try to find status element in conversation room
+            const statusEl = document.getElementById('status') ||
+                           document.getElementById('conversation-status') ||
+                           document.querySelector('.status-message');
+
+            if (statusEl) {
+                statusEl.textContent = message;
+                statusEl.className = `status status-${type}`;
+                statusEl.style.display = 'block';
+
+                if (!persistent) {
+                    setTimeout(() => {
+                        statusEl.style.display = 'none';
+                    }, 3000);
+                }
+            }
+
+            // Also show in browser notification if available
+            if ('Notification' in window && Notification.permission === 'granted') {
+                if (type === 'error') {
+                    new Notification('VocalLocal Error', { body: message, icon: '/static/favicon.ico' });
+                }
+            }
+        };
+
+        // Audio recording function for conversation room
+        window.startRecording = async function(options = {}) {
+            try {
+                console.log('🎤 Starting recording with options:', options);
+
+                // Reset any existing recording
+                if (currentMediaRecorder && currentMediaRecorder.state !== 'inactive') {
+                    currentMediaRecorder.stop();
+                }
+
+                // Visual indication that we're requesting mic access
+                window.showStatus('Requesting microphone access...', 'info');
+
+                // Get audio constraints with echo cancellation and noise suppression
+                const constraints = {
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: 44100
+                    }
+                };
+
+                // Request microphone access
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                console.log('✅ Microphone access granted');
+
+                // Create MediaRecorder
+                let mimeType = 'audio/webm';
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    mimeType = 'audio/mp4';
+                    if (!MediaRecorder.isTypeSupported(mimeType)) {
+                        mimeType = 'audio/wav';
+                    }
+                }
+
+                const mediaRecorder = new MediaRecorder(stream, { mimeType });
+                const audioChunks = [];
+
+                // Set up event handlers
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                        console.log(`📊 Audio chunk received: ${event.data.size} bytes`);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    console.log('🛑 Recording stopped, total chunks:', audioChunks.length);
+                    stream.getTracks().forEach(track => {
+                        track.stop();
+                        console.log('🔇 Stopped track:', track.kind);
+                    });
+                };
+
+                mediaRecorder.onerror = (event) => {
+                    console.error('❌ MediaRecorder error:', event.error);
+                    window.showStatus('Recording error: ' + event.error.message, 'error');
+                };
+
+                // Start recording
+                mediaRecorder.start(100); // Collect data every 100ms
+                currentMediaRecorder = mediaRecorder;
+
+                window.showStatus('Recording started', 'success');
+
+                // Add visual feedback for recording button
+                const recordButton = options.recordButton;
+                if (recordButton) {
+                    recordButton.classList.add('recording');
+                    const icon = recordButton.querySelector('i');
+                    if (icon) {
+                        icon.className = 'fas fa-stop';
+                    }
+                }
+
+                // Start recording timer
+                recordingStartTime = new Date();
+                if (recordingTimer) clearInterval(recordingTimer);
+                recordingTimer = setInterval(() => {
+                    const elapsed = Math.floor((new Date() - recordingStartTime) / 1000);
+                    const minutes = Math.floor(elapsed / 60);
+                    const seconds = elapsed % 60;
+                    const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                    // Update timer display if available
+                    const timerEl = document.getElementById('bilingual-recording-timer') ||
+                                   document.querySelector('.recording-timer');
+                    if (timerEl) {
+                        timerEl.textContent = timeString;
+                        timerEl.style.display = 'block';
+                    }
+                }, 1000);
+
+                console.log('✅ Recording started successfully');
+
+                // Return recording object
+                return {
+                    mediaRecorder,
+                    audioChunks,
+                    stream,
+                    mimeType
+                };
+
+            } catch (error) {
+                console.error('❌ Error starting recording:', error);
+
+                if (error.name === 'NotAllowedError') {
+                    window.showStatus('Microphone access denied. Please allow microphone access and try again.', 'error', true);
+                } else if (error.name === 'NotFoundError') {
+                    window.showStatus('No microphone found. Please connect a microphone and try again.', 'error', true);
+                } else {
+                    window.showStatus('Failed to start recording: ' + error.message, 'error', true);
+                }
+
+                throw error;
+            }
+        };
+
+        // Audio processing function for conversation room
+        window.processAudioWithSmartRouting = async function(audioChunks, mimeType, formData) {
+            try {
+                console.log('🔄 Processing audio with smart routing...');
+                console.log('Audio chunks:', audioChunks.length, 'MIME type:', mimeType);
+
+                if (!audioChunks || audioChunks.length === 0) {
+                    throw new Error('No audio chunks to process');
+                }
+
+                // Create audio blob
+                const audioBlob = new Blob(audioChunks, { type: mimeType });
+                const fileSizeMB = audioBlob.size / (1024 * 1024);
+
+                console.log(`📊 Audio file size: ${fileSizeMB.toFixed(2)} MB`);
+
+                // Add the audio file to form data
+                formData.append('file', audioBlob, 'recording.webm');
+
+                // Add the selected transcription model
+                const selectedModel = window.getTranscriptionModel();
+                formData.append('model', selectedModel);
+                console.log('Using transcription model:', selectedModel);
+
+                window.showStatus('Processing audio...', 'info');
+
+                // Determine routing based on file size
+                const CHUNKING_THRESHOLD_MB = 25;
+                let endpoint = '/api/transcribe';
+
+                if (fileSizeMB > CHUNKING_THRESHOLD_MB) {
+                    console.log('📦 Large file detected, using chunked processing');
+                    endpoint = '/upload'; // Use chunked upload for large files
+                    window.showStatus('Processing large audio file...', 'info');
+                } else {
+                    console.log('📄 Small file, using direct transcription');
+                }
+
+                // Send request
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                }
+
+                const result = await response.json();
+                console.log('✅ Audio processing result:', result);
+
+                if (result.text) {
+                    window.showStatus('Audio processed successfully!', 'success');
+                    return result;
+                } else if (result.error) {
+                    throw new Error(result.error);
+                } else {
+                    throw new Error('No transcription text received');
+                }
+
+            } catch (error) {
+                console.error('❌ Error processing audio:', error);
+                window.showStatus('Audio processing failed: ' + error.message, 'error');
+                throw error;
+            }
+        };
+
+        // Additional utility functions for conversation room
+        window.getTranscriptionModel = function() {
+            const modelSelect = document.getElementById('global-transcription-model');
+            return modelSelect ? modelSelect.value : 'gemini-2.0-flash-lite';
+        };
+
+        window.getTranslationModel = function() {
+            const modelSelect = document.getElementById('global-translation-model');
+            return modelSelect ? modelSelect.value : 'gemini-2.0-flash-lite';
+        };
+
+        // Initialize model selectors with saved preferences
+        window.initializeModelSelectors = function() {
+            console.log('🔧 Initializing model selectors...');
+
+            // Set default values or load from localStorage
+            const transcriptionModel = localStorage.getItem('conversation-transcription-model') || 'gemini-2.0-flash-lite';
+            const translationModel = localStorage.getItem('conversation-translation-model') || 'gemini-2.0-flash-lite';
+
+            const transcriptionSelect = document.getElementById('global-transcription-model');
+            const translationSelect = document.getElementById('global-translation-model');
+
+            if (transcriptionSelect) {
+                transcriptionSelect.value = transcriptionModel;
+                transcriptionSelect.addEventListener('change', function() {
+                    localStorage.setItem('conversation-transcription-model', this.value);
+                    console.log('Transcription model changed to:', this.value);
+                });
+            }
+
+            if (translationSelect) {
+                translationSelect.value = translationModel;
+                translationSelect.addEventListener('change', function() {
+                    localStorage.setItem('conversation-translation-model', this.value);
+                    console.log('Translation model changed to:', this.value);
+                });
+            }
+
+            console.log('✅ Model selectors initialized:', {
+                transcription: transcriptionModel,
+                translation: translationModel
+            });
+        };
+
+        // Stop recording function
+        window.stopRecording = function() {
+            if (currentMediaRecorder && currentMediaRecorder.state === 'recording') {
+                currentMediaRecorder.stop();
+                console.log('🛑 Recording stopped manually');
+            }
+
+            if (recordingTimer) {
+                clearInterval(recordingTimer);
+                recordingTimer = null;
+            }
+
+            // Hide timer
+            const timerEl = document.getElementById('bilingual-recording-timer') ||
+                           document.querySelector('.recording-timer');
+            if (timerEl) {
+                timerEl.style.display = 'none';
+            }
+        };
+
+        // Reset recording state
+        window.resetRecordingState = function() {
+            if (currentMediaRecorder) {
+                if (currentMediaRecorder.state === 'recording') {
+                    currentMediaRecorder.stop();
+                }
+                currentMediaRecorder = null;
+            }
+
+            if (recordingTimer) {
+                clearInterval(recordingTimer);
+                recordingTimer = null;
+            }
+
+            recordingStartTime = null;
+
+            // Reset button states
+            const recordButtons = document.querySelectorAll('.recording');
+            recordButtons.forEach(btn => {
+                btn.classList.remove('recording');
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.className = 'fas fa-microphone';
+                }
+            });
+
+            console.log('🔄 Recording state reset');
+        };
+
+        console.log('✅ Conversation room recording module loaded completely');
+
+        // Ensure functions are available immediately
+        console.log('🔍 Function availability check:', {
+            startRecording: typeof window.startRecording === 'function',
+            processAudioWithSmartRouting: typeof window.processAudioWithSmartRouting === 'function',
+            showStatus: typeof window.showStatus === 'function'
+        });
+    </script>
+
+    <!-- Main Script (Must load before bilingual-conversation.js) -->
+    <script src="{{ versioned_url_for('static', filename='script.js') }}"></script>
+    <script src="{{ versioned_url_for('static', filename='auth.js') }}"></script>
+    <script src="{{ versioned_url_for('static', filename='upload-progress.js') }}"></script>
+
+    <!-- Enhanced file size warnings -->
+    <script src="{{ versioned_url_for('static', filename='file-size-warning.js') }}"></script>
+
+    <!-- Bilingual Conversation Mode (Must load after script.js) -->
+    <script src="{{ versioned_url_for('static', filename='js/bilingual-conversation.js') }}"></script>
+
+    <!-- TTS Access Control -->
+    <script src="{{ versioned_url_for('static', filename='js/tts-access-control.js') }}"></script>
+
+    <script src="{{ versioned_url_for('static', filename='background-processing.js') }}"></script>
+    <script src="{{ versioned_url_for('static', filename='common.js') }}"></script>
+    {% if current_user.is_authenticated %}
+    <script src="{{ versioned_url_for('static', filename='js/usage-enforcement.js') }}"></script>
+    {% endif %}
+    <script>
+        // Global variables needed for bilingual mode
+        window.currentUserRole = '{{ current_user.role if current_user.is_authenticated else "normal_user" }}';
+        window.currentUserPlan = '{{ current_user.plan if current_user.is_authenticated else "free" }}';
+        window.currentUserEmail = '{{ current_user.email if current_user.is_authenticated else "" }}';
+
+        // Ensure required global functions are available
+        window.showStatus = window.showStatus || function(message, type) {
+            console.log(`[${type}] ${message}`);
+        };
+
+        // Ensure updateTranscript function is available
+        window.updateTranscript = window.updateTranscript || function(elementId, text) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.value = text;
+                console.log(`Transcript updated for ${elementId}:`, text);
+            }
+        };
+
+        // Initialize Socket.IO connection
+        const socket = io();
+        const roomCode = '{{ room_code }}';
+        const userEmail = '{{ user_email }}';
+
+        // DOM elements
+        const participantCount = document.getElementById('participantCount');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const connectionText = document.getElementById('connectionText');
+
+        // State
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+
+        // Define loadLanguages function exactly like main script.js
+        function loadLanguages() {
+            return fetch('/api/languages')
+                .then(response => response.json())
+                .then(languages => {
+                    // Sort language names alphabetically
+                    const sortedLanguages = Object.entries(languages).sort((a, b) =>
+                        a[0].localeCompare(b[0])
+                    );
+                    return sortedLanguages;
+                })
+                .catch(error => {
+                    console.error("Error loading languages:", error);
+                    return [];
+                });
+        }
+
+        // Define populateLanguageDropdown function exactly like main script.js
+        function populateLanguageDropdown(dropdownId, languages, defaultCode) {
+            const dropdown = document.getElementById(dropdownId);
+            if (!dropdown) {
+                console.error('Dropdown not found:', dropdownId);
+                return;
+            }
+
+            dropdown.innerHTML = ''; // Clear existing options
+
+            // Add language options
+            languages.forEach(([name, details]) => {
+                const option = document.createElement('option');
+                option.value = details.code;
+                option.textContent = `${name} (${details.native})`;
+                if (details.code === defaultCode) option.selected = true;
+                dropdown.appendChild(option);
+            });
+
+            console.log(`✅ Populated ${dropdownId} with ${languages.length} languages, default: ${defaultCode}`);
+        }
+
+        // Expose functions globally
+        window.loadLanguages = loadLanguages;
+        window.populateLanguageDropdown = populateLanguageDropdown;
+
+        // Function to check if all required functions are available
+        function checkRequiredFunctions() {
+            const requiredFunctions = [
+                'window.startRecording',
+                'window.processAudioWithSmartRouting',
+                'window.showStatus',
+                'window.loadLanguages',
+                'window.populateLanguageDropdown',
+                'window.getTranscriptionModel',
+                'window.speakText',
+                'window.stopSpeakText'
+            ];
+
+            const missingFunctions = [];
+            for (const funcName of requiredFunctions) {
+                const func = funcName.split('.').reduce((obj, prop) => obj && obj[prop], window);
+                if (typeof func !== 'function') {
+                    missingFunctions.push(funcName);
+                }
+            }
+
+            if (missingFunctions.length > 0) {
+                console.log(`Waiting for functions to be available: ${missingFunctions.join(', ')}`);
+                return false;
+            }
+
+            console.log('✅ All required functions are available');
+            return true;
+        }
+
+        // Comprehensive diagnostic function
+        function runConversationRoomDiagnostics() {
+            console.log('🔍 === CONVERSATION ROOM DIAGNOSTICS ===');
+
+            // Check DOM elements
+            const elements = [
+                'bilingual-hold-record-btn',
+                'bilingual-manual-record',
+                'bilingual-translate-btn',
+                'bilingual-upload-btn',
+                'bilingual-mode-content',
+                'bilingual-mode'
+            ];
+
+            console.log('🔍 DOM Elements Check:');
+            elements.forEach(id => {
+                const el = document.getElementById(id);
+                console.log(`  ${id}: ${el ? '✅ Found' : '❌ Missing'}`);
+                if (el) {
+                    console.log(`    - Visible: ${el.offsetParent !== null}`);
+                    console.log(`    - Disabled: ${el.disabled}`);
+                    console.log(`    - Classes: ${el.className}`);
+                }
+            });
+
+            // Check JavaScript files loaded
+            console.log('🔍 JavaScript Dependencies:');
+            console.log(`  BilingualConversation class: ${typeof window.BilingualConversation === 'function' ? '✅' : '❌'}`);
+            console.log(`  BilingualConversation instance: ${window.bilingualConversation ? '✅' : '❌'}`);
+            console.log(`  startRecording function: ${typeof window.startRecording === 'function' ? '✅' : '❌'}`);
+            console.log(`  processAudioWithSmartRouting function: ${typeof window.processAudioWithSmartRouting === 'function' ? '✅' : '❌'}`);
+            console.log(`  showStatus function: ${typeof window.showStatus === 'function' ? '✅' : '❌'}`);
+
+            // Check for JavaScript errors
+            console.log('🔍 Error Detection:');
+            window.addEventListener('error', function(e) {
+                console.error('🚨 JavaScript Error Detected:', e.error);
+                console.error('🚨 Error Details:', {
+                    message: e.message,
+                    filename: e.filename,
+                    lineno: e.lineno,
+                    colno: e.colno
+                });
+            });
+
+            // Check script loading
+            console.log('🔍 Script Tags:');
+            const scripts = document.querySelectorAll('script[src]');
+            scripts.forEach(script => {
+                if (script.src.includes('bilingual-conversation.js') || script.src.includes('script.js')) {
+                    console.log(`  ${script.src}: ${script.readyState || 'unknown state'}`);
+                }
+            });
+
+            console.log('🔍 === END DIAGNOSTICS ===');
+        }
+
+        // Initialize conversation room with bilingual mode
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Conversation room loaded - initializing bilingual mode');
+
+            // Run diagnostics immediately
+            runConversationRoomDiagnostics();
+
+            // Force bilingual mode to be active
+            const bilingualModeContent = document.getElementById('bilingual-mode-content');
+            if (bilingualModeContent) {
+                bilingualModeContent.style.display = 'block';
+                console.log('Bilingual mode activated for conversation room');
+            }
+
+            // Ensure bilingual mode toggle is checked
+            const bilingualToggle = document.getElementById('bilingual-mode');
+            if (bilingualToggle) {
+                bilingualToggle.checked = true;
+            }
+
+            // Wait for all required functions to be available before setting up integrations
+            let functionCheckAttempts = 0;
+            const maxFunctionCheckAttempts = 20; // 10 seconds max wait
+
+            function waitForFunctionsAndSetup() {
+                functionCheckAttempts++;
+
+                if (checkRequiredFunctions()) {
+                    console.log('All required functions are available, setting up conversation room integration...');
+                    setupConversationRoomIntegration();
+                } else if (functionCheckAttempts < maxFunctionCheckAttempts) {
+                    console.log(`Required functions not yet available, retrying in 500ms... (attempt ${functionCheckAttempts}/${maxFunctionCheckAttempts})`);
+                    setTimeout(waitForFunctionsAndSetup, 500);
+                } else {
+                    console.error('❌ Timeout waiting for required functions. Setting up with fallbacks...');
+                    setupConversationRoomIntegrationWithFallbacks();
+                }
+            }
+
+            // Start checking for functions
+            waitForFunctionsAndSetup();
+        });
+        
+        // Socket.IO event handlers
+        socket.on('connect', function() {
+            console.log('Connected to server');
+            updateConnectionStatus(true);
+
+            // Wait for languages to be loaded before joining room
+            function attemptRoomJoin() {
+                const fromLanguageSelect = document.getElementById('bilingual-from-language');
+                const toLanguageSelect = document.getElementById('bilingual-to-language');
+
+                // Check if language dropdowns are populated
+                if (fromLanguageSelect && toLanguageSelect &&
+                    fromLanguageSelect.options.length > 0 && toLanguageSelect.options.length > 0) {
+
+                    console.log('Languages loaded, joining room with:', {
+                        input_language: fromLanguageSelect.value,
+                        target_language: toLanguageSelect.value
+                    });
+
+                    // Join the conversation room with bilingual mode languages
+                    socket.emit('join_conversation_room', {
+                        room_code: roomCode,
+                        input_language: fromLanguageSelect.value,
+                        target_language: toLanguageSelect.value
+                    });
+                } else {
+                    console.log('Languages not yet loaded, retrying in 500ms...');
+                    setTimeout(attemptRoomJoin, 500);
+                }
+            }
+
+            // Start attempting to join room
+            attemptRoomJoin();
+        });
+        
+        socket.on('disconnect', function() {
+            console.log('Disconnected from server');
+            updateConnectionStatus(false);
+        });
+        
+        socket.on('room_joined', function(data) {
+            console.log('Joined room:', data);
+            participantCount.textContent = `${data.participant_count} participant(s)`;
+        });
+        
+        socket.on('user_joined', function(data) {
+            console.log('User joined:', data);
+            participantCount.textContent = `${data.participant_count} participant(s)`;
+            addSystemMessage(`${data.user_email} joined the conversation`);
+        });
+        
+        socket.on('user_left', function(data) {
+            console.log('User left:', data);
+            participantCount.textContent = `${data.participant_count} participant(s)`;
+            addSystemMessage(`${data.user_email} left the conversation`);
+        });
+        
+        socket.on('transcription_received', function(data) {
+            console.log('Transcription received:', data);
+            if (data.is_final) {
+                addMessage(data.user_email, data.text, null, data.language, 'transcription');
+            }
+        });
+        
+        socket.on('translation_received', function(data) {
+            console.log('Translation received:', data);
+            addMessage(data.user_email, data.original_text, data.translated_text, data.target_language, 'translation');
+        });
+        
+        socket.on('error', function(data) {
+            console.error('Socket error:', data);
+            alert('Error: ' + data.message);
+        });
+        
+        // Helper functions
+        function updateConnectionStatus(connected) {
+            if (connected) {
+                connectionStatus.classList.remove('disconnected');
+                connectionText.textContent = 'Connected';
+            } else {
+                connectionStatus.classList.add('disconnected');
+                connectionText.textContent = 'Disconnected';
+            }
+        }
+        
+        // Enhanced message display for bilingual conversation
+        function addMessage(userEmail, originalText, translatedText, language, type) {
+            // Add to bilingual mode text areas instead of message container
+            const originalTextArea = document.getElementById('bilingual-original-text');
+            const translationTextArea = document.getElementById('bilingual-translation-text');
+
+            if (originalTextArea && originalText) {
+                // Append to original text area
+                const currentText = originalTextArea.value;
+                const newText = currentText ? `${currentText}\n\n[${userEmail}]: ${originalText}` : `[${userEmail}]: ${originalText}`;
+                originalTextArea.value = newText;
+                originalTextArea.scrollTop = originalTextArea.scrollHeight;
+            }
+
+            if (translationTextArea && translatedText) {
+                // Append to translation text area
+                const currentText = translationTextArea.value;
+                const newText = currentText ? `${currentText}\n\n[${userEmail}]: ${translatedText}` : `[${userEmail}]: ${translatedText}`;
+                translationTextArea.value = newText;
+                translationTextArea.scrollTop = translationTextArea.scrollHeight;
+            }
+        }
+
+        function addSystemMessage(text) {
+            console.log('System message:', text);
+            // Could add system messages to the original text area if needed
+            const originalTextArea = document.getElementById('bilingual-original-text');
+            if (originalTextArea) {
+                const currentText = originalTextArea.value;
+                const newText = currentText ? `${currentText}\n\n[System]: ${text}` : `[System]: ${text}`;
+                originalTextArea.value = newText;
+                originalTextArea.scrollTop = originalTextArea.scrollHeight;
+            }
+        }
+
+        // Fallback setup function when required functions are not available
+        function setupConversationRoomIntegrationWithFallbacks() {
+            console.log('⚠️ Setting up conversation room with fallback functions...');
+
+            // Provide fallback functions if they're not available
+            if (typeof window.showStatus !== 'function') {
+                window.showStatus = function(message, type) {
+                    console.log(`[${type}] ${message}`);
+                    // Also show in UI if possible
+                    const statusElement = document.createElement('div');
+                    statusElement.textContent = `[${type}] ${message}`;
+                    statusElement.style.cssText = 'position: fixed; top: 10px; right: 10px; background: #333; color: white; padding: 10px; border-radius: 5px; z-index: 10000;';
+                    document.body.appendChild(statusElement);
+                    setTimeout(() => statusElement.remove(), 3000);
+                };
+            }
+
+            if (typeof window.startRecording !== 'function') {
+                window.startRecording = function() {
+                    window.showStatus('Recording function not available. Please refresh the page.', 'error');
+                    return Promise.reject(new Error('Recording function not available. Please refresh the page.'));
+                };
+            }
+
+            if (typeof window.processAudioWithSmartRouting !== 'function') {
+                window.processAudioWithSmartRouting = function() {
+                    window.showStatus('Audio processing function not available. Please refresh the page.', 'error');
+                    return Promise.reject(new Error('Audio processing function not available. Please refresh the page.'));
+                };
+            }
+
+            // Continue with setup
+            setupConversationRoomIntegration();
+        }
+
+        // Emergency fallback event listeners - attach directly to buttons if BilingualConversation fails
+        function attachFallbackEventListeners() {
+            console.log('🚨 Attaching emergency fallback event listeners...');
+
+            // Hold-to-record button fallback
+            const holdBtn = document.getElementById('bilingual-hold-record-btn');
+            if (holdBtn) {
+                holdBtn.addEventListener('mousedown', function() {
+                    console.log('🚨 Fallback: Hold button mousedown');
+                    window.showStatus('Hold-to-record functionality requires page refresh', 'warning');
+                });
+                holdBtn.addEventListener('click', function() {
+                    console.log('🚨 Fallback: Hold button click');
+                    window.showStatus('Hold-to-record functionality requires page refresh', 'warning');
+                });
+            }
+
+            // Manual record button fallback
+            const manualBtn = document.getElementById('bilingual-manual-record');
+            if (manualBtn) {
+                manualBtn.addEventListener('click', function() {
+                    console.log('🚨 Fallback: Manual record button click');
+                    window.showStatus('Manual record functionality requires page refresh', 'warning');
+                });
+            }
+
+            // Translate button fallback
+            const translateBtn = document.getElementById('bilingual-translate-btn');
+            if (translateBtn) {
+                translateBtn.addEventListener('click', function() {
+                    console.log('🚨 Fallback: Translate button click');
+                    window.showStatus('Translate functionality requires page refresh', 'warning');
+                });
+            }
+
+            // Upload button fallback
+            const uploadBtn = document.getElementById('bilingual-upload-btn');
+            if (uploadBtn) {
+                uploadBtn.addEventListener('click', function() {
+                    console.log('🚨 Fallback: Upload button click');
+                    window.showStatus('Upload functionality requires page refresh', 'warning');
+                });
+            }
+
+            console.log('🚨 Emergency fallback event listeners attached');
+        }
+
+        // Consolidated setup function for conversation room integration
+        function setupConversationRoomIntegration() {
+            console.log('Setting up conversation room integration...');
+
+            // Verify all required functions are available
+            if (!checkRequiredFunctions()) {
+                console.error('Required functions not available, cannot set up conversation room integration');
+                return;
+            }
+
+            console.log('✅ All required functions verified, proceeding with setup...');
+
+            // Ensure bilingual mode is properly activated for conversation rooms
+            const bilingualModeToggle = document.getElementById('bilingual-mode');
+            const bilingualModeContent = document.getElementById('bilingual-mode-content');
+
+            if (bilingualModeToggle && bilingualModeContent) {
+                // Force bilingual mode to be active
+                bilingualModeToggle.checked = true;
+                bilingualModeContent.style.display = 'block';
+
+                // CRITICAL: Disable mode switching in conversation rooms to prevent functionality breaking
+                bilingualModeToggle.disabled = true;
+                bilingualModeToggle.style.pointerEvents = 'none';
+                bilingualModeToggle.style.opacity = '0.6';
+
+                // Add a flag to indicate this is a conversation room (no mode switching allowed)
+                window.isConversationRoom = true;
+
+                console.log('✅ Bilingual mode locked for conversation room (mode switching disabled)');
+            }
+
+            // Load and populate languages using the exact same mechanism as main page
+            // CRITICAL: Ensure stable language loading that won't be affected by mode switching
+            function loadConversationRoomLanguages() {
+                if (typeof window.loadLanguages === 'function') {
+                console.log('Loading languages for conversation room...');
+                window.loadLanguages().then(languages => {
+                    console.log('Languages loaded:', Object.keys(languages).length);
+
+                    // Store languages globally for bilingual conversation mode (same as main script)
+                    window.languages = Object.entries(languages).map(([name, details]) => ({
+                        name: name,
+                        native: details.native,
+                        code: details.code
+                    }));
+
+                    // Get saved language preferences
+                    const sourceLanguage = window.languagePreferences ?
+                        window.languagePreferences.loadLanguagePreference('source', 'en') : 'en';
+                    const targetLanguage = window.languagePreferences ?
+                        window.languagePreferences.loadLanguagePreference('target', 'es') : 'es';
+
+                    // Populate bilingual conversation dropdowns using the exact same function as main page
+                    if (typeof window.populateLanguageDropdown === 'function') {
+                        window.populateLanguageDropdown('bilingual-from-language', languages, sourceLanguage);
+                        window.populateLanguageDropdown('bilingual-to-language', languages, targetLanguage);
+                        console.log('✅ Language dropdowns populated with', Object.keys(languages).length, 'languages');
+                    } else {
+                        console.error('❌ populateLanguageDropdown function not available');
+                    }
+
+                    // Set up language change handlers after population
+                    setupLanguageChangeHandlers();
+
+                    // Initialize BilingualConversation after languages are loaded
+                    initializeBilingualConversationForRoom();
+
+                }).catch(error => {
+                    console.error('Error loading languages:', error);
+                    // Use fallback languages if API fails
+                    setupFallbackLanguages();
+                });
+                } else {
+                    console.error('❌ loadLanguages function not available');
+                    // Use fallback languages
+                    setupFallbackLanguages();
+                }
+            }
+
+            // Store the language loading function globally to prevent re-execution
+            window.conversationRoomLanguagesLoaded = false;
+            if (!window.conversationRoomLanguagesLoaded) {
+                loadConversationRoomLanguages();
+                window.conversationRoomLanguagesLoaded = true;
+            }
+
+            function setupFallbackLanguages() {
+                console.log('Setting up fallback languages...');
+
+                // Create fallback languages in the same format as the API
+                const fallbackLanguages = {
+                    'English': { code: 'en', native: 'English' },
+                    'Spanish': { code: 'es', native: 'Español' },
+                    'French': { code: 'fr', native: 'Français' },
+                    'German': { code: 'de', native: 'Deutsch' },
+                    'Italian': { code: 'it', native: 'Italiano' },
+                    'Portuguese': { code: 'pt', native: 'Português' },
+                    'Chinese': { code: 'zh', native: '中文' },
+                    'Japanese': { code: 'ja', native: '日本語' },
+                    'Korean': { code: 'ko', native: '한국어' },
+                    'Russian': { code: 'ru', native: 'Русский' }
+                };
+
+                // Store languages globally
+                window.languages = Object.entries(fallbackLanguages).map(([name, details]) => ({
+                    name: name,
+                    native: details.native,
+                    code: details.code
+                }));
+
+                // Populate dropdowns
+                if (typeof window.populateLanguageDropdown === 'function') {
+                    window.populateLanguageDropdown('bilingual-from-language', fallbackLanguages, 'en');
+                    window.populateLanguageDropdown('bilingual-to-language', fallbackLanguages, 'es');
+                    console.log('✅ Fallback languages populated');
+                } else {
+                    console.error('❌ populateLanguageDropdown function not available for fallback');
+                }
+
+                setupLanguageChangeHandlers();
+
+                // Initialize BilingualConversation after fallback languages are set up
+                initializeBilingualConversationForRoom();
+            }
+
+            function setupLanguageChangeHandlers() {
+                const fromLanguageSelect = document.getElementById('bilingual-from-language');
+                const toLanguageSelect = document.getElementById('bilingual-to-language');
+
+                if (fromLanguageSelect) {
+                    fromLanguageSelect.addEventListener('change', function() {
+                        console.log('From language changed to:', this.value);
+                        socket.emit('update_language_settings', {
+                            room_code: roomCode,
+                            input_language: this.value
+                        });
+                    });
+                }
+
+                if (toLanguageSelect) {
+                    toLanguageSelect.addEventListener('change', function() {
+                        console.log('To language changed to:', this.value);
+                        socket.emit('update_language_settings', {
+                            room_code: roomCode,
+                            target_language: this.value
+                        });
+                    });
+                }
+            }
+
+            // Integration with bilingual conversation - Enhanced with better timing
+            function setupBilingualConversationIntegration() {
+                if (window.bilingualConversation && window.bilingualConversation.holdRecordBtn) {
+                    console.log('✅ Integrating bilingual conversation with Socket.IO');
+
+                    // Override the transcription completion handler
+                    const originalUpdateTranscript = window.updateTranscript;
+                    if (originalUpdateTranscript) {
+                        window.updateTranscript = function(elementId, text) {
+                            // Call original function
+                            originalUpdateTranscript(elementId, text);
+
+                            // Send transcription via Socket.IO
+                            if (text && text.trim()) {
+                                socket.emit('send_transcription', {
+                                    room_code: roomCode,
+                                    text: text,
+                                    language: fromLanguageSelect ? fromLanguageSelect.value : 'en',
+                                    target_language: toLanguageSelect ? toLanguageSelect.value : 'es',
+                                    is_final: true
+                                });
+                            }
+                        };
+                    }
+
+                    // Override the translation completion handler
+                    const originalTranslateText = window.bilingualConversation.translateText;
+                    if (originalTranslateText) {
+                        window.bilingualConversation.translateText = async function() {
+                            try {
+                                // Call original translation function
+                                await originalTranslateText.call(this);
+
+                                // Send translation via Socket.IO
+                                const originalText = document.getElementById('bilingual-original-text').value;
+                                const translatedText = document.getElementById('bilingual-translation-text').value;
+
+                                if (translatedText && translatedText.trim()) {
+                                    socket.emit('send_translation', {
+                                        room_code: roomCode,
+                                        original_text: originalText,
+                                        translated_text: translatedText,
+                                        source_language: fromLanguageSelect ? fromLanguageSelect.value : 'en',
+                                        target_language: toLanguageSelect ? toLanguageSelect.value : 'es'
+                                    });
+                                }
+                            } catch (error) {
+                                console.error('Translation error:', error);
+                            }
+                        };
+                    }
+
+                    // Set up real-time transcription integration
+                    if (window.bilingualConversation.processRecordingAndTranslate) {
+                        const originalProcessRecording = window.bilingualConversation.processRecordingAndTranslate;
+                        window.bilingualConversation.processRecordingAndTranslate = async function() {
+                            try {
+                                await originalProcessRecording.call(this);
+
+                                // After processing, send both transcription and translation
+                                const originalText = document.getElementById('bilingual-original-text').value;
+                                const translatedText = document.getElementById('bilingual-translation-text').value;
+
+                                if (originalText && originalText.trim()) {
+                                    socket.emit('send_transcription', {
+                                        room_code: roomCode,
+                                        text: originalText,
+                                        language: fromLanguageSelect ? fromLanguageSelect.value : 'en',
+                                        target_language: toLanguageSelect ? toLanguageSelect.value : 'es',
+                                        is_final: true
+                                    });
+                                }
+
+                                if (translatedText && translatedText.trim()) {
+                                    socket.emit('send_translation', {
+                                        room_code: roomCode,
+                                        original_text: originalText,
+                                        translated_text: translatedText,
+                                        source_language: fromLanguageSelect ? fromLanguageSelect.value : 'en',
+                                        target_language: toLanguageSelect ? toLanguageSelect.value : 'es'
+                                    });
+                                }
+                            } catch (error) {
+                                console.error('Processing and translation error:', error);
+                            }
+                        };
+                    }
+
+                    console.log('✅ Bilingual conversation Socket.IO integration complete');
+                } else {
+                    if (!window.bilingualConversation) {
+                        console.warn('⏳ BilingualConversation instance not found, retrying in 1 second...');
+                    } else if (!window.bilingualConversation.holdRecordBtn) {
+                        console.warn('⏳ BilingualConversation not fully initialized (missing holdRecordBtn), retrying in 1 second...');
+                    }
+                    setTimeout(setupBilingualConversationIntegration, 1000);
+                }
+            }
+
+            // Start the integration setup
+            setupBilingualConversationIntegration();
+
+            // Add debugging information for conversation room functionality
+            console.log('🔍 Conversation Room Debug Information:');
+            console.log('- Room Code:', roomCode);
+            console.log('- User Email:', userEmail);
+            console.log('- Bilingual Mode Toggle:', document.getElementById('bilingual-mode')?.checked);
+            console.log('- Bilingual Content Visible:', document.getElementById('bilingual-mode-content')?.style.display !== 'none');
+            console.log('- From Language Dropdown:', document.getElementById('bilingual-from-language')?.options.length, 'options');
+            console.log('- To Language Dropdown:', document.getElementById('bilingual-to-language')?.options.length, 'options');
+            console.log('- Socket.IO Available:', typeof io !== 'undefined');
+            console.log('- BilingualConversation Class:', typeof window.BilingualConversation !== 'undefined');
+            console.log('- BilingualConversation Instance:', !!window.bilingualConversation);
+            console.log('- Required Functions Available:', {
+                startRecording: typeof window.startRecording === 'function',
+                processAudioWithSmartRouting: typeof window.processAudioWithSmartRouting === 'function',
+                showStatus: typeof window.showStatus === 'function',
+                loadLanguages: typeof window.loadLanguages === 'function',
+                populateLanguageDropdown: typeof window.populateLanguageDropdown === 'function',
+                speakText: typeof window.speakText === 'function'
+            });
+        }
+
+        // Initialize BilingualConversation for conversation room
+        function initializeBilingualConversationForRoom() {
+            console.log('🚀 Initializing BilingualConversation for conversation room...');
+
+            // CRITICAL: Prevent multiple initializations that break functionality
+            if (window.bilingualConversationInitialized) {
+                console.log('✅ BilingualConversation already initialized, skipping...');
+                return;
+            }
+
+            // Check if BilingualConversation class is available
+            if (typeof window.BilingualConversation !== 'function') {
+                console.error('❌ BilingualConversation class not available');
+                return;
+            }
+
+            // Check if required DOM elements exist
+            const requiredElements = [
+                'bilingual-hold-record-btn',
+                'bilingual-manual-record',
+                'bilingual-translate-btn',
+                'bilingual-upload-btn'
+            ];
+
+            const missingElements = requiredElements.filter(id => !document.getElementById(id));
+            if (missingElements.length > 0) {
+                console.warn(`⏳ Missing required DOM elements: ${missingElements.join(', ')}`);
+                console.log('Retrying BilingualConversation initialization in 500ms...');
+                setTimeout(initializeBilingualConversationForRoom, 500);
+                return;
+            }
+
+            // Check if required functions are available
+            const requiredFunctions = ['startRecording', 'processAudioWithSmartRouting', 'showStatus'];
+            const missingFunctions = requiredFunctions.filter(func => typeof window[func] !== 'function');
+
+            if (missingFunctions.length > 0) {
+                console.warn(`⏳ Missing required functions: ${missingFunctions.join(', ')}`);
+                console.log('Functions status:', {
+                    startRecording: typeof window.startRecording,
+                    processAudioWithSmartRouting: typeof window.processAudioWithSmartRouting,
+                    showStatus: typeof window.showStatus
+                });
+                console.log('Retrying BilingualConversation initialization in 1 second...');
+                setTimeout(initializeBilingualConversationForRoom, 1000);
+                return;
+            }
+
+            console.log('✅ All required functions are available:', {
+                startRecording: typeof window.startRecording === 'function',
+                processAudioWithSmartRouting: typeof window.processAudioWithSmartRouting === 'function',
+                showStatus: typeof window.showStatus === 'function'
+            });
+
+            // Initialize BilingualConversation if not already initialized
+            if (!window.bilingualConversation) {
+                try {
+                    console.log('Creating new BilingualConversation instance...');
+                    console.log('Available elements:', {
+                        holdRecordBtn: !!document.getElementById('bilingual-hold-record-btn'),
+                        manualRecordBtn: !!document.getElementById('bilingual-manual-record'),
+                        translateBtn: !!document.getElementById('bilingual-translate-btn'),
+                        uploadBtn: !!document.getElementById('bilingual-upload-btn')
+                    });
+
+                    // Double-check that the class is available
+                    if (typeof window.BilingualConversation !== 'function') {
+                        throw new Error('BilingualConversation class is not available');
+                    }
+
+                    window.bilingualConversation = new window.BilingualConversation();
+                    window.bilingualConversationInitialized = true;
+                    console.log('✅ BilingualConversation initialized successfully for conversation room');
+
+                    // Verify the instance was created properly
+                    if (!window.bilingualConversation.holdRecordBtn) {
+                        console.warn('⚠️ BilingualConversation instance created but holdRecordBtn not found');
+                        throw new Error('BilingualConversation instance incomplete - missing holdRecordBtn');
+                    }
+
+                    // Verify event listeners are attached
+                    setTimeout(() => {
+                        console.log('🔍 Verifying button functionality...');
+                        const holdBtn = document.getElementById('bilingual-hold-record-btn');
+                        const manualBtn = document.getElementById('bilingual-manual-record');
+                        const translateBtn = document.getElementById('bilingual-translate-btn');
+                        const uploadBtn = document.getElementById('bilingual-upload-btn');
+
+                        console.log('Button event listeners status:', {
+                            holdBtn: holdBtn ? 'Found' : 'Missing',
+                            manualBtn: manualBtn ? 'Found' : 'Missing',
+                            translateBtn: translateBtn ? 'Found' : 'Missing',
+                            uploadBtn: uploadBtn ? 'Found' : 'Missing'
+                        });
+
+                        // Test button click handlers
+                        if (holdBtn) {
+                            console.log('✅ Hold-to-record button ready');
+                        }
+                        if (manualBtn) {
+                            console.log('✅ Manual record button ready');
+                        }
+                        if (translateBtn) {
+                            console.log('✅ Translate button ready');
+                        }
+                        if (uploadBtn) {
+                            console.log('✅ Upload button ready');
+                        }
+                    }, 100);
+
+                } catch (error) {
+                    console.error('❌ Error initializing BilingualConversation:', error);
+                    console.error('Error details:', error.stack);
+
+                    // Show user-friendly error message
+                    window.showStatus('Button functionality initialization failed. Attempting fallback...', 'warning');
+
+                    // Attach emergency fallback event listeners
+                    attachFallbackEventListeners();
+
+                    // Try again after a delay
+                    setTimeout(() => {
+                        console.log('🔄 Retrying BilingualConversation initialization...');
+                        try {
+                            if (typeof window.BilingualConversation === 'function' && !window.bilingualConversation) {
+                                window.bilingualConversation = new window.BilingualConversation();
+                                console.log('✅ BilingualConversation retry successful');
+                                window.showStatus('Button functionality restored!', 'success');
+                            }
+                        } catch (retryError) {
+                            console.error('❌ BilingualConversation retry failed:', retryError);
+                            window.showStatus('Button functionality requires page refresh', 'error');
+                        }
+                    }, 2000);
+                }
+            } else {
+                console.log('✅ BilingualConversation already initialized');
+            }
+        }
+
+        // Test function for manual button testing (can be called from console)
+        window.testConversationButtons = function() {
+            console.log('🧪 Testing conversation room buttons...');
+
+            const buttons = {
+                hold: document.getElementById('bilingual-hold-record-btn'),
+                manual: document.getElementById('bilingual-manual-record'),
+                translate: document.getElementById('bilingual-translate-btn'),
+                upload: document.getElementById('bilingual-upload-btn')
+            };
+
+            console.log('Button elements found:', {
+                hold: !!buttons.hold,
+                manual: !!buttons.manual,
+                translate: !!buttons.translate,
+                upload: !!buttons.upload
+            });
+
+            // Test each button
+            Object.entries(buttons).forEach(([name, button]) => {
+                if (button) {
+                    console.log(`✅ ${name} button found and ready`);
+                    // Add a temporary visual indicator
+                    button.style.border = '2px solid #00ff00';
+                    setTimeout(() => {
+                        button.style.border = '';
+                    }, 2000);
+                } else {
+                    console.error(`❌ ${name} button not found`);
+                }
+            });
+
+            // Test BilingualConversation instance
+            if (window.bilingualConversation) {
+                console.log('✅ BilingualConversation instance available');
+                console.log('Instance properties:', {
+                    holdRecordBtn: !!window.bilingualConversation.holdRecordBtn,
+                    manualRecordBtn: !!window.bilingualConversation.manualRecordBtn,
+                    translateBtn: !!window.bilingualConversation.translateBtn,
+                    uploadBtn: !!window.bilingualConversation.uploadBtn
+                });
+            } else {
+                console.error('❌ BilingualConversation instance not available');
+            }
+
+            return 'Test completed - check console for results';
+        };
+
+        // Force initialization function that can be called manually
+        window.forceInitializeBilingual = function() {
+            console.log('🔧 Force initializing bilingual conversation...');
+
+            // Ensure bilingual mode is enabled
+            const bilingualToggle = document.getElementById('bilingual-mode');
+            if (bilingualToggle) {
+                bilingualToggle.checked = true;
+            }
+
+            // Ensure bilingual content is visible
+            const bilingualContent = document.getElementById('bilingual-mode-content');
+            if (bilingualContent) {
+                bilingualContent.style.display = 'block';
+            }
+
+            // Force create BilingualConversation instance
+            if (typeof window.BilingualConversation === 'function') {
+                try {
+                    window.bilingualConversation = new window.BilingualConversation();
+                    console.log('✅ Force initialization successful');
+                } catch (error) {
+                    console.error('❌ Force initialization failed:', error);
+                    attachFallbackEventListeners();
+                }
+            } else {
+                console.error('❌ BilingualConversation class not available');
+                attachFallbackEventListeners();
+            }
+
+            // DISABLED: Test buttons after force initialization to prevent auto-recording
+            console.log('ℹ️ Automatic button testing after force initialization disabled.');
+            /*
+            setTimeout(() => {
+                if (typeof window.testConversationButtons === 'function') {
+                    window.testConversationButtons();
+                }
+            }, 500);
+            */
+
+            return 'Force initialization completed';
+        };
+
+        // Manual button test function (can be called from browser console)
+        window.manualButtonTest = function() {
+            console.log('🧪 === MANUAL BUTTON TEST ===');
+
+            const buttons = [
+                { id: 'bilingual-hold-record-btn', name: 'Hold-to-record', events: ['mousedown', 'mouseup', 'click'] },
+                { id: 'bilingual-manual-record', name: 'Manual record', events: ['click'] },
+                { id: 'bilingual-translate-btn', name: 'Translate', events: ['click'] },
+                { id: 'bilingual-upload-btn', name: 'Upload', events: ['click'] }
+            ];
+
+            buttons.forEach(({ id, name, events }) => {
+                const btn = document.getElementById(id);
+                if (!btn) {
+                    console.log(`❌ ${name} button not found`);
+                    return;
+                }
+
+                console.log(`🧪 Testing ${name} button (${id}):`);
+
+                events.forEach(eventType => {
+                    try {
+                        console.log(`  Triggering ${eventType} event...`);
+                        const event = new Event(eventType, { bubbles: true });
+                        btn.dispatchEvent(event);
+                        console.log(`  ✅ ${eventType} event dispatched successfully`);
+                    } catch (error) {
+                        console.log(`  ❌ ${eventType} event failed:`, error);
+                    }
+                });
+
+                // Test direct click
+                try {
+                    console.log(`  Testing direct click...`);
+                    btn.click();
+                    console.log(`  ✅ Direct click executed`);
+                } catch (error) {
+                    console.log(`  ❌ Direct click failed:`, error);
+                }
+            });
+
+            console.log('🧪 === END MANUAL TEST ===');
+            return 'Manual button test completed';
+        };
+
+        // Enhanced debugging and testing function
+        window.testConversationButtons = function() {
+            console.log('🧪 Testing conversation room button functionality...');
+
+            const buttons = [
+                { id: 'bilingual-hold-record-btn', name: 'Hold-to-record' },
+                { id: 'bilingual-manual-record', name: 'Manual record' },
+                { id: 'bilingual-translate-btn', name: 'Translate' },
+                { id: 'bilingual-upload-btn', name: 'Upload' }
+            ];
+
+            const results = {};
+
+            buttons.forEach(({ id, name }) => {
+                const btn = document.getElementById(id);
+                if (!btn) {
+                    results[name] = '❌ Element not found';
+                    return;
+                }
+
+                // Check if element is visible and clickable
+                const style = window.getComputedStyle(btn);
+                const isVisible = style.display !== 'none' && style.visibility !== 'hidden';
+                const hasEventListeners = btn.onclick !== null || btn.addEventListener !== undefined;
+
+                // Try to get event listeners (this is limited in browsers for security)
+                const hasClickHandler = btn.onclick !== null;
+
+                results[name] = {
+                    exists: true,
+                    visible: isVisible,
+                    hasClickHandler: hasClickHandler,
+                    disabled: btn.disabled,
+                    classList: Array.from(btn.classList),
+                    parentElement: btn.parentElement?.tagName || 'none'
+                };
+            });
+
+            console.log('🧪 Button test results:', results);
+
+            // Test BilingualConversation instance
+            console.log('🧪 BilingualConversation status:', {
+                classAvailable: typeof window.BilingualConversation === 'function',
+                instanceExists: !!window.bilingualConversation,
+                instanceType: typeof window.bilingualConversation,
+                requiredFunctions: {
+                    startRecording: typeof window.startRecording === 'function',
+                    processAudioWithSmartRouting: typeof window.processAudioWithSmartRouting === 'function',
+                    showStatus: typeof window.showStatus === 'function'
+                }
+            });
+
+            // DISABLED: Automatic button clicking to prevent auto-recording
+            console.log('🧪 Automatic button clicking disabled to prevent auto-recording');
+            console.log('ℹ️ To test buttons manually, use: window.manualTestButtons()');
+            /*
+            // Test clicking each button programmatically - DISABLED
+            console.log('🧪 Testing programmatic button clicks...');
+            buttons.forEach(({ id, name }) => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    try {
+                        console.log(`🧪 Testing ${name} button click...`);
+                        btn.click();
+                        console.log(`✅ ${name} button click executed without error`);
+                    } catch (error) {
+                        console.error(`❌ ${name} button click failed:`, error);
+                    }
+                }
+            });
+            */
+
+            return results;
+        };
+
+        // Manual test function for debugging (call from console)
+        window.manualTestButtons = function() {
+            console.log('🧪 Manual button test - clicking all buttons...');
+            const buttons = [
+                { id: 'bilingual-hold-record-btn', name: 'Hold-to-record' },
+                { id: 'bilingual-manual-record', name: 'Manual record' },
+                { id: 'bilingual-translate-btn', name: 'Translate' },
+                { id: 'bilingual-upload-btn', name: 'Upload' }
+            ];
+
+            buttons.forEach(({ id, name }) => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    try {
+                        console.log(`🧪 Testing ${name} button click...`);
+                        btn.click();
+                        console.log(`✅ ${name} button click executed without error`);
+                    } catch (error) {
+                        console.error(`❌ ${name} button click failed:`, error);
+                    }
+                }
+            });
+        };
+
+        // Auto-run test after initialization
+        setTimeout(() => {
+            console.log('🔍 === FINAL BUTTON FUNCTIONALITY TEST ===');
+
+            // Test button existence
+            const buttons = [
+                'bilingual-hold-record-btn',
+                'bilingual-manual-record',
+                'bilingual-translate-btn',
+                'bilingual-upload-btn'
+            ];
+
+            console.log('🔍 Button existence check:');
+            buttons.forEach(id => {
+                const btn = document.getElementById(id);
+                console.log(`  ${id}: ${btn ? '✅ Found' : '❌ Missing'}`);
+
+                if (btn) {
+                    // Test if button responds to clicks
+                    let clickWorked = false;
+                    const testHandler = () => {
+                        clickWorked = true;
+                        console.log(`✅ ${id} click handler working`);
+                    };
+
+                    btn.addEventListener('click', testHandler);
+                    btn.click();
+
+                    setTimeout(() => {
+                        if (!clickWorked) {
+                            console.log(`❌ ${id} click handler not working`);
+                        }
+                        btn.removeEventListener('click', testHandler);
+                    }, 100);
+                }
+            });
+
+            // Test BilingualConversation instance
+            console.log('🔍 BilingualConversation status:');
+            console.log(`  Class available: ${typeof window.BilingualConversation === 'function'}`);
+            console.log(`  Instance exists: ${!!window.bilingualConversation}`);
+
+            if (window.bilingualConversation) {
+                console.log(`  Instance properties:`, {
+                    holdRecordBtn: !!window.bilingualConversation.holdRecordBtn,
+                    manualRecordBtn: !!window.bilingualConversation.manualRecordBtn,
+                    translateBtn: !!window.bilingualConversation.translateBtn,
+                    uploadBtn: !!window.bilingualConversation.uploadBtn
+                });
+            }
+
+            // Test required functions
+            console.log('🔍 Required functions:');
+            console.log(`  startRecording: ${typeof window.startRecording === 'function'}`);
+            console.log(`  processAudioWithSmartRouting: ${typeof window.processAudioWithSmartRouting === 'function'}`);
+            console.log(`  showStatus: ${typeof window.showStatus === 'function'}`);
+
+            console.log('🔍 === END FINAL TEST ===');
+
+            // DISABLED: Automatic button testing to prevent auto-recording
+            console.log('ℹ️ Automatic button testing disabled. Use window.manualTestButtons() to test manually.');
+            /*
+            if (typeof window.testConversationButtons === 'function') {
+                window.testConversationButtons();
+            }
+            */
+
+            // If buttons are not working, try force initialization
+            setTimeout(() => {
+                const holdBtn = document.getElementById('bilingual-hold-record-btn');
+                if (holdBtn && !window.bilingualConversation) {
+                    console.log('🔧 BilingualConversation not initialized, attempting force initialization...');
+                    window.forceInitializeBilingual();
+                }
+            }, 1000);
+        }, 3000);
+
+        // Final initialization check for conversation room - NO AUTO RECORDING
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Final conversation room initialization check...');
+
+            // Initialize model selectors
+            if (typeof window.initializeModelSelectors === 'function') {
+                window.initializeModelSelectors();
+            }
+
+            // Ensure our recording functions are available
+            setTimeout(() => {
+                const functionsReady = typeof window.startRecording === 'function' &&
+                                     typeof window.processAudioWithSmartRouting === 'function' &&
+                                     typeof window.showStatus === 'function';
+
+                if (functionsReady) {
+                    console.log('✅ All recording functions confirmed ready');
+                    window.showStatus('Conversation room ready! Click a button to start recording.', 'success');
+                } else {
+                    console.error('❌ Recording functions not available after initialization');
+                    window.showStatus('Recording functions not available. Please refresh the page.', 'error');
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

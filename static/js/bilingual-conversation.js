@@ -1,10 +1,15 @@
 /**
  * Bilingual Conversation Mode - Enhanced UI Implementation
  * Handles the new "Quick Conversation" interface with Hold to Record functionality
+ * Updated: 2025-09-20 12:13 - Added comprehensive debugging
  */
 
+// Prevent class redeclaration
+if (typeof window.BilingualConversation === 'undefined') {
 class BilingualConversation {
   constructor() {
+    console.log('🎙️ BilingualConversation constructor called');
+
     this.isRecording = false;
     this.recording = null;
     this.recordingStartTime = null;
@@ -12,10 +17,43 @@ class BilingualConversation {
     this.keyPressCount = 0;
     this.keyPressTimer = null;
     this.lastTranscription = '';
-    
+
+    // Validate required functions are available
+    this.validateRequiredFunctions();
+
+    console.log('🎙️ Initializing elements...');
     this.initializeElements();
+
+    console.log('🎙️ Setting up event listeners...');
     this.setupEventListeners();
-    this.populateLanguageDropdowns();
+
+    // Delay language population to ensure all scripts are loaded
+    setTimeout(() => {
+      this.populateLanguageDropdowns();
+    }, 100);
+  }
+
+  validateRequiredFunctions() {
+    const requiredFunctions = [
+      'window.startRecording',
+      'window.processAudioWithSmartRouting',
+      'window.showStatus'
+    ];
+
+    const missingFunctions = [];
+    for (const funcName of requiredFunctions) {
+      const func = funcName.split('.').reduce((obj, prop) => obj && obj[prop], window);
+      if (typeof func !== 'function') {
+        missingFunctions.push(funcName);
+      }
+    }
+
+    if (missingFunctions.length > 0) {
+      console.warn(`⚠️ BilingualConversation: Missing functions: ${missingFunctions.join(', ')}`);
+      console.warn('Some functionality may not work properly. Consider refreshing the page.');
+    } else {
+      console.log('✅ BilingualConversation: All required functions are available');
+    }
   }
 
   initializeElements() {
@@ -48,47 +86,148 @@ class BilingualConversation {
   }
 
   setupEventListeners() {
-    // Hold to Record button
+    console.log('🎙️ Setting up event listeners for BilingualConversation');
+
+    // Hold to Record button - Enhanced with click-to-toggle functionality
     if (this.holdRecordBtn) {
-      this.holdRecordBtn.addEventListener('mousedown', () => {
+      console.log('✅ Hold record button found, attaching event listeners');
+
+      // Variables to track hold vs click behavior
+      this.holdTimeout = null;
+      this.isHoldMode = false;
+      this.clickStartTime = null;
+
+      // Click event for toggle functionality (like Basic mode)
+      this.holdRecordBtn.addEventListener('click', (e) => {
+        // Only process click if it wasn't a hold gesture
+        if (!this.isHoldMode) {
+          console.log('Hold button click event (toggle mode)');
+          this.toggleHoldRecording();
+        }
+        // Reset hold mode flag
+        this.isHoldMode = false;
+      });
+
+      // Mouse events for hold functionality
+      this.holdRecordBtn.addEventListener('mousedown', (e) => {
         console.log('Hold button mousedown event');
-        this.startHoldRecording();
+        this.clickStartTime = Date.now();
+        this.isHoldMode = false;
+
+        // Set timeout to detect hold gesture (300ms threshold)
+        this.holdTimeout = setTimeout(() => {
+          console.log('Hold gesture detected');
+          this.isHoldMode = true;
+          this.startHoldRecording();
+        }, 300);
       });
-      this.holdRecordBtn.addEventListener('mouseup', () => {
+
+      this.holdRecordBtn.addEventListener('mouseup', (e) => {
         console.log('Hold button mouseup event');
-        this.stopHoldRecording();
+
+        // Clear hold timeout
+        if (this.holdTimeout) {
+          clearTimeout(this.holdTimeout);
+          this.holdTimeout = null;
+        }
+
+        // If we were in hold mode, stop the recording
+        if (this.isHoldMode && this.isRecording) {
+          this.stopHoldRecording();
+        }
       });
-      this.holdRecordBtn.addEventListener('mouseleave', () => {
+
+      this.holdRecordBtn.addEventListener('mouseleave', (e) => {
         console.log('Hold button mouseleave event');
-        this.stopHoldRecording();
+
+        // Clear hold timeout
+        if (this.holdTimeout) {
+          clearTimeout(this.holdTimeout);
+          this.holdTimeout = null;
+        }
+
+        // If we were in hold mode, stop the recording
+        if (this.isHoldMode && this.isRecording) {
+          this.stopHoldRecording();
+        }
       });
 
       // Touch events for mobile
       this.holdRecordBtn.addEventListener('touchstart', (e) => {
         e.preventDefault();
         console.log('Hold button touchstart event');
-        this.startHoldRecording();
+        this.clickStartTime = Date.now();
+        this.isHoldMode = false;
+
+        // Set timeout to detect hold gesture (300ms threshold)
+        this.holdTimeout = setTimeout(() => {
+          console.log('Touch hold gesture detected');
+          this.isHoldMode = true;
+          this.startHoldRecording();
+        }, 300);
       });
+
       this.holdRecordBtn.addEventListener('touchend', (e) => {
         e.preventDefault();
         console.log('Hold button touchend event');
-        this.stopHoldRecording();
+
+        // Clear hold timeout
+        if (this.holdTimeout) {
+          clearTimeout(this.holdTimeout);
+          this.holdTimeout = null;
+        }
+
+        // If we were in hold mode, stop the recording
+        if (this.isHoldMode && this.isRecording) {
+          this.stopHoldRecording();
+        } else if (!this.isHoldMode) {
+          // This was a tap, trigger toggle functionality
+          this.toggleHoldRecording();
+        }
+
+        // Reset hold mode flag
+        this.isHoldMode = false;
       });
+
+      console.log('✅ Hold record button event listeners attached (click-to-toggle + hold-to-record)');
+    } else {
+      console.error('❌ Hold record button not found!');
     }
 
     // Manual Record button (toggle)
     if (this.manualRecordBtn) {
+      console.log('✅ Manual record button found, attaching event listener');
       this.manualRecordBtn.addEventListener('click', () => this.toggleManualRecording());
+      console.log('✅ Manual record button event listener attached');
+    } else {
+      console.error('❌ Manual record button not found!');
     }
 
     // Translate button
     if (this.translateBtn) {
+      console.log('✅ Translate button found, attaching event listener');
       this.translateBtn.addEventListener('click', () => this.translateText());
+      console.log('✅ Translate button event listener attached');
+    } else {
+      console.error('❌ Translate button not found!');
     }
 
     // Upload button
     if (this.uploadBtn) {
-      this.uploadBtn.addEventListener('click', () => this.fileInput?.click());
+      console.log('✅ Upload button found, attaching event listener');
+      this.uploadBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Upload button clicked');
+        if (this.fileInput) {
+          this.fileInput.click();
+        } else {
+          console.error('File input not found');
+        }
+      });
+      console.log('✅ Upload button event listener attached');
+    } else {
+      console.error('❌ Upload button not found!');
     }
 
     // Clear results button
@@ -98,15 +237,51 @@ class BilingualConversation {
 
     // File input
     if (this.fileInput) {
+      // Remove any existing event listeners to prevent duplicates
+      this.fileInput.removeEventListener('change', this.handleFileUpload);
       this.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
     }
 
-    // Language change listeners
+    // Language change listeners with synchronization
     if (this.fromLanguageSelect) {
-      this.fromLanguageSelect.addEventListener('change', () => this.updateLanguageDisplays());
+      this.fromLanguageSelect.addEventListener('change', (e) => {
+        const language = e.target.value;
+        console.log('🌍 Bilingual from-language changed to:', language);
+
+        // Prevent invalid values
+        if (!language || language === '0' || language === 'undefined') {
+          console.warn('⚠️ Invalid from-language value, resetting to default');
+          this.fromLanguageSelect.value = 'en';
+          return;
+        }
+
+        // Save to preferences
+        if (window.languagePreferences) {
+          window.languagePreferences.saveLanguagePreference('source', language);
+        }
+
+        this.updateLanguageDisplays();
+      });
     }
     if (this.toLanguageSelect) {
-      this.toLanguageSelect.addEventListener('change', () => this.updateLanguageDisplays());
+      this.toLanguageSelect.addEventListener('change', (e) => {
+        const language = e.target.value;
+        console.log('🌍 Bilingual to-language changed to:', language);
+
+        // Prevent invalid values
+        if (!language || language === '0' || language === 'undefined') {
+          console.warn('⚠️ Invalid to-language value, resetting to default');
+          this.toLanguageSelect.value = 'es';
+          return;
+        }
+
+        // Save to preferences
+        if (window.languagePreferences) {
+          window.languagePreferences.saveLanguagePreference('target', language);
+        }
+
+        this.updateLanguageDisplays();
+      });
     }
 
     // Copy buttons
@@ -124,17 +299,43 @@ class BilingualConversation {
     // to prevent duplicate event listeners and multiple voices playing
   }
 
+  // Toggle recording functionality (like Basic mode microphone button)
+  async toggleHoldRecording() {
+    if (this.isRecording) {
+      console.log('Toggle: Stopping recording');
+      await this.stopHoldRecording();
+    } else {
+      console.log('Toggle: Starting recording');
+      await this.startHoldRecording();
+    }
+  }
+
   async startHoldRecording() {
     if (this.isRecording) return;
-    
+
     try {
+      console.log('Starting hold recording...');
+
+      // Check if startRecording function is available
+      if (typeof window.startRecording !== 'function') {
+        throw new Error('startRecording function not available');
+      }
+
       this.isRecording = true;
       this.holdRecordBtn.classList.add('recording');
-      this.holdRecordBtn.innerHTML = '<i class="fas fa-stop"></i><span>Recording...</span>';
-      
+
+      // Update button text based on mode
+      if (this.isHoldMode) {
+        this.holdRecordBtn.innerHTML = '<i class="fas fa-stop"></i><span>Recording... (Hold)</span>';
+        window.showStatus?.('Recording started - hold to continue', 'info');
+      } else {
+        this.holdRecordBtn.innerHTML = '<i class="fas fa-stop"></i><span>Stop Recording</span>';
+        window.showStatus?.('Recording started - click to stop', 'info');
+      }
+
       this.recordingStartTime = Date.now();
       this.startTimer();
-      
+
       // Start recording using existing recording infrastructure
       this.recording = await window.startRecording({
         recordButton: this.holdRecordBtn
@@ -148,11 +349,11 @@ class BilingualConversation {
         });
       }
 
-      console.log('Hold recording started');
+      console.log('Hold recording started successfully');
     } catch (error) {
       console.error('Error starting hold recording:', error);
       this.resetRecordingState();
-      window.showStatus?.('Failed to start recording. Please check microphone permissions.', 'error');
+      window.showStatus?.(`Failed to start recording: ${error.message}`, 'error');
     }
   }
 
@@ -204,13 +405,20 @@ class BilingualConversation {
 
   async startManualRecording() {
     try {
+      console.log('Starting manual recording...');
+
+      // Check if startRecording function is available
+      if (typeof window.startRecording !== 'function') {
+        throw new Error('startRecording function not available');
+      }
+
       this.isRecording = true;
       this.manualRecordBtn.classList.add('recording');
       this.manualRecordBtn.innerHTML = '<i class="fas fa-stop"></i><span>Stop Recording</span>';
-      
+
       this.recordingStartTime = Date.now();
       this.startTimer();
-      
+
       this.recording = await window.startRecording({
         recordButton: this.manualRecordBtn
       });
@@ -223,11 +431,12 @@ class BilingualConversation {
         });
       }
 
-      console.log('Manual recording started');
+      console.log('Manual recording started successfully');
+      window.showStatus?.('Recording started - click Stop to finish', 'info');
     } catch (error) {
       console.error('Error starting manual recording:', error);
       this.resetRecordingState();
-      window.showStatus?.('Failed to start recording. Please check microphone permissions.', 'error');
+      window.showStatus?.(`Failed to start recording: ${error.message}`, 'error');
     }
   }
 
@@ -473,6 +682,13 @@ class BilingualConversation {
       this.holdRecordBtn.classList.remove('recording');
       this.holdRecordBtn.innerHTML = '<i class="fas fa-microphone"></i><span>Hold to Record</span>';
     }
+
+    // Reset hold mode tracking variables
+    this.isHoldMode = false;
+    if (this.holdTimeout) {
+      clearTimeout(this.holdTimeout);
+      this.holdTimeout = null;
+    }
   }
 
   resetManualRecordButton() {
@@ -483,33 +699,130 @@ class BilingualConversation {
   }
 
   populateLanguageDropdowns() {
-    // Use existing language data from the main script
-    if (window.languages) {
+    // Check if languages are already loaded and properly formatted
+    if (window.languages && Array.isArray(window.languages) && window.languages.length > 0) {
+      console.log('Using existing window.languages:', window.languages.length, 'languages');
       this.populateSelect(this.fromLanguageSelect, window.languages);
       this.populateSelect(this.toLanguageSelect, window.languages);
-
-      // Set default values
-      if (this.fromLanguageSelect) {
-        this.fromLanguageSelect.value = 'en';
-      }
-      if (this.toLanguageSelect) {
-        this.toLanguageSelect.value = 'es';
-      }
-
+      this.setDefaultLanguages();
       this.updateLanguageDisplays();
+      return;
+    }
+
+    // Try to load languages from API
+    console.log('Loading languages for bilingual conversation...');
+    fetch('/api/languages')
+      .then(response => response.json())
+      .then(languages => {
+        console.log('Languages loaded from API:', Object.keys(languages).length);
+
+        // Convert the languages format to match what we expect
+        window.languages = Object.entries(languages).map(([name, details]) => ({
+          name: name,
+          native: details.native,
+          code: details.code
+        }));
+
+        this.populateSelect(this.fromLanguageSelect, window.languages);
+        this.populateSelect(this.toLanguageSelect, window.languages);
+        this.setDefaultLanguages();
+        this.updateLanguageDisplays();
+        console.log('✅ Bilingual conversation languages loaded from API');
+      })
+      .catch(error => {
+        console.error('Error loading languages from API:', error);
+        // Fallback to basic language set
+        this.loadFallbackLanguages();
+      });
+  }
+
+  setDefaultLanguages() {
+    // Get saved language preferences or use defaults
+    const sourceLanguage = window.languagePreferences ?
+      window.languagePreferences.loadLanguagePreference('source', 'en') : 'en';
+    const targetLanguage = window.languagePreferences ?
+      window.languagePreferences.loadLanguagePreference('target', 'es') : 'es';
+
+    console.log('🌍 Setting default languages:', { sourceLanguage, targetLanguage });
+
+    if (this.fromLanguageSelect && this.fromLanguageSelect.options.length > 0) {
+      // Check if the language exists in the dropdown
+      const sourceOptionExists = Array.from(this.fromLanguageSelect.options).some(option => option.value === sourceLanguage);
+      if (sourceOptionExists) {
+        this.fromLanguageSelect.value = sourceLanguage;
+        console.log('✅ Set from-language to:', sourceLanguage);
+      } else {
+        console.warn('⚠️ Source language not found in dropdown, using first option');
+        this.fromLanguageSelect.value = this.fromLanguageSelect.options[0].value;
+      }
+    }
+
+    if (this.toLanguageSelect && this.toLanguageSelect.options.length > 0) {
+      // Check if the language exists in the dropdown
+      const targetOptionExists = Array.from(this.toLanguageSelect.options).some(option => option.value === targetLanguage);
+      if (targetOptionExists) {
+        this.toLanguageSelect.value = targetLanguage;
+        console.log('✅ Set to-language to:', targetLanguage);
+      } else {
+        console.warn('⚠️ Target language not found in dropdown, using second option or first if only one');
+        this.toLanguageSelect.value = this.toLanguageSelect.options[this.toLanguageSelect.options.length > 1 ? 1 : 0].value;
+      }
     }
   }
 
+  loadFallbackLanguages() {
+    // Basic language set as fallback
+    const fallbackLanguages = [
+      { name: 'English', native: 'English', code: 'en' },
+      { name: 'Spanish', native: 'Español', code: 'es' },
+      { name: 'French', native: 'Français', code: 'fr' },
+      { name: 'German', native: 'Deutsch', code: 'de' },
+      { name: 'Italian', native: 'Italiano', code: 'it' },
+      { name: 'Portuguese', native: 'Português', code: 'pt' },
+      { name: 'Chinese', native: '中文', code: 'zh' },
+      { name: 'Japanese', native: '日本語', code: 'ja' },
+      { name: 'Korean', native: '한국어', code: 'ko' },
+      { name: 'Russian', native: 'Русский', code: 'ru' }
+    ];
+
+    window.languages = fallbackLanguages;
+    this.populateSelect(this.fromLanguageSelect, fallbackLanguages);
+    this.populateSelect(this.toLanguageSelect, fallbackLanguages);
+    this.setDefaultLanguages();
+    this.updateLanguageDisplays();
+    console.log('✅ Fallback languages loaded for bilingual conversation');
+  }
+
   populateSelect(selectElement, languages) {
-    if (!selectElement || !languages) return;
+    if (!selectElement || !languages || !Array.isArray(languages)) {
+      console.warn('⚠️ Invalid parameters for populateSelect:', { selectElement: !!selectElement, languages: languages?.length });
+      return;
+    }
+
+    console.log(`🔄 Populating ${selectElement.id} with ${languages.length} languages`);
+
+    // Store current value to restore if possible
+    const currentValue = selectElement.value;
 
     selectElement.innerHTML = '';
     languages.forEach(lang => {
-      const option = document.createElement('option');
-      option.value = lang.code;
-      option.textContent = `${lang.name} (${lang.native})`;
-      selectElement.appendChild(option);
+      if (lang && lang.code && lang.name) {
+        const option = document.createElement('option');
+        option.value = lang.code;
+        option.textContent = `${lang.name} (${lang.native || lang.name})`;
+        selectElement.appendChild(option);
+      } else {
+        console.warn('⚠️ Invalid language object:', lang);
+      }
     });
+
+    // Restore previous value if it exists in the new options
+    if (currentValue && Array.from(selectElement.options).some(option => option.value === currentValue)) {
+      selectElement.value = currentValue;
+      console.log(`✅ Restored previous value ${currentValue} for ${selectElement.id}`);
+    }
+
+    console.log(`✅ Populated ${selectElement.id} with ${selectElement.options.length} options`);
   }
 
   updateLanguageDisplays() {
@@ -535,8 +848,14 @@ class BilingualConversation {
   }
 
   async handleFileUpload(event) {
+    console.log('handleFileUpload called');
     const file = event.target.files[0];
-    if (!file) return;
+    if (!file) {
+      console.log('No file selected');
+      return;
+    }
+
+    console.log(`File selected: ${file.name}, size: ${file.size} bytes`);
 
     try {
       window.showStatus?.(`Processing uploaded file: ${file.name}`, 'info');
@@ -634,11 +953,35 @@ document.addEventListener('DOMContentLoaded', () => {
   // Only initialize if bilingual mode elements exist
   const bilingualModeContent = document.getElementById('bilingual-mode-content');
   if (bilingualModeContent) {
-    window.bilingualConversation = new BilingualConversation();
-    console.log('Bilingual Conversation mode initialized');
+    // Don't initialize immediately - wait for required functions to be available
+    console.log('Bilingual mode content found, waiting for required functions...');
 
-    // Initialize TTS button functionality
-    initializeBilingualTTSButtons();
+    // Check if bilingual mode should be enabled by default (from saved preferences)
+    const bilingualToggle = document.getElementById('bilingual-mode');
+    if (bilingualToggle) {
+      // Wait for language preferences to load first
+      setTimeout(() => {
+        const shouldInitialize = bilingualToggle.checked ||
+                                bilingualModeContent.style.display === 'block' ||
+                                bilingualModeContent.style.display !== 'none';
+
+        console.log('🔍 Bilingual mode initialization check:', {
+          toggleChecked: bilingualToggle.checked,
+          contentDisplay: bilingualModeContent.style.display,
+          shouldInitialize: shouldInitialize
+        });
+
+        if (shouldInitialize) {
+          console.log('🚀 Bilingual mode is default - initializing immediately');
+          waitForScriptsAndInitialize();
+        } else {
+          console.log('⏸️ Bilingual mode not default - waiting for toggle');
+        }
+      }, 200); // Wait for language preferences to load
+    } else {
+      // No toggle found, initialize anyway
+      waitForScriptsAndInitialize();
+    }
   }
 });
 
@@ -696,3 +1039,175 @@ function initializeBilingualTTSButtons() {
     }
   });
 }
+
+// Initialize bilingual conversation when DOM is ready
+let bilingualConversation;
+
+function initializeBilingualConversation() {
+  console.log('🎙️ Initializing bilingual conversation...');
+
+  // Check if bilingual mode is active
+  const bilingualModeContent = document.getElementById('bilingual-mode-content');
+  const bilingualModeToggle = document.getElementById('bilingual-mode');
+
+  // More robust check for bilingual mode being active
+  const isBilingualModeActive = bilingualModeContent && (
+    bilingualModeToggle?.checked ||
+    bilingualModeContent.style.display === 'block' ||
+    (bilingualModeContent.style.display !== 'none' && bilingualModeContent.style.display !== '') ||
+    window.isConversationRoom // Always active in conversation rooms
+  );
+
+  console.log('🔍 Bilingual mode activation check:', {
+    contentExists: !!bilingualModeContent,
+    toggleChecked: bilingualModeToggle?.checked,
+    contentDisplay: bilingualModeContent?.style.display,
+    isConversationRoom: window.isConversationRoom,
+    isBilingualModeActive: isBilingualModeActive
+  });
+
+  if (isBilingualModeActive) {
+    // Check if required functions are available before initializing
+    const requiredFunctions = ['startRecording', 'processAudioWithSmartRouting', 'showStatus'];
+    const missingFunctions = requiredFunctions.filter(func => typeof window[func] !== 'function');
+
+    if (missingFunctions.length > 0) {
+      console.log(`⏳ Waiting for functions: ${missingFunctions.join(', ')}`);
+      return; // Don't initialize yet, let waitForScriptsAndInitialize handle the retry
+    }
+
+    if (!bilingualConversation && !window.bilingualConversation) {
+      try {
+        console.log('🚀 Creating new BilingualConversation instance...');
+        bilingualConversation = new BilingualConversation();
+        console.log('✅ Bilingual conversation initialized');
+
+        // Make it globally available for debugging and integration
+        window.bilingualConversation = bilingualConversation;
+
+        // Verify the Hold to Record button is working
+        setTimeout(() => {
+          const holdBtn = document.getElementById('bilingual-hold-record-btn');
+          if (holdBtn) {
+            console.log('🔍 Hold to Record button found:', holdBtn);
+            console.log('🔍 Button event listeners attached:', !!bilingualConversation.holdRecordBtn);
+          } else {
+            console.warn('⚠️ Hold to Record button not found in DOM');
+          }
+        }, 500);
+
+      } catch (error) {
+        console.error('❌ Error initializing bilingual conversation:', error);
+        // Retry after a delay
+        setTimeout(initializeBilingualConversation, 1000);
+        return;
+      }
+    } else {
+      console.log('✅ BilingualConversation already exists, skipping initialization');
+    }
+
+    // Initialize TTS buttons
+    initializeBilingualTTSButtons();
+  } else {
+    console.log('⏸️ Bilingual mode not active, skipping initialization');
+    console.log('- Content exists:', !!bilingualModeContent);
+    console.log('- Toggle checked:', bilingualModeToggle?.checked);
+    console.log('- Content display:', bilingualModeContent?.style.display);
+  }
+}
+
+// Wait for both DOM and all scripts to be ready
+function waitForScriptsAndInitialize() {
+  // Check if required functions are available
+  const requiredFunctions = ['startRecording', 'processAudioWithSmartRouting', 'showStatus'];
+  const missingFunctions = requiredFunctions.filter(func => typeof window[func] !== 'function');
+
+  if (missingFunctions.length === 0) {
+    console.log('✅ All required functions available, initializing bilingual conversation');
+    initializeBilingualConversation();
+  } else {
+    console.log(`⏳ Waiting for functions: ${missingFunctions.join(', ')}`);
+    setTimeout(waitForScriptsAndInitialize, 500);
+  }
+}
+
+// This initialization is now handled by the DOMContentLoaded event listener above
+// No need for duplicate initialization logic here
+
+// Also initialize when bilingual mode is toggled (but NOT in conversation rooms)
+document.addEventListener('change', (event) => {
+  if (event.target && event.target.id === 'bilingual-mode') {
+    // CRITICAL: Don't reinitialize in conversation rooms to prevent breaking functionality
+    if (window.isConversationRoom) {
+      console.log('🚫 Ignoring mode toggle in conversation room to preserve functionality');
+      return;
+    }
+
+    if (event.target.checked) {
+      console.log('🔄 Bilingual mode toggled ON - initializing BilingualConversation...');
+      // Use the proper waiting mechanism to ensure functions are available
+      setTimeout(waitForScriptsAndInitialize, 100);
+    } else {
+      console.log('🔄 Bilingual mode toggled OFF - cleaning up BilingualConversation...');
+      // Clean up when switching to basic mode
+      if (window.bilingualConversation) {
+        window.bilingualConversation = null;
+      }
+    }
+  }
+});
+
+// Make the class available globally for debugging
+window.BilingualConversation = BilingualConversation;
+
+// Make the initialization function available globally
+window.waitForScriptsAndInitialize = waitForScriptsAndInitialize;
+
+// Force initialization function for debugging and fallback
+window.forceBilingualConversationInit = function() {
+  console.log('🔧 Force initializing BilingualConversation...');
+
+  // Clear any existing instance
+  if (window.bilingualConversation) {
+    window.bilingualConversation = null;
+  }
+
+  // Force initialization regardless of mode state
+  const bilingualModeContent = document.getElementById('bilingual-mode-content');
+  if (bilingualModeContent) {
+    bilingualModeContent.style.display = 'block';
+  }
+
+  // Initialize
+  initializeBilingualConversation();
+
+  return window.bilingualConversation;
+};
+
+// Debug function to test Hold to Record button
+window.testHoldToRecordButton = function() {
+  console.log('🧪 Testing Hold to Record Button...');
+
+  const holdBtn = document.getElementById('bilingual-hold-record-btn');
+  const bilingualMode = document.getElementById('bilingual-mode-content');
+  const bilingualToggle = document.getElementById('bilingual-mode');
+
+  console.log('Button element:', holdBtn);
+  console.log('Bilingual mode content:', bilingualMode?.style.display);
+  console.log('Bilingual toggle checked:', bilingualToggle?.checked);
+  console.log('BilingualConversation instance:', window.bilingualConversation);
+
+  if (window.bilingualConversation) {
+    console.log('Hold record button reference:', window.bilingualConversation.holdRecordBtn);
+    console.log('Is recording:', window.bilingualConversation.isRecording);
+  }
+
+  if (holdBtn) {
+    console.log('✅ Button found - testing click...');
+    holdBtn.click();
+  } else {
+    console.error('❌ Hold to Record button not found!');
+  }
+};
+
+} // End of BilingualConversation class guard

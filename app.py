@@ -131,6 +131,19 @@ except Exception as e:
     print(f"Warning: Firebase initialization failed: {e}")
     print("Application will continue with limited functionality")
 
+# Initialize Socket.IO for real-time communication
+try:
+    from socketio_config import init_socketio
+    socketio = init_socketio(app)
+    print("Socket.IO initialized successfully")
+
+    # Initialize room cleanup service
+    from services.room_cleanup_service import initialize_cleanup_service
+    initialize_cleanup_service()
+    print("Room cleanup service initialized successfully")
+except Exception as e:
+    print(f"Warning: Socket.IO/Room cleanup initialization failed: {e}")
+
 # Initialize authentication
 try:
     import auth
@@ -144,6 +157,11 @@ except Exception as e:
 def index():
     """Main index route - handles both authenticated and non-authenticated users."""
     from flask_login import current_user
+    from flask import request
+
+    # Check if bilingual mode should be automatically activated
+    auto_bilingual = request.args.get('bilingual_mode') == 'true'
+
     if current_user.is_authenticated:
         # User is logged in, get their plan and usage info for upgrade prompts
         try:
@@ -191,13 +209,15 @@ def index():
 
             return render_template('index.html',
                                  plan_type=plan_type,
-                                 show_upgrade_prompts=show_upgrade_prompts)
+                                 show_upgrade_prompts=show_upgrade_prompts,
+                                 auto_bilingual=auto_bilingual)
         except Exception as e:
             print(f"Error getting user plan info: {e}")
             # Fallback: show the main application without upgrade prompt logic
             return render_template('index.html',
                                  plan_type='free',
-                                 show_upgrade_prompts=True)
+                                 show_upgrade_prompts=True,
+                                 auto_bilingual=auto_bilingual)
     else:
         # User is not logged in, show the home page
         return render_template('home.html')
@@ -251,7 +271,7 @@ def translate():
     return render_template('translate.html')
 
 # Register blueprints
-from routes import main, transcription, translation, tts, admin, interpretation, usage_tracking, user, payment, payg
+from routes import main, transcription, translation, tts, admin, interpretation, usage_tracking, user, payment, payg, conversation
 from routes.email_routes import email_bp
 from routes.email_verification import email_verification_bp
 
@@ -265,6 +285,7 @@ app.register_blueprint(usage_tracking.bp)
 app.register_blueprint(user.bp)
 app.register_blueprint(payment.bp)
 app.register_blueprint(payg.bp)
+app.register_blueprint(conversation.bp)
 app.register_blueprint(email_bp)
 app.register_blueprint(email_verification_bp)
 
@@ -374,5 +395,16 @@ if __name__ == '__main__':
     else:
         print(f"Access the application at {protocol}://localhost:{args.port}")
 
-    # Run the application
-    app.run(debug=args.debug, host=args.host, port=args.port)
+    # Run the application with Socket.IO support
+    try:
+        from socketio_config import get_socketio
+        socketio_instance = get_socketio()
+        if socketio_instance:
+            socketio_instance.run(app, debug=args.debug, host=args.host, port=args.port)
+        else:
+            # Fallback to regular Flask if Socket.IO is not available
+            app.run(debug=args.debug, host=args.host, port=args.port)
+    except Exception as e:
+        print(f"Warning: Could not start with Socket.IO: {e}")
+        print("Starting with regular Flask...")
+        app.run(debug=args.debug, host=args.host, port=args.port)

@@ -5,6 +5,8 @@
  * displays appropriate upgrade prompts when limits are reached.
  */
 
+// Prevent class redeclaration
+if (typeof UsageEnforcement === 'undefined') {
 class UsageEnforcement {
     constructor() {
         this.userRole = 'normal_user'; // Default role
@@ -539,3 +541,5 @@ document.addEventListener('DOMContentLoaded', () => {
         // Don't throw - just log the error and continue
     }
 });
+
+} // End of UsageEnforcement class guard

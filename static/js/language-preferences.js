@@ -120,12 +120,10 @@ class LanguagePreferences {
   loadAllPreferences() {
     // Load source language (used for transcription)
     const sourceLanguage = this.loadLanguagePreference('source', 'en');
-    this.applyLanguageToDropdowns(['global-language', 'basic-language', 'language-1'], sourceLanguage);
-    
+
     // Load target language (used for translation)
     const targetLanguage = this.loadLanguagePreference('target', 'es');
-    this.applyLanguageToDropdowns(['language-2', 'bilingual-to-language'], targetLanguage);
-    
+
     // Load bilingual mode preference
     const bilingualMode = this.loadLanguagePreference('bilingual_mode', 'false') === 'true';
     const bilingualToggle = document.getElementById('bilingual-mode');
@@ -134,7 +132,14 @@ class LanguagePreferences {
       // Trigger change event to update UI
       bilingualToggle.dispatchEvent(new Event('change'));
     }
-    
+
+    // Apply languages after a short delay to ensure dropdowns are populated
+    setTimeout(() => {
+      this.applyLanguageToDropdowns(['global-language', 'basic-language', 'language-1', 'bilingual-from-language'], sourceLanguage);
+      this.applyLanguageToDropdowns(['language-2', 'bilingual-to-language'], targetLanguage);
+      console.log(`[LanguagePrefs] Applied preferences - Source: ${sourceLanguage}, Target: ${targetLanguage}, Bilingual: ${bilingualMode}`);
+    }, 300);
+
     console.log(`[LanguagePrefs] Loaded preferences - Source: ${sourceLanguage}, Target: ${targetLanguage}, Bilingual: ${bilingualMode}`);
   }
 
@@ -145,8 +150,25 @@ class LanguagePreferences {
     dropdownIds.forEach(id => {
       const dropdown = document.getElementById(id);
       if (dropdown) {
-        dropdown.value = language;
-        console.log(`[LanguagePrefs] Applied ${language} to ${id}`);
+        // Check if the dropdown has options before setting value
+        if (dropdown.options.length > 0) {
+          // Check if the language value exists in the dropdown
+          const optionExists = Array.from(dropdown.options).some(option => option.value === language);
+          if (optionExists) {
+            dropdown.value = language;
+            console.log(`[LanguagePrefs] Applied ${language} to ${id}`);
+          } else {
+            console.warn(`[LanguagePrefs] Language ${language} not found in ${id}, keeping current value`);
+          }
+        } else {
+          console.warn(`[LanguagePrefs] Dropdown ${id} has no options yet, will retry later`);
+          // Retry after a delay
+          setTimeout(() => {
+            this.applyLanguageToDropdowns([id], language);
+          }, 500);
+        }
+      } else {
+        console.warn(`[LanguagePrefs] Dropdown ${id} not found`);
       }
     });
   }
@@ -155,25 +177,35 @@ class LanguagePreferences {
    * Setup event listeners for language changes
    */
   setupLanguageListeners() {
-    // Source language dropdowns
-    const sourceDropdowns = ['global-language', 'basic-language', 'language-1'];
+    // Source language dropdowns (including bilingual from-language)
+    const sourceDropdowns = ['global-language', 'basic-language', 'language-1', 'bilingual-from-language'];
     sourceDropdowns.forEach(id => {
       const dropdown = document.getElementById(id);
       if (dropdown) {
         dropdown.addEventListener('change', (e) => {
           const language = e.target.value;
+
+          // Prevent setting invalid values
+          if (!language || language === '0' || language === 'undefined') {
+            console.warn(`[LanguagePrefs] Invalid language value: ${language}, ignoring`);
+            return;
+          }
+
           this.saveLanguagePreference('source', language);
-          
+
           // Sync with other source language dropdowns
           sourceDropdowns.forEach(otherId => {
             if (otherId !== id) {
               const otherDropdown = document.getElementById(otherId);
-              if (otherDropdown) {
-                otherDropdown.value = language;
+              if (otherDropdown && otherDropdown.options.length > 0) {
+                const optionExists = Array.from(otherDropdown.options).some(option => option.value === language);
+                if (optionExists) {
+                  otherDropdown.value = language;
+                }
               }
             }
           });
-          
+
           console.log(`[LanguagePrefs] Source language changed to: ${language}`);
         });
       }
@@ -186,18 +218,28 @@ class LanguagePreferences {
       if (dropdown) {
         dropdown.addEventListener('change', (e) => {
           const language = e.target.value;
+
+          // Prevent setting invalid values
+          if (!language || language === '0' || language === 'undefined') {
+            console.warn(`[LanguagePrefs] Invalid language value: ${language}, ignoring`);
+            return;
+          }
+
           this.saveLanguagePreference('target', language);
-          
+
           // Sync with other target language dropdowns
           targetDropdowns.forEach(otherId => {
             if (otherId !== id) {
               const otherDropdown = document.getElementById(otherId);
-              if (otherDropdown) {
-                otherDropdown.value = language;
+              if (otherDropdown && otherDropdown.options.length > 0) {
+                const optionExists = Array.from(otherDropdown.options).some(option => option.value === language);
+                if (optionExists) {
+                  otherDropdown.value = language;
+                }
               }
             }
           });
-          
+
           console.log(`[LanguagePrefs] Target language changed to: ${language}`);
         });
       }
@@ -226,6 +268,45 @@ class LanguagePreferences {
   }
 
   /**
+   * Refresh language preferences for specific dropdowns
+   */
+  refreshLanguagePreferences() {
+    console.log('[LanguagePrefs] Refreshing language preferences...');
+
+    const sourceLanguage = this.loadLanguagePreference('source', 'en');
+    const targetLanguage = this.loadLanguagePreference('target', 'es');
+
+    // Apply to all relevant dropdowns with validation
+    setTimeout(() => {
+      this.applyLanguageToDropdowns(['global-language', 'basic-language', 'language-1', 'bilingual-from-language'], sourceLanguage);
+      this.applyLanguageToDropdowns(['language-2', 'bilingual-to-language'], targetLanguage);
+    }, 100);
+  }
+
+  /**
+   * Force synchronize all language dropdowns
+   */
+  synchronizeLanguageDropdowns() {
+    console.log('[LanguagePrefs] Synchronizing all language dropdowns...');
+
+    // Get current values from primary dropdowns
+    const globalLanguage = document.getElementById('global-language');
+    const language2 = document.getElementById('language-2');
+
+    if (globalLanguage && globalLanguage.value && globalLanguage.value !== '0' && globalLanguage.value !== 'undefined') {
+      const sourceLanguage = globalLanguage.value;
+      this.saveLanguagePreference('source', sourceLanguage);
+      this.applyLanguageToDropdowns(['basic-language', 'language-1', 'bilingual-from-language'], sourceLanguage);
+    }
+
+    if (language2 && language2.value && language2.value !== '0' && language2.value !== 'undefined') {
+      const targetLanguage = language2.value;
+      this.saveLanguagePreference('target', targetLanguage);
+      this.applyLanguageToDropdowns(['bilingual-to-language'], targetLanguage);
+    }
+  }
+
+  /**
    * Reset all language preferences
    */
   resetPreferences() {
@@ -238,7 +319,7 @@ class LanguagePreferences {
         // Ignore localStorage errors
       }
     });
-    
+
     console.log('[LanguagePrefs] All preferences reset');
     this.loadAllPreferences();
   }
@@ -251,6 +332,10 @@ function initializeLanguagePreferences() {
   if (!languagePreferences) {
     languagePreferences = new LanguagePreferences();
     window.languagePreferences = languagePreferences; // Make globally available
+
+    // Make refresh methods globally available
+    window.refreshLanguagePreferences = () => languagePreferences.refreshLanguagePreferences();
+    window.synchronizeLanguageDropdowns = () => languagePreferences.synchronizeLanguageDropdowns();
   }
 }
 

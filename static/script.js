@@ -2009,7 +2009,21 @@ function updateModelDropdown(selectElement, models, modelType) {
   const translationModelContainer = document.getElementById('translation-model-container');
 
   if (modeToggle && basicMode && bilingualMode) {
+    console.log('✅ Mode toggle elements found, attaching event listener');
+    console.log('- modeToggle:', modeToggle.id);
+    console.log('- basicMode:', basicMode.id);
+    console.log('- bilingualMode:', bilingualMode.id);
+
     modeToggle.addEventListener('change', () => {
+      console.log('🔄 Mode toggle event triggered, checked:', modeToggle.checked);
+
+      // CRITICAL: Don't allow mode switching in conversation rooms
+      if (window.isConversationRoom) {
+        console.log('🚫 Mode switching disabled in conversation room');
+        modeToggle.checked = true; // Force back to bilingual mode
+        return;
+      }
+
       if (modeToggle.checked) {
         // Bilingual mode
         basicMode.style.display = 'none';
@@ -2023,6 +2037,65 @@ function updateModelDropdown(selectElement, models, modelType) {
         if (appSubtitle) {
           appSubtitle.textContent = 'Bilingual Conversation Tool';
         }
+
+        // Re-populate language dropdowns to prevent "undefined" values
+        setTimeout(() => {
+          console.log('🔄 Starting bilingual language dropdown re-population...');
+          console.log('window.languages available:', !!window.languages);
+          console.log('window.populateLanguageDropdown available:', !!window.populateLanguageDropdown);
+          console.log('window.originalLanguagesData available:', !!window.originalLanguagesData);
+
+          // Use original languages data if available, otherwise reload from API
+          if (window.originalLanguagesData && window.populateLanguageDropdown) {
+            const sourceLanguage = window.languagePreferences ?
+              window.languagePreferences.loadLanguagePreference('source', 'en') : 'en';
+            const targetLanguage = window.languagePreferences ?
+              window.languagePreferences.loadLanguagePreference('target', 'es') : 'es';
+
+            console.log('🔄 Re-populating bilingual language dropdowns...');
+            console.log('Using original languages data with', Object.keys(window.originalLanguagesData).length, 'languages');
+            console.log('Source language:', sourceLanguage, 'Target language:', targetLanguage);
+
+            // Use the original languages data directly (already in correct format)
+            window.populateLanguageDropdown('bilingual-from-language', window.originalLanguagesData, sourceLanguage);
+            window.populateLanguageDropdown('bilingual-to-language', window.originalLanguagesData, targetLanguage);
+            console.log('✅ Re-populated bilingual language dropdowns using original data');
+
+            // Force re-initialize BilingualConversation to ensure Hold to Record button works
+            if (typeof window.waitForScriptsAndInitialize === 'function') {
+              console.log('🔄 Force re-initializing BilingualConversation after mode switch...');
+              window.waitForScriptsAndInitialize();
+            }
+
+            // Synchronize language preferences when switching to bilingual mode
+            if (typeof window.refreshLanguagePreferences === 'function') {
+              console.log('🌍 Refreshing language preferences for bilingual mode...');
+              window.refreshLanguagePreferences();
+            }
+
+            // Also update BilingualConversation instance if it exists
+            if (window.bilingualConversation && window.bilingualConversation.updateLanguageDisplays) {
+              window.bilingualConversation.updateLanguageDisplays();
+              console.log('✅ Updated BilingualConversation language displays');
+            }
+          } else {
+            console.warn('⚠️ Original languages data not available, reloading from API...');
+            // Reload languages from API as fallback
+            loadLanguages().then(languages => {
+              const sourceLanguage = window.languagePreferences ?
+                window.languagePreferences.loadLanguagePreference('source', 'en') : 'en';
+              const targetLanguage = window.languagePreferences ?
+                window.languagePreferences.loadLanguagePreference('target', 'es') : 'es';
+
+              console.log('🔄 Reloaded languages from API, re-populating dropdowns...');
+              window.populateLanguageDropdown('bilingual-from-language', languages, sourceLanguage);
+              window.populateLanguageDropdown('bilingual-to-language', languages, targetLanguage);
+              console.log('✅ Re-populated bilingual language dropdowns from API');
+            }).catch(error => {
+              console.error('❌ Failed to reload languages from API:', error);
+            });
+          }
+        }, 100); // Small delay to ensure DOM is ready
       } else {
         // Basic mode
         basicMode.style.display = 'block';
@@ -2098,17 +2171,99 @@ function updateModelDropdown(selectElement, models, modelType) {
     });
   }
 
+  // Expose populateLanguageDropdown globally for conversation rooms
+  window.populateLanguageDropdown = populateLanguageDropdown;
+
+  // Debug function to check language data structure
+  window.debugLanguageData = function() {
+    console.log('🔍 Language Data Debug:');
+    console.log('window.originalLanguagesData:', window.originalLanguagesData);
+    console.log('window.languages:', window.languages);
+
+    if (window.originalLanguagesData) {
+      console.log('Original data sample:', Object.entries(window.originalLanguagesData).slice(0, 3));
+    }
+
+    if (window.languages) {
+      console.log('Transformed data sample:', window.languages.slice(0, 3));
+    }
+
+    // Check dropdown content
+    const fromDropdown = document.getElementById('bilingual-from-language');
+    const toDropdown = document.getElementById('bilingual-to-language');
+
+    if (fromDropdown) {
+      console.log('From dropdown options count:', fromDropdown.options.length);
+      console.log('From dropdown first 3 options:', Array.from(fromDropdown.options).slice(0, 3).map(opt => ({value: opt.value, text: opt.textContent})));
+    } else {
+      console.log('❌ From dropdown not found');
+    }
+
+    if (toDropdown) {
+      console.log('To dropdown options count:', toDropdown.options.length);
+      console.log('To dropdown first 3 options:', Array.from(toDropdown.options).slice(0, 3).map(opt => ({value: opt.value, text: opt.textContent})));
+    } else {
+      console.log('❌ To dropdown not found');
+    }
+
+    // Check mode toggle state
+    const modeToggle = document.getElementById('bilingual-mode');
+    const bilingualContent = document.getElementById('bilingual-mode-content');
+    console.log('Mode toggle checked:', modeToggle?.checked);
+    console.log('Bilingual content display:', bilingualContent?.style.display);
+  };
+
+  // Immediate test function to check current state
+  window.testCurrentState = function() {
+    console.log('🧪 Testing Current State:');
+    console.log('DOM ready state:', document.readyState);
+    console.log('populateLanguageDropdown available:', typeof window.populateLanguageDropdown);
+    console.log('originalLanguagesData available:', !!window.originalLanguagesData);
+    console.log('languages available:', !!window.languages);
+
+    const modeToggle = document.getElementById('bilingual-mode');
+    const fromDropdown = document.getElementById('bilingual-from-language');
+    const toDropdown = document.getElementById('bilingual-to-language');
+
+    console.log('Elements found:');
+    console.log('- Mode toggle:', !!modeToggle);
+    console.log('- From dropdown:', !!fromDropdown);
+    console.log('- To dropdown:', !!toDropdown);
+
+    if (fromDropdown && fromDropdown.options.length > 0) {
+      console.log('From dropdown current state:');
+      console.log('- Options count:', fromDropdown.options.length);
+      console.log('- First option:', {value: fromDropdown.options[0]?.value, text: fromDropdown.options[0]?.textContent});
+      console.log('- Second option:', {value: fromDropdown.options[1]?.value, text: fromDropdown.options[1]?.textContent});
+    }
+  };
+
   // Load user-specific available models
   loadUserAvailableModels();
 
   // Initialize language dropdowns
+  console.log('🚀 Starting language loading...');
   loadLanguages().then(languages => {
-    // Store languages globally for bilingual conversation mode
+    console.log('📥 Raw languages received from API:', languages);
+    console.log('📊 Languages object type:', typeof languages);
+    console.log('📊 Languages keys count:', Object.keys(languages).length);
+
+    // CRITICAL: Store original languages data to prevent corruption during mode switching
+    window.originalLanguagesData = languages;
+
+    // Store languages globally for bilingual conversation mode (legacy format)
     window.languages = Object.entries(languages).map(([name, details]) => ({
       name: name,
       native: details.native,
       code: details.code
     }));
+
+    console.log('🌍 Languages loaded successfully:');
+    console.log('- Original data keys:', Object.keys(languages).length);
+    console.log('- Transformed array length:', window.languages.length);
+    console.log('- Sample language:', Object.entries(languages)[0]);
+    console.log('- window.originalLanguagesData stored:', !!window.originalLanguagesData);
+    console.log('- window.languages stored:', !!window.languages);
 
     // Get saved language preferences from cookies
     const sourceLanguage = window.languagePreferences ?

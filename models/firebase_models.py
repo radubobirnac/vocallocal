@@ -408,3 +408,511 @@ class Translation(FirebaseModel):
             except Exception as e2:
                 print(f"Error fetching translations without ordering: {str(e2)}")
                 return {}
+
+
+class ConversationRoom(FirebaseModel):
+    """Conversation room model for real-time multilingual communication."""
+
+    # Room status constants
+    STATUS_WAITING = 'waiting'
+    STATUS_ACTIVE = 'active'
+    STATUS_INACTIVE = 'inactive'
+    STATUS_CLOSED = 'closed'
+
+    VALID_STATUSES = [STATUS_WAITING, STATUS_ACTIVE, STATUS_INACTIVE, STATUS_CLOSED]
+
+    @staticmethod
+    def sanitize_for_firebase(data):
+        """Ensure all data is JSON-serializable for Firebase."""
+        if isinstance(data, dict):
+            return {key: ConversationRoom.sanitize_for_firebase(value) for key, value in data.items()}
+        elif isinstance(data, list):
+            return [ConversationRoom.sanitize_for_firebase(item) for item in data]
+        elif isinstance(data, datetime):
+            return data.isoformat()
+        else:
+            return data
+
+    @staticmethod
+    def encode_email_for_firebase_key(email):
+        """
+        Encode email address to be used as Firebase key.
+        Firebase keys cannot contain periods, so we replace them with underscores.
+        """
+        if not email:
+            return email
+        # Replace periods with underscores and other problematic characters
+        return email.replace('.', '_DOT_').replace('#', '_HASH_').replace('$', '_DOLLAR_').replace('[', '_LBRACKET_').replace(']', '_RBRACKET_').replace('/', '_SLASH_')
+
+    @staticmethod
+    def decode_email_from_firebase_key(encoded_email):
+        """
+        Decode Firebase key back to email address.
+        """
+        if not encoded_email:
+            return encoded_email
+        # Reverse the encoding
+        return encoded_email.replace('_DOT_', '.').replace('_HASH_', '#').replace('_DOLLAR_', '$').replace('_LBRACKET_', '[').replace('_RBRACKET_', ']').replace('_SLASH_', '/')
+
+    @staticmethod
+    def get_participants_with_decoded_emails(room_data):
+        """
+        Get participants data with decoded email addresses as keys.
+        This is useful for frontend display and API responses.
+        """
+        if not room_data:
+            return {}
+
+        participants = room_data.get('participants', {})
+        decoded_participants = {}
+
+        for encoded_email, participant_data in participants.items():
+            decoded_email = ConversationRoom.decode_email_from_firebase_key(encoded_email)
+            decoded_participants[decoded_email] = participant_data
+
+        return decoded_participants
+
+    @staticmethod
+    def create(room_code, creator_email, max_participants=2, auto_add_creator=True):
+        """Create a new conversation room."""
+        room_data = {
+            'room_code': room_code,
+            'creator_email': creator_email,
+            'created_at': datetime.now().isoformat(),
+            'last_activity': datetime.now().isoformat(),
+            'status': ConversationRoom.STATUS_WAITING,
+            'max_participants': max_participants,
+            'participant_count': 0,
+            'participants': {},
+            'settings': {
+                'auto_cleanup_minutes': 5,
+                'max_duration_minutes': 120
+            }
+        }
+
+        try:
+            # Sanitize room data before sending to Firebase
+            sanitized_room_data = ConversationRoom.sanitize_for_firebase(room_data)
+            ConversationRoom.get_ref(f'conversation_rooms/{room_code}').set(sanitized_room_data)
+
+            # Automatically add creator as participant if requested
+            if auto_add_creator:
+                print(f"[DEBUG] Auto-adding creator {creator_email} to room {room_code}")
+                success, message = ConversationRoom.add_participant(
+                    room_code, creator_email, "en", "en"  # Default languages
+                )
+                if success:
+                    print(f"[DEBUG] Creator successfully added to room: {message}")
+                    # Get updated room data with creator as participant
+                    updated_room_data = ConversationRoom.get_by_code(room_code)
+                    return updated_room_data if updated_room_data else sanitized_room_data
+                else:
+                    print(f"[WARNING] Failed to auto-add creator to room: {message}")
+                    # Return original room data even if creator addition failed
+                    return sanitized_room_data
+
+            return sanitized_room_data
+        except Exception as e:
+            print(f"Error creating conversation room: {str(e)}")
+            return None
+
+    @staticmethod
+    def get_by_code(room_code):
+        """Get room by room code."""
+        try:
+            room_data = ConversationRoom.get_ref(f'conversation_rooms/{room_code}').get()
+            return room_data
+        except Exception as e:
+            print(f"Error fetching room {room_code}: {str(e)}")
+            return None
+
+    @staticmethod
+    def update_status(room_code, status):
+        """Update room status."""
+        if status not in ConversationRoom.VALID_STATUSES:
+            raise ValueError(f"Invalid status: {status}")
+
+        try:
+            ConversationRoom.get_ref(f'conversation_rooms/{room_code}').update({
+                'status': status,
+                'last_activity': datetime.now().isoformat()
+            })
+            return True
+        except Exception as e:
+            print(f"Error updating room status: {str(e)}")
+            return False
+
+    @staticmethod
+    def update_last_activity(room_code):
+        """Update room's last activity timestamp."""
+        try:
+            ConversationRoom.get_ref(f'conversation_rooms/{room_code}').update({
+                'last_activity': datetime.now().isoformat()
+            })
+            return True
+        except Exception as e:
+            print(f"Error updating room activity: {str(e)}")
+            return False
+
+    @staticmethod
+    def add_participant(room_code, user_email, input_language, target_language):
+        """Add a participant to the room."""
+        try:
+            print(f"[DEBUG] Adding participant {user_email} to room {room_code}")
+            print(f"[DEBUG] Languages: input={input_language}, target={target_language}")
+
+            # Get room reference
+            room_ref = ConversationRoom.get_ref(f'conversation_rooms/{room_code}')
+            print(f"[DEBUG] Got room reference for {room_code}")
+
+            # Get room data
+            room_data = room_ref.get()
+            print(f"[DEBUG] Retrieved room data: {type(room_data)}")
+
+            if not room_data:
+                print(f"[DEBUG] Room {room_code} not found")
+                return False, "Room not found"
+
+            participants = room_data.get('participants', {})
+            max_participants = room_data.get('max_participants', 2)
+            print(f"[DEBUG] Current participants: {len(participants)}, max: {max_participants}")
+
+            if len(participants) >= max_participants:
+                print(f"[DEBUG] Room {room_code} is full")
+                return False, "Room is full"
+
+            # Ensure all existing participant data is JSON-serializable
+            # This fixes any existing datetime objects that might not be properly serialized
+            sanitized_participants = ConversationRoom.sanitize_for_firebase(participants)
+            print(f"[DEBUG] Sanitized existing participants data")
+
+            # Create participant data
+            participant_data = {
+                'user_email': user_email,
+                'joined_at': datetime.now().isoformat(),
+                'input_language': input_language,
+                'target_language': target_language,
+                'status': 'connected',
+                'last_seen': datetime.now().isoformat()
+            }
+            print(f"[DEBUG] Created participant data: {participant_data}")
+
+            # Encode email for Firebase key (Firebase keys cannot contain periods)
+            encoded_email = ConversationRoom.encode_email_for_firebase_key(user_email)
+            print(f"[DEBUG] Encoded email '{user_email}' to '{encoded_email}' for Firebase key")
+
+            # Add new participant to sanitized participants using encoded email as key
+            sanitized_participants[encoded_email] = participant_data
+            print(f"[DEBUG] Added participant to sanitized participants dict with encoded key")
+
+            # Prepare update data with proper JSON serialization
+            update_data = {
+                'participants': sanitized_participants,
+                'participant_count': len(sanitized_participants),
+                'status': ConversationRoom.STATUS_ACTIVE if len(sanitized_participants) > 1 else ConversationRoom.STATUS_WAITING,
+                'last_activity': datetime.now().isoformat()
+            }
+
+            # Sanitize all update data to ensure Firebase compatibility
+            update_data = ConversationRoom.sanitize_for_firebase(update_data)
+            print(f"[DEBUG] Prepared and sanitized update data: {update_data}")
+
+            # Validate that all data is JSON-serializable before sending to Firebase
+            try:
+                import json
+                json.dumps(update_data)
+                print(f"[DEBUG] Update data is JSON-serializable")
+            except (TypeError, ValueError) as json_error:
+                print(f"[ERROR] Update data is not JSON-serializable: {json_error}")
+                return False, f"Data serialization error: {str(json_error)}"
+
+            # Update room
+            print(f"[DEBUG] Attempting to update room {room_code}")
+            room_ref.update(update_data)
+            print(f"[DEBUG] Successfully updated room {room_code}")
+
+            return True, "Participant added successfully"
+
+        except Exception as e:
+            print(f"[ERROR] Error adding participant to room {room_code}: {str(e)}")
+            print(f"[ERROR] Exception type: {type(e)}")
+            print(f"[ERROR] Exception args: {e.args}")
+            import traceback
+            print(f"[ERROR] Traceback: {traceback.format_exc()}")
+            return False, f"Failed to add participant: {str(e)}"
+
+    @staticmethod
+    def remove_participant(room_code, user_email):
+        """Remove a participant from the room."""
+        try:
+            room_ref = ConversationRoom.get_ref(f'conversation_rooms/{room_code}')
+            room_data = room_ref.get()
+
+            if not room_data:
+                return False, "Room not found"
+
+            participants = room_data.get('participants', {})
+
+            # Encode email for Firebase key lookup
+            encoded_email = ConversationRoom.encode_email_for_firebase_key(user_email)
+
+            if encoded_email in participants:
+                del participants[encoded_email]
+
+                # Update room
+                new_status = ConversationRoom.STATUS_INACTIVE if len(participants) == 0 else ConversationRoom.STATUS_ACTIVE
+
+                room_ref.update({
+                    'participants': participants,
+                    'participant_count': len(participants),
+                    'status': new_status,
+                    'last_activity': datetime.now().isoformat()
+                })
+
+                return True, "Participant removed successfully"
+
+            return False, "Participant not found in room"
+
+        except Exception as e:
+            print(f"Error removing participant: {str(e)}")
+            return False, str(e)
+
+    @staticmethod
+    def update_participant_status(room_code, user_email, status):
+        """Update participant status (connected/disconnected)."""
+        try:
+            room_ref = ConversationRoom.get_ref(f'conversation_rooms/{room_code}')
+            room_data = room_ref.get()
+
+            if not room_data:
+                return False
+
+            participants = room_data.get('participants', {})
+
+            # Encode email for Firebase key lookup
+            encoded_email = ConversationRoom.encode_email_for_firebase_key(user_email)
+
+            if encoded_email in participants:
+                participants[encoded_email]['status'] = status
+                participants[encoded_email]['last_seen'] = datetime.now().isoformat()
+
+                if status == 'disconnected':
+                    participants[encoded_email]['disconnected_at'] = datetime.now().isoformat()
+
+                room_ref.update({
+                    'participants': participants,
+                    'last_activity': datetime.now().isoformat()
+                })
+
+                return True
+
+            return False
+
+        except Exception as e:
+            print(f"Error updating participant status: {str(e)}")
+            return False
+
+    @staticmethod
+    def cleanup_inactive_rooms(inactive_minutes=5):
+        """Clean up rooms that have been inactive for specified minutes."""
+        try:
+            rooms_ref = ConversationRoom.get_ref('conversation_rooms')
+            rooms = rooms_ref.get()
+
+            if not rooms:
+                return 0
+
+            cleaned_count = 0
+            current_time = datetime.now()
+
+            for room_code, room_data in rooms.items():
+                if not room_data:
+                    continue
+
+                last_activity = datetime.fromisoformat(room_data.get('last_activity', current_time.isoformat()))
+                time_diff = (current_time - last_activity).total_seconds() / 60
+
+                # Check if room should be cleaned up
+                should_cleanup = False
+
+                # Room is inactive for too long
+                if time_diff > inactive_minutes:
+                    should_cleanup = True
+
+                # Room has no participants
+                if room_data.get('participant_count', 0) == 0:
+                    should_cleanup = True
+
+                # Room status is closed
+                if room_data.get('status') == ConversationRoom.STATUS_CLOSED:
+                    should_cleanup = True
+
+                if should_cleanup:
+                    rooms_ref.child(room_code).delete()
+                    cleaned_count += 1
+
+            return cleaned_count
+
+        except Exception as e:
+            print(f"Error cleaning up rooms: {str(e)}")
+            return 0
+
+
+class ConversationMessage(FirebaseModel):
+    """Conversation message model for storing transcriptions and translations."""
+
+    # Message type constants
+    TYPE_TRANSCRIPTION = 'transcription'
+    TYPE_TRANSLATION = 'translation'
+    TYPE_SYSTEM = 'system'
+
+    VALID_TYPES = [TYPE_TRANSCRIPTION, TYPE_TRANSLATION, TYPE_SYSTEM]
+
+    @staticmethod
+    def create(room_code, user_email, message_type, content, language=None, target_language=None, original_message_id=None):
+        """Create a new conversation message."""
+        if message_type not in ConversationMessage.VALID_TYPES:
+            raise ValueError(f"Invalid message type: {message_type}")
+
+        message_data = {
+            'room_code': room_code,
+            'user_email': user_email,
+            'type': message_type,
+            'content': content,
+            'language': language,
+            'target_language': target_language,
+            'original_message_id': original_message_id,
+            'timestamp': datetime.now().isoformat(),
+            'created_at': datetime.now().isoformat()
+        }
+
+        try:
+            # Generate unique message ID
+            message_ref = ConversationMessage.get_ref(f'conversation_messages/{room_code}').push()
+            message_id = message_ref.key
+            message_data['message_id'] = message_id
+
+            # Save message
+            message_ref.set(message_data)
+
+            # Update room's last activity
+            ConversationRoom.update_last_activity(room_code)
+
+            return message_data
+
+        except Exception as e:
+            print(f"Error creating conversation message: {str(e)}")
+            return None
+
+    @staticmethod
+    def get_room_messages(room_code, limit=50):
+        """Get messages for a specific room."""
+        try:
+            messages_ref = ConversationMessage.get_ref(f'conversation_messages/{room_code}')
+            messages = messages_ref.order_by_child('timestamp').limit_to_last(limit).get()
+            return messages if messages else {}
+        except Exception as e:
+            print(f"Error fetching room messages: {str(e)}")
+            return {}
+
+    @staticmethod
+    def get_user_messages(room_code, user_email, limit=20):
+        """Get messages from a specific user in a room."""
+        try:
+            messages_ref = ConversationMessage.get_ref(f'conversation_messages/{room_code}')
+            all_messages = messages_ref.order_by_child('user_email').equal_to(user_email).limit_to_last(limit).get()
+            return all_messages if all_messages else {}
+        except Exception as e:
+            print(f"Error fetching user messages: {str(e)}")
+            return {}
+
+    @staticmethod
+    def delete_room_messages(room_code):
+        """Delete all messages for a room (used during cleanup)."""
+        try:
+            ConversationMessage.get_ref(f'conversation_messages/{room_code}').delete()
+            return True
+        except Exception as e:
+            print(f"Error deleting room messages: {str(e)}")
+            return False
+
+
+class UserLanguagePreferences(FirebaseModel):
+    """User language preferences for conversations."""
+
+    @staticmethod
+    def get_preferences(user_email):
+        """Get user's language preferences."""
+        try:
+            user_id = user_email.replace('.', ',')
+            prefs = UserLanguagePreferences.get_ref(f'user_language_preferences/{user_id}').get()
+
+            # Return default preferences if none exist
+            if not prefs:
+                return {
+                    'input_language': 'en',
+                    'target_language': 'es',
+                    'updated_at': datetime.now().isoformat()
+                }
+
+            return prefs
+        except Exception as e:
+            print(f"Error fetching language preferences: {str(e)}")
+            return {
+                'input_language': 'en',
+                'target_language': 'es',
+                'updated_at': datetime.now().isoformat()
+            }
+
+    @staticmethod
+    def update_preferences(user_email, input_language=None, target_language=None):
+        """Update user's language preferences."""
+        try:
+            user_id = user_email.replace('.', ',')
+            current_prefs = UserLanguagePreferences.get_preferences(user_email)
+
+            # Update only provided preferences
+            if input_language:
+                current_prefs['input_language'] = input_language
+            if target_language:
+                current_prefs['target_language'] = target_language
+
+            current_prefs['updated_at'] = datetime.now().isoformat()
+
+            UserLanguagePreferences.get_ref(f'user_language_preferences/{user_id}').set(current_prefs)
+            return True
+
+        except Exception as e:
+            print(f"Error updating language preferences: {str(e)}")
+            return False
+
+    @staticmethod
+    def get_conversation_history(user_email, limit=10):
+        """Get user's recent conversation rooms."""
+        try:
+            user_id = user_email.replace('.', ',')
+            history = UserLanguagePreferences.get_ref(f'user_conversation_history/{user_id}').order_by_child('last_joined').limit_to_last(limit).get()
+            return history if history else {}
+        except Exception as e:
+            print(f"Error fetching conversation history: {str(e)}")
+            return {}
+
+    @staticmethod
+    def add_to_history(user_email, room_code, room_data):
+        """Add a room to user's conversation history."""
+        try:
+            user_id = user_email.replace('.', ',')
+            history_entry = {
+                'room_code': room_code,
+                'joined_at': datetime.now().isoformat(),
+                'last_joined': datetime.now().isoformat(),
+                'creator_email': room_data.get('creator_email'),
+                'participant_count': room_data.get('participant_count', 0)
+            }
+
+            UserLanguagePreferences.get_ref(f'user_conversation_history/{user_id}/{room_code}').set(history_entry)
+            return True
+
+        except Exception as e:
+            print(f"Error adding to conversation history: {str(e)}")
+            return False
