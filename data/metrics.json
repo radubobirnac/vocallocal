@@ -43,10 +43,17 @@
       "failures": 0
     },
     "gemini-2.5-flash-preview-05-20": {
-      "calls": 44,
+      "calls": 47,
       "tokens": 0,
-      "chars": 814,
-      "time": 380.4540169239044,
+      "chars": 922,
+      "time": 386.3529658317566,
+      "failures": 0
+    },
+    "gemini-2.5-flash-preview": {
+      "calls": 3,
+      "tokens": 0,
+      "chars": 108,
+      "time": 5.914937496185303,
       "failures": 0
     }
   },
@@ -101,10 +108,10 @@
       "failures": 0
     },
     "te": {
-      "calls": 2,
-      "tokens": 183,
-      "chars": 551,
-      "time": 7.706942558288574,
+      "calls": 5,
+      "tokens": 255,
+      "chars": 768,
+      "time": 30.42314338684082,
       "failures": 0
     },
     "hi": {
@@ -346,6 +353,11 @@
     "2025-09-22": {
       "transcription": {
         "en": 24
+      }
+    },
+    "2025-10-27": {
+      "transcription": {
+        "te": 72
       }
     }
   },
@@ -723,6 +735,16 @@
     "2025-09-22-23": {
       "transcription": {
         "en": 17
+      }
+    },
+    "2025-10-27-15": {
+      "transcription": {
+        "te": 13
+      }
+    },
+    "2025-10-27-16": {
+      "transcription": {
+        "te": 59
       }
     }
   },

@@ -1869,82 +1869,18 @@
             });
         };
 
-        // Auto-run test after initialization
+        // REMOVED: Auto-run test that was calling .click() on buttons and triggering auto-recording
+        // This code was causing the hold-record button to auto-click on page load, starting recording automatically
+        // Users must now explicitly click buttons to start recording
+
+        // If buttons are not working, try force initialization
         setTimeout(() => {
-            console.log('🔍 === FINAL BUTTON FUNCTIONALITY TEST ===');
-
-            // Test button existence
-            const buttons = [
-                'bilingual-hold-record-btn',
-                'bilingual-manual-record',
-                'bilingual-translate-btn',
-                'bilingual-upload-btn'
-            ];
-
-            console.log('🔍 Button existence check:');
-            buttons.forEach(id => {
-                const btn = document.getElementById(id);
-                console.log(`  ${id}: ${btn ? '✅ Found' : '❌ Missing'}`);
-
-                if (btn) {
-                    // Test if button responds to clicks
-                    let clickWorked = false;
-                    const testHandler = () => {
-                        clickWorked = true;
-                        console.log(`✅ ${id} click handler working`);
-                    };
-
-                    btn.addEventListener('click', testHandler);
-                    btn.click();
-
-                    setTimeout(() => {
-                        if (!clickWorked) {
-                            console.log(`❌ ${id} click handler not working`);
-                        }
-                        btn.removeEventListener('click', testHandler);
-                    }, 100);
-                }
-            });
-
-            // Test BilingualConversation instance
-            console.log('🔍 BilingualConversation status:');
-            console.log(`  Class available: ${typeof window.BilingualConversation === 'function'}`);
-            console.log(`  Instance exists: ${!!window.bilingualConversation}`);
-
-            if (window.bilingualConversation) {
-                console.log(`  Instance properties:`, {
-                    holdRecordBtn: !!window.bilingualConversation.holdRecordBtn,
-                    manualRecordBtn: !!window.bilingualConversation.manualRecordBtn,
-                    translateBtn: !!window.bilingualConversation.translateBtn,
-                    uploadBtn: !!window.bilingualConversation.uploadBtn
-                });
+            const holdBtn = document.getElementById('bilingual-hold-record-btn');
+            if (holdBtn && !window.bilingualConversation) {
+                console.log('🔧 BilingualConversation not initialized, attempting force initialization...');
+                window.forceInitializeBilingual();
             }
-
-            // Test required functions
-            console.log('🔍 Required functions:');
-            console.log(`  startRecording: ${typeof window.startRecording === 'function'}`);
-            console.log(`  processAudioWithSmartRouting: ${typeof window.processAudioWithSmartRouting === 'function'}`);
-            console.log(`  showStatus: ${typeof window.showStatus === 'function'}`);
-
-            console.log('🔍 === END FINAL TEST ===');
-
-            // DISABLED: Automatic button testing to prevent auto-recording
-            console.log('ℹ️ Automatic button testing disabled. Use window.manualTestButtons() to test manually.');
-            /*
-            if (typeof window.testConversationButtons === 'function') {
-                window.testConversationButtons();
-            }
-            */
-
-            // If buttons are not working, try force initialization
-            setTimeout(() => {
-                const holdBtn = document.getElementById('bilingual-hold-record-btn');
-                if (holdBtn && !window.bilingualConversation) {
-                    console.log('🔧 BilingualConversation not initialized, attempting force initialization...');
-                    window.forceInitializeBilingual();
-                }
-            }, 1000);
-        }, 3000);
+        }, 1000);
 
         // Final initialization check for conversation room - NO AUTO RECORDING
         document.addEventListener('DOMContentLoaded', function() {
