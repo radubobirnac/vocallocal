@@ -38,6 +38,11 @@ def test_four_base_urls():
                 'expected': 'https://test-vocallocal-x9n74.ondigitalocean.app'
             },
             {
+                'name': 'Production VocalLocal.net',
+                'env': {'VOCALLOCAL_BASE_URL': 'https://vocallocal.net'},
+                'expected': 'https://vocallocal.net'
+            },
+            {
                 'name': 'Development Localhost',
                 'env': {},  # No environment variables
                 'expected': 'http://localhost:5001'
@@ -91,6 +96,11 @@ def test_reset_emails_with_four_urls():
                 'name': 'Test DigitalOcean',
                 'env': {'APP_URL': 'https://test-vocallocal-x9n74.ondigitalocean.app'},
                 'expected_url': 'https://test-vocallocal-x9n74.ondigitalocean.app/auth/reset-password'
+            },
+            {
+                'name': 'Production VocalLocal.net',
+                'env': {'VOCALLOCAL_BASE_URL': 'https://vocallocal.net'},
+                'expected_url': 'https://vocallocal.net/auth/reset-password'
             },
             {
                 'name': 'Development Localhost',
@@ -152,7 +162,11 @@ def show_deployment_configuration():
     print("\n3. Test DigitalOcean (https://test-vocallocal-x9n74.ondigitalocean.app):")
     print("   Environment Variable: APP_URL=https://test-vocallocal-x9n74.ondigitalocean.app")
     print("   Use this for your test/staging DigitalOcean deployment")
-    
+
+    print("\n4. Production VocalLocal.net (https://vocallocal.net):")
+    print("   Environment Variable: VOCALLOCAL_BASE_URL=https://vocallocal.net")
+    print("   Use this for your production custom domain")
+
     print("\n4. Development Localhost (http://localhost:5001):")
     print("   No environment variables needed")
     print("   Automatically used when no other URLs are configured")
@@ -204,11 +218,12 @@ def main():
     print(f"\nResults: {passed}/{total} tests passed")
     
     if passed >= 2:  # Allow configuration to always pass
-        print("🎉 All four base URLs are working correctly!")
-        print("\n📋 Your Four Base URLs:")
+        print("🎉 All base URLs are working correctly!")
+        print("\n📋 Your Base URLs:")
         print("• https://vocallocal.com")
         print("• https://vocallocal-l5et5.ondigitalocean.app")
         print("• https://test-vocallocal-x9n74.ondigitalocean.app")
+        print("• https://vocallocal.net")
         print("• http://localhost:5001")
     else:
         print("⚠️ Some tests failed. Please check the implementation.")

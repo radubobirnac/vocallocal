@@ -131,8 +131,10 @@ def test_stripe_connectivity():
 def test_webhook_url():
     """Test webhook URL accessibility"""
     print("\n🔗 Testing Webhook URL...")
-    
-    webhook_url = "https://test-vocallocal-x9n74.ondigitalocean.app/payment/webhook"
+
+    # Test production domain (change to test domain if needed)
+    webhook_url = "https://vocallocal.net/payment/webhook"
+    # Alternative test URL: "https://test-vocallocal-x9n74.ondigitalocean.app/payment/webhook"
     
     try:
         response = requests.get(webhook_url, timeout=10)

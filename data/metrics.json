@@ -43,10 +43,10 @@
       "failures": 0
     },
     "gemini-2.5-flash-preview-05-20": {
-      "calls": 47,
+      "calls": 49,
       "tokens": 0,
-      "chars": 922,
-      "time": 386.3529658317566,
+      "chars": 924,
+      "time": 389.0752046108246,
       "failures": 0
     },
     "gemini-2.5-flash-preview": {
@@ -108,10 +108,10 @@
       "failures": 0
     },
     "te": {
-      "calls": 5,
-      "tokens": 255,
-      "chars": 768,
-      "time": 30.42314338684082,
+      "calls": 6,
+      "tokens": 256,
+      "chars": 769,
+      "time": 34.79898524284363,
       "failures": 0
     },
     "hi": {
@@ -358,6 +358,11 @@
     "2025-10-27": {
       "transcription": {
         "te": 72
+      }
+    },
+    "2025-11-09": {
+      "transcription": {
+        "te": 1
       }
     }
   },
@@ -745,6 +750,11 @@
     "2025-10-27-16": {
       "transcription": {
         "te": 59
+      }
+    },
+    "2025-11-09-20": {
+      "transcription": {
+        "te": 1
       }
     }
   },

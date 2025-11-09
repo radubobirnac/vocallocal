@@ -30,11 +30,12 @@ class PasswordResetService:
         """
         Get the base URL for the application.
 
-        Returns one of four specific base URLs:
+        Returns one of five specific base URLs:
         1. https://vocallocal.com (production)
         2. https://vocallocal-l5et5.ondigitalocean.app (production DigitalOcean)
         3. https://test-vocallocal-x9n74.ondigitalocean.app (test DigitalOcean)
-        4. http://localhost:5001 (development)
+        4. https://vocallocal.net (production)
+        5. http://localhost:5001 (development)
 
         Returns:
             str: Base URL for the application
@@ -59,6 +60,8 @@ class PasswordResetService:
                     return 'https://vocallocal-l5et5.ondigitalocean.app'
                 elif 'test-vocallocal-x9n74.ondigitalocean.app' in url_root:
                     return 'https://test-vocallocal-x9n74.ondigitalocean.app'
+                elif 'vocallocal.net' in url_root:
+                    return 'https://vocallocal.net'
                 elif 'vocallocal.com' in url_root:
                     return 'https://vocallocal.com'
                 elif 'localhost' in url_root:

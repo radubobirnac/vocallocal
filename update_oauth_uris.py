@@ -36,7 +36,9 @@ def update_oauth_redirect_uris(port=5001):
             "https://vocallocal.onrender.com/auth/callback",
             "https://vocallocal-aj6b.onrender.com/auth/callback",
             "https://vocallocal-l5et5.ondigitalocean.app/auth/callback",
-            "https://test-vocallocal-x9n74.ondigitalocean.app/auth/callback"
+            "https://test-vocallocal-x9n74.ondigitalocean.app/auth/callback",
+            "https://vocallocal.net/auth/callback",
+            "https://vocallocal.net/auth/google/callback"
         ]
         
         # Get current redirect URIs or initialize empty list
