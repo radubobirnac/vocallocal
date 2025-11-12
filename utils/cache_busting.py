@@ -51,7 +51,28 @@ class CacheBuster:
             return str(int(time.time()))
 
         # Force refresh for critical files to ensure latest version is served
-        critical_files = ['script.js', 'styles.css', 'auth.css', 'js/bilingual-conversation.js']
+        critical_files = [
+            'script.js',
+            'styles.css',
+            'auth.css',
+            'auth.js',
+            'common.js',
+            'js/bilingual-conversation.js',
+            'js/usage-validation.js',
+            'js/usage-enforcement.js',
+            'js/usage-tracking-free.js',
+            'js/plan-access-control.js',
+            'js/language-preferences.js',
+            'js/payment.js',
+            'cache-manager.js',
+            'mobile-nav.js',
+            'navigation.js',
+            'dashboard.js',
+            'home.js',
+            'history.js',
+            'profile.js',
+            'try_it_free.js'
+        ]
         if filename in critical_files:
             current_time = time.time()
             try:
@@ -144,7 +165,11 @@ class CacheBuster:
 
         # Critical CSS/JS files without version - force revalidation
         elif '/static/' in request_path and any(critical in request_path for critical in [
-            'styles.css', 'script.js', 'auth.css', 'bilingual-conversation.js'
+            'styles.css', 'script.js', 'auth.css', 'auth.js', 'common.js',
+            'bilingual-conversation.js', 'usage-validation.js', 'usage-enforcement.js',
+            'usage-tracking-free.js', 'plan-access-control.js', 'language-preferences.js',
+            'payment.js', 'cache-manager.js', 'mobile-nav.js', 'navigation.js',
+            'dashboard.js', 'home.js', 'history.js', 'profile.js', 'try_it_free.js'
         ]):
             response.headers['Cache-Control'] = 'no-cache, must-revalidate'
             response.headers['Pragma'] = 'no-cache'

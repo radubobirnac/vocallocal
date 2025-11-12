@@ -1064,8 +1064,8 @@
       // Set Stripe publishable key for payment.js
       window.stripePublishableKey = '{{ config.STRIPE_PUBLISHABLE_KEY or "" }}';
   </script>
-  <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/email-verification-modal.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='js/payment.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='js/email-verification-modal.js') }}"></script>
   <script src="{{ versioned_url_for('static', filename='js/conversation-modal.js') }}"></script>
 
   <!-- Device Compatibility - Load first for device detection -->

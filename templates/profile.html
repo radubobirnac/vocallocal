@@ -6,7 +6,7 @@
   <title>Profile - Vocal Local</title>
 
   <!-- Favicon -->
-  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+  <link rel="icon" href="{{ versioned_url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,9 +17,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/brand-link.css') }}">
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='auth.css') }}">
+  <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/brand-link.css') }}">
 
   <style>
     /* Navigation buttons styles */
@@ -209,10 +209,10 @@
   </div>
 
   <!-- Scripts -->
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
-  <script src="{{ url_for('static', filename='common.js') }}"></script>
-  <script src="{{ url_for('static', filename='auth.js') }}"></script>
-  <script src="{{ url_for('static', filename='profile.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='script.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='common.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='auth.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='profile.js') }}"></script>
 </body>
 </html>
 

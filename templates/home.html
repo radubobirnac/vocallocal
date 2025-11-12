@@ -208,7 +208,7 @@
         </div>
       </div>
       <div class="hero-image">
-        <img src="{{ url_for('static', filename='images/hero-illustration.svg') }}" alt="VocalLocal Illustration" onerror="this.style.display='none'">
+        <img src="{{ versioned_url_for('static', filename='images/hero-illustration.svg') }}" alt="VocalLocal Illustration" onerror="this.style.display='none'">
       </div>
     </section>
 
@@ -614,6 +614,6 @@
       // Set Stripe publishable key for payment.js
       window.stripePublishableKey = '{{ config.STRIPE_PUBLISHABLE_KEY or "" }}';
   </script>
-  <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
+  <script src="{{ versioned_url_for('static', filename='js/payment.js') }}"></script>
 </body>
 </html>

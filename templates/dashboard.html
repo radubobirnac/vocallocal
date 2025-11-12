@@ -6,7 +6,7 @@
     <title>Dashboard - VocalLocal</title>
 
     <!-- Favicon -->
-    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="icon" href="{{ versioned_url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,10 +17,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/upgrade-modal.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/brand-link.css') }}">
+    <link rel="stylesheet" href="{{ versioned_url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ versioned_url_for('static', filename='auth.css') }}">
+    <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/upgrade-modal.css') }}">
+    <link rel="stylesheet" href="{{ versioned_url_for('static', filename='css/brand-link.css') }}">
 
     <style>
         .dashboard-container {
@@ -991,14 +991,14 @@
     </script>
 
     <!-- Scripts -->
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
-    <script src="{{ url_for('static', filename='common.js') }}"></script>
-    <script src="{{ url_for('static', filename='auth.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/usage-validation.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/usage-enforcement.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/tts-access-control.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/rbac-access-control.js') }}"></script>
-    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+    <script src="{{ versioned_url_for('static', filename='script.js') }}"></script>
+    <script src="{{ versioned_url_for('static', filename='common.js') }}"></script>
+    <script src="{{ versioned_url_for('static', filename='auth.js') }}"></script>
+    <script src="{{ versioned_url_for('static', filename='js/usage-validation.js') }}"></script>
+    <script src="{{ versioned_url_for('static', filename='js/usage-enforcement.js') }}"></script>
+    <script src="{{ versioned_url_for('static', filename='js/tts-access-control.js') }}"></script>
+    <script src="{{ versioned_url_for('static', filename='js/rbac-access-control.js') }}"></script>
+    <script src="{{ versioned_url_for('static', filename='dashboard.js') }}"></script>
 
     <!-- Billing History JavaScript -->
     <script>
@@ -1111,7 +1111,7 @@
 </script>
 
 <!-- Fetch Fix Validator Safe - Load early to prevent fetch binding issues -->
-<script src="{{ url_for('static', filename='js/fetch-fix-validator-safe.js') }}"></script>
+<script src="{{ versioned_url_for('static', filename='js/fetch-fix-validator-safe.js') }}"></script>
 
 <!-- Stripe Integration -->
 <script src="https://js.stripe.com/v3/"></script>
@@ -1119,7 +1119,7 @@
     // Set Stripe publishable key for payment.js
     window.stripePublishableKey = '{{ config.STRIPE_PUBLISHABLE_KEY or "" }}';
 </script>
-<script src="{{ url_for('static', filename='js/payment.js') }}"></script>
-<script src="{{ url_for('static', filename='js/payg-dashboard.js') }}"></script>
+<script src="{{ versioned_url_for('static', filename='js/payment.js') }}"></script>
+<script src="{{ versioned_url_for('static', filename='js/payg-dashboard.js') }}"></script>
 </body>
 </html>
