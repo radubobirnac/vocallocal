@@ -41,6 +41,115 @@ function decodeUserId(encodedUserId) {
 }
 
 /**
+ * Check if usage needs to be reset for a new month and reset if necessary.
+ *
+ * This function implements automatic monthly usage reset by:
+ * 1. Checking if the current month/year differs from the periodStartDate month/year
+ * 2. If different, archives the previous month's usage to history
+ * 3. Resets currentPeriod usage counters to zero
+ * 4. Updates the periodStartDate to the first day of the current month
+ *
+ * @param {string} userId - The user ID to check and reset
+ * @returns {Promise<boolean>} - True if reset was performed, False otherwise
+ */
+async function checkAndResetMonthlyUsage(userId) {
+  try {
+    const encodedUserId = encodeUserId(userId);
+    const userRef = firebase.database().ref(`users/${encodedUserId}`);
+
+    // Get current user data
+    const snapshot = await userRef.once('value');
+    const userData = snapshot.val();
+
+    if (!userData || !userData.usage) {
+      // Initialize usage structure with periodStartDate
+      const now = new Date();
+      const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      const firstDayTimestamp = firstDayOfMonth.getTime();
+
+      await userRef.child('usage').set({
+        currentPeriod: {
+          transcriptionMinutes: 0,
+          translationWords: 0,
+          ttsMinutes: 0,
+          aiCredits: 0,
+          periodStartDate: firstDayTimestamp
+        },
+        totalUsage: {
+          transcriptionMinutes: 0,
+          translationWords: 0,
+          ttsMinutes: 0,
+          aiCredits: 0
+        },
+        lastResetAt: Date.now()
+      });
+
+      return true;
+    }
+
+    const currentPeriod = userData.usage.currentPeriod || {};
+    const periodStartDate = currentPeriod.periodStartDate || 0;
+
+    // Get current month/year and period start month/year
+    const now = new Date();
+    const currentMonth = now.getUTCMonth();
+    const currentYear = now.getUTCFullYear();
+
+    const periodStart = new Date(periodStartDate);
+    const periodMonth = periodStart.getUTCMonth();
+    const periodYear = periodStart.getUTCFullYear();
+
+    // Check if we're in a new month
+    const isNewMonth = (currentYear > periodYear) || (currentYear === periodYear && currentMonth > periodMonth);
+
+    if (isNewMonth) {
+      console.log(`Automatic monthly reset triggered for user ${userId}: ${periodYear}-${String(periodMonth + 1).padStart(2, '0')} -> ${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`);
+
+      // Archive previous month's usage
+      const archiveMonth = `${periodYear}-${String(periodMonth + 1).padStart(2, '0')}`;
+      const archiveData = {
+        transcriptionMinutes: currentPeriod.transcriptionMinutes || 0,
+        translationWords: currentPeriod.translationWords || 0,
+        ttsMinutes: currentPeriod.ttsMinutes || 0,
+        aiCredits: currentPeriod.aiCredits || 0,
+        periodStartDate: periodStartDate,
+        archivedAt: Date.now(),
+        planType: (userData.subscription && userData.subscription.planType) || 'free'
+      };
+
+      // Calculate first day of current month
+      const firstDayOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1));
+      const firstDayTimestamp = firstDayOfMonth.getTime();
+
+      // Batch update: archive old data, reset current period
+      const updates = {};
+      updates[`usage/history/${archiveMonth}/${encodedUserId}`] = archiveData;
+      updates[`users/${encodedUserId}/usage/currentPeriod`] = {
+        transcriptionMinutes: 0,
+        translationWords: 0,
+        ttsMinutes: 0,
+        aiCredits: 0,
+        periodStartDate: firstDayTimestamp
+      };
+      updates[`users/${encodedUserId}/usage/lastResetAt`] = Date.now();
+
+      await firebase.database().ref().update(updates);
+
+      console.log(`Monthly usage reset completed for user ${userId}. Archived ${archiveData.transcriptionMinutes} transcription minutes, ${archiveData.translationWords} translation words to ${archiveMonth}`);
+
+      return true;
+    }
+
+    return false;
+
+  } catch (error) {
+    console.error(`Error checking/resetting monthly usage for user ${userId}:`, error);
+    // Don't throw - allow the operation to continue even if reset fails
+    return false;
+  }
+}
+
+/**
  * Deduct usage directly from Firebase Realtime Database using transactions
  *
  * @param {string} userId - The user ID to deduct usage from
@@ -53,6 +162,9 @@ async function deductUsageDirectly(userId, serviceType, amount, serviceName) {
   try {
     console.log(`Deducting ${serviceName} usage for user ${userId}: ${amount}`);
 
+    // Check and reset monthly usage if needed (automatic monthly reset)
+    await checkAndResetMonthlyUsage(userId);
+
     // Encode user ID for Firebase path safety
     const encodedUserId = encodeUserId(userId);
     console.log(`Encoded user ID: ${userId} -> ${encodedUserId}`);
@@ -61,6 +173,10 @@ async function deductUsageDirectly(userId, serviceType, amount, serviceName) {
 
     return new Promise((resolve, reject) => {
       userRef.transaction((currentData) => {
+        const now = new Date();
+        const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+        const firstDayTimestamp = firstDayOfMonth.getTime();
+
         if (!currentData) {
           // Initialize user data if it doesn't exist
           currentData = {
@@ -69,7 +185,8 @@ async function deductUsageDirectly(userId, serviceType, amount, serviceName) {
                 transcriptionMinutes: 0,
                 translationWords: 0,
                 ttsMinutes: 0,
-                aiCredits: 0
+                aiCredits: 0,
+                periodStartDate: firstDayTimestamp
               },
               totalUsage: {
                 transcriptionMinutes: 0,
@@ -89,7 +206,8 @@ async function deductUsageDirectly(userId, serviceType, amount, serviceName) {
               transcriptionMinutes: 0,
               translationWords: 0,
               ttsMinutes: 0,
-              aiCredits: 0
+              aiCredits: 0,
+              periodStartDate: firstDayTimestamp
             },
             totalUsage: {
               transcriptionMinutes: 0,
@@ -105,7 +223,8 @@ async function deductUsageDirectly(userId, serviceType, amount, serviceName) {
             transcriptionMinutes: 0,
             translationWords: 0,
             ttsMinutes: 0,
-            aiCredits: 0
+            aiCredits: 0,
+            periodStartDate: firstDayTimestamp
           };
         }
 

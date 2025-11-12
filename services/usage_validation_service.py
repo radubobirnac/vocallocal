@@ -51,7 +51,11 @@ class UsageValidationService:
             # Get user ID (email with dots replaced by commas for Firebase)
             user_id = user_email.replace('.', ',')
 
-            # Get user account data
+            # Check and reset monthly usage if needed (automatic monthly reset)
+            from services.usage_tracking_service import UsageTrackingService
+            UsageTrackingService._check_and_reset_monthly_usage(user_email)
+
+            # Get user account data (after potential reset)
             user_ref = UserAccountService.get_ref(f'users/{user_id}')
             user_data = user_ref.get()
 

@@ -19,6 +19,114 @@ class UsageTrackingService(FirebaseModel):
     """Service for tracking user usage with atomic operations on Firebase free plan."""
 
     @staticmethod
+    def _check_and_reset_monthly_usage(user_id):
+        """
+        Check if usage needs to be reset for a new month and reset if necessary.
+
+        This function implements automatic monthly usage reset by:
+        1. Checking if the current month/year differs from the last reset month/year
+        2. If different, archives the previous month's usage to history
+        3. Resets currentPeriod usage counters to zero
+        4. Updates the periodStartDate to the first day of the current month
+
+        Args:
+            user_id (str): The user ID to check and reset
+
+        Returns:
+            bool: True if reset was performed, False otherwise
+        """
+        try:
+            # Encode user ID for Firebase path safety
+            encoded_user_id = UsageTrackingService._encode_user_id(user_id)
+            user_ref = UsageTrackingService.get_ref(f'users/{encoded_user_id}')
+            user_data = user_ref.get()
+
+            if not user_data or 'usage' not in user_data:
+                # Initialize usage structure if it doesn't exist
+                from datetime import datetime
+                first_day_of_month = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                first_day_timestamp = int(first_day_of_month.timestamp() * 1000)
+
+                user_ref.child('usage').set({
+                    'currentPeriod': {
+                        'transcriptionMinutes': 0,
+                        'translationWords': 0,
+                        'ttsMinutes': 0,
+                        'aiCredits': 0,
+                        'periodStartDate': first_day_timestamp
+                    },
+                    'totalUsage': {
+                        'transcriptionMinutes': 0,
+                        'translationWords': 0,
+                        'ttsMinutes': 0,
+                        'aiCredits': 0
+                    },
+                    'lastResetAt': int(time.time() * 1000)
+                })
+                return True
+
+            current_period = user_data.get('usage', {}).get('currentPeriod', {})
+            period_start_date = current_period.get('periodStartDate', 0)
+
+            # Get current month/year and period start month/year
+            from datetime import datetime
+            now = datetime.utcnow()
+            current_month = now.month
+            current_year = now.year
+
+            period_start = datetime.utcfromtimestamp(period_start_date / 1000) if period_start_date else now
+            period_month = period_start.month
+            period_year = period_start.year
+
+            # Check if we're in a new month
+            is_new_month = (current_year > period_year) or (current_year == period_year and current_month > period_month)
+
+            if is_new_month:
+                logger.info(f"Automatic monthly reset triggered for user {user_id}: {period_year}-{period_month:02d} -> {current_year}-{current_month:02d}")
+
+                # Archive previous month's usage
+                archive_month = f"{period_year}-{period_month:02d}"
+                archive_data = {
+                    'transcriptionMinutes': current_period.get('transcriptionMinutes', 0),
+                    'translationWords': current_period.get('translationWords', 0),
+                    'ttsMinutes': current_period.get('ttsMinutes', 0),
+                    'aiCredits': current_period.get('aiCredits', 0),
+                    'periodStartDate': period_start_date,
+                    'archivedAt': int(time.time() * 1000),
+                    'planType': user_data.get('subscription', {}).get('planType', 'free')
+                }
+
+                # Calculate first day of current month
+                first_day_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                first_day_timestamp = int(first_day_of_month.timestamp() * 1000)
+
+                # Archive the usage data
+                UsageTrackingService.get_ref(f'usage/history/{archive_month}/{encoded_user_id}').set(archive_data)
+
+                # Reset current period usage
+                user_ref.child('usage/currentPeriod').set({
+                    'transcriptionMinutes': 0,
+                    'translationWords': 0,
+                    'ttsMinutes': 0,
+                    'aiCredits': 0,
+                    'periodStartDate': first_day_timestamp
+                })
+
+                # Update last reset timestamp
+                user_ref.child('usage/lastResetAt').set(int(time.time() * 1000))
+
+                logger.info(f"Monthly usage reset completed for user {user_id}. Archived {archive_data['transcriptionMinutes']} transcription minutes, {archive_data['translationWords']} translation words to {archive_month}")
+
+                return True
+
+            return False
+
+        except Exception as e:
+            logger.error(f"Error checking/resetting monthly usage for user {user_id}: {str(e)}")
+            # Don't throw - allow the operation to continue even if reset fails
+            return False
+
+    @staticmethod
     def _encode_user_id(user_id):
         """
         Encode user ID to be Firebase path-safe.
@@ -151,6 +259,9 @@ class UsageTrackingService(FirebaseModel):
         try:
             logger.info(f"Deducting {service_name} usage for user {user_id}: {amount_used}")
 
+            # Check and reset monthly usage if needed (automatic monthly reset)
+            UsageTrackingService._check_and_reset_monthly_usage(user_id)
+
             # Encode user ID for Firebase path safety
             encoded_user_id = UsageTrackingService._encode_user_id(user_id)
             logger.debug(f"Encoded user ID: {user_id} -> {encoded_user_id}")
@@ -160,6 +271,10 @@ class UsageTrackingService(FirebaseModel):
 
             # Perform atomic transaction
             def update_usage(current_data):
+                from datetime import datetime
+                first_day_of_month = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                first_day_timestamp = int(first_day_of_month.timestamp() * 1000)
+
                 if current_data is None:
                     # Initialize user data if it doesn't exist
                     current_data = {
@@ -168,7 +283,8 @@ class UsageTrackingService(FirebaseModel):
                                 'transcriptionMinutes': 0,
                                 'translationWords': 0,
                                 'ttsMinutes': 0,
-                                'aiCredits': 0
+                                'aiCredits': 0,
+                                'periodStartDate': first_day_timestamp
                             },
                             'totalUsage': {
                                 'transcriptionMinutes': 0,
@@ -187,7 +303,8 @@ class UsageTrackingService(FirebaseModel):
                             'transcriptionMinutes': 0,
                             'translationWords': 0,
                             'ttsMinutes': 0,
-                            'aiCredits': 0
+                            'aiCredits': 0,
+                            'periodStartDate': first_day_timestamp
                         },
                         'totalUsage': {
                             'transcriptionMinutes': 0,
@@ -202,7 +319,8 @@ class UsageTrackingService(FirebaseModel):
                         'transcriptionMinutes': 0,
                         'translationWords': 0,
                         'ttsMinutes': 0,
-                        'aiCredits': 0
+                        'aiCredits': 0,
+                        'periodStartDate': first_day_timestamp
                     }
 
                 if 'totalUsage' not in current_data['usage']:

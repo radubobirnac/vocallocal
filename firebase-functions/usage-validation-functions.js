@@ -75,6 +75,106 @@ async function getSubscriptionPlan(planType) {
 }
 
 /**
+ * Check if usage needs to be reset for a new month and reset if necessary
+ *
+ * This function implements automatic monthly usage reset by:
+ * 1. Checking if the current month/year differs from the last reset month/year
+ * 2. If different, archives the previous month's usage to history
+ * 3. Resets currentPeriod usage counters to zero
+ * 4. Updates the periodStartDate to the first day of the current month
+ *
+ * @param {string} userId - The user ID to check and reset
+ * @returns {Promise<boolean>} - True if reset was performed, false otherwise
+ */
+async function checkAndResetMonthlyUsage(userId) {
+  try {
+    const userRef = db.ref(`users/${userId}`);
+    const snapshot = await userRef.once('value');
+    const userData = snapshot.val();
+
+    if (!userData || !userData.usage) {
+      // Initialize usage structure if it doesn't exist
+      await userRef.child('usage').set({
+        currentPeriod: {
+          transcriptionMinutes: 0,
+          translationWords: 0,
+          ttsMinutes: 0,
+          aiCredits: 0,
+          periodStartDate: new Date().setDate(1) // First day of current month
+        },
+        totalUsage: {
+          transcriptionMinutes: 0,
+          translationWords: 0,
+          ttsMinutes: 0,
+          aiCredits: 0
+        },
+        lastResetAt: Date.now()
+      });
+      return true;
+    }
+
+    const currentPeriod = userData.usage.currentPeriod || {};
+    const periodStartDate = currentPeriod.periodStartDate || 0;
+
+    // Get current month/year and period start month/year
+    const now = new Date();
+    const currentMonth = now.getUTCMonth();
+    const currentYear = now.getUTCFullYear();
+
+    const periodStart = new Date(periodStartDate);
+    const periodMonth = periodStart.getUTCMonth();
+    const periodYear = periodStart.getUTCFullYear();
+
+    // Check if we're in a new month
+    const isNewMonth = (currentYear > periodYear) || (currentYear === periodYear && currentMonth > periodMonth);
+
+    if (isNewMonth) {
+      functions.logger.info(`Automatic monthly reset triggered for user ${userId}: ${periodYear}-${periodMonth + 1} -> ${currentYear}-${currentMonth + 1}`);
+
+      // Archive previous month's usage
+      const archiveMonth = `${periodYear}-${String(periodMonth + 1).padStart(2, '0')}`;
+      const archiveData = {
+        transcriptionMinutes: currentPeriod.transcriptionMinutes || 0,
+        translationWords: currentPeriod.translationWords || 0,
+        ttsMinutes: currentPeriod.ttsMinutes || 0,
+        aiCredits: currentPeriod.aiCredits || 0,
+        periodStartDate: periodStartDate,
+        archivedAt: Date.now(),
+        planType: userData.subscription?.planType || 'free'
+      };
+
+      // Calculate first day of current month
+      const firstDayOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1)).getTime();
+
+      // Prepare batch updates
+      const updates = {};
+      updates[`usage/history/${archiveMonth}/${userId}`] = archiveData;
+      updates[`users/${userId}/usage/currentPeriod`] = {
+        transcriptionMinutes: 0,
+        translationWords: 0,
+        ttsMinutes: 0,
+        aiCredits: 0,
+        periodStartDate: firstDayOfMonth
+      };
+      updates[`users/${userId}/usage/lastResetAt`] = Date.now();
+
+      // Execute batch update
+      await db.ref().update(updates);
+
+      functions.logger.info(`Monthly usage reset completed for user ${userId}. Archived ${archiveData.transcriptionMinutes} transcription minutes, ${archiveData.translationWords} translation words to ${archiveMonth}`);
+
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    functions.logger.error(`Error checking/resetting monthly usage for user ${userId}:`, error);
+    // Don't throw - allow the operation to continue even if reset fails
+    return false;
+  }
+}
+
+/**
  * Validate if a user has sufficient transcription minutes available
  *
  * @param {Object} data - The request data
@@ -117,7 +217,10 @@ exports.validateTranscriptionUsage = functions.https.onCall(async (data, context
   try {
     functions.logger.info(`Validating transcription usage for user ${userId}: ${minutesRequested} minutes requested`);
 
-    // Get user data
+    // Check and reset monthly usage if needed (automatic monthly reset)
+    await checkAndResetMonthlyUsage(userId);
+
+    // Get user data (after potential reset)
     const userData = await getUserData(userId);
 
     // Check user role first - admins and super users have unlimited access
@@ -139,7 +242,7 @@ exports.validateTranscriptionUsage = functions.https.onCall(async (data, context
     // Get subscription plan details
     const planData = await getSubscriptionPlan(planType);
 
-    // Get current usage
+    // Get current usage (only from current month due to automatic reset above)
     const currentUsage = userData.usage?.currentPeriod?.transcriptionMinutes || 0;
 
     // Get pay-as-you-go balance
@@ -225,7 +328,10 @@ exports.validateTranslationUsage = functions.https.onCall(async (data, context) 
   try {
     functions.logger.info(`Validating translation usage for user ${userId}: ${wordsRequested} words requested`);
 
-    // Get user data
+    // Check and reset monthly usage if needed (automatic monthly reset)
+    await checkAndResetMonthlyUsage(userId);
+
+    // Get user data (after potential reset)
     const userData = await getUserData(userId);
 
     // Check user role first - admins and super users have unlimited access
@@ -247,7 +353,7 @@ exports.validateTranslationUsage = functions.https.onCall(async (data, context) 
     // Get subscription plan details
     const planData = await getSubscriptionPlan(planType);
 
-    // Get current usage
+    // Get current usage (only from current month due to automatic reset above)
     const currentUsage = userData.usage?.currentPeriod?.translationWords || 0;
 
     // Get pay-as-you-go balance
@@ -333,7 +439,10 @@ exports.validateTTSUsage = functions.https.onCall(async (data, context) => {
   try {
     functions.logger.info(`Validating TTS usage for user ${userId}: ${minutesRequested} minutes requested`);
 
-    // Get user data
+    // Check and reset monthly usage if needed (automatic monthly reset)
+    await checkAndResetMonthlyUsage(userId);
+
+    // Get user data (after potential reset)
     const userData = await getUserData(userId);
 
     // Check user role first - admins and super users have unlimited access
@@ -370,7 +479,7 @@ exports.validateTTSUsage = functions.https.onCall(async (data, context) => {
     // Get subscription plan details
     const planData = await getSubscriptionPlan(planType);
 
-    // Get current usage
+    // Get current usage (only from current month due to automatic reset above)
     const currentUsage = userData.usage?.currentPeriod?.ttsMinutes || 0;
 
     // Get pay-as-you-go balance
@@ -815,6 +924,9 @@ exports.deductTranscriptionUsage = functions.https.onCall(async (data, context) 
   try {
     functions.logger.info(`Deducting transcription usage for user ${userId}: ${minutesUsed} minutes`);
 
+    // Check and reset monthly usage if needed (automatic monthly reset)
+    await checkAndResetMonthlyUsage(userId);
+
     // Use atomic transaction for consistency
     const userRef = db.ref(`users/${userId}`);
 
@@ -825,8 +937,15 @@ exports.deductTranscriptionUsage = functions.https.onCall(async (data, context) 
 
       // Initialize usage structure if it doesn't exist
       if (!userData.usage) {
+        const firstDayOfMonth = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).getTime();
         userData.usage = {
-          currentPeriod: { transcriptionMinutes: 0, translationWords: 0, ttsMinutes: 0, aiCredits: 0 },
+          currentPeriod: {
+            transcriptionMinutes: 0,
+            translationWords: 0,
+            ttsMinutes: 0,
+            aiCredits: 0,
+            periodStartDate: firstDayOfMonth
+          },
           totalUsage: { transcriptionMinutes: 0, translationWords: 0, ttsMinutes: 0, aiCredits: 0 }
         };
       }
@@ -835,7 +954,7 @@ exports.deductTranscriptionUsage = functions.https.onCall(async (data, context) 
       const currentUsage = userData.usage.currentPeriod.transcriptionMinutes || 0;
       const totalUsage = userData.usage.totalUsage.transcriptionMinutes || 0;
 
-      // Update usage counters
+      // Update usage counters (only current month due to automatic reset above)
       userData.usage.currentPeriod.transcriptionMinutes = currentUsage + minutesUsed;
       userData.usage.totalUsage.transcriptionMinutes = totalUsage + minutesUsed;
 
@@ -915,6 +1034,9 @@ exports.deductTranslationUsage = functions.https.onCall(async (data, context) =>
   try {
     functions.logger.info(`Deducting translation usage for user ${userId}: ${wordsUsed} words`);
 
+    // Check and reset monthly usage if needed (automatic monthly reset)
+    await checkAndResetMonthlyUsage(userId);
+
     // Use atomic transaction for consistency
     const userRef = db.ref(`users/${userId}`);
 
@@ -925,8 +1047,15 @@ exports.deductTranslationUsage = functions.https.onCall(async (data, context) =>
 
       // Initialize usage structure if it doesn't exist
       if (!userData.usage) {
+        const firstDayOfMonth = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).getTime();
         userData.usage = {
-          currentPeriod: { transcriptionMinutes: 0, translationWords: 0, ttsMinutes: 0, aiCredits: 0 },
+          currentPeriod: {
+            transcriptionMinutes: 0,
+            translationWords: 0,
+            ttsMinutes: 0,
+            aiCredits: 0,
+            periodStartDate: firstDayOfMonth
+          },
           totalUsage: { transcriptionMinutes: 0, translationWords: 0, ttsMinutes: 0, aiCredits: 0 }
         };
       }
@@ -935,7 +1064,7 @@ exports.deductTranslationUsage = functions.https.onCall(async (data, context) =>
       const currentUsage = userData.usage.currentPeriod.translationWords || 0;
       const totalUsage = userData.usage.totalUsage.translationWords || 0;
 
-      // Update usage counters
+      // Update usage counters (only current month due to automatic reset above)
       userData.usage.currentPeriod.translationWords = currentUsage + wordsUsed;
       userData.usage.totalUsage.translationWords = totalUsage + wordsUsed;
 
@@ -1015,6 +1144,9 @@ exports.deductTTSUsage = functions.https.onCall(async (data, context) => {
   try {
     functions.logger.info(`Deducting TTS usage for user ${userId}: ${minutesUsed} minutes`);
 
+    // Check and reset monthly usage if needed (automatic monthly reset)
+    await checkAndResetMonthlyUsage(userId);
+
     // Use atomic transaction for consistency
     const userRef = db.ref(`users/${userId}`);
 
@@ -1025,8 +1157,15 @@ exports.deductTTSUsage = functions.https.onCall(async (data, context) => {
 
       // Initialize usage structure if it doesn't exist
       if (!userData.usage) {
+        const firstDayOfMonth = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).getTime();
         userData.usage = {
-          currentPeriod: { transcriptionMinutes: 0, translationWords: 0, ttsMinutes: 0, aiCredits: 0 },
+          currentPeriod: {
+            transcriptionMinutes: 0,
+            translationWords: 0,
+            ttsMinutes: 0,
+            aiCredits: 0,
+            periodStartDate: firstDayOfMonth
+          },
           totalUsage: { transcriptionMinutes: 0, translationWords: 0, ttsMinutes: 0, aiCredits: 0 }
         };
       }
@@ -1035,7 +1174,7 @@ exports.deductTTSUsage = functions.https.onCall(async (data, context) => {
       const currentUsage = userData.usage.currentPeriod.ttsMinutes || 0;
       const totalUsage = userData.usage.totalUsage.ttsMinutes || 0;
 
-      // Update usage counters
+      // Update usage counters (only current month due to automatic reset above)
       userData.usage.currentPeriod.ttsMinutes = currentUsage + minutesUsed;
       userData.usage.totalUsage.ttsMinutes = totalUsage + minutesUsed;
 
@@ -1115,6 +1254,9 @@ exports.deductAICredits = functions.https.onCall(async (data, context) => {
   try {
     functions.logger.info(`Deducting AI credits for user ${userId}: ${creditsUsed} credits`);
 
+    // Check and reset monthly usage if needed (automatic monthly reset)
+    await checkAndResetMonthlyUsage(userId);
+
     // Use atomic transaction for consistency
     const userRef = db.ref(`users/${userId}`);
 
@@ -1125,8 +1267,15 @@ exports.deductAICredits = functions.https.onCall(async (data, context) => {
 
       // Initialize usage structure if it doesn't exist
       if (!userData.usage) {
+        const firstDayOfMonth = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).getTime();
         userData.usage = {
-          currentPeriod: { transcriptionMinutes: 0, translationWords: 0, ttsMinutes: 0, aiCredits: 0 },
+          currentPeriod: {
+            transcriptionMinutes: 0,
+            translationWords: 0,
+            ttsMinutes: 0,
+            aiCredits: 0,
+            periodStartDate: firstDayOfMonth
+          },
           totalUsage: { transcriptionMinutes: 0, translationWords: 0, ttsMinutes: 0, aiCredits: 0 }
         };
       }
@@ -1135,7 +1284,7 @@ exports.deductAICredits = functions.https.onCall(async (data, context) => {
       const currentUsage = userData.usage.currentPeriod.aiCredits || 0;
       const totalUsage = userData.usage.totalUsage.aiCredits || 0;
 
-      // Update usage counters
+      // Update usage counters (only current month due to automatic reset above)
       userData.usage.currentPeriod.aiCredits = currentUsage + creditsUsed;
       userData.usage.totalUsage.aiCredits = totalUsage + creditsUsed;
 
