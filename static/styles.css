@@ -705,11 +705,11 @@ p {
     position: absolute !important; /* Use absolute positioning relative to avatar button */
     top: calc(100% + 8px) !important; /* Position below avatar button */
     bottom: auto !important;
-    right: 0 !important; /* Align with right edge of avatar button */
+    right: 20vw !important; /* Shift dropdown left by 20% of viewport width */
     left: auto !important;
     z-index: 10001 !important;
-    min-width: 200px !important;
-    max-width: 250px !important;
+    width: calc(100vw - 20vw - 1rem) !important; /* Adjusted width to prevent left-edge overflow */
+    max-width: calc(100vw - 20vw - 1rem) !important;
     background-color: hsl(var(--popover)) !important;
     border: 1px solid hsl(var(--border)) !important;
     border-radius: var(--radius) !important;
@@ -718,6 +718,7 @@ p {
     margin: 0 !important;
     overflow: visible !important;
     opacity: 0 !important;
+    pointer-events: none !important; /* Prevent invisible dropdown from capturing clicks */
     transform: translateY(-10px) scale(0.95) !important;
     transition: opacity 0.3s ease, transform 0.3s ease !important;
   }
@@ -744,32 +745,16 @@ p {
     z-index: 10003 !important;
   }
 
-  /* Alternative positioning for larger mobile screens */
-  @media (min-width: 481px) and (max-width: 768px) {
-    .user-dropdown {
-      position: absolute !important;
-      top: calc(100% + 8px) !important;
-      bottom: auto !important;
-      right: 0 !important;
-      left: auto !important;
-      transform: translateY(-10px) !important;
-    }
-
-    .user-dropdown.show {
-      transform: translateY(0) !important;
-    }
-  }
-
   /* Small mobile screens - ensure downward positioning with viewport awareness */
   @media (max-width: 480px) {
     .user-dropdown {
       position: absolute !important;
       top: calc(100% + 8px) !important;
       bottom: auto !important;
-      right: 0 !important;
+      right: 15vw !important; /* Shift dropdown left by 15% of viewport width on very small screens */
       left: auto !important;
-      min-width: 180px !important;
-      max-width: 220px !important;
+      width: calc(100vw - 15vw - 1rem) !important; /* Adjusted width to prevent left-edge overflow */
+      max-width: calc(100vw - 15vw - 1rem) !important;
       /* Ensure dropdown stays within viewport */
       max-height: calc(100vh - 120px) !important;
       overflow-y: auto !important;

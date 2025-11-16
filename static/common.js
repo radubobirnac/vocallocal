@@ -206,24 +206,13 @@ window.ensureDropdownVisibility = function() {
     }
 
     // Apply responsive positioning based on screen size
+    // NOTE: Positioning is handled by CSS media queries, not inline styles
+    // This prevents inline styles from overriding CSS rules
     if (isMobile) {
-      // Mobile: always use absolute positioning below avatar for consistent downward opening
-      userDropdown.style.position = 'absolute';
-      userDropdown.style.top = 'calc(100% + 8px)';
-      userDropdown.style.bottom = 'auto';
-      userDropdown.style.right = '0';
-      userDropdown.style.left = 'auto';
-
-      // Check if dropdown would go off-screen and adjust if needed
+      // Mobile: check if dropdown would go off-screen and adjust if needed
       window.checkDropdownPosition();
-    } else {
-      // Desktop: standard absolute positioning
-      userDropdown.style.position = 'absolute';
-      userDropdown.style.top = 'calc(100% + 8px)';
-      userDropdown.style.bottom = 'auto';
-      userDropdown.style.right = '0';
-      userDropdown.style.left = 'auto';
     }
+    // Desktop and mobile positioning is now handled entirely by CSS
 
     console.log('Dropdown visibility and positioning ensured');
   }

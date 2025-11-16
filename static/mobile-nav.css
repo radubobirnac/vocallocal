@@ -323,18 +323,18 @@
     position: absolute !important; /* Use absolute positioning relative to avatar button */
     top: calc(100% + 8px) !important; /* Position below avatar button */
     bottom: auto !important;
-    right: 0 !important; /* Align with right edge of avatar button */
+    right: 20vw !important; /* Shift dropdown left by 20% of viewport width */
     left: auto !important;
     z-index: 10001 !important; /* Even higher than avatar button */
-    min-width: 200px !important;
-    max-width: 250px !important;
+    width: calc(100vw - 20vw - 1rem) !important; /* Adjusted width to prevent left-edge overflow */
+    max-width: calc(100vw - 20vw - 1rem) !important;
     background-color: hsl(var(--popover)) !important;
     border: 1px solid hsl(var(--border)) !important;
     border-radius: var(--radius) !important;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
     padding: 0.5rem !important;
     margin: 0 !important;
-    pointer-events: auto !important;
+    pointer-events: none !important; /* Prevent clicks when hidden */
     opacity: 0 !important;
     transform: translateY(-10px) scale(0.95) !important;
     transition: opacity 0.3s ease, transform 0.3s ease !important;

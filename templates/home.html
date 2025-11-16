@@ -129,7 +129,7 @@
           <!-- Auth Links -->
           {% if current_user.is_authenticated %}
             <div class="user-avatar-menu">
-              <button id="avatar-button" class="avatar-button" aria-expanded="false" onclick="toggleProfileDropdown(event)">
+              <button id="avatar-button" class="avatar-button" aria-expanded="false">
                 <div class="avatar-circle">{{ current_user.username[0]|upper }}</div>
                 <i class="fas fa-chevron-down dropdown-arrow"></i>
               </button>
@@ -158,27 +158,6 @@
                 </a>
               </div>
             </div>
-
-            <script>
-              // Direct click handler for the profile dropdown
-              function toggleProfileDropdown(event) {
-                event.preventDefault();
-                event.stopPropagation();
-
-                const avatarButton = document.getElementById('avatar-button');
-                const userDropdown = document.getElementById('user-dropdown');
-
-                if (!avatarButton || !userDropdown) return;
-
-                const isExpanded = avatarButton.getAttribute('aria-expanded') === 'true';
-
-                // Toggle dropdown visibility
-                avatarButton.setAttribute('aria-expanded', !isExpanded);
-                userDropdown.classList.toggle('show');
-
-                console.log('Profile dropdown toggled via inline handler');
-              }
-            </script>
           {% else %}
             <div class="auth-links">
               <a href="{{ url_for('auth.login') }}" class="nav-link">Login</a>
