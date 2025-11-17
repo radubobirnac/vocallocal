@@ -2017,12 +2017,7 @@ function updateModelDropdown(selectElement, models, modelType) {
     modeToggle.addEventListener('change', () => {
       console.log('🔄 Mode toggle event triggered, checked:', modeToggle.checked);
 
-      // CRITICAL: Don't allow mode switching in conversation rooms
-      if (window.isConversationRoom) {
-        console.log('🚫 Mode switching disabled in conversation room');
-        modeToggle.checked = true; // Force back to bilingual mode
-        return;
-      }
+      // Conversation room mode switching prevention removed - Conversation Rooms feature has been removed
 
       if (modeToggle.checked) {
         // Bilingual mode
@@ -2171,7 +2166,7 @@ function updateModelDropdown(selectElement, models, modelType) {
     });
   }
 
-  // Expose populateLanguageDropdown globally for conversation rooms
+  // Expose populateLanguageDropdown globally
   window.populateLanguageDropdown = populateLanguageDropdown;
 
   // Debug function to check language data structure
@@ -3236,13 +3231,7 @@ function updateModelDropdown(selectElement, models, modelType) {
         // Determine which transcript element to update based on formData
         let elementId = 'basic-transcript';
 
-        // For conversation mode, check if this is speaker 1 or 2
-        const speaker = formData.get('speaker');
-        if (speaker === '1') {
-          elementId = 'transcript-1';
-        } else if (speaker === '2') {
-          elementId = 'transcript-2';
-        }
+        // Conversation mode speaker detection removed - Conversation Rooms feature has been removed
 
         // Start polling for status
         pollTranscriptionStatus(result.job_id, elementId);

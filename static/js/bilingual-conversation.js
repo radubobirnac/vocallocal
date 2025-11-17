@@ -1054,15 +1054,13 @@ function initializeBilingualConversation() {
   const isBilingualModeActive = bilingualModeContent && (
     bilingualModeToggle?.checked ||
     bilingualModeContent.style.display === 'block' ||
-    (bilingualModeContent.style.display !== 'none' && bilingualModeContent.style.display !== '') ||
-    window.isConversationRoom // Always active in conversation rooms
+    (bilingualModeContent.style.display !== 'none' && bilingualModeContent.style.display !== '')
   );
 
   console.log('🔍 Bilingual mode activation check:', {
     contentExists: !!bilingualModeContent,
     toggleChecked: bilingualModeToggle?.checked,
     contentDisplay: bilingualModeContent?.style.display,
-    isConversationRoom: window.isConversationRoom,
     isBilingualModeActive: isBilingualModeActive
   });
 
@@ -1134,14 +1132,10 @@ function waitForScriptsAndInitialize() {
 // This initialization is now handled by the DOMContentLoaded event listener above
 // No need for duplicate initialization logic here
 
-// Also initialize when bilingual mode is toggled (but NOT in conversation rooms)
+// Also initialize when bilingual mode is toggled
 document.addEventListener('change', (event) => {
   if (event.target && event.target.id === 'bilingual-mode') {
-    // CRITICAL: Don't reinitialize in conversation rooms to prevent breaking functionality
-    if (window.isConversationRoom) {
-      console.log('🚫 Ignoring mode toggle in conversation room to preserve functionality');
-      return;
-    }
+    // Conversation room check removed - Conversation Rooms feature has been removed
 
     if (event.target.checked) {
       console.log('🔄 Bilingual mode toggled ON - initializing BilingualConversation...');

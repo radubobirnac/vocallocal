@@ -43,17 +43,17 @@
       "failures": 0
     },
     "gemini-2.5-flash-preview-05-20": {
-      "calls": 51,
+      "calls": 52,
       "tokens": 0,
-      "chars": 1144,
-      "time": 394.94599652290344,
+      "chars": 1545,
+      "time": 400.2633738517761,
       "failures": 0
     },
     "gemini-2.5-flash-preview": {
-      "calls": 3,
+      "calls": 4,
       "tokens": 0,
-      "chars": 108,
-      "time": 5.914937496185303,
+      "chars": 509,
+      "time": 11.239411354064941,
       "failures": 0
     }
   },
@@ -101,10 +101,10 @@
       "failures": 0
     },
     "en": {
-      "calls": 76,
-      "tokens": 15993,
-      "chars": 48013,
-      "time": 605.2838757038116,
+      "calls": 77,
+      "tokens": 16135,
+      "chars": 48440,
+      "time": 610.0536952018738,
       "failures": 0
     },
     "te": {
@@ -368,6 +368,11 @@
     "2025-11-12": {
       "transcription": {
         "en": 35
+      }
+    },
+    "2025-11-17": {
+      "transcription": {
+        "en": 142
       }
     }
   },
@@ -765,6 +770,11 @@
     "2025-11-12-16": {
       "transcription": {
         "en": 35
+      }
+    },
+    "2025-11-17-18": {
+      "transcription": {
+        "en": 142
       }
     }
   },
