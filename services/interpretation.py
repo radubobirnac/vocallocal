@@ -4,6 +4,8 @@ import google.generativeai as genai
 from openai import OpenAI
 import json
 import re
+import logging
+from .gemini_model_manager import GeminiModelManager
 
 class InterpretationService:
     """Enhanced service for interpreting text using AI models with contextual understanding and rephrasing capabilities"""
@@ -12,10 +14,19 @@ class InterpretationService:
         self.logger = logging.getLogger(__name__)
 
         # Initialize Gemini
-        gemini_api_key = os.getenv("GEMINI_API_KEY")
-        if gemini_api_key:
-            genai.configure(api_key=gemini_api_key)
+        self.gemini_api_key = os.getenv("GEMINI_API_KEY")
+        if self.gemini_api_key:
+            genai.configure(api_key=self.gemini_api_key)
             self.logger.info("Gemini API initialized")
+
+            # Initialize Gemini Model Manager for dynamic fallback
+            self.gemini_model_manager = GeminiModelManager(
+                api_key=self.gemini_api_key,
+                logger=self.logger,
+                cache_duration_hours=24
+            )
+        else:
+            self.gemini_model_manager = None
 
         # Initialize OpenAI
         self.openai_client = None
@@ -70,24 +81,27 @@ class InterpretationService:
             # Extract original text from prompt for fallback purposes
             original_text = self._extract_text_from_prompt(prompt)
 
-            # Map model name to actual model ID if needed
-            model_id = model_name
-            if model_name == "gemini-2.5-flash-preview":
-                model_id = "gemini-2.5-flash-preview-05-20"
-            elif model_name == "gemini-2.5-flash-preview-05-20":
-                # Direct mapping for the specific 05-20 model
-                model_id = "gemini-2.5-flash-preview-05-20"
-            elif model_name == "gemini-2.0-flash-lite":
-                # Legacy mapping - use 2.5 Flash Preview instead
-                model_id = "gemini-2.5-flash-preview-05-20"
-                self.logger.warning(f"Mapping legacy model {model_name} to gemini-2.5-flash-preview-05-20")
-            elif model_name == "gemini-2.5-flash-preview-04-17":
-                # Map old model to new working model for backward compatibility
-                model_id = "gemini-2.5-flash-preview-05-20"
-                self.logger.warning(f"Mapping deprecated model {model_name} to {model_id}")
-            elif model_name == "gemini-2.5-flash":
-                # Map to the correct Gemini 2.5 Flash Preview model
-                model_id = "gemini-2.5-flash-preview-05-20"
+            # Use dynamic model mapping with intelligent fallback
+            if self.gemini_model_manager:
+                try:
+                    model_id, is_fallback, reason = self.gemini_model_manager.get_best_model_for_capability(
+                        capability='interpretation',
+                        preferred_model=model_name
+                    )
+
+                    if is_fallback:
+                        self.logger.warning(f"Model fallback for interpretation: '{model_name}' -> '{model_id}' ({reason})")
+                        self.gemini_model_manager.register_fallback(model_name, model_id, reason)
+                    else:
+                        self.logger.debug(f"Using preferred model for interpretation: {model_name}")
+
+                except Exception as e:
+                    self.logger.error(f"Dynamic model selection failed: {e}, falling back to static mapping")
+                    # Fallback to static mapping
+                    model_id = self._static_model_mapping(model_name)
+            else:
+                # Use static mapping if model manager not available
+                model_id = self._static_model_mapping(model_name)
 
             self.logger.info(f"Using Gemini model: {model_id}")
 
@@ -155,6 +169,23 @@ class InterpretationService:
         except Exception as e:
             self.logger.error(f"Gemini interpretation error: {str(e)}")
             raise
+
+    def _static_model_mapping(self, model_name):
+        """Static fallback model mapping for interpretation."""
+        model_id = model_name
+        if model_name == "gemini-2.5-flash-preview":
+            model_id = "gemini-2.5-flash"
+        elif model_name in ["gemini-2.5-flash-preview-05-20", "gemini-2.5-flash-preview-04-17"]:
+            model_id = "gemini-2.5-flash"
+            self.logger.warning(f"Static mapping: deprecated model {model_name} to stable gemini-2.5-flash")
+        elif model_name == "gemini-2.0-flash-lite":
+            model_id = "gemini-2.0-flash-lite"
+        elif model_name == "gemini-2.5-flash":
+            model_id = "gemini-2.5-flash"
+        elif model_name in ["gemini-2.5-pro-preview", "gemini-2.5-pro-preview-03-25"]:
+            model_id = "gemini-2.5-pro"
+            self.logger.warning(f"Static mapping: preview model {model_name} to stable gemini-2.5-pro")
+        return model_id
 
     def _interpret_with_openai(self, prompt, model_name):
         """Use OpenAI model for enhanced interpretation with optimized parameters"""

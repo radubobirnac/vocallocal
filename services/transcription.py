@@ -16,6 +16,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from services.base_service import BaseService
 from services.audio_chunker import AudioChunker
 from services.robust_chunker import RobustChunker
+from services.gemini_model_manager import GeminiModelManager
 from metrics_tracker import track_transcription_metrics
 
 # Try to import pydub for audio chunking, but make it optional
@@ -63,8 +64,16 @@ class TranscriptionService(BaseService):
             genai.configure(api_key=self.gemini_api_key)
             self.gemini_available = True
             self.logger.info("Google Generative AI module loaded successfully for transcription service")
+
+            # Initialize Gemini Model Manager for dynamic fallback
+            self.gemini_model_manager = GeminiModelManager(
+                api_key=self.gemini_api_key,
+                logger=self.logger,
+                cache_duration_hours=24
+            )
         else:
             self.gemini_available = False
+            self.gemini_model_manager = None
             self.logger.warning("Gemini API key not found. Gemini transcription will not be available.")
 
         # Initialize the audio chunkers
@@ -1054,36 +1063,53 @@ class TranscriptionService(BaseService):
 
     def _map_model_name(self, model_name):
         """
-        Helper method to map model names to Gemini model IDs.
+        Helper method to map model names to Gemini model IDs with dynamic fallback.
 
-        Note: gemini-2.5-flash-preview-04-17 is deprecated and no longer available in Gemini API.
-        All references to 04-17 are automatically mapped to the working 05-20 model.
+        Updated November 2025: Using dynamic model discovery with intelligent fallback.
         """
-        gemini_model_id = 'gemini-2.5-flash-preview-05-20'  # Default model updated to 2.5
+        # If Gemini Model Manager is available, use dynamic fallback
+        if self.gemini_model_manager:
+            try:
+                best_model, is_fallback, reason = self.gemini_model_manager.get_best_model_for_capability(
+                    capability='transcription',
+                    preferred_model=model_name
+                )
 
-        if model_name == 'gemini-2.5-flash-preview' or model_name == 'gemini-2.0-flash-lite':
-            # Updated default model to use 2.5 Flash Preview
-            gemini_model_id = 'gemini-2.5-flash-preview-05-20'
-            if model_name == 'gemini-2.0-flash-lite':
-                self.logger.info(f"Using Gemini 2.5 Flash Preview instead of 2.0 Flash Lite for better performance")
-        elif model_name == 'gemini-2.5-flash-preview-04-17':
-            # 04-17 model is deprecated - automatically use 05-20 instead
-            gemini_model_id = 'gemini-2.5-flash-preview-05-20'
-            self.logger.info(f"Model 04-17 is deprecated, automatically using 05-20 instead")
-        elif model_name == 'gemini-2.5-flash-preview-05-20':
-            # Direct mapping for the working 05-20 model
-            gemini_model_id = 'gemini-2.5-flash-preview-05-20'
-        elif model_name == 'gemini-2.5-flash':
-            # Alternative model name mapping - use latest working model (05-20)
-            gemini_model_id = 'gemini-2.5-flash-preview-05-20'
-        elif model_name == 'gemini-2.5-pro-preview':
-            gemini_model_id = 'gemini-2.5-pro-preview-03-25'
+                if is_fallback:
+                    self.logger.warning(f"Model fallback: '{model_name}' -> '{best_model}' ({reason})")
+                    # Register the fallback for future reference
+                    self.gemini_model_manager.register_fallback(model_name, best_model, reason)
+                else:
+                    self.logger.debug(f"Using preferred model: {model_name}")
+
+                return best_model
+
+            except Exception as e:
+                self.logger.error(f"Dynamic model selection failed: {e}, falling back to static mapping")
+
+        # Fallback to static mapping if dynamic fails
+        gemini_model_id = 'gemini-2.5-flash'  # Safe default
+
+        if model_name == 'gemini-2.5-flash-preview' or model_name == 'gemini-2.5-flash':
+            gemini_model_id = 'gemini-2.5-flash'
+        elif model_name == 'gemini-2.0-flash-lite':
+            gemini_model_id = 'gemini-2.0-flash-lite'
+        elif model_name in ['gemini-2.5-flash-preview-04-17', 'gemini-2.5-flash-preview-05-20']:
+            gemini_model_id = 'gemini-2.5-flash'
+            self.logger.info(f"Deprecated model {model_name} mapped to stable gemini-2.5-flash")
+        elif model_name in ['gemini-2.5-pro-preview', 'gemini-2.5-pro-preview-03-25']:
+            gemini_model_id = 'gemini-2.5-pro'
+            self.logger.info(f"Preview model {model_name} mapped to stable gemini-2.5-pro")
+        elif model_name == 'gemini-2.5-pro':
+            gemini_model_id = 'gemini-2.5-pro'
+        elif model_name == 'gemini-2.0-flash':
+            gemini_model_id = 'gemini-2.0-flash'
         elif model_name == 'gemini' or model_name == 'gemini-1.5-flash':
             gemini_model_id = 'gemini-2.0-flash-lite'
 
         # Log the mapping for debugging
         if model_name != gemini_model_id:
-            self.logger.info(f"Model mapping: '{model_name}' -> '{gemini_model_id}'")
+            self.logger.info(f"Static model mapping: '{model_name}' -> '{gemini_model_id}'")
 
         return gemini_model_id
 
@@ -1322,31 +1348,8 @@ class TranscriptionService(BaseService):
         try:
             self.logger.info(f"Using Gemini for transcription with model: {model_name}, language: {language}")
 
-            # Map model name to actual Gemini model ID
-            # Note: 04-17 model is deprecated, automatically mapping to working 05-20 model
-            gemini_model_id = 'gemini-2.5-flash-preview-05-20'  # Default model updated to 2.5
-            if model_name == 'gemini-2.5-flash-preview' or model_name == 'gemini-2.0-flash-lite':
-                # Updated default model to use 2.5 Flash Preview
-                gemini_model_id = 'gemini-2.5-flash-preview-05-20'
-                if model_name == 'gemini-2.0-flash-lite':
-                    self.logger.info(f"Using Gemini 2.5 Flash Preview instead of 2.0 Flash Lite for better performance")
-            elif model_name == 'gemini-2.5-flash-preview-04-17':
-                # 04-17 model is deprecated - automatically use 05-20 instead
-                gemini_model_id = 'gemini-2.5-flash-preview-05-20'
-                self.logger.info(f"Model 04-17 is deprecated, automatically using 05-20 instead")
-            elif model_name == 'gemini-2.5-flash-preview-05-20':
-                # Direct mapping for the working 05-20 model
-                gemini_model_id = 'gemini-2.5-flash-preview-05-20'
-            elif model_name == 'gemini-2.5-flash':
-                # Alternative model name mapping - use latest working model (05-20)
-                gemini_model_id = 'gemini-2.5-flash-preview-05-20'
-            elif model_name == 'gemini-2.5-pro-preview':
-                gemini_model_id = 'gemini-2.5-pro-preview-03-25'
-            elif model_name == 'gemini' or model_name == 'gemini-1.5-flash':
-                # Legacy fallback to 2.0 Flash Lite
-                gemini_model_id = 'gemini-2.0-flash-lite'
-
-            self.logger.info(f"Mapped model name '{model_name}' to Gemini model ID: {gemini_model_id}")
+            # Use the centralized model mapping with updated models
+            gemini_model_id = self._map_model_name(model_name)
 
             # Create a temporary file to store the audio
             with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as temp_file:

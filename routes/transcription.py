@@ -115,13 +115,14 @@ def transcribe_audio():
         requested_model = request.form.get('model', 'gemini-2.0-flash-lite')
 
         # Fix model routing - ensure proper mapping between frontend and backend
-        # Note: 04-17 model is deprecated, but we keep the mapping for UI compatibility
-        # The actual API call will use 05-20 model (handled in transcription service)
+        # Updated November 2025: Using current working models
+        # Deprecated preview models are handled by the transcription service
         model_mapping = {
             'gpt-4o-mini-transcribe': 'gpt-4o-mini-transcribe',
             'gpt-4o-transcribe': 'gpt-4o-transcribe',
-            'gemini-2.5-flash-preview-04-17': 'gemini-2.5-flash-preview-04-17',  # Will be mapped to 05-20 in service
-            'gemini-2.5-flash-preview-05-20': 'gemini-2.5-flash-preview-05-20',  # Direct support for 05-20
+            'gemini-2.5-flash-preview-04-17': 'gemini-2.5-flash-preview-04-17',  # Will be mapped to stable in service
+            'gemini-2.5-flash-preview-05-20': 'gemini-2.5-flash-preview-05-20',  # Will be mapped to stable in service
+            'gemini-2.5-flash': 'gemini-2.5-flash',  # Stable model
             'gemini-2.0-flash-lite': 'gemini-2.0-flash-lite'
         }
 

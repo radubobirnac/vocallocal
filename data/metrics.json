@@ -15,10 +15,10 @@
       "failures": 0
     },
     "gemini-2.5-flash": {
-      "calls": 12,
+      "calls": 14,
       "tokens": 3265,
-      "chars": 4379,
-      "time": 13.527712106704712,
+      "chars": 4479,
+      "time": 17.71979522705078,
       "failures": 0
     },
     "gemini-2.5-pro": {
@@ -43,17 +43,31 @@
       "failures": 0
     },
     "gemini-2.5-flash-preview-05-20": {
-      "calls": 52,
+      "calls": 54,
       "tokens": 0,
       "chars": 1545,
-      "time": 400.2633738517761,
-      "failures": 0
+      "time": 400.5380702018738,
+      "failures": 2
     },
     "gemini-2.5-flash-preview": {
       "calls": 4,
       "tokens": 0,
       "chars": 509,
       "time": 11.239411354064941,
+      "failures": 0
+    },
+    "models/gemini-2.5-flash": {
+      "calls": 1,
+      "tokens": 0,
+      "chars": 10,
+      "time": 2.358910322189331,
+      "failures": 0
+    },
+    "gpt-4.1-mini": {
+      "calls": 2,
+      "tokens": 0,
+      "chars": 100,
+      "time": 3.9026601314544678,
       "failures": 0
     }
   },
@@ -108,10 +122,10 @@
       "failures": 0
     },
     "te": {
-      "calls": 6,
-      "tokens": 256,
-      "chars": 769,
-      "time": 34.79898524284363,
+      "calls": 8,
+      "tokens": 292,
+      "chars": 880,
+      "time": 65.96330261230469,
       "failures": 0
     },
     "hi": {
@@ -373,6 +387,11 @@
     "2025-11-17": {
       "transcription": {
         "en": 142
+      }
+    },
+    "2025-11-19": {
+      "transcription": {
+        "te": 36
       }
     }
   },
@@ -775,6 +794,11 @@
     "2025-11-17-18": {
       "transcription": {
         "en": 142
+      }
+    },
+    "2025-11-19-22": {
+      "transcription": {
+        "te": 36
       }
     }
   },

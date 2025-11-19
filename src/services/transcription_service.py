@@ -54,9 +54,9 @@ class TranscriptionService(BaseService):
         elif GEMINI_AVAILABLE:
             self.logger.warning("Gemini API key not found. Gemini transcription will not be available.")
 
-        # Set default models
+        # Set default models - Updated November 2025
         self.default_openai_model = "gpt-4o-mini-transcribe"
-        self.default_gemini_model = "gemini-2.0-flash-lite"
+        self.default_gemini_model = "gemini-2.5-flash"  # Use stable Gemini 2.5 Flash
 
         # Track available providers
         self.providers = []
