@@ -41,6 +41,17 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
+# OpenAI Whisper API supported languages (57 languages as of February 2024)
+# Source: https://community.openai.com/t/whisper-transcribe-api-verbose-json-results-format-of-language-property/646014
+# Note: OpenAI Whisper API supports fewer languages than the open-source Whisper model
+OPENAI_WHISPER_SUPPORTED_LANGUAGES = [
+    'af', 'ar', 'hy', 'az', 'be', 'bs', 'bg', 'ca', 'zh', 'hr', 'cs', 'da',
+    'nl', 'en', 'et', 'fi', 'fr', 'gl', 'de', 'el', 'he', 'hi', 'hu', 'is',
+    'id', 'it', 'ja', 'kn', 'kk', 'ko', 'lv', 'lt', 'mk', 'ms', 'mi', 'mr',
+    'ne', 'no', 'fa', 'pl', 'pt', 'ro', 'ru', 'sr', 'sk', 'sl', 'es', 'sw',
+    'sv', 'tl', 'ta', 'th', 'tr', 'uk', 'ur', 'vi', 'cy'
+]
+
 class TranscriptionService(BaseService):
     """Service for transcribing audio files."""
 
@@ -62,22 +73,42 @@ class TranscriptionService(BaseService):
         # Configure Gemini
         if self.gemini_api_key:
             try:
+                self.logger.info("🔧 Configuring Gemini API...")
                 genai.configure(api_key=self.gemini_api_key)
-                self.gemini_available = True
                 self.logger.info("✅ Google Generative AI configured successfully for transcription service")
                 self.logger.info(f"Gemini API Key present: {self.gemini_api_key[:10]}...{self.gemini_api_key[-4:]}")
 
                 # Initialize Gemini Model Manager for dynamic fallback
+                self.logger.info("🔧 Initializing Gemini Model Manager...")
                 self.gemini_model_manager = GeminiModelManager(
                     api_key=self.gemini_api_key,
                     logger=self.logger,
                     cache_duration_hours=24
                 )
                 self.logger.info("✅ Gemini Model Manager initialized successfully")
+
+                # Test that we can actually use Gemini by checking available models
+                self.logger.info("🔧 Testing Gemini availability by fetching models...")
+                try:
+                    models_data = self.gemini_model_manager.get_available_models()
+                    total_models = models_data.get("total_models", 0)
+                    self.logger.info(f"✅ Gemini is fully operational - {total_models} models available")
+                    self.gemini_available = True
+                except Exception as model_fetch_error:
+                    self.logger.error(f"❌ Gemini API configured but model fetch failed: {str(model_fetch_error)}")
+                    self.logger.error(f"Error type: {type(model_fetch_error).__name__}")
+                    import traceback
+                    self.logger.error(f"Traceback: {traceback.format_exc()}")
+                    self.gemini_available = False
+                    self.gemini_model_manager = None
+
             except Exception as gemini_init_error:
                 self.gemini_available = False
                 self.gemini_model_manager = None
                 self.logger.error(f"❌ Failed to initialize Gemini: {str(gemini_init_error)}")
+                self.logger.error(f"Error type: {type(gemini_init_error).__name__}")
+                import traceback
+                self.logger.error(f"Traceback: {traceback.format_exc()}")
                 self.logger.error(f"Gemini will not be available for transcription")
         else:
             self.gemini_available = False
@@ -605,6 +636,7 @@ class TranscriptionService(BaseService):
 
                 if not self.gemini_available:
                     self.logger.warning("❌ Gemini not available. Attempting fallback to OpenAI.")
+                    self.logger.info(f"Requested language: {language}")
                     self.logger.info(f"FFmpeg availability for OpenAI fallback: {ffmpeg_available}")
 
                     if not ffmpeg_available:
@@ -613,6 +645,8 @@ class TranscriptionService(BaseService):
                         raise Exception("Transcription failed: Gemini not available and FFmpeg not installed for OpenAI fallback.")
 
                     self.logger.info("✅ FFmpeg available - falling back to OpenAI")
+                    if language and language not in OPENAI_WHISPER_SUPPORTED_LANGUAGES:
+                        self.logger.warning(f"⚠️ Note: Language '{language}' may not be supported by OpenAI - will auto-detect")
                     return self.transcribe_with_openai(audio_data, language, "gpt-4o-mini-transcribe")
 
                 self.logger.info(f"✅ Using Gemini for transcription with model: {model}")
@@ -1838,6 +1872,17 @@ class TranscriptionService(BaseService):
         try:
             self.logger.info(f"Using OpenAI for transcription with model: {model}")
 
+            # Validate language support for OpenAI Whisper API
+            if language and language not in OPENAI_WHISPER_SUPPORTED_LANGUAGES:
+                self.logger.warning(f"⚠️ Language '{language}' is NOT supported by OpenAI Whisper API")
+                self.logger.warning(f"📋 OpenAI Whisper supports only 57 languages: {', '.join(OPENAI_WHISPER_SUPPORTED_LANGUAGES[:10])}...")
+                self.logger.warning(f"🔄 Switching from '{language}' to auto-detect mode for OpenAI")
+                language = None  # Let OpenAI auto-detect the language
+            elif language:
+                self.logger.info(f"✅ Language '{language}' is supported by OpenAI Whisper API")
+            else:
+                self.logger.info("ℹ️ No language specified - OpenAI will auto-detect")
+
             # Check if FFmpeg is available before proceeding
             if not self._check_ffmpeg_available():
                 self.logger.error("FFmpeg is required for OpenAI transcription but not available")
@@ -2091,6 +2136,14 @@ class TranscriptionService(BaseService):
     def _transcribe_with_openai_internal(self, audio_data, language, model):
         """Internal method for OpenAI transcription without chunking"""
         self.logger.info(f"Using OpenAI {model} for chunk transcription")
+
+        # Validate language support for OpenAI Whisper API
+        if language and language != 'auto' and language not in OPENAI_WHISPER_SUPPORTED_LANGUAGES:
+            self.logger.warning(f"⚠️ Language '{language}' is NOT supported by OpenAI Whisper API (chunk transcription)")
+            self.logger.warning(f"🔄 Switching from '{language}' to auto-detect mode for OpenAI")
+            language = None  # Let OpenAI auto-detect the language
+        elif language and language != 'auto':
+            self.logger.info(f"✅ Language '{language}' is supported by OpenAI Whisper API (chunk transcription)")
 
         # Check if FFmpeg is available for WebM conversion
         if not self._check_ffmpeg_available():

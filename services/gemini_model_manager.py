@@ -29,7 +29,7 @@ class GeminiModelManager:
     def __init__(self, api_key: str, logger: logging.Logger, cache_duration_hours: int = 24):
         """
         Initialize the Gemini Model Manager.
-        
+
         Args:
             api_key: Gemini API key
             logger: Logger instance
@@ -38,13 +38,16 @@ class GeminiModelManager:
         self.api_key = api_key
         self.logger = logger
         self.cache_duration = timedelta(hours=cache_duration_hours)
-        
+
         # In-memory cache
         self._models_cache: Optional[Dict] = None
         self._cache_timestamp: Optional[datetime] = None
-        
-        # Persistent cache file
-        self.cache_file = "gemini_models_cache.json"
+
+        # Persistent cache file - use absolute path relative to this file's directory
+        # This ensures it works in both development and deployment environments
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.cache_file = os.path.join(current_dir, "gemini_models_cache.json")
+        self.logger.debug(f"Gemini models cache file path: {self.cache_file}")
         
         # Model capability mappings
         self.capability_requirements = {
