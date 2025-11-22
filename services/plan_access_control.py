@@ -11,25 +11,25 @@ logger = logging.getLogger(__name__)
 class PlanAccessControl:
     """Service for managing plan-based access control."""
 
-    # Model access matrix by plan type
+    # Model access matrix by plan type (Updated November 2025)
     PLAN_MODEL_ACCESS = {
         'free': {
-            'transcription': ['gemini-2.5-flash-preview'],
-            'translation': ['gemini-2.5-flash-preview'],
+            'transcription': ['gemini-2.5-flash', 'gemini-2.5-flash-preview'],  # Allow both for backward compatibility
+            'translation': ['gemini-2.5-flash', 'gemini-2.5-flash-preview'],
             'tts': [],  # No free TTS models - all require upgrade
-            'interpretation': ['gemini-2.5-flash-preview']
+            'interpretation': ['gemini-2.5-flash', 'gemini-2.5-flash-preview']
         },
         'basic': {
             'transcription': [
-                'gemini-2.5-flash-preview',
+                'gemini-2.5-flash',  # Stable model (current)
+                'gemini-2.5-flash-preview',  # Backward compatibility
                 'gpt-4o-mini-transcribe',
                 'gpt-4o-transcribe',
-                'gemini-2.5-flash-preview-04-17',  # Kept for UI compatibility (maps to 05-20)
-                'gemini-2.5-flash-preview-05-20'   # Working model
+                'gemini-2.5-flash-preview-09-2025'  # Latest preview (Sept 2025)
             ],
             'translation': [
-                'gemini-2.5-flash-preview',
-                'gemini-2.5-flash-preview-05-20',
+                'gemini-2.5-flash',  # Stable model (current)
+                'gemini-2.5-flash-preview',  # Backward compatibility
                 'gpt-4.1-mini'
             ],
             'tts': [
@@ -38,22 +38,23 @@ class PlanAccessControl:
                 'openai'
             ],
             'interpretation': [
-                'gemini-2.5-flash-preview',
-                'gemini-2.5-flash-preview-05-20',
-                'gemini-2.5-flash'
+                'gemini-2.5-flash',  # Stable model (current)
+                'gemini-2.5-flash-preview',  # Backward compatibility
+                'gemini-2.5-flash-preview-09-2025'
             ]
         },
         'professional': {
             'transcription': [
-                'gemini-2.5-flash-preview',
+                'gemini-2.5-flash',  # Stable model (current)
+                'gemini-2.5-flash-preview',  # Backward compatibility
                 'gpt-4o-mini-transcribe',
                 'gpt-4o-transcribe',
-                'gemini-2.5-flash-preview-04-17',  # Kept for UI compatibility (maps to 05-20)
-                'gemini-2.5-flash-preview-05-20'   # Working model
+                'gemini-2.5-flash-preview-09-2025',  # Latest preview (Sept 2025)
+                'gemini-2.5-pro'  # Pro model
             ],
             'translation': [
-                'gemini-2.5-flash-preview',
-                'gemini-2.5-flash',
+                'gemini-2.5-flash',  # Stable model (current)
+                'gemini-2.5-flash-preview',  # Backward compatibility
                 'gpt-4.1-mini'
             ],
             'tts': [
@@ -62,18 +63,24 @@ class PlanAccessControl:
                 'openai'
             ],
             'interpretation': [
-                'gemini-2.5-flash-preview',
-                'gemini-2.5-flash-preview-05-20',
-                'gemini-2.5-flash'
+                'gemini-2.5-flash',  # Stable model (current)
+                'gemini-2.5-flash-preview',  # Backward compatibility
+                'gemini-2.5-flash-preview-09-2025',
+                'gemini-2.5-pro'
             ]
         }
     }
 
-    # Model display names and descriptions
+    # Model display names and descriptions (Updated November 2025)
     MODEL_INFO = {
+        'gemini-2.5-flash': {
+            'name': 'Gemini 2.5 Flash (Stable)',
+            'description': 'Fast and efficient stable model',
+            'tier': 'free'
+        },
         'gemini-2.5-flash-preview': {
-            'name': 'Gemini 2.5 Flash Preview',
-            'description': 'Fast and efficient model with enhanced capabilities',
+            'name': 'Gemini 2.5 Flash Preview (Legacy)',
+            'description': 'Legacy preview model - use gemini-2.5-flash instead',
             'tier': 'free'
         },
         'gpt-4o-mini-transcribe': {
@@ -86,15 +93,15 @@ class PlanAccessControl:
             'description': 'Premium transcription with latest OpenAI model (available to Basic Plan users)',
             'tier': 'basic'
         },
-        'gemini-2.5-flash-preview-04-17': {
-            'name': 'Gemini 2.5 Flash Preview',
-            'description': 'Latest Gemini model with enhanced capabilities (deprecated, uses 05-20)',
+        'gemini-2.5-flash-preview-09-2025': {
+            'name': 'Gemini 2.5 Flash Preview (Sept 2025)',
+            'description': 'Latest preview model with enhanced capabilities',
             'tier': 'basic'
         },
-        'gemini-2.5-flash-preview-05-20': {
-            'name': 'Gemini 2.5 Flash Preview 05-20',
-            'description': 'Latest working Gemini 2.5 Flash model with enhanced capabilities',
-            'tier': 'basic'
+        'gemini-2.5-pro': {
+            'name': 'Gemini 2.5 Pro',
+            'description': 'Most capable Gemini model for complex tasks',
+            'tier': 'professional'
         },
         'gemini-2.5-flash': {
             'name': 'Gemini 2.5 Flash Preview',

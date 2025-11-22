@@ -118,25 +118,26 @@ class TranslationService(BaseService):
             # Select the appropriate model based on the translation_model parameter
             model_name = "models/gemini-2.0-flash-lite"  # Default model
             display_model = translation_model  # For metrics tracking
-            
-            if translation_model == 'gemini-2.5-flash-preview-04-17':
-                # 04-17 model is deprecated - automatically use 05-20 instead
-                model_name = "models/gemini-2.5-flash-preview-05-20"
-                display_model = "gemini-2.5-flash-preview-05-20"
-                print(f"Using Gemini 2.5 Flash Preview 05-20 model for translation (04-17 is deprecated)")
-            elif translation_model == 'gemini-2.5-flash-preview-05-20':
-                # Direct mapping for the working 05-20 model
-                model_name = "models/gemini-2.5-flash-preview-05-20"
-                display_model = "gemini-2.5-flash-preview-05-20"
-                print(f"Using Gemini 2.5 Flash Preview 05-20 model for translation")
+
+            # Map deprecated models to current working models (November 2025)
+            if translation_model in ['gemini-2.5-flash-preview-04-17', 'gemini-2.5-flash-preview-05-20']:
+                # Deprecated preview models - use stable gemini-2.5-flash
+                model_name = "models/gemini-2.5-flash"
+                display_model = "gemini-2.5-flash"
+                print(f"Mapping deprecated model '{translation_model}' to stable 'gemini-2.5-flash'")
+            elif translation_model == 'gemini-2.5-flash-preview-09-2025':
+                # Latest preview model (September 2025)
+                model_name = "models/gemini-2.5-flash-preview-09-2025"
+                display_model = "gemini-2.5-flash-preview-09-2025"
+                print(f"Using Gemini 2.5 Flash Preview (September 2025) model for translation")
             elif 'gemini-2.5-flash' in translation_model or translation_model == 'gemini-2.5-flash':
-                # Use the working 05-20 model instead of deprecated 04-17
-                model_name = "models/gemini-2.5-flash-preview-05-20"
-                display_model = "gemini-2.5-flash-preview-05-20"
-                print(f"Using Gemini 2.5 Flash Preview 05-20 model for translation")
+                # Use stable gemini-2.5-flash
+                model_name = "models/gemini-2.5-flash"
+                display_model = "gemini-2.5-flash"
+                print(f"Using stable Gemini 2.5 Flash model for translation")
             elif 'gemini-2.5-pro' in translation_model:
-                # Use the full model name from the available models list
-                model_name = "models/gemini-2.5-pro-preview-03-25"
+                # Use stable gemini-2.5-pro
+                model_name = "models/gemini-2.5-pro"
                 display_model = "gemini-2.5-pro"
                 print(f"Using Gemini 2.5 Pro Preview model for translation")
             elif translation_model == 'gemini-2.0-flash-lite' or translation_model == 'gemini':

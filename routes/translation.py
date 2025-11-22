@@ -114,21 +114,23 @@ def translate_text():
 
     text = data['text']
     target_language = data['target_language']
-    translation_model = data.get('translation_model', 'gemini-2.5-flash-preview')  # Default to Gemini 2.5
+    translation_model = data.get('translation_model', 'gemini-2.5-flash')  # Default to stable Gemini 2.5 Flash
 
     # Fix model routing - ensure proper mapping between frontend and backend
-    # Updated November 2025: Using current working models
+    # Updated November 2025: Using current working models from gemini_models_cache.json
     model_mapping = {
-        'gemini-2.5-flash-preview': 'gemini-2.5-flash',  # Map to stable model
+        'gemini-2.5-flash-preview': 'gemini-2.5-flash',  # Map old preview to stable
         'gemini-2.5-flash-preview-05-20': 'gemini-2.5-flash',  # Map deprecated to stable
         'gemini-2.5-flash-preview-04-17': 'gemini-2.5-flash',  # Map deprecated to stable
-        'gemini-2.5-flash': 'gemini-2.5-flash',  # Direct stable mapping
+        'gemini-2.5-flash': 'gemini-2.5-flash',  # Stable model (current)
+        'gemini-2.5-flash-preview-09-2025': 'gemini-2.5-flash-preview-09-2025',  # Latest preview (Sept 2025)
+        'gemini-2.5-pro': 'gemini-2.5-pro',  # Stable pro model
         'gemini-2.0-flash-lite': 'gemini-2.0-flash-lite',  # Keep as is (still available)
         'gpt-4.1-mini': 'gpt-4.1-mini'
     }
 
     # Map the requested model to ensure correct routing
-    mapped_model = model_mapping.get(translation_model, 'gemini-2.5-flash-preview')
+    mapped_model = model_mapping.get(translation_model, 'gemini-2.5-flash')  # Default to stable
     if mapped_model != translation_model:
         print(f"Translation model mapping: {translation_model} -> {mapped_model}")
 
@@ -141,7 +143,7 @@ def translate_text():
             user_email = getattr(current_user, 'email', None)
             if not user_email:
                 print(f"Warning: Authenticated user has no email attribute for translation model validation.")
-                translation_model = 'gemini-2.5-flash-preview'
+                translation_model = 'gemini-2.5-flash'
             else:
                 # Quick model validation with cross-platform timeout protection
                 validation_result = None
@@ -163,11 +165,11 @@ def translate_text():
                 if validation_thread.is_alive():
                     # Validation timed out
                     print(f"Translation model validation timeout. Using fallback model for {user_email}")
-                    translation_model = 'gemini-2.5-flash-preview'
+                    translation_model = 'gemini-2.5-flash'
                 elif validation_error:
                     # Validation failed with error
                     print(f"Translation model validation error: {str(validation_error)}")
-                    translation_model = 'gemini-2.5-flash-preview'
+                    translation_model = 'gemini-2.5-flash'
                 elif validation_result:
                     # Validation completed successfully
                     if not validation_result['valid']:
@@ -177,24 +179,24 @@ def translate_text():
                             print(f"Model access denied for {translation_model}. Using suggested model: {translation_model}")
                         else:
                             # Use fallback model instead of returning error to avoid blocking translation
-                            translation_model = 'gemini-2.5-flash-preview'
+                            translation_model = 'gemini-2.5-flash'
                             print(f"Model access denied. Using fallback model: {translation_model}")
 
                     print(f"Translation model access validated: {translation_model} for user {user_email}")
                 else:
                     # No result received
                     print(f"Translation model validation incomplete. Using fallback model for {user_email}")
-                    translation_model = 'gemini-2.5-flash-preview'
+                    translation_model = 'gemini-2.5-flash'
 
                 print(f"Model access validated: {translation_model} for translation (user: {user_email})")
         except Exception as validation_error:
             print(f"Model validation error: {str(validation_error)}")
             # Continue with default free model if validation fails
-            translation_model = 'gemini-2.5-flash-preview'
+            translation_model = 'gemini-2.5-flash'
             print(f"Validation failed, using fallback model: {translation_model}")
     else:
         # Non-authenticated users get free model only
-        translation_model = 'gemini-2.5-flash-preview'
+        translation_model = 'gemini-2.5-flash'
         print(f"Non-authenticated user, using free model: {translation_model}")
 
     if not text.strip():
@@ -267,11 +269,11 @@ def translate_free_trial():
 
         text = data.get('text')
         target_language = data.get('target_language')
-        translation_model = data.get('translation_model', 'gemini-2.5-flash-preview')
+        translation_model = data.get('translation_model', 'gemini-2.5-flash')
 
         # Ensure only free models are used for free trial
-        if translation_model not in ['gemini-2.5-flash-preview']:
-            translation_model = 'gemini-2.5-flash-preview'
+        if translation_model not in ['gemini-2.5-flash', 'gemini-2.5-flash-preview']:
+            translation_model = 'gemini-2.5-flash'
 
         if not text.strip():
             return jsonify({'error': 'Empty text provided'}), 400

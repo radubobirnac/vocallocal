@@ -139,10 +139,10 @@ async function loadUserAvailableModels() {
 function updateModelDropdown(selectElement, models, modelType) {
   if (!selectElement || !models) return;
 
-  // Define authorized models for validation
+  // Define authorized models for validation (Updated November 2025)
   const authorizedModels = {
-    'transcription': ['gemini-2.5-flash-preview', 'gpt-4o-mini-transcribe', 'gpt-4o-transcribe', 'gemini-2.5-flash-preview-05-20'],
-    'translation': ['gemini-2.5-flash-preview', 'gpt-4.1-mini']
+    'transcription': ['gemini-2.5-flash', 'gemini-2.5-flash-preview', 'gpt-4o-mini-transcribe', 'gpt-4o-transcribe', 'gemini-2.5-flash-preview-09-2025'],
+    'translation': ['gemini-2.5-flash', 'gemini-2.5-flash-preview', 'gpt-4.1-mini']
   };
 
   // Store current selection
@@ -1361,7 +1361,7 @@ function updateModelDropdown(selectElement, models, modelType) {
     if (interpretationModelSelect) {
       return interpretationModelSelect.value;
     } else {
-      return 'gemini-2.5-flash-preview'; // Default to Gemini 2.5 Flash Preview if dropdown not found
+      return 'gemini-2.5-flash'; // Default to stable Gemini 2.5 Flash if dropdown not found
     }
   }
 

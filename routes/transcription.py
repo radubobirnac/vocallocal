@@ -117,17 +117,20 @@ def transcribe_audio():
         # Fix model routing - ensure proper mapping between frontend and backend
         # Updated November 2025: Using current working models
         # Deprecated preview models are handled by the transcription service
+        # Updated November 2025: Map deprecated models to current working models
         model_mapping = {
             'gpt-4o-mini-transcribe': 'gpt-4o-mini-transcribe',
             'gpt-4o-transcribe': 'gpt-4o-transcribe',
-            'gemini-2.5-flash-preview-04-17': 'gemini-2.5-flash-preview-04-17',  # Will be mapped to stable in service
-            'gemini-2.5-flash-preview-05-20': 'gemini-2.5-flash-preview-05-20',  # Will be mapped to stable in service
-            'gemini-2.5-flash': 'gemini-2.5-flash',  # Stable model
+            'gemini-2.5-flash-preview-04-17': 'gemini-2.5-flash',  # Map deprecated to stable
+            'gemini-2.5-flash-preview-05-20': 'gemini-2.5-flash',  # Map deprecated to stable
+            'gemini-2.5-flash-preview': 'gemini-2.5-flash',  # Map old preview to stable
+            'gemini-2.5-flash': 'gemini-2.5-flash',  # Stable model (current)
+            'gemini-2.5-flash-preview-09-2025': 'gemini-2.5-flash-preview-09-2025',  # Latest preview
             'gemini-2.0-flash-lite': 'gemini-2.0-flash-lite'
         }
 
         # Map the requested model to ensure correct routing
-        mapped_model = model_mapping.get(requested_model, 'gemini-2.0-flash-lite')
+        mapped_model = model_mapping.get(requested_model, 'gemini-2.5-flash')  # Default to stable
         if mapped_model != requested_model:
             print(f"Model mapping: {requested_model} -> {mapped_model}")
 

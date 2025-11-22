@@ -605,16 +605,16 @@ def get_user_available_models():
         available_models = ModelAccessService.get_available_models(current_user.email)
         user_role = getattr(current_user, 'role', 'normal_user')
 
-        # Define authorized models by category
+        # Define authorized models by category (Updated November 2025)
         authorized_models = {
             'transcription': [
-                {'value': 'gemini-2.5-flash-preview', 'label': 'Gemini 2.5 Flash Preview', 'free': True},
+                {'value': 'gemini-2.5-flash', 'label': 'Gemini 2.5 Flash (Stable)', 'free': True},
                 {'value': 'gpt-4o-mini-transcribe', 'label': 'OpenAI GPT-4o Mini', 'free': False},
                 {'value': 'gpt-4o-transcribe', 'label': 'OpenAI GPT-4o', 'free': False},
-                {'value': 'gemini-2.5-flash-preview-05-20', 'label': 'Gemini 2.5 Flash Preview (Latest)', 'free': False}
+                {'value': 'gemini-2.5-flash-preview-09-2025', 'label': 'Gemini 2.5 Flash Preview (Sept 2025)', 'free': False}
             ],
             'translation': [
-                {'value': 'gemini-2.5-flash-preview', 'label': 'Gemini 2.5 Flash Preview', 'free': True},
+                {'value': 'gemini-2.5-flash', 'label': 'Gemini 2.5 Flash (Stable)', 'free': True},
                 {'value': 'gpt-4.1-mini', 'label': 'GPT-4.1 Mini', 'free': False}
             ]
         }
