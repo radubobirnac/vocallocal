@@ -61,20 +61,29 @@ class TranscriptionService(BaseService):
 
         # Configure Gemini
         if self.gemini_api_key:
-            genai.configure(api_key=self.gemini_api_key)
-            self.gemini_available = True
-            self.logger.info("Google Generative AI module loaded successfully for transcription service")
+            try:
+                genai.configure(api_key=self.gemini_api_key)
+                self.gemini_available = True
+                self.logger.info("✅ Google Generative AI configured successfully for transcription service")
+                self.logger.info(f"Gemini API Key present: {self.gemini_api_key[:10]}...{self.gemini_api_key[-4:]}")
 
-            # Initialize Gemini Model Manager for dynamic fallback
-            self.gemini_model_manager = GeminiModelManager(
-                api_key=self.gemini_api_key,
-                logger=self.logger,
-                cache_duration_hours=24
-            )
+                # Initialize Gemini Model Manager for dynamic fallback
+                self.gemini_model_manager = GeminiModelManager(
+                    api_key=self.gemini_api_key,
+                    logger=self.logger,
+                    cache_duration_hours=24
+                )
+                self.logger.info("✅ Gemini Model Manager initialized successfully")
+            except Exception as gemini_init_error:
+                self.gemini_available = False
+                self.gemini_model_manager = None
+                self.logger.error(f"❌ Failed to initialize Gemini: {str(gemini_init_error)}")
+                self.logger.error(f"Gemini will not be available for transcription")
         else:
             self.gemini_available = False
             self.gemini_model_manager = None
-            self.logger.warning("Gemini API key not found. Gemini transcription will not be available.")
+            self.logger.warning("❌ Gemini API key not found in environment variables (GEMINI_API_KEY)")
+            self.logger.warning("Gemini transcription will not be available - only OpenAI will work")
 
         # Initialize the audio chunkers
         self.audio_chunker = AudioChunker(
@@ -591,13 +600,22 @@ class TranscriptionService(BaseService):
         try:
             # Check if we should use Gemini
             if model.startswith('gemini-') or model == 'gemini':
+                self.logger.info(f"Gemini model requested: {model}")
+                self.logger.info(f"Gemini availability status: {self.gemini_available}")
+
                 if not self.gemini_available:
-                    self.logger.warning("Gemini not available. Falling back to OpenAI.")
+                    self.logger.warning("❌ Gemini not available. Attempting fallback to OpenAI.")
+                    self.logger.info(f"FFmpeg availability for OpenAI fallback: {ffmpeg_available}")
+
                     if not ffmpeg_available:
-                        self.logger.error("Cannot fall back to OpenAI because FFmpeg is not available.")
+                        self.logger.error("❌ Cannot fall back to OpenAI because FFmpeg is not available.")
+                        self.logger.error("CRITICAL: Both Gemini and FFmpeg are unavailable - transcription cannot proceed")
                         raise Exception("Transcription failed: Gemini not available and FFmpeg not installed for OpenAI fallback.")
+
+                    self.logger.info("✅ FFmpeg available - falling back to OpenAI")
                     return self.transcribe_with_openai(audio_data, language, "gpt-4o-mini-transcribe")
 
+                self.logger.info(f"✅ Using Gemini for transcription with model: {model}")
                 return self.transcribe_with_gemini(audio_data, language, model)
             else:
                 # Use OpenAI for transcription
@@ -624,20 +642,52 @@ class TranscriptionService(BaseService):
     def _check_ffmpeg_available(self):
         """Check if FFmpeg is available on the system"""
         try:
-            # Try to run FFmpeg version command
+            # Try to run FFmpeg version command from system PATH
             subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
-            self.logger.info("FFmpeg is available")
+            self.logger.info("FFmpeg is available in system PATH")
             self.ffmpeg_path = 'ffmpeg'  # Use system PATH
             return True
         except (subprocess.SubprocessError, FileNotFoundError):
-            # Try with custom path if defined in environment
-            ffmpeg_path = os.getenv("FFMPEG_PATH", "C:\\Users\\91630\\Downloads\\ffmpeg-master-latest-win64-gpl-shared\\ffmpeg-master-latest-win64-gpl-shared\\bin\\ffmpeg.exe")
-            if os.path.exists(ffmpeg_path):
-                self.logger.info(f"Found FFmpeg at custom path: {ffmpeg_path}")
-                # Store the path for later use
-                self.ffmpeg_path = ffmpeg_path
-                return True
-            self.logger.warning("FFmpeg is not available")
+            # Try with environment variable paths (DigitalOcean uses FFMPEG_BINARY)
+            # Check FFMPEG_BINARY first (DigitalOcean), then FFMPEG_PATH (custom)
+            ffmpeg_env_paths = [
+                os.getenv("FFMPEG_BINARY"),  # DigitalOcean deployment
+                os.getenv("FFMPEG_PATH"),     # Custom environment variable
+            ]
+
+            for ffmpeg_path in ffmpeg_env_paths:
+                if ffmpeg_path and os.path.exists(ffmpeg_path):
+                    try:
+                        # Verify the binary works
+                        subprocess.run([ffmpeg_path, '-version'], capture_output=True, check=True)
+                        self.logger.info(f"Found FFmpeg at environment path: {ffmpeg_path}")
+                        self.ffmpeg_path = ffmpeg_path
+                        return True
+                    except (subprocess.SubprocessError, FileNotFoundError):
+                        self.logger.warning(f"FFmpeg binary at {ffmpeg_path} exists but is not executable")
+                        continue
+
+            # Try common deployment paths
+            common_paths = [
+                './bin/ffmpeg',           # DigitalOcean build location
+                '/usr/bin/ffmpeg',        # Standard Linux location
+                '/usr/local/bin/ffmpeg',  # Alternative Linux location
+                "C:\\Users\\91630\\Downloads\\ffmpeg-master-latest-win64-gpl-shared\\ffmpeg-master-latest-win64-gpl-shared\\bin\\ffmpeg.exe"  # Windows dev path
+            ]
+
+            for ffmpeg_path in common_paths:
+                if os.path.exists(ffmpeg_path):
+                    try:
+                        # Verify the binary works
+                        subprocess.run([ffmpeg_path, '-version'], capture_output=True, check=True)
+                        self.logger.info(f"Found FFmpeg at common path: {ffmpeg_path}")
+                        self.ffmpeg_path = ffmpeg_path
+                        return True
+                    except (subprocess.SubprocessError, FileNotFoundError):
+                        self.logger.warning(f"FFmpeg binary at {ffmpeg_path} exists but is not executable")
+                        continue
+
+            self.logger.warning("FFmpeg is not available - checked system PATH, environment variables, and common paths")
             self.ffmpeg_path = None
             return False
 

@@ -385,7 +385,6 @@ def transcribe_audio():
                 except Exception as auth_error:
                     # Just log the error but continue - don't fail the transcription if saving to Firebase fails
                     print(f"Error saving transcription to Firebase: {str(auth_error)}")
-                    import traceback
                     traceback.print_exc()
 
                 # Remove temporary file
@@ -551,7 +550,6 @@ def transcribe_free_trial():
         })
 
     except Exception as e:
-        import traceback
         error_details = traceback.format_exc()
         print(f"Free trial transcription error: {str(e)}\n{error_details}")
 
